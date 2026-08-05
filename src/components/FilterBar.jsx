@@ -41,13 +41,25 @@ const FilterBar = ({ onFilterChange, regions, anos = [], isVisible, currentUser,
   const [filters, setFilters] = useState({
     buscaGeral: '',
     ra: '',
-    ano: '',
+    periodo: '',
+    dataInicio: '',
+    dataFim: '',
     status: 'Todos',
     problema: ''
   });
 
   const handleChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
+
+  const handlePeriodoChange = (val) => {
+    let newFilters = { ...filters, periodo: val };
+    if (val !== 'personalizado') {
+       newFilters.dataInicio = '';
+       newFilters.dataFim = '';
+    }
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
@@ -93,17 +105,40 @@ const FilterBar = ({ onFilterChange, regions, anos = [], isVisible, currentUser,
             </select>
           </div>
 
-          {/* Filtro por Ano */}
+          {/* Filtro por Período */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ano da Vistoria</label>
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Data da Vistoria</label>
             <select 
               className="p-2 rounded bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
-              value={filters.ano}
-              onChange={(e) => handleChange('ano', e.target.value)}
+              value={filters.periodo}
+              onChange={(e) => handlePeriodoChange(e.target.value)}
             >
-              <option value="">Todos os Anos</option>
-              {anos.map(a => <option key={a} value={a}>{a}</option>)}
+              <option value="">Todo o período</option>
+              <option value="hoje">Hoje</option>
+              <option value="semana">Esta semana</option>
+              <option value="mes">Este mês</option>
+              <option value="ano_atual">Este ano</option>
+              <option value="personalizado">Personalizado...</option>
+              {anos.length > 0 && <optgroup label="Por Ano Específico">
+                {anos.map(a => <option key={a} value={`ano-${a}`}>{a}</option>)}
+              </optgroup>}
             </select>
+            {filters.periodo === 'personalizado' && (
+              <div className="flex gap-2 mt-1">
+                <input 
+                  type="date" 
+                  value={filters.dataInicio} 
+                  onChange={(e) => handleChange('dataInicio', e.target.value)}
+                  className="w-1/2 p-1 rounded bg-slate-700 border border-slate-600 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+                <input 
+                  type="date" 
+                  value={filters.dataFim} 
+                  onChange={(e) => handleChange('dataFim', e.target.value)}
+                  className="w-1/2 p-1 rounded bg-slate-700 border border-slate-600 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            )}
           </div>
 
           {/* Filtro de Status */}

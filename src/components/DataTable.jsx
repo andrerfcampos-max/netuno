@@ -128,7 +128,7 @@ const DataTable = ({ data, onCenterMap, onInspect, selectedMissionIds = [], onTo
     <section className="w-full bg-slate-800 rounded-xl border border-slate-700 p-4 shadow-inner flex flex-col h-full min-h-[300px]">
       <div className="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
         <h2 className="text-lg font-bold text-slate-200">
-          Tabela de Dados ({data.length} registros)
+          Lista de vistorias ({data.length} registros)
         </h2>
         <button
           onClick={exportCSV}

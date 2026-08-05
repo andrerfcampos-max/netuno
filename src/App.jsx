@@ -21,8 +21,7 @@ function App() {
   const [hidrantes, setHidrantes] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
   const [isFilterVisible, setIsFilterVisible] = useState(true);
-  const [isMapVisible, setIsMapVisible] = useState(true);
-  const [isTableVisible, setIsTableVisible] = useState(false);
+  const [activeView, setActiveView] = useState('map'); // 'map' | 'table' | 'route' | 'report'
   const [activeFilters, setActiveFilters] = useState({});
   const [inspectingHidrante, setInspectingHidrante] = useState(null);
   const [lastInspectedCoords, setLastInspectedCoords] = useState(null);
@@ -33,8 +32,6 @@ function App() {
   const [openMissionIds, setOpenMissionIds] = useState([]);
   const [activeMissionId, setActiveMissionId] = useState(null);
   const [isMissionManagerOpen, setIsMissionManagerOpen] = useState(false);
-  const [isRouteModuleOpen, setIsRouteModuleOpen] = useState(false);
-  const [isReportVisible, setIsReportVisible] = useState(false);
 
   // Derivações da Missão Ativa
   const currentMission = missions.find(m => m.id === activeMissionId);
@@ -71,7 +68,7 @@ function App() {
         setMissions(prev => [...prev, newMission]);
         setOpenMissionIds(prev => [...prev, newMission.id]);
         setActiveMissionId(newMission.id);
-        setIsRouteModuleOpen(true);
+        setActiveView('route');
         // Limpa a URL para não duplicar no F5
         window.history.replaceState({}, document.title, window.location.pathname);
       }
@@ -140,36 +137,17 @@ function App() {
     }
   };
 
-  // Extrair Regiões (RAs) únicas
-  const regions = useMemo(() => {
-    const r = new Set(hidrantes.map(h => h.dscLocalidade).filter(Boolean));
-    return Array.from(r).sort();
-  }, [hidrantes]);
-
-  // Extrair Anos únicos
-  const anosVistoria = useMemo(() => {
-    const anos = new Set();
-    hidrantes.forEach(h => {
-      if (h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') {
-        // Assume formato DD/MM/YYYY ou similar que contenha o ano com 4 dígitos
-        const match = h.datHoraUltimaVistoria.match(/\b(20\d{2})\b/);
-        if (match) anos.add(match[1]);
-      }
-    });
-    return Array.from(anos).sort((a, b) => b - a); // decrescente
-  }, [hidrantes]);
-
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      parseHydrantsCSV(file, (data) => {
-        setHidrantes(data);
-        setFilteredList(data);
-      });
+  const parseDate = (dateStr) => {
+    if (!dateStr || dateStr === '-') return null;
+    const [datePart] = dateStr.split(' ');
+    const parts = datePart.split('/');
+    if (parts.length === 3) {
+      return new Date(parts[2], parts[1] - 1, parts[0]);
     }
+    return null;
   };
 
-  const applyFilters = (filters, dataList = hidrantes) => {
+  const getFilteredData = (filters, dataList = hidrantes) => {
     let result = [...dataList];
     if (filters.buscaGeral) {
       const termo = filters.buscaGeral.toLowerCase();
@@ -182,8 +160,41 @@ function App() {
     if (filters.ra) {
       result = result.filter(h => h.dscLocalidade === filters.ra);
     }
-    if (filters.ano) {
-      result = result.filter(h => h.datHoraUltimaVistoria && h.datHoraUltimaVistoria.includes(filters.ano));
+    if (filters.periodo) {
+      result = result.filter(h => {
+        const d = parseDate(h.datHoraUltimaVistoria);
+        if (!d) return false;
+        
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        
+        if (filters.periodo === 'hoje') {
+          return d.getTime() === hoje.getTime();
+        } else if (filters.periodo === 'semana') {
+          const start = new Date(hoje);
+          start.setDate(start.getDate() - start.getDay());
+          return d >= start;
+        } else if (filters.periodo === 'mes') {
+          return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
+        } else if (filters.periodo === 'ano_atual') {
+          return d.getFullYear() === hoje.getFullYear();
+        } else if (filters.periodo.startsWith('ano-')) {
+          const targetYear = parseInt(filters.periodo.split('-')[1]);
+          return d.getFullYear() === targetYear;
+        } else if (filters.periodo === 'personalizado') {
+          if (filters.dataInicio) {
+            // Usa 'T00:00:00' para evitar shift de timezone no Date constructor
+            const start = new Date(filters.dataInicio + 'T00:00:00');
+            if (d < start) return false;
+          }
+          if (filters.dataFim) {
+            const end = new Date(filters.dataFim + 'T23:59:59');
+            if (d > end) return false;
+          }
+          return true;
+        }
+        return true;
+      });
     }
     if (filters.status && filters.status !== 'Todos') {
       const isOperante = filters.status === 'Operante';
@@ -192,7 +203,45 @@ function App() {
     if (filters.problema) {
       result = result.filter(h => h.problemasHidrante === filters.problema);
     }
-    setFilteredList(result);
+    return result;
+  };
+
+  // Extrair Regiões (RAs) únicas dinamicamente
+  const regions = useMemo(() => {
+    const filtersWithoutRA = { ...activeFilters, ra: '' };
+    const dataForRA = getFilteredData(filtersWithoutRA, hidrantes);
+    const r = new Set(dataForRA.map(h => h.dscLocalidade).filter(Boolean));
+    return Array.from(r).sort();
+  }, [hidrantes, activeFilters]);
+
+  // Extrair Anos únicos dinamicamente
+  const anosVistoria = useMemo(() => {
+    const filtersWithoutAno = { ...activeFilters, periodo: '', dataInicio: '', dataFim: '' };
+    const dataForAno = getFilteredData(filtersWithoutAno, hidrantes);
+    
+    const anos = new Set();
+    dataForAno.forEach(h => {
+      if (h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') {
+        // Assume formato DD/MM/YYYY ou similar que contenha o ano com 4 dígitos
+        const match = h.datHoraUltimaVistoria.match(/\b(20\d{2})\b/);
+        if (match) anos.add(match[1]);
+      }
+    });
+    return Array.from(anos).sort((a, b) => b - a); // decrescente
+  }, [hidrantes, activeFilters]);
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      parseHydrantsCSV(file, (data) => {
+        setHidrantes(data);
+        setFilteredList(data);
+      });
+    }
+  };
+
+  const applyFilters = (filters, dataList = hidrantes) => {
+    setFilteredList(getFilteredData(filters, dataList));
   };
 
   const handleFilterChange = (filters) => {
@@ -254,9 +303,7 @@ function App() {
     setCurrentUser(null);
     setOpenMissionIds([]);
     setActiveMissionId(null);
-    setIsRouteModuleOpen(false);
-    setIsReportVisible(false);
-    setIsTableVisible(false);
+    setActiveView('map');
   };
 
   // Sessão de 8h e renovação silenciosa
@@ -427,38 +474,38 @@ function App() {
         )}
 
         {/* CONTROLES RETRÁTEIS */}
-        <div className="flex gap-2 w-full justify-center flex-wrap px-1 mt-1 mb-1">
+        <div className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur py-2 flex gap-2 w-full justify-center flex-wrap px-1 border-b border-slate-700/50 mb-2">
           <button 
             onClick={() => setIsFilterVisible(!isFilterVisible)}
-            className={`flex-1 min-w-[80px] sm:min-w-[120px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+            className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
               isFilterVisible ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
             }`}
           >
             Filtros
           </button>
           <button 
-            onClick={() => setIsMapVisible(!isMapVisible)}
-            className={`flex-1 min-w-[80px] sm:min-w-[120px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
-              isMapVisible ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+            onClick={() => setActiveView('map')}
+            className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+              activeView === 'map' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
             }`}
           >
             Mapa
           </button>
           <button 
-            onClick={() => setIsTableVisible(!isTableVisible)}
-            className={`flex-1 min-w-[80px] sm:min-w-[120px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
-              isTableVisible ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+            onClick={() => setActiveView('table')}
+            className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+              activeView === 'table' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
             }`}
           >
             Lista
           </button>
           <button 
-            onClick={() => setIsRouteModuleOpen(!isRouteModuleOpen)}
-            className={`flex-1 min-w-[80px] sm:min-w-[120px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
-              isRouteModuleOpen 
+            onClick={() => setActiveView('route')}
+            className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+              activeView === 'route' 
                 ? 'bg-emerald-600 border-emerald-500 text-white' 
                 : (!activeMissionId || selectedMissionIds.length === 0 
-                   ? 'bg-slate-800 border-slate-700 text-slate-500' 
+                   ? 'bg-slate-800 border-slate-700 text-slate-500 opacity-50' 
                    : 'bg-slate-800 border-slate-700 text-slate-300')
             }`}
             disabled={!activeMissionId}
@@ -466,9 +513,9 @@ function App() {
             Rota ({selectedMissionIds.length})
           </button>
           <button 
-            onClick={() => setIsReportVisible(!isReportVisible)}
-            className={`flex-1 min-w-[80px] sm:min-w-[120px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
-              isReportVisible ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+            onClick={() => setActiveView('report')}
+            className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+              activeView === 'report' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
             }`}
           >
             Relatório
@@ -476,7 +523,7 @@ function App() {
         </div>
 
         {/* MÓDULO 2: MAPA TÁTICO INTEGRADO */}
-        {isMapVisible && (
+        {activeView === 'map' && (
           <div className="w-full relative z-0 flex-1 flex-shrink-0 min-h-[400px]">
             <MapComponent 
               hidrantes={filteredList} 
@@ -490,14 +537,14 @@ function App() {
         )}
 
         {/* MÓDULO 4: TABELA */}
-        {isTableVisible && (
+        {activeView === 'table' && (
           <div className="w-full flex-1 flex-shrink-0 min-h-[400px] bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
             <DataTable 
               data={filteredList} 
               onInspect={(h) => setInspectingHidrante(h)}
               onCenterMap={(h) => {
                 setMapCenterPosition(h);
-                setIsMapVisible(true);
+                setActiveView('map');
               }} 
               selectedMissionIds={selectedMissionIds}
               onToggleMission={toggleMissionSelection}
@@ -507,8 +554,8 @@ function App() {
           </div>
         )}
 
-        {/* MÓDULO ROTA DE MISSÃO (RETRÁTIL) */}
-        {isRouteModuleOpen && activeMissionId && (
+        {/* MÓDULO ROTA DE MISSÃO */}
+        {activeView === 'route' && activeMissionId && (
           <div id="modulo-rota" className="w-full relative z-10 flex-shrink-0 h-[65vh] min-h-[400px] max-h-[800px] border border-slate-700 rounded-xl overflow-hidden flex flex-col">
             <MissionRoutePanel 
               hidrantes={hidrantes}
@@ -516,27 +563,27 @@ function App() {
               completedMissionIds={completedMissionIds}
               currentMission={currentMission}
               onUpdateMission={(updates) => updateCurrentMission(updates)}
-              onClose={() => setIsRouteModuleOpen(false)}
+              onClose={() => setActiveView('map')}
               onClearMission={() => updateCurrentMission({ selectedIds: [], completedIds: [] })}
               onRemoveFromMission={toggleMissionSelection}
               lastInspectedCoords={lastInspectedCoords} 
               onInspect={(h) => setInspectingHidrante(h)}
               onCenterMap={(h) => {
                 setMapCenterPosition(h);
-                setIsMapVisible(true);
+                setActiveView('map');
               }}
               currentUser={currentUser}
             />
           </div>
         )}
 
-        {/* MÓDULO RELATÓRIO TÁTICO (RETRÁTIL) */}
-        {isReportVisible && (
+        {/* MÓDULO RELATÓRIO TÁTICO */}
+        {activeView === 'report' && (
           <div id="modulo-relatorio" className="w-full relative z-10 flex-shrink-0 h-[65vh] min-h-[400px] max-h-[800px] border border-slate-700 rounded-xl flex flex-col">
             <MissionReportPanel 
               hidrantes={activeMissionId && selectedMissionIds.length > 0 ? hidrantes.filter(h => selectedMissionIds.includes(h.codHidrante || h.nomHidrante)) : filteredList}
               currentMission={currentMission}
-              onClose={() => setIsReportVisible(false)}
+              onClose={() => setActiveView('map')}
               currentUser={currentUser}
             />
           </div>
@@ -545,21 +592,25 @@ function App() {
 
       {/* Barramento de Seleção Inferior */}
       <footer className="bg-slate-900 border-t border-slate-700 p-3 flex justify-between items-center z-50">
-        <div className="text-sm font-semibold text-slate-400">
-          {activeMissionId ? (
-            <>
-              <span className="text-emerald-400 font-bold">{selectedMissionIds.length}</span> hidrantes na {currentMission?.name} 
-              {completedMissionIds.length > 0 && ` (${completedMissionIds.length} concluídos)`}
-            </>
-          ) : (
-            <span>Selecione ou crie uma Missão na Central</span>
-          )}
+        <div className="flex flex-col">
+          <div className="text-sm font-semibold text-slate-400">
+            {activeMissionId ? (
+              <>
+                <span className="text-emerald-400 font-bold">{selectedMissionIds.length}</span> hidrantes na {currentMission?.name} 
+                {completedMissionIds.length > 0 && ` (${completedMissionIds.length} concluídos)`}
+              </>
+            ) : (
+              <span>Selecione ou crie uma Missão na Central</span>
+            )}
+          </div>
+          <span className="text-[10px] text-slate-500 opacity-60 mt-0.5 tracking-wide">
+            Desenvolvido por Sgt Roméro
+          </span>
         </div>
         {selectedMissionIds.length > 0 && (
           <button 
             onClick={() => {
-              setIsRouteModuleOpen(true);
-              setTimeout(() => document.getElementById('modulo-rota')?.scrollIntoView({ behavior: 'smooth' }), 100);
+              setActiveView('route');
             }}
             className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold shadow-lg shadow-emerald-900/50 active:scale-95 transition-all animate-pulse"
           >
