@@ -1,0 +1,433 @@
+import { useState, useMemo, useEffect } from 'react';
+import { Upload, GitMerge, FolderOpen } from 'lucide-react';
+import { parseHydrantsCSV } from './utils/csvParser';
+import MapComponent from './components/MapComponent';
+import FilterBar from './components/FilterBar';
+import InspectionModal from './components/InspectionModal';
+import DataTable from './components/DataTable';
+import MissionRoutePanel from './components/MissionRoutePanel';
+import MissionReportPanel from './components/MissionReportPanel';
+import MissionTabs from './components/MissionTabs';
+import MissionManagerModal from './components/MissionManagerModal';
+import { loadPreloadedDatabase } from './utils/xlsxParser';
+import { loadMissions, saveMissions, createNewMission } from './utils/storage';
+
+function App() {
+  const [hidrantes, setHidrantes] = useState([]);
+  const [filteredList, setFilteredList] = useState([]);
+  const [isFilterVisible, setIsFilterVisible] = useState(true);
+  const [isMapVisible, setIsMapVisible] = useState(true);
+  const [isTableVisible, setIsTableVisible] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({});
+  const [inspectingHidrante, setInspectingHidrante] = useState(null);
+  const [lastInspectedCoords, setLastInspectedCoords] = useState(null);
+  const [mapCenterPosition, setMapCenterPosition] = useState(null);
+  
+  // Controle de Missões Persistentes
+  const [missions, setMissions] = useState(loadMissions());
+  const [openMissionIds, setOpenMissionIds] = useState([]);
+  const [activeMissionId, setActiveMissionId] = useState(null);
+  const [isMissionManagerOpen, setIsMissionManagerOpen] = useState(false);
+  const [isRouteModuleOpen, setIsRouteModuleOpen] = useState(false);
+  const [isReportVisible, setIsReportVisible] = useState(false);
+
+  // Derivações da Missão Ativa
+  const currentMission = missions.find(m => m.id === activeMissionId);
+  const selectedMissionIds = currentMission?.selectedIds || [];
+  const completedMissionIds = currentMission?.completedIds || [];
+
+  // Sincroniza estado de missões com LocalStorage sempre que alterar
+  useEffect(() => {
+    saveMissions(missions);
+  }, [missions]);
+
+  // Hidratação por Link Mágico (?ds=ID1,ID2) e Carregamento Automático
+  useEffect(() => {
+    // 1. Carregar Base Pre-carregada automaticamente se estiver vazio
+    if (hidrantes.length === 0) {
+      loadPreloadedDatabase((data) => {
+        if (data.length > 0) {
+          setHidrantes(data);
+          setFilteredList(data);
+        }
+      });
+    }
+
+    // 2. Link Mágico
+    const params = new URLSearchParams(window.location.search);
+    const ds = params.get('ds');
+    if (ds) {
+      const ids = ds.split(',').filter(Boolean);
+      if (ids.length > 0) {
+        // Cria uma nova missão com esses IDs importados
+        const newMission = createNewMission("Missão Importada");
+        newMission.selectedIds = ids;
+        setMissions(prev => [...prev, newMission]);
+        setOpenMissionIds(prev => [...prev, newMission.id]);
+        setActiveMissionId(newMission.id);
+        setIsRouteModuleOpen(true);
+        // Limpa a URL para não duplicar no F5
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [hidrantes.length]);
+
+  const updateCurrentMission = (updates) => {
+    if (!activeMissionId) return;
+    setMissions(prev => prev.map(m => m.id === activeMissionId ? { ...m, ...updates, updatedAt: new Date().toISOString() } : m));
+  };
+
+  const toggleMissionSelection = (id) => {
+    let currentId = activeMissionId;
+    let currentSel = selectedMissionIds;
+    let currentComp = completedMissionIds;
+
+    // Se tentar adicionar mas não tiver missão ativa, cria uma automaticamente
+    if (!currentId) {
+      const newMission = createNewMission();
+      setMissions(prev => [...prev, newMission]);
+      setOpenMissionIds(prev => [...prev, newMission.id]);
+      setActiveMissionId(newMission.id);
+      currentId = newMission.id;
+      currentSel = [];
+      currentComp = [];
+    }
+
+    const newSelected = currentSel.includes(id) 
+      ? currentSel.filter(missionId => missionId !== id) 
+      : [...currentSel, id];
+    
+    const newCompleted = currentSel.includes(id)
+      ? currentComp.filter(cId => cId !== id)
+      : currentComp;
+
+    // Atualiza o estado
+    setMissions(prev => prev.map(m => m.id === currentId ? { ...m, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() } : m));
+  };
+
+  const selectAllFiltered = (isChecked, currentFilteredData) => {
+    let currentId = activeMissionId;
+    let currentSel = selectedMissionIds;
+    let currentComp = completedMissionIds;
+
+    if (!currentId) {
+      const newMission = createNewMission();
+      setMissions(prev => [...prev, newMission]);
+      setOpenMissionIds(prev => [...prev, newMission.id]);
+      setActiveMissionId(newMission.id);
+      currentId = newMission.id;
+      currentSel = [];
+      currentComp = [];
+    }
+
+    const filteredIds = currentFilteredData.map(h => h.codHidrante || h.nomHidrante);
+    
+    if (isChecked) {
+      const idsToAdd = filteredIds.filter(id => !currentSel.includes(id));
+      setMissions(prev => prev.map(m => m.id === currentId ? { ...m, selectedIds: [...currentSel, ...idsToAdd], updatedAt: new Date().toISOString() } : m));
+    } else {
+      const newSelected = currentSel.filter(id => !filteredIds.includes(id));
+      const newCompleted = currentComp.filter(id => !filteredIds.includes(id));
+      setMissions(prev => prev.map(m => m.id === currentId ? { ...m, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() } : m));
+    }
+  };
+
+  // Extrair Regiões (RAs) únicas
+  const regions = useMemo(() => {
+    const r = new Set(hidrantes.map(h => h.dscLocalidade).filter(Boolean));
+    return Array.from(r).sort();
+  }, [hidrantes]);
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      parseHydrantsCSV(file, (data) => {
+        setHidrantes(data);
+        setFilteredList(data);
+      });
+    }
+  };
+
+  const applyFilters = (filters, dataList = hidrantes) => {
+    let result = [...dataList];
+    if (filters.buscaGeral) {
+      const termo = filters.buscaGeral.toLowerCase();
+      result = result.filter(h => 
+        (h.dscEndereco && h.dscEndereco.toLowerCase().includes(termo)) ||
+        (h.nomHidrante && h.nomHidrante.toLowerCase().includes(termo)) ||
+        (h.dscPontoReferencia && h.dscPontoReferencia.toLowerCase().includes(termo))
+      );
+    }
+    if (filters.ra) {
+      result = result.filter(h => h.dscLocalidade === filters.ra);
+    }
+    if (filters.status && filters.status !== 'Todos') {
+      const isOperante = filters.status === 'Operante';
+      result = result.filter(h => h.flgAtivo === isOperante);
+    }
+    if (filters.problema) {
+      result = result.filter(h => h.problemasHidrante === filters.problema);
+    }
+    setFilteredList(result);
+  };
+
+  const handleFilterChange = (filters) => {
+    setActiveFilters(filters);
+    applyFilters(filters, hidrantes);
+  };
+
+  const handleSaveInspection = (updatedHidrante) => {
+    const newHidrantes = hidrantes.map(h => {
+      if (h._internalId === updatedHidrante._internalId || 
+         (h.nomHidrante === updatedHidrante.nomHidrante && h.codHidrante === updatedHidrante.codHidrante)) {
+        return updatedHidrante;
+      }
+      return h;
+    });
+    setHidrantes(newHidrantes);
+    
+    const id = updatedHidrante.codHidrante || updatedHidrante.nomHidrante;
+    if (activeMissionId && selectedMissionIds.includes(id) && !completedMissionIds.includes(id)) {
+      updateCurrentMission({ completedIds: [...completedMissionIds, id] });
+    }
+
+    applyFilters(activeFilters, newHidrantes);
+    setLastInspectedCoords({ lat: updatedHidrante.numLatitude, lng: updatedHidrante.numLongitude });
+    setInspectingHidrante(null);
+  };
+
+  // ---- Controle de Missões ----
+  const handleNewMission = () => {
+    const newMission = createNewMission();
+    setMissions(prev => [...prev, newMission]);
+    setOpenMissionIds(prev => [...prev, newMission.id]);
+    setActiveMissionId(newMission.id);
+  };
+
+  const handleOpenMission = (id) => {
+    if (!openMissionIds.includes(id)) {
+      setOpenMissionIds(prev => [...prev, id]);
+    }
+    setActiveMissionId(id);
+  };
+
+  const handleCloseTab = (id) => {
+    const newOpen = openMissionIds.filter(mid => mid !== id);
+    setOpenMissionIds(newOpen);
+    if (activeMissionId === id) {
+      setActiveMissionId(newOpen.length > 0 ? newOpen[0] : null);
+    }
+  };
+
+  const handleDeleteMission = (id) => {
+    setMissions(prev => prev.filter(m => m.id !== id));
+    handleCloseTab(id);
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
+      
+      {inspectingHidrante && (
+        <InspectionModal 
+          hidrante={inspectingHidrante}
+          onClose={() => setInspectingHidrante(null)}
+          onSave={handleSaveInspection}
+        />
+      )}
+
+      {/* Header com Botão de Upload */}
+      <header className="flex justify-between items-center p-3 bg-slate-900 border-b border-slate-700 z-50">
+        <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md">ARGOS 2.1</h1>
+        
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setIsMissionManagerOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm hover:bg-slate-700 active:scale-95 transition-all"
+          >
+            <FolderOpen size={18} />
+            <span className="hidden sm:inline">Central de Missões</span>
+          </button>
+          
+          <label className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white font-semibold rounded shadow-sm cursor-pointer hover:bg-emerald-500 active:scale-95 transition-all">
+            <Upload size={18} />
+            <span className="hidden sm:inline">Carregar Planilha (CSV)</span>
+            <input 
+              type="file" 
+              accept=".csv" 
+              className="hidden" 
+              onChange={handleFileUpload} 
+            />
+          </label>
+        </div>
+      </header>
+
+      {/* TABS DE MISSÃO GLOBAL */}
+      <MissionTabs 
+        missions={missions}
+        activeMissionId={activeMissionId}
+        openMissionIds={openMissionIds}
+        onTabClick={setActiveMissionId}
+        onCloseTab={handleCloseTab}
+        onNewMission={handleNewMission}
+      />
+
+      <main className="flex-1 overflow-y-auto w-full flex flex-col relative p-2 gap-2">
+        
+        {/* MÓDULO 1: BARRA DE FILTROS */}
+        {hidrantes.length > 0 && (
+          <FilterBar onFilterChange={handleFilterChange} regions={regions} isVisible={isFilterVisible} />
+        )}
+
+        {/* CONTROLES RETRÁTEIS */}
+        <div className="flex gap-2 w-full justify-center flex-wrap px-1 mt-1 mb-1">
+          <button 
+            onClick={() => setIsFilterVisible(!isFilterVisible)}
+            className={`flex-1 min-w-[80px] sm:min-w-[120px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+              isFilterVisible ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+            }`}
+          >
+            Filtros
+          </button>
+          <button 
+            onClick={() => setIsMapVisible(!isMapVisible)}
+            className={`flex-1 min-w-[80px] sm:min-w-[120px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+              isMapVisible ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+            }`}
+          >
+            Mapa
+          </button>
+          <button 
+            onClick={() => setIsTableVisible(!isTableVisible)}
+            className={`flex-1 min-w-[80px] sm:min-w-[120px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+              isTableVisible ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+            }`}
+          >
+            Tabela
+          </button>
+          <button 
+            onClick={() => setIsRouteModuleOpen(!isRouteModuleOpen)}
+            className={`flex-1 min-w-[80px] sm:min-w-[120px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+              isRouteModuleOpen 
+                ? 'bg-emerald-600 border-emerald-500 text-white' 
+                : (!activeMissionId || selectedMissionIds.length === 0 
+                   ? 'bg-slate-800 border-slate-700 text-slate-500' 
+                   : 'bg-slate-800 border-slate-700 text-slate-300')
+            }`}
+            disabled={!activeMissionId}
+          >
+            Rota ({selectedMissionIds.length})
+          </button>
+          <button 
+            onClick={() => setIsReportVisible(!isReportVisible)}
+            className={`flex-1 min-w-[80px] sm:min-w-[120px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+              isReportVisible ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+            }`}
+          >
+            Relatório
+          </button>
+        </div>
+
+        {/* MÓDULO 2: MAPA TÁTICO INTEGRADO */}
+        {isMapVisible && (
+          <div className="w-full relative z-0 flex-1 flex-shrink-0 min-h-[400px]">
+            <MapComponent 
+              hidrantes={filteredList} 
+              onInspect={(h) => setInspectingHidrante(h)}
+              centerPosition={mapCenterPosition}
+              selectedMissionIds={selectedMissionIds}
+              onToggleMission={toggleMissionSelection}
+            />
+          </div>
+        )}
+
+        {/* MÓDULO 4: TABELA */}
+        {isTableVisible && (
+          <div className="w-full flex-1 flex-shrink-0 min-h-[400px] bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
+            <DataTable 
+              data={filteredList} 
+              onInspect={(h) => setInspectingHidrante(h)}
+              onCenterMap={(h) => {
+                setMapCenterPosition(h);
+                setIsMapVisible(true);
+              }} 
+              selectedMissionIds={selectedMissionIds}
+              onToggleMission={toggleMissionSelection}
+              onSelectAllMission={selectAllFiltered}
+            />
+          </div>
+        )}
+
+        {/* MÓDULO ROTA DE MISSÃO (RETRÁTIL) */}
+        {isRouteModuleOpen && activeMissionId && (
+          <div id="modulo-rota" className="w-full relative z-10 flex-shrink-0 h-[65vh] min-h-[400px] max-h-[800px] border border-slate-700 rounded-xl overflow-hidden flex flex-col">
+            <MissionRoutePanel 
+              hidrantes={hidrantes}
+              selectedMissionIds={selectedMissionIds}
+              completedMissionIds={completedMissionIds}
+              currentMission={currentMission}
+              onUpdateMission={(updates) => updateCurrentMission(updates)}
+              onClose={() => setIsRouteModuleOpen(false)}
+              onClearMission={() => updateCurrentMission({ selectedIds: [], completedIds: [] })}
+              onRemoveFromMission={toggleMissionSelection}
+              lastInspectedCoords={lastInspectedCoords} 
+              onInspect={(h) => setInspectingHidrante(h)}
+              onCenterMap={(h) => {
+                setMapCenterPosition(h);
+                setIsMapVisible(true);
+              }}
+            />
+          </div>
+        )}
+
+        {/* MÓDULO RELATÓRIO TÁTICO (RETRÁTIL) */}
+        {isReportVisible && (
+          <div id="modulo-relatorio" className="w-full relative z-10 flex-shrink-0 h-[65vh] min-h-[400px] max-h-[800px] border border-slate-700 rounded-xl flex flex-col">
+            <MissionReportPanel 
+              hidrantes={activeMissionId && selectedMissionIds.length > 0 ? hidrantes.filter(h => selectedMissionIds.includes(h.codHidrante || h.nomHidrante)) : filteredList}
+              currentMission={currentMission}
+              onClose={() => setIsReportVisible(false)}
+            />
+          </div>
+        )}
+      </main>
+
+      {/* Barramento de Seleção Inferior */}
+      <footer className="bg-slate-900 border-t border-slate-700 p-3 flex justify-between items-center z-50">
+        <div className="text-sm font-semibold text-slate-400">
+          {activeMissionId ? (
+            <>
+              <span className="text-emerald-400 font-bold">{selectedMissionIds.length}</span> hidrantes na {currentMission?.name} 
+              {completedMissionIds.length > 0 && ` (${completedMissionIds.length} concluídos)`}
+            </>
+          ) : (
+            <span>Selecione ou crie uma Missão na Central</span>
+          )}
+        </div>
+        {selectedMissionIds.length > 0 && (
+          <button 
+            onClick={() => {
+              setIsRouteModuleOpen(true);
+              setTimeout(() => document.getElementById('modulo-rota')?.scrollIntoView({ behavior: 'smooth' }), 100);
+            }}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold shadow-lg shadow-emerald-900/50 active:scale-95 transition-all animate-pulse"
+          >
+            IR PARA A ROTA
+          </button>
+        )}
+      </footer>
+
+      {isMissionManagerOpen && (
+        <MissionManagerModal 
+          missions={missions}
+          openMissionIds={openMissionIds}
+          onClose={() => setIsMissionManagerOpen(false)}
+          onOpenMission={handleOpenMission}
+          onNewMission={handleNewMission}
+          onDeleteMission={handleDeleteMission}
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;

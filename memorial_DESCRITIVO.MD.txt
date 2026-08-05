@@ -1,0 +1,277 @@
+
+SUPER ARGOS COMMAND CENTER (ARGOS 2.1)
+Memorial Descritivo Completo e Especificação Técnica
+Este documento consolida integralmente a arquitetura de software, as regras de negócio táticas, as diretrizes visuais e as especificações de interface para o desenvolvimento do Super Argos 2.1 (Mobile-First PWA). Ele serve como especificação técnica imutável e atualizada para ser alimentada na ferramenta de desenvolvimento Google AntiGravity, garantindo que o sistema seja construído do zero com fidelidade absoluta às necessidades operacionais do Corpo de Bombeiros Militar.
+DIRETRIZ DE DESENVOLVIMENTO (DO ZERO): O ARGOS 2.1 será reconstruído inteiramente do zero no Google AntiGravity sem reaproveitamento de código legado. Todas as especificações técnicas, tratamentos de dados, regras visuais e registros de erros/acertos contidos neste memorial devem ser estritamente seguidos.
+1. VISÃO GERAL E CONTEXTO OPERACIONAL
+O Super Argos 2.1 é um Centro de Comando tático em formato de aplicação web responsiva voltada prioritariamente para dispositivos móveis (Mobile-First PWA). Sua finalidade primária é dar suporte às equipes operacionais no gerenciamento, planejamento de rotas, monitoramento, vistoria e manutenção de hidrantes públicos.
+2. DIRETRIZES DE DESIGN E ERGONOMIA TÁTICA (UX DE CAMPO)
+O ARGOS 2.1 é um aplicativo de uso tático operacional sob condições extremas de campo (exposição à luz solar direta, calor, uso em movimento e restrição de tempo). O design deve seguir rigorosamente os princípios de usabilidade simplificada:
+Simplicidade e Poucos Cliques: Redução drástica do número de etapas para executar qualquer ação. O cadastro de uma vistoria deve exigir no máximo 2 a 3 toques na tela (Toque 1: Selecionar o hidrante no mapa; Toque 2: Abrir o modal de vistoria; Toque 3: Confirmar e salvar).
+Ergonomia para Operadores Seniores e Sob Sol: Elementos visuais amplificados, fontes com alto contraste, em negrito e botões de grande dimensão (mínimo de 48px de área útil de toque / touch target) para facilitar o manuseio com o polegar, em movimento ou por usuários com pouca intimidade com tecnologia.
+Minimização de Entrada de Texto: Proibição de digitação manual de textos longos. Utilização exclusiva de seletores visuais rápidos, botões de alternância (toggles), etiquetas (chips/tags) e caixas de seleção parametrizadas.
+Navegação Intuitiva e Feedback Imediato: Rótulos claros em português simples, ícones universais e confirmações visuais destacadas (ex: ícone de check verde gigante ao salvar uma vistoria).
+3. BANCO DE DADOS, PERSISTÊNCIA E MODELAGEM DE DADOS
+O banco de dados do ARGOS 2.1 adota uma relação de 1 para N (Um Hidrante possui um histórico de Várias Vistorias ao longo do tempo).
+A. Identificação Imutável do Hidrante
+codHidrante / nomHidrante (Entidade Unificada): O codHidrante (ID numérico de banco, ex: 827) e o nomHidrante (Código Alfa-Numérico público, ex: GAM00002 ou GUA00116) possuem relação de 1 para 1 e identificam o mesmo equipamento físico. São chaves fixas e imutáveis. Não mudam em vistorias e nem no modal de edição.
+B. Dados Estruturais e Atualização de Estado
+Dados Cadastrais Fixos: dscLocalidade (RA), dscEndereco, dscPontoReferencia, numLatitude, numLongitude. Só são alterados caso o militar acione explicitamente o botão EDITAR HIDRANTE.
+Estado Atualizado em Tempo Real (Sobrescrita de Cadastro): Ao salvar uma nova vistoria, a entidade do hidrante no mapa atualiza imediatamente seu estado ativo:
+flgAtivo (Status Operacional: True/Verde ou False/Vermelho).
+datHoraUltimaVistoria / qtdDiasUltimaVistoria (Zera o contador de dias e registra a nova data).
+problemasHidrante (Atualiza para o problema recém-selecionado ou limpa o campo caso volte a ser Operante).
+C. Log Histórico de Vistorias (Imutável)
+Cada vistoria gera um novo registro histórico (codVistoria único, datHoraVistoria, problemasHidrante e dscObservacaoVistoria). Registros passados nunca são apagados ou sobrescritos, garantindo a auditabilidade completa do CBMDF.
+4. DIRETRIZES VISUAIS E ARQUITETURA DO MAPA (LEAFLET)
+Para garantir a legibilidade sob condições de campo (exposição à luz solar direta):
+Mapa Base Obrigatório: Deve utilizar exclusivamente a camada de satélite híbrido do Google (Google Hybrid Satellite Tiles). A URL configurada na biblioteca Leaflet deve ser estritamente: [http://mt0.google.com/vt/lyrs=y&hl=pt-BR&x=](http://mt0.google.com/vt/lyrs=y&hl=pt-BR&x=){x}&y={y}&z={z}. É expressamente proibida a regressão para o OpenStreetMap padrão.
+Estilização dos Marcadores (CSS Puro): Os marcadores de hidrantes devem possuir alto contraste cromático baseado em CSS puro via L.divIcon, sem depender de arquivos de imagens rasterizadas (.png) externas:
+Hidrante Operante: Círculo com preenchimento em Verde Neon (#00FF00).
+Hidrante Inoperante: Círculo com preenchimento em Vermelho Neon (#FF0000).
+Alertas / Especiais: Círculos com preenchimento Laranja/Amarelo conforme a categoria.
+Borda de Contraste: Todos os pinos devem conter obrigatoriamente uma borda sólida branca de no mínimo 2px para evitar perda de visibilidade contra a textura escura da imagem de satélite. Marcadores selecionados ganham borda ciano (#00FFFF) e efeito de pulso/sombra.
+Agrupamento Dinâmico (Clustering Condicional): O agrupamento de marcadores (MarkerClusterGroup) só deve atuar se o volume de hidrantes carregados na tela superar 500 unidades. Para subconjuntos menores ou acompanhamento de rotas ativas, os pinos devem ser plotados individualmente e numerados sequencialmente (1, 2, 3...) conforme a ordem da missão.
+5. ESTRUTURA DE INTERFACE E MÓDULOS RETRÁTEIS (SHOW/HIDE)
+Para evitar a poluição visual em dispositivos móveis e permitir que o operador adapte a interface ao cenário tático do momento, a Single Page Application (SPA) adota uma estrutura em blocos independentes com suporte a expansão e recolhimento (Show/Hide / Collapse):
+Módulos da Interface:
+Módulo 1: Barra de Filtros Globais (FilterBar) — Posicionada no topo com efeito glassmorphism. Pode ser colapsada em um botão flutuante para maximizar a área do mapa.
+Módulo 2: Mapa Tático Integrado (MapComponent) — Ocupa de 55vh a 60vh da viewport por padrão. Pode ser ocultado ou colocado em tela cheia a pedido do usuário. Deve possuir altura explícita CSS para evitar colapso de tela.
+Módulo 3: Painel Estatístico / Gráficos — Exibe os gráficos descritivos de operabilidade e métricas macro de forma retrátil.
+Módulo 4: Tabela de Dados Integrada — Módulo tabular integrado à tela principal para análise detalhada de dados, com ordenação por colunas e exportação em CSV.
+5.1. Mecânica de Seleção de Missão e Desacoplamento de Estados:
+selectedMissionIds (Conjunto Persistente): Array de IDs numéricos mantido no estado global. É imune a alterações de filtros na FilterBar ou troca de abas.
+Sincronia Mapa/Tabela: Marcar uma caixa de seleção na tabela adiciona/remove o ID da selectedMissionIds e altera imediatamente a borda do marcador correspondente no mapa para a cor Ciano (#00FFFF) com ícone de ativo.
+Gestão de Módulos (Show/Hide/Maximize): Os painéis de Rota e Relatório consomem exclusivamente o array selectedMissionIds. Podem ser maximizados em tela cheia ou recolhidos a qualquer momento sem perda de dados.
+
+6. BARRA DE FILTROS GLOBAIS (FILTERBAR)
+A barra superior de filtros substitui o antigo filtro genérico de "Aguardando Manutenção" por um filtro direto de falhas técnicas:
+Filtro Geral (Busca Textual): Campo livre para busca por endereço, nome do hidrante ou ponto de referência.
+Região Administrativa (RA): Dropdown para isolar localidades específicas (ex: GUARA, GAMA, TAGUATINGA).
+Código do Hidrante: Busca direta pelo identificador/código numérico ou alfanumérico do equipamento.
+Status do Hidrante: Alternador direto entre Operante, Inoperante ou Todos.
+Filtro de Problemas do Hidrante (NOVO): Substitui o antigo "Aguardando Manutenção". Permite selecionar/filtrar cirurgicamente hidrantes que apresentem falhas específicas cadastradas na Tabela Oficial de Problemas (ex: "Vazamento no registro", "Falta tampão de 2.1/2", "Hidrante soterrado").
+Ano da Vistoria: Dropdown para filtro histórico por período de atualização.
+7. BALÃO DE INFORMAÇÕES (POPUP DO HIDRANTE)
+Ao clicar sobre qualquer marcador no mapa, o balão de diálogo (popup) é exibido imediatamente com informações fixas e integradas (sem botões de ocultar/expandir na vistoria):
+Bloco de Dados do Hidrante (Exibição Fixa e Completa):
+Nome / Código do Hidrante (ex: GUA00116 / Guará 57)
+Status Operacional (OPERANTE em verde / INOPERANTE em vermelho)
+Endereço Completo (ex: QE 4 CONJUNTO G)
+Ponto de Referência (ex: MERCADO LARAMIX)
+Região Administrativa (ex: GUARA)
+Localização / Coordenadas Geográficas (Latitude e Longitude)
+Data e Hora da Última Vistoria (exibida de forma fixa, direta e visível junto aos dados acima, ex: 04/07/2025, 08:00:00)
+Navegação Externa (Links Universais Parametrizados):
+Botão Waze: Link universal [https://waze.com/ul?ll=](https://waze.com/ul?ll=){lat},{long}&navigate=yes para traçar rota de deslocamento da viatura.
+Botão Google Maps: Atalho direto para rotas no Google Maps.
+Botão Street View: Link direto para a visão de rua [https://maps.google.com/maps?q=&layer=c&cbll=](https://maps.google.com/maps?q=&layer=c&cbll=){lat},{long} para inspeção prévia da fachada e entorno.
+Ações Críticas em Campo:
+Botão Cadastrar Vistoria (onInspect): Dispara o modal restrito de vistoria técnica.
+Botão Editar Hidrante: Permite atualização dos dados cadastrais e estruturais do equipamento.
+Botão Selecionar / Remover da Rota: Inclui ou remove o hidrante da missão ativa do dia.
+8. TABELA DE DADOS INTEGRADA E EXPORTAÇÃO CSV
+Em substituição às telas isoladas do ARGOS 1.0, o ARGOS 2.1 integra o banco de dados diretamente na SPA (Aba Explorar / Tabela de Dados):
+Estrutura de Colunas Reordenáveis: A tabela permite ordenar os dados ao clicar no cabeçalho das colunas (Sorting), apresentando a seguinte hierarquia padrão:
+nomHidrante (Nome/Código — Coluna fixa à esquerda)
+flgAtivo (Status com Badge Verde/Vermelho)
+problemasHidrante (Problema técnico cadastrado na lista oficial)
+dscEndereco / dscPontoReferencia (Localização completa)
+datHoraVistoria / qtdDiasUltimaVistoria (Temporalidade)
+Ações Rápidas (Centralizar no Mapa / Acessar Waze)
+Botão Exportar CSV: Botão em destaque no cabeçalho da tabela que realiza a extração/download em tempo real de um arquivo .csv contendo exatamente o subconjunto de dados filtrado no momento pelo operador.
+9. REGRAS DE NEGÓCIO AVANÇADAS
+A. Hidratação por Link Mágico: Interceptação dos parâmetros da URL (?$ds=1,2,3...) para carregar automaticamente rotas pré-configuradas entre guarnições.
+B. Reotimização Automática e Resolução do TSP: Ao concluir uma vistoria com sucesso, o sistema recalcula e reordena automaticamente os hidrantes pendentes da rota utilizando distância euclidiana ou fórmula de Haversine a partir da coordenada da última vistoria.
+C. Compartilhamento via WhatsApp: Compila relatório textual simplificado contendo o resumo da missão, link direto do Waze para o próximo destino e o link mágico de espelhamento.
+D. Sanitização do CSV Parser: Tratamento na leitura da base de dados, convertendo vírgulas em pontos nas coordenadas e descartando valores inválidos (NaN) antes da renderização para prevenir telas brancas no Leaflet.
+10. PADRONIZAÇÃO DE DADOS: LISTA DE PROBLEMAS OFICIAIS
+O modal de vistoria (InspectionModal) impossibilita a inserção de texto livre para o registro de falhas, forçando a seleção parametrizada através de menu multi-seleção baseado na tabela oficial abaixo. Caso o status "INOPERANTE" seja selecionado, um diálogo de confirmação de segurança é invocado antes de salvar.
+ID
+DESCRIÇÃO PADRONIZADA DO PROBLEMA TÉCNICO
+1
+Caixa do hidrante obstruída com esgoto
+2
+Hidrante sem água
+3
+Hidrante removido ou não encontrado
+4
+Hidrante cercado/bloqueado
+5
+Falta tampão de 2.1/2"
+6
+Falta tampão de 4"
+7
+Tampa da caixa lacrada (concretada)
+8
+Tampa de concreto quebrada ou removida
+9
+Tampa metálica T19 quebrada ou removida
+10
+Caixa de registro muito profunda
+11
+Caixa de registro cheia de lixo
+12
+Caixa de registro cheia d'água
+13
+Caixa de registro quebrada
+14
+Caixa de registro com enxame de abelhas
+15
+Falta cabeçote da haste do registro (luva)
+16
+Registro com vazamento
+17
+Registro emperrado
+18
+Faltam bujões e tampões
+19
+Rosca de tampão danificado
+20
+Carretel do registro danificado
+21
+Hidrante com pouca pressão
+22
+Hidrante quebrado no flange
+23
+Registro concretado
+24
+Faltam dois tampões de 2 1/2
+25
+Registro danificado
+26
+Caixa de concreto danificado
+27
+Falta flange
+28
+Registro não funciona
+29
+Hidrante quebrado
+30
+Hidrante soterrado
+31
+Registro soterrado
+32
+Hidrante empenado
+33
+Vazamento no flange (operante)
+
+11. REGISTRO DE ERROS E ACERTOS TÉCNICOS (TROUBLESHOOTING)
+Este histórico registra as falhas enfrentadas no desenvolvimento legado do ARGOS e suas respectivas soluções definitivas. A ferramenta Google AntiGravity deve considerar estes pontos como instruções estritas de arquitetura para prevenir regressões:
+A. Engenharia do Mapa (Leaflet)
+ERRO (Mapas Padrão): O uso do OpenStreetMap (OSM) padrão resultou em baixo contraste e inviabilizou a identificação tática em campo sob luz solar.
+SOLUÇÃO (Satélite Híbrido): Substituição forçada do TileLayer para o servidor do Google Maps Híbrido ([http://mt0.google.com/vt/lyrs=y&hl=pt-BR&x=](http://mt0.google.com/vt/lyrs=y&hl=pt-BR&x=){x}&y={y}&z={z}).
+ERRO (Ícones Quebrados): O uso dos marcadores padrão do Leaflet (L.Marker) resultou em caminhos de imagens quebradas (shadow/icon) no build de produção.
+SOLUÇÃO (DivIcon Customizado): Abandono de imagens rasterizadas (.png). Implementação rigorosa do L.divIcon injetando HTML e classes CSS puras (bolinhas coloridas com bordas brancas de contraste).
+ERRO (Clustering Agressivo): O uso do MarkerClusterGroup para todos os cenários engoliu os hidrantes de rotas pequenas, transformando missões de 5 hidrantes em um único cluster genérico.
+SOLUÇÃO (Clustering Condicional): Implementada a variável de controle const useClustering = hidrantes.length > 500. Rotas pequenas renderizam marcadores individualmente e numerados.
+ERRO (Mapa com Altura Zero / Tela Branca): Ao colocar o <MapComponent> dentro de abas ou seções retráteis, o Leaflet perdeu a referência de dimensão e colapsou (tela branca).
+SOLUÇÃO (Altura Fixa CSS): O container do mapa precisa obrigatoriamente de altura explícita em viewport height ou pixels antes do componente ser montado (ex: h-[60vh] min-h-[400px] relative).
+B. Tratamento de Dados (CSV Parser)
+ERRO (Coordenadas NaN e Tela Branca): A leitura crua de arquivos CSV gerou erros de tipagem. Vírgulas decimais brasileiras (-15,793) foram lidas como strings inválidas no JavaScript, gerando NaN. O Leaflet tentava plotar NaN e derrubava a renderização da tela inteira.
+SOLUÇÃO (Sanitização no Parser): Tratamento explícito aplicando .replace(',', '.') e convertendo para parseFloat antes da gravação no estado do aplicativo.
+ERRO (Caracteres Estranhos e Encoding): A separação do parser em utilitários externos gerou problemas de assincronicidade e leitura incorreta de codificação (UTF-8 vs ANSI), resultando em listas vazias "(0)".
+SOLUÇÃO (Parser Robusto e Filtro Estrito): Implementado um filtro rigoroso filter(h => !isNaN(h.numLatitude)) para descartar dados corrompidos antes do armazenamento no estado.
+C. Gerenciamento de Estado (React)
+ERRO (Perda de Seleção ao Filtrar): Ao buscar um texto na FilterBar, os hidrantes marcados para a "Rota" desapareciam da missão caso não correspondessem ao termo buscado.
+SOLUÇÃO (Separação de Contexto): Divisão rigorosa em três estados independentes:
+hidrantes (vetor imutável com a totalidade dos dados).
+filteredList (subconjunto mutável pelos filtros da barra).
+selectedIds / routeIds (vetor de rota persistente, imune aos filtros de texto).
+
+
+## 10. METODOLOGIA DE DESENVOLVIMENTO NO GOOGLE ANTIGRAVITY (GESTÃO DE TOKENS E CHECKPOINTS)
+
+Para garantir a estabilidade do código, prevenir a saturação da janela de contexto (tokens) do modelo de IA e evitar alucinações, o desenvolvimento do ARGOS 2.1 no Google AntiGravity deve seguir estritamente o modelo modular incremental por etapas:
+
+### Diretrizes de Execução:
+1. **Desenvolvimento Modular (Etapa por Etapa):** Cada funcionalidade deve ser desenvolvida em uma sessão/janela isolada. É proibido tentar gerar o sistema inteiro em uma única instrução.
+2. **Ciclo de Validação e Checkpoints (Commits):** A cada etapa concluída e validada com sucesso, o estado funcional do projeto deve ser salvo através de um "Commit / Checkpoint" no controle de versão. Em caso de erro em etapas posteriores, a IA deve reverter o código para o último Checkpoint estável.
+3. **Limpeza de Contexto:** Ao iniciar uma nova etapa, a conversa anterior deve ser finalizada para liberar a janela de tokens, alimentando o ambiente apenas com o código atual e o prompt da etapa específica.
+
+🚀 Plano de Execução do ARGOS 2.1 (Prompts para o AntiGravity)
+Abaixo está o Roteiro de Prompts Etapa por Etapa pronto para você copiar e enviar sequencialmente para o Google AntiGravity.
+Instrução de Uso: Execute uma etapa por vez. Teste na tela. Se funcionar perfeitamente, faça o Commit/Save no AntiGravity e passe para a próxima etapa.
+📌 ETAPA 1: Setup da Aplicação PWA e Parser de Dados (CSV)
+Prompt para o AntiGravity: *"Atue como desenvolvedor especialista em React, Tailwind CSS e Vite. Crie a estrutura inicial PWA Mobile-First do aplicativo ARGOS 2.1 para o Corpo de Bombeiros.
+Configure a estrutura base de estado para carregar e tratar o arquivo CSV de hidrantes.
+Implemente a sanitização estrita no parser de dados: converta coordenadas com vírgula para ponto flutuante (parseFloat) e filtre linhas inválidas (NaN).
+Monte o layout base em blocos retráteis (Show/Hide) para Mobile."* 👉 Ação após conclusão: Teste se o CSV carrega sem erros de console. [FAÇA O COMMIT / SALVE O ESTADO 1]
+📌 ETAPA 2: Mapa Tático Integrado (Leaflet + Satélite Híbrido)
+Prompt para o AntiGravity: *"Com a base da Etapa 1 validada, implemente o Módulo de Mapa (MapComponent) usando Leaflet / react-leaflet:
+Use OBRIGATORIAMENTE a camada Google Hybrid Satellite ([http://mt0.google.com/vt/lyrs=y&hl=pt-BR&x=](http://mt0.google.com/vt/lyrs=y&hl=pt-BR&x=){x}&y={y}&z={z}).
+Crie os marcadores com CSS puro (L.divIcon) com bordas brancas sólidas de 2px (Verde Neon #00FF00 para Operante e Vermelho Neon #FF0000 para Inoperante).
+Configure a div container com altura explícita CSS (h-[60vh] min-h-[400px] relative) para evitar tela branca.
+Aplique clustering condicional apenas se a lista tiver mais de 500 hidrantes (hidrantes.length > 500)."* 👉 Ação após conclusão: Verifique se o mapa renderizou a imagem de satélite com os pinos coloridos. [FAÇA O COMMIT / SALVE O ESTADO 2]
+📌 ETAPA 3: Balão de Informações (Popup) e Integração de GPS
+Prompt para o AntiGravity: *"Com o mapa funcionando, configure o Popup de detalhes ao clicar no pino do hidrante:
+Exiba de forma FIXA e DIRETA todos os dados: Código/Nome (nomHidrante), Endereço, Ponto de Referência, RA, Status Operacional e a DATA E HORA DA ÚLTIMA VISTORIA (sem botões de ocultar/show-hide).
+Crie os botões de ação com áreas de toque amplificadas (mínimo 48px): Waze ([https://waze.com/ul?ll=](https://waze.com/ul?ll=){lat},{long}&navigate=yes), Google Maps e Street View.
+Adicione os botões de ação tática: 'CAD. VISTOR.' e 'EDITAR HIDR.'"* 👉 Ação após conclusão: Clique em um pino e valide se a caixa de diálogo abre com os dados visíveis e botões grandes. [FAÇA O COMMIT / SALVE O ESTADO 3]
+📌 ETAPA 4: Barra de Filtros Globais (FilterBar)
+Prompt para o AntiGravity: *"Implemente o módulo da Barra de Filtros no topo da interface com efeito Glassmorphism e suporte a colapsar (Show/Hide):
+Adicione os campos de busca: Texto livre (endereço/nome), Seleção por RA (Dropdown), Código e Status (Operante/Inoperante/Todos).
+Implemente o NOVO 'Filtro por Problemas do Hidrante', permitindo filtrar a lista diretamente pelos itens da tabela oficial de defeitos (ex: 'Vazamento no registro', 'Falta tampão de 2.1/2').
+Garanta que o filtro atualize o estado filteredList sem perder o contexto da rota ativa."* 👉 Ação após conclusão: Teste filtrar por uma RA ou problema específico e veja se os pinos do mapa filtram instantaneamente. [FAÇA O COMMIT / SALVE O ESTADO 4]
+📌 ETAPA 5: Modal de Vistoria (Lista Restrita de 33 Problemas) e Regra do Banco
+Prompt para o AntiGravity: *"Desenvolva o modal de cadastro de vistoria (InspectionModal):
+O fluxo deve ser simples em 2 toques: Pré-preencha automaticamente Data/Hora, Coordenadas e ID do Hidrante.
+Opcional de defeitos baseado ESTRITAMENTE na lista padronizada de 33 problemas técnicos (impedindo digitação de texto livre).
+Ao salvar, adicione um novo registro no histórico imutável (HISTORICO_VISTORIAS) e ATUALIZE o estado ativo no mapa e na tabela (Status, Data da Última Vistoria e Defeito)."* 👉 Ação após conclusão: Realize uma vistoria teste e confirme se a cor do pino altera e a data é atualizada. [FAÇA O COMMIT / SALVE O ESTADO 5]
+📌 ETAPA 6: Tabela de Dados Integrada com Ordenação e Exportação em CSV
+Prompt para o AntiGravity: *"Implemente a Tabela de Dados Integrada no módulo retrátil na Aba Explorar:
+Monte a tabela com ordenação por clique no cabeçalho das colunas (Sorting): Código, Status, Problema Registrado, Endereço e Data da Última Vistoria.
+Adicione na linha da tabela atalhos para centralizar o pino no mapa e abrir o Waze.
+Crie o botão 'Exportar CSV' no cabeçalho da tabela, permitindo o download em tempo real do subconjunto filtrado."* 👉 Ação após conclusão: Baixe o CSV gerado e verifique se as colunas e os dados filtrados estão corretos. [FAÇA O COMMIT / SALVE O ESTADO FINAL]
+📌 ETAPA 7: Gerenciador de Seleção da Missão (selectedMissionIds) e Módulo Rota (TSP)
+Prompt para o AntiGravity:
+"Atue como desenvolvedor especialista em React, TypeScript e Algoritmos de Otimização. Implemente a Arquitetura de Seleção de Missão e o Módulo Rota de Missão para o ARGOS 2.1:
+Gerenciamento de Estado da Seleção:
+Crie o estado global selectedMissionIds (array de IDs) totalmente desacoplado da filteredList.
+Adicione a coluna com Checkbox na Tabela de Dados (incluindo checkbox 'Selecionar Todos os Filtrados' no cabeçalho).
+Adicione o botão 'Adicionar/Remover da Missão' no Popup do Mapa e aplique nos marcadores selecionados no mapa uma borda Ciano (#00FFFF) destacada.
+Crie uma barra flutuante inferior ('Barramento de Seleção') informando a quantidade de hidrantes na missão e botões de ação rápida.
+Módulo Rota de Missão (Retrátil / Maximizável):
+O módulo deve ser alimentado APENAS pelos hidrantes contidos em selectedMissionIds.
+Implemente o algoritmo TSP (reotimização por menor distância de Haversine a partir da geolocalização do GPS ou da última vistoria).
+Adicione opção para reordenar sequencialmente (1, 2, 3...) os hidrantes da missão e gerar link dinâmico para Waze/WhatsApp.
+Hidratação por Link Mágico:
+Intercepte o parâmetro ?ds=ID1,ID2,ID3 na URL ao carregar o app para preencher automaticamente o selectedMissionIds.
+Garanta botões amplos (mínimo 48px) para uso em dispositivos móveis."
+
+📌 ETAPA 8: Módulo Relatório (Estatísticas, Filtro de Missão e Exportação PDF)
+Prompt para o AntiGravity:
+"Atue como desenvolvedor especialista em React e Visualização de Dados. Implemente o Módulo de Relatório Tático para o ARGOS 2.1:
+Estrutura Retrátil / Maximizável:
+Crie o bloco do Módulo Relatório com suporte a Maximizar (Tela Cheia), Minimizar e Ocultar.
+Permita que o relatório seja gerado a partir do subconjunto ativo na selectedMissionIds (ou da seleção geral caso nenhuma missão esteja ativa).
+Painel Estatístico e Métricas:
+Exiba Cards KPI: Total de Hidrantes Selecionados, Quantidade/Percentual de Operantes (Verde) e Inoperantes (Vermelho).
+Exiba gráfico visual (usando Chart.js ou Recharts) com os 'Top Defeitos Registrados' do subconjunto filtrado.
+Exportação e Impressão de Relatório Oficial (PDF):
+Adicione o botão 'Exportar Relatório PDF / Imprimir'.
+Desenvolva o layout de impressão CSS (@media print) formatado como documento do CBMDF contendo: Título do Relatório, Data/Hora de emissão, Tabela consolidada dos hidrantes da missão (com seus respectivos status, defeitos e endereços) e campo para assinatura do militar responsável.
+Ajustes de Ergonomia:
+Alto contraste para leitura sob sol forte e áreas de toque de 48px."
+
+## 11. REQUISITOS DE GOVERNANÇA, HOMOLOGAÇÃO E IMPLANTAÇÃO INFRA/DICTEC
+
+O ARGOS 2.1 é concebido como um Protótipo Funcional de Alta Fidelidade (PWA), desenvolvido sob encomenda funcional para posterior transferência de tecnologia, homologação e hospedagem nos servidores oficiais do CBMDF sob gestão da Diretoria de Tecnologia (DICTEC). Para garantir uma transição transparente e sem atritos, o sistema deve obedecer aos seguintes critérios técnicos:
+
+### 1. Desacoplamento e Independência de Fornecedor (Vendor Lock-in Zero)
+* **Código-Fonte Aberto e Padronizado:** Desenvolvido em linguagem e frameworks modernos, padrão de mercado (React / TypeScript / Vite / Tailwind CSS), sem dependências de frameworks proprietários de terceiros.
+* **Variáveis de Ambiente (`.env`):** Todas as URLs de serviços externos (servidores de mapas, endpoints de API e credenciais de banco) devem ser parametrizadas via variáveis de ambiente, permitindo que a DICTEC altere o ambiente de 'Testes/Desenvolvimento' para 'Produção' apenas trocando as variáveis no servidor.
+
+### 2. Prontidão para Conteinerização (Docker Ready)
+* O repositório final do projeto deve incluir um arquivo `Dockerfile` e `docker-compose.yml` pré-configurados. Isso permitirá que a equipe de infraestrutura da DICTEC suba a aplicação em contêineres isolados (Docker/Kubernetes) no datacenter do CBMDF com um único comando.
+
+### 3. Integração Futura com APIs e Autenticação Corporativa
+* **Arquitetura Service-Oriented:** As funções de leitura e gravação de vistorias (atualmente em LocalStorage/State dinâmico para testes) devem ser encapsuladas em uma camada de serviço isolada (`src/services/api.ts`).
+* Isso garantirá que a DITIC possa conectar o ARGOS 2.1 diretamente aos bancos de dados corporativos ou APIs de autenticação (ex: Keycloak / LDAP / Single Sign-On do CBMDF) sem precisar reescrever a interface do usuário (UI/UX).
+
+### 4. Documentação de Handoff Técnico
+* O projeto deve conter um arquivo `README.md` completo detalhando:
+  * Instruções de build e deploy em servidor Web (Nginx / Apache).
+  * Estrutura de pastas do projeto.
+  * Dicionário de dados das tabelas (`HIDRANTE` e `HISTORICO_VISTORIAS`).
+

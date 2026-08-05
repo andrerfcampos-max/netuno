@@ -1,0 +1,129 @@
+import React, { useState } from 'react';
+import { Search, MapPin, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+
+const DEFEITOS_OFICIAIS = [
+  "Caixa do hidrante obstruída com esgoto",
+  "Hidrante sem água",
+  "Hidrante removido ou não encontrado",
+  "Hidrante cercado/bloqueado",
+  "Falta tampão de 2.1/2\"",
+  "Falta tampão de 4\"",
+  "Tampa da caixa lacrada (concretada)",
+  "Tampa de concreto quebrada ou removida",
+  "Tampa metálica T19 quebrada ou removida",
+  "Caixa de registro muito profunda",
+  "Caixa de registro cheia de lixo",
+  "Caixa de registro cheia d'água",
+  "Caixa de registro quebrada",
+  "Caixa de registro com enxame de abelhas",
+  "Falta cabeçote da haste do registro (luva)",
+  "Registro com vazamento",
+  "Registro emperrado",
+  "Faltam bujões e tampões",
+  "Rosca de tampão danificado",
+  "Carretel do registro danificado",
+  "Hidrante com pouca pressão",
+  "Hidrante quebrado no flange",
+  "Registro concretado",
+  "Faltam dois tampões de 2 1/2",
+  "Registro danificado",
+  "Caixa de concreto danificado",
+  "Falta flange",
+  "Registro não funciona",
+  "Hidrante quebrado",
+  "Hidrante soterrado",
+  "Registro soterrado",
+  "Hidrante empenado",
+  "Vazamento no flange (operante)"
+];
+
+const FilterBar = ({ onFilterChange, regions, isVisible }) => {
+  const [filters, setFilters] = useState({
+    buscaGeral: '',
+    ra: '',
+    status: 'Todos',
+    problema: ''
+  });
+
+  const handleChange = (key, value) => {
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
+
+  return (
+    <div className={`w-full z-40 bg-slate-800/80 backdrop-blur-md border border-slate-700 shadow-lg rounded-xl overflow-hidden transition-all duration-300 ${isVisible ? 'block' : 'hidden'}`}>
+      <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-900/50">
+          
+          {/* Busca Textual (Geral) */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Busca Livre (Nome/Ref)</label>
+            <input 
+              type="text" 
+              placeholder="Ex: Mercado, Guará 57..." 
+              className="p-2 rounded bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+              value={filters.buscaGeral}
+              onChange={(e) => handleChange('buscaGeral', e.target.value)}
+            />
+          </div>
+
+          {/* Filtro por RA */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Região Administrativa</label>
+            <select 
+              className="p-2 rounded bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+              value={filters.ra}
+              onChange={(e) => handleChange('ra', e.target.value)}
+            >
+              <option value="">Todas as RAs</option>
+              {regions.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          {/* Filtro de Status */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status Operacional</label>
+            <div className="flex rounded overflow-hidden border border-slate-700 bg-slate-800 text-sm">
+              <button 
+                onClick={() => handleChange('status', 'Todos')}
+                className={`flex-1 py-1.5 ${filters.status === 'Todos' ? 'bg-slate-600 text-white font-bold' : 'text-slate-400'}`}
+              >
+                Todos
+              </button>
+              <button 
+                onClick={() => handleChange('status', 'Operante')}
+                className={`flex-1 py-1.5 ${filters.status === 'Operante' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400'}`}
+              >
+                Operantes
+              </button>
+              <button 
+                onClick={() => handleChange('status', 'Inoperante')}
+                className={`flex-1 py-1.5 ${filters.status === 'Inoperante' ? 'bg-red-600 text-white font-bold' : 'text-slate-400'}`}
+              >
+                Inoperantes
+              </button>
+            </div>
+          </div>
+
+          {/* Novo Filtro de Problemas */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <AlertCircle size={14} className="text-orange-400" /> 
+              Filtro por Problema
+            </label>
+            <select 
+              className="p-2 rounded bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+              value={filters.problema}
+              onChange={(e) => handleChange('problema', e.target.value)}
+            >
+              <option value="">Qualquer problema / Nenhum</option>
+              {DEFEITOS_OFICIAIS.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+
+        </div>
+    </div>
+  );
+};
+
+export default FilterBar;

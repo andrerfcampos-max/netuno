@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply m-0 p-0 overflow-hidden bg-slate-900 text-slate-100 font-sans;
+  }
+
+  /* Scrollbar customizada para garantir visibilidade */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #1e293b; /* slate-800 */
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #059669; /* emerald-600 */
+    border-radius: 5px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #10b981; /* emerald-500 */
+  }
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  body {
+    background-color: white !important;
+    color: black !important;
+    overflow: auto !important;
+  }
+  
+  /* Ocultar tudo que não é o relatório (de forma mais agressiva para o #root do React) */
+  #root > div > header, 
+  #root > div > main > *:not(#modulo-relatorio),
+  #root > div > footer,
+  #root > div > nav,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Resetar scroll e dimensionamento para impressão */
+  #root, #root > div, #root > div > main {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  /* Expandir o relatório */
+  #modulo-relatorio {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  
+  .print-container, .report-content {
+    position: static !important;
+    height: auto !important;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
+  }
+
+  .print-bg-white { background-color: white !important; }
+  .print-text-black { color: black !important; }
+  .print-bg-black { background-color: black !important; }
+  .print-bg-gray { background-color: #e5e7eb !important; color: black !important; }
+  .print-text-gray { color: #6b7280 !important; }
+  .print-border-black { border-color: black !important; }
+  .print-border-gray { border-color: #d1d5db !important; }
+  .print-divide-gray > :not([hidden]) ~ :not([hidden]) { border-color: #d1d5db !important; }
+  
+  .print-table { border-collapse: collapse !important; width: 100% !important; }
+  .print-table thead { display: table-header-group !important; }
+  .print-border { border: 1px solid #d1d5db !important; }
+  .print-row-avoid { break-inside: avoid; }
+  .page-break-inside-avoid { break-inside: avoid; }
+  
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+}
