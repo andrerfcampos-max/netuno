@@ -188,6 +188,7 @@ Para garantir a estabilidade do código, prevenir a saturação da janela de con
 1. **Desenvolvimento Modular (Etapa por Etapa):** Cada funcionalidade deve ser desenvolvida em uma sessão/janela isolada. É proibido tentar gerar o sistema inteiro em uma única instrução.
 2. **Ciclo de Validação e Checkpoints (Commits):** A cada etapa concluída e validada com sucesso, o estado funcional do projeto deve ser salvo através de um "Commit / Checkpoint" no controle de versão. Em caso de erro em etapas posteriores, a IA deve reverter o código para o último Checkpoint estável.
 3. **Limpeza de Contexto:** Ao iniciar uma nova etapa, a conversa anterior deve ser finalizada para liberar a janela de tokens, alimentando o ambiente apenas com o código atual e o prompt da etapa específica.
+4. **Alinhamento Prévio (Proibição de Execução Imediata):** Ao implementar novidades, a IA deve PRIMEIRO apresentar sugestões e direcionamentos. Após isso, os detalhes devem ser ajustados em conjunto com o usuário. A execução (modificação de código) só pode acontecer após a ordem explícita do usuário. Não execute o código de cara.
 
 🚀 Plano de Execução do ARGOS 2.1 (Prompts para o AntiGravity)
 Abaixo está o Roteiro de Prompts Etapa por Etapa pronto para você copiar e enviar sequencialmente para o Google AntiGravity.
@@ -267,8 +268,8 @@ O ARGOS 2.1 é concebido como um Protótipo Funcional de Alta Fidelidade (PWA), 
 
 ### 3. Integração Futura com APIs e Autenticação Corporativa
 * **Arquitetura Service-Oriented:** As funções de leitura e gravação de vistorias (atualmente em LocalStorage/State dinâmico para testes) devem ser encapsuladas em uma camada de serviço isolada (`src/services/api.ts`).
-* Isso garantirá que a DITIC possa conectar o ARGOS 2.1 diretamente aos bancos de dados corporativos ou APIs de autenticação (ex: Keycloak / LDAP / Single Sign-On do CBMDF) sem precisar reescrever a interface do usuário (UI/UX).
-
+* **Autenticação Nativa (Sem Cerberus):** A autenticação oficial corporativa NÃO deverá utilizar o portal Cerberus. O aplicativo Netuno deve possuir sua própria interface de login embarcada (2 campos: Matrícula e Senha).
+* **Autenticação Persistente e Refresh Token:** O sistema deverá implementar arquitetura de autenticação via token (ex: JWT) com duração de segurança (ex: 8 horas). O sistema renovará esse token automaticamente em background (Refresh Token) cada vez que o aplicativo for aberto em uso contínuo, de forma invisível para o usuário, garantindo que militares em serviço não precisem inserir a senha diariamente. O logout forçado só deve ocorrer se houver longa inatividade da aplicação.
 ### 4. Documentação de Handoff Técnico
 * O projeto deve conter um arquivo `README.md` completo detalhando:
   * Instruções de build e deploy em servidor Web (Nginx / Apache).

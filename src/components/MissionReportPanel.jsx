@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet } from 'lucide-react';
 
-const MissionReportPanel = ({ hidrantes, currentMission, onClose }) => {
+const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser }) => {
   const [isMaximized, setIsMaximized] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -71,6 +71,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose }) => {
         <th style="padding: 8px; text-align: left;">ENDEREÇO</th>
         <th style="padding: 8px; text-align: left;">PONTO DE REFERÊNCIA</th>
         <th style="padding: 8px; text-align: left;">DATA DA VISTORIA</th>
+        <th style="padding: 8px; text-align: left;">VISTORIADOR</th>
         <th style="padding: 8px; text-align: center;">SITUAÇÃO ATUAL</th>
         <th style="padding: 8px; text-align: left;">PROBLEMAS ENCONTRADOS</th>
         <th style="padding: 8px; text-align: left;">OBSERVAÇÕES</th>
@@ -84,6 +85,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose }) => {
           <td style="padding: 8px;">${h.dscEndereco || h.dscLocalidade || '-'}</td>
           <td style="padding: 8px;">${h.dscPontoReferencia || '-'}</td>
           <td style="padding: 8px;">${h.datHoraUltimaVistoria || '-'}</td>
+          <td style="padding: 8px;">${h.vistoriadorNome || '-'}</td>
           <td style="padding: 8px; text-align: center; color: ${h.flgAtivo ? '#166534' : '#991b1b'}; font-weight: bold;">${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}</td>
           <td style="padding: 8px; color: #991b1b;">${!h.flgAtivo && h.problemasHidrante ? h.problemasHidrante : '-'}</td>
           <td style="padding: 8px;">${h.dscObservacao || h.observacoes || h.obsVistoria || '-'}</td>
@@ -132,12 +134,13 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose }) => {
   };
 
   const handleExportCSV = () => {
-    const headers = ["CÓDIGO", "ENDEREÇO", "PONTO DE REFERÊNCIA", "DATA DA VISTORIA", "SITUAÇÃO ATUAL", "PROBLEMAS ENCONTRADOS", "OBSERVAÇÕES", "LOCALIZAÇÃO"];
+    const headers = ["CÓDIGO", "ENDEREÇO", "PONTO DE REFERÊNCIA", "DATA DA VISTORIA", "VISTORIADOR", "SITUAÇÃO ATUAL", "PROBLEMAS ENCONTRADOS", "OBSERVAÇÕES", "LOCALIZAÇÃO"];
     const rows = sortedHidrantes.map(h => [
       h.nomHidrante || h.codHidrante || '',
       h.dscEndereco || h.dscLocalidade || '',
       h.dscPontoReferencia || '',
       h.datHoraUltimaVistoria || '',
+      h.vistoriadorNome || '',
       h.flgAtivo ? 'OPERANTE' : 'INOPERANTE',
       (h.problemasHidrante || '').replace(/;/g, ' | '),
       (h.dscObservacao || h.observacoes || h.obsVistoria || '').replace(/;/g, ' | '),
@@ -199,7 +202,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose }) => {
             <span><strong>Data da Geração:</strong> {new Date().toLocaleString('pt-BR')}</span>
           </div>
           <div className="mt-4 text-left text-sm text-slate-400 print-text-black border-t border-slate-700 pt-4 print-border-gray">
-            <strong>Identificação do Militar (Matrícula/Nome):</strong> _________________________________________________
+            <strong>Relatório gerado por:</strong> {currentUser?.nome ? `${currentUser.nome} (Matrícula: ${currentUser.matricula})` : '_________________________________________________'}
           </div>
         </div>
 
@@ -259,6 +262,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose }) => {
                   <th className="px-4 py-3 print-border">ENDEREÇO</th>
                   <th className="px-4 py-3 print-border">PONTO DE REF.</th>
                   <th className="px-4 py-3 print-border">DATA VISTORIA</th>
+                  <th className="px-4 py-3 print-border">VISTORIADOR</th>
                   <th className="px-4 py-3 print-border text-center">SITUAÇÃO</th>
                   <th className="px-4 py-3 print-border">PROBLEMAS</th>
                   <th className="px-4 py-3 print-border">OBSERVAÇÕES</th>
@@ -278,6 +282,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose }) => {
                       {h.dscPontoReferencia || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap print-border">{h.datHoraUltimaVistoria || '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap print-border text-emerald-300 print-text-black text-xs font-bold">{h.vistoriadorNome || '-'}</td>
                     <td className={`px-4 py-3 font-bold text-center ${h.flgAtivo ? 'text-emerald-400' : 'text-red-400'} print-text-black print-border`}>
                       {h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}
                     </td>
@@ -303,6 +308,39 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose }) => {
             </table>
           </div>
         </div>
+
+        {/* ANEXO FOTOGRÁFICO */}
+        {(() => {
+          const hidrantesComFoto = sortedHidrantes.filter(h => h.fotoVistoria);
+          if (hidrantesComFoto.length === 0) return null;
+          
+          return (
+            <div className="mt-12 pt-8 border-t border-slate-700 print-border-gray print-page-break-before">
+              <h3 className="text-xl font-bold text-slate-200 mb-6 print-text-black border-b border-slate-700 print-border-gray pb-2 uppercase text-center">
+                Anexo Fotográfico - Registro de Defeitos
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {hidrantesComFoto.map((h, i) => (
+                  <div key={`foto-${h.codHidrante || i}`} className="bg-slate-700/30 p-4 rounded-lg border border-slate-600 print-border-gray print-bg-white page-break-inside-avoid shadow">
+                    <div className="font-bold text-slate-200 print-text-black mb-1 text-lg">
+                      {h.nomHidrante || h.codHidrante}
+                    </div>
+                    <div className="text-sm text-red-400 print-text-black font-bold mb-3">
+                      Defeito: {h.problemasHidrante}
+                    </div>
+                    <div className="flex justify-center bg-black/20 print-bg-transparent p-2 rounded">
+                      <img 
+                        src={h.fotoVistoria} 
+                        alt={`Defeito no hidrante ${h.nomHidrante || h.codHidrante}`} 
+                        className="w-full max-w-sm rounded border border-slate-500 object-contain max-h-64"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* BARRA DE EXPORTAÇÃO NO PRINT */}

@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { LocateFixed, Navigation, Download, Map as MapIcon, MapPin, ClipboardPlus, Edit } from 'lucide-react';
 
-const DataTable = ({ data, onCenterMap, onInspect, selectedMissionIds = [], onToggleMission, onSelectAllMission }) => {
+const DataTable = ({ data, onCenterMap, onInspect, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const isGestor = currentUser?.role === 'gestor';
 
   const sortedData = useMemo(() => {
     let sortableItems = [...data];
@@ -145,15 +146,17 @@ const DataTable = ({ data, onCenterMap, onInspect, selectedMissionIds = [], onTo
           <table className="w-full text-left text-sm text-slate-300">
             <thead className="bg-slate-700 text-slate-200 sticky top-0 z-10 shadow">
               <tr>
-                <th className="p-2 text-center w-10">
-                  <input 
-                    type="checkbox" 
-                    className="w-4 h-4 cursor-pointer accent-emerald-500"
-                    checked={isAllSelected}
-                    onChange={handleSelectAll}
-                    title="Selecionar Todos os Filtrados"
-                  />
-                </th>
+                {isGestor && (
+                  <th className="p-2 text-center w-10">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 cursor-pointer accent-emerald-500"
+                      checked={isAllSelected}
+                      onChange={handleSelectAll}
+                      title="Selecionar Todos os Filtrados"
+                    />
+                  </th>
+                )}
                 <th className="p-2 cursor-pointer hover:bg-slate-600 transition-colors" onClick={handleSortCode}>
                   Código{getSortIndicator('nomHidrante')}
                 </th>
@@ -178,14 +181,16 @@ const DataTable = ({ data, onCenterMap, onInspect, selectedMissionIds = [], onTo
                 const isSelected = selectedMissionIds.includes(id);
                 return (
                 <tr key={id || i} className={`border-b border-slate-700/50 hover:bg-slate-700/50 transition-colors ${isSelected ? 'bg-cyan-900/20' : ''}`}>
-                  <td className="p-2 text-center">
-                    <input 
-                      type="checkbox"
-                      className="w-4 h-4 cursor-pointer accent-emerald-500"
-                      checked={isSelected}
-                      onChange={() => onToggleMission && onToggleMission(id)}
-                    />
-                  </td>
+                  {isGestor && (
+                    <td className="p-2 text-center">
+                      <input 
+                        type="checkbox"
+                        className="w-4 h-4 cursor-pointer accent-emerald-500"
+                        checked={isSelected}
+                        onChange={() => onToggleMission && onToggleMission(id)}
+                      />
+                    </td>
+                  )}
                   <td className="p-2 font-medium text-slate-200">{h.nomHidrante || h.codHidrante}</td>
                   <td className="p-2">{h.dscLocalidade}</td>
                   <td className="p-2">

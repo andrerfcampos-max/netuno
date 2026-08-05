@@ -38,6 +38,7 @@ export const createNewMission = (name = "Rascunho de Hoje") => {
   return {
     id: generateId(),
     name,
+    atribuicao: "", // Ex: 'sehur', '16º GBM Ala B'
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     selectedIds: [],

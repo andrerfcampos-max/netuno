@@ -82,8 +82,9 @@ const ScrollBehavior = () => {
 };
 
 
-const MapComponent = ({ hidrantes, onInspect, centerPosition, selectedMissionIds = [], onToggleMission }) => {
+const MapComponent = ({ hidrantes, onInspect, centerPosition, selectedMissionIds = [], onToggleMission, currentUser }) => {
   const useClustering = hidrantes.length > 500;
+  const isGestor = currentUser?.role === 'gestor';
 
   // Centro padrão (Brasília)
   const defaultCenter = [-15.793, -47.882];
@@ -147,12 +148,14 @@ const MapComponent = ({ hidrantes, onInspect, centerPosition, selectedMissionIds
 
             {/* Ações Táticas (Reduzidas) */}
             <div className="flex flex-col gap-1 mt-1">
-              <button 
-                onClick={() => onToggleMission && onToggleMission(id)}
-                className={`flex w-full items-center justify-center gap-1 py-2 rounded font-bold transition-all active:scale-95 ${isSelected ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}
-              >
-                {isSelected ? 'REMOVER DA MISSÃO' : 'ADICIONAR À MISSÃO'}
-              </button>
+              {isGestor && (
+                <button 
+                  onClick={() => onToggleMission && onToggleMission(id)}
+                  className={`flex w-full items-center justify-center gap-1 py-2 rounded font-bold transition-all active:scale-95 ${isSelected ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}
+                >
+                  {isSelected ? 'REMOVER DA MISSÃO' : 'ADICIONAR À MISSÃO'}
+                </button>
+              )}
               
               <div className="flex gap-1">
                 <button 

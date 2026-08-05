@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, MapPin, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, MapPin, AlertCircle, ChevronDown, ChevronUp, LogOut } from 'lucide-react';
 
 const DEFEITOS_OFICIAIS = [
   "Caixa do hidrante obstruída com esgoto",
@@ -37,7 +37,7 @@ const DEFEITOS_OFICIAIS = [
   "Vazamento no flange (operante)"
 ];
 
-const FilterBar = ({ onFilterChange, regions, isVisible }) => {
+const FilterBar = ({ onFilterChange, regions, isVisible, currentUser, onLogout }) => {
   const [filters, setFilters] = useState({
     buscaGeral: '',
     ra: '',
@@ -53,6 +53,18 @@ const FilterBar = ({ onFilterChange, regions, isVisible }) => {
 
   return (
     <div className={`w-full z-40 bg-slate-800/80 backdrop-blur-md border border-slate-700 shadow-lg rounded-xl overflow-hidden transition-all duration-300 ${isVisible ? 'block' : 'hidden'}`}>
+      
+      {currentUser && (
+        <div className="bg-slate-900 px-3 py-1 flex justify-between items-center border-b border-slate-700/50">
+          <span className="text-[10px] uppercase tracking-wider text-slate-300 font-bold">
+            {currentUser.nome} - {currentUser.role === 'gestor' ? 'Gestor de hidrante' : 'Vistoriador de hidrante'}
+          </span>
+          <button onClick={onLogout} className="text-[10px] text-slate-500 hover:text-red-400 flex items-center gap-1 transition-colors">
+            <LogOut size={12} /> Sair
+          </button>
+        </div>
+      )}
+
       <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-900/50">
           
           {/* Busca Textual (Geral) */}

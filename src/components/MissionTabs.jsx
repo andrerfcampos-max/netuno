@@ -50,13 +50,15 @@ const MissionTabs = ({ missions, activeMissionId, openMissionIds, onTabClick, on
           );
         })}
 
-        <button 
-          onClick={onNewMission}
-          className="flex items-center justify-center p-2 mb-1 ml-1 text-slate-500 hover:bg-slate-800 hover:text-emerald-400 rounded-lg transition-colors"
-          title="Nova Missão"
-        >
-          <Plus size={18} />
-        </button>
+        {onNewMission && (
+          <button 
+            onClick={onNewMission}
+            className="flex items-center justify-center p-2 mb-1 ml-1 text-slate-500 hover:bg-slate-800 hover:text-emerald-400 rounded-lg transition-colors"
+            title="Nova Missão"
+          >
+            <Plus size={18} />
+          </button>
+        )}
       </div>
     </div>
   );

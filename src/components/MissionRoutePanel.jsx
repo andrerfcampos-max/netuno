@@ -113,11 +113,13 @@ const optimizeRouteMultiMode = async (hidrantes, startLat, startLng) => {
   }
 };
 
-const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds = [], currentMission, onUpdateMission, onClose, onClearMission, onRemoveFromMission, lastInspectedCoords, onInspect, onCenterMap }) => {
+const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds = [], currentMission, onUpdateMission, onClose, onClearMission, onRemoveFromMission, lastInspectedCoords, onInspect, onCenterMap, currentUser }) => {
   const [pendingRoute, setPendingRoute] = useState([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
+  const [isEditingAtribuicao, setIsEditingAtribuicao] = useState(false);
+  const [editedAtribuicao, setEditedAtribuicao] = useState('');
   
   // Centro de Brasília como fallback
   const BRASILIA_LAT = -15.793;
@@ -214,6 +216,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
   // Renderizador de Item da Lista para reuso
   const renderHydrantItem = (h, index, isCompleted) => {
     const id = h.codHidrante || h.nomHidrante;
+    const canEditRoute = !currentMission?.createdBy || currentMission.createdBy === currentUser?.matricula;
     const itemClasses = isCompleted 
       ? "bg-slate-900/50 border-l-4 border-slate-700 rounded-r-lg p-2 flex flex-col lg:flex-row gap-2 items-start lg:items-center justify-between opacity-70 grayscale"
       : "bg-slate-800 border-l-4 border-emerald-500 rounded-r-lg p-2 shadow flex flex-col lg:flex-row gap-2 items-start lg:items-center justify-between";
@@ -259,7 +262,9 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
           <button title="Editar Hidrante" className="p-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded active:scale-95 transition-transform"><Edit size={16}/></button>
           
           <div className="w-px h-6 bg-slate-600 mx-1 hidden lg:block"></div>
-          <button onClick={() => onRemoveFromMission(id)} title="Remover da Missão" className="p-1.5 bg-red-900/80 text-red-400 hover:bg-red-600 hover:text-white rounded active:scale-95 transition-transform"><X size={16}/></button>
+          {canEditRoute && (
+            <button onClick={() => onRemoveFromMission(id)} title="Remover da Missão" className="p-1.5 bg-red-900/80 text-red-400 hover:bg-red-600 hover:text-white rounded active:scale-95 transition-transform"><X size={16}/></button>
+          )}
         </div>
       </div>
     );
@@ -270,60 +275,111 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
       <div className="flex justify-between items-start mb-4 pb-2 border-b border-slate-700">
         <div className="flex flex-col gap-1 w-full">
           {currentMission ? (
-            <div className="flex items-center gap-2">
-              <GitMerge size={24} className="text-emerald-400 flex-shrink-0" />
-              {isEditingName ? (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <input 
-                    type="text" 
-                    value={editedName} 
-                    onChange={e => setEditedName(e.target.value)} 
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && editedName.trim()) {
-                        onUpdateMission({ name: editedName.trim(), isDraft: false });
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <GitMerge size={24} className="text-emerald-400 flex-shrink-0" />
+                {isEditingName ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input 
+                      type="text" 
+                      value={editedName} 
+                      onChange={e => setEditedName(e.target.value)} 
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && editedName.trim()) {
+                          onUpdateMission({ name: editedName.trim(), isDraft: false });
+                          setIsEditingName(false);
+                        }
+                      }}
+                      className="bg-slate-800 border border-slate-600 text-white rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500 w-full sm:w-auto"
+                      placeholder="Nome da operação..."
+                      autoFocus
+                    />
+                    <button 
+                      onClick={() => {
+                        if (editedName.trim()) {
+                          onUpdateMission({ name: editedName.trim(), isDraft: false });
+                        }
                         setIsEditingName(false);
-                      }
-                    }}
-                    className="bg-slate-800 border border-slate-600 text-white rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500 w-full sm:w-auto"
-                    placeholder="Nome da operação..."
-                    autoFocus
-                  />
-                  <button 
-                    onClick={() => {
-                      if (editedName.trim()) {
-                        onUpdateMission({ name: editedName.trim(), isDraft: false });
-                      }
-                      setIsEditingName(false);
-                    }}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded font-bold text-sm"
-                  >
-                    Salvar
-                  </button>
-                  <button 
-                    onClick={() => setIsEditingName(false)}
-                    className="text-slate-400 hover:text-white px-2 py-1 text-sm"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-slate-300 overflow-hidden">
-                  <span className="font-bold text-xl drop-shadow-sm truncate">{currentMission.name}</span>
-                  {currentMission.isDraft && (
-                    <span className="bg-amber-900/50 text-amber-500 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border border-amber-800 flex-shrink-0">
-                      Não Salvo
-                    </span>
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded font-bold text-sm"
+                    >
+                      Salvar
+                    </button>
+                    <button 
+                      onClick={() => setIsEditingName(false)}
+                      className="text-slate-400 hover:text-white px-2 py-1 text-sm"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-slate-300 overflow-hidden">
+                    <span className="font-bold text-xl drop-shadow-sm truncate">{currentMission.name}</span>
+                    {currentMission.isDraft && (
+                      <span className="bg-amber-900/50 text-amber-500 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border border-amber-800 flex-shrink-0">
+                        Não Salvo
+                      </span>
+                    )}
+                    {(!currentMission.createdBy || currentMission.createdBy === currentUser?.matricula) && (
+                      <button 
+                        onClick={() => {
+                          setEditedName(currentMission.name === 'Rascunho de Hoje' ? '' : currentMission.name);
+                          setEditedAtribuicao(currentMission.atribuicao || '');
+                          setIsEditingName(true);
+                        }} 
+                        className="text-slate-400 hover:text-emerald-400 transition-colors p-1 bg-slate-800 rounded flex-shrink-0"
+                        title={currentMission.isDraft ? "Dar nome para salvar permanentemente" : "Renomear operação"}
+                      >
+                        <Edit size={14} />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {/* CAMPO DE ATRIBUIÇÃO */}
+              {!currentMission.isDraft && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-slate-400 uppercase font-bold tracking-widest flex items-center gap-1">
+                     Equipe:
+                  </span>
+                  {isEditingAtribuicao ? (
+                    <div className="flex items-center gap-1">
+                       <input 
+                         type="text" 
+                         value={editedAtribuicao} 
+                         onChange={e => setEditedAtribuicao(e.target.value)} 
+                         onKeyDown={e => {
+                           if (e.key === 'Enter') {
+                             onUpdateMission({ atribuicao: editedAtribuicao.trim() });
+                             setIsEditingAtribuicao(false);
+                           }
+                         }}
+                         className="bg-slate-800 border border-slate-600 text-white rounded px-2 py-0.5 text-xs focus:outline-none focus:border-amber-500 w-32"
+                         placeholder="Ex: 16 GBM"
+                         autoFocus
+                       />
+                       <button onClick={() => { onUpdateMission({ atribuicao: editedAtribuicao.trim() }); setIsEditingAtribuicao(false); }} className="text-amber-400 hover:text-amber-300 px-1 text-xs font-bold">Salvar</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 group">
+                      <span className="text-xs text-amber-400 font-bold bg-amber-900/30 px-2 py-0.5 rounded border border-amber-900/50">
+                        {currentMission.atribuicao || 'Não atribuída'}
+                      </span>
+                      {(!currentMission.createdBy || currentMission.createdBy === currentUser?.matricula) && (
+                        <button 
+                          onClick={() => {
+                            setEditedAtribuicao(currentMission.atribuicao || '');
+                            setIsEditingAtribuicao(true);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-amber-400 transition-all p-0.5"
+                          title="Editar Atribuição"
+                        >
+                          <Edit size={12} />
+                        </button>
+                      )}
+                    </div>
                   )}
-                  <button 
-                    onClick={() => {
-                      setEditedName(currentMission.name === 'Rascunho de Hoje' ? '' : currentMission.name);
-                      setIsEditingName(true);
-                    }} 
-                    className="text-slate-400 hover:text-emerald-400 transition-colors p-1 bg-slate-800 rounded flex-shrink-0"
-                    title={currentMission.isDraft ? "Dar nome para salvar permanentemente" : "Renomear operação"}
-                  >
-                    <Edit size={14} />
-                  </button>
                 </div>
               )}
             </div>
@@ -417,19 +473,21 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
           COMPARTILHAR
         </button>
         
-        <button 
-          onClick={() => {
-            if (window.confirm("Deseja limpar toda a missão?")) {
-              onClearMission();
-              onClose();
-            }
-          }}
-          disabled={missionHydrants.length === 0}
-          className="flex items-center justify-center px-3 bg-slate-700 hover:bg-red-600 disabled:opacity-50 text-white font-bold py-2 rounded-lg shadow active:scale-95 transition-all"
-          title="Limpar Missão"
-        >
-          <X size={20} />
-        </button>
+        {(!currentMission || !currentMission.createdBy || currentMission.createdBy === currentUser?.matricula) && (
+          <button 
+            onClick={() => {
+              if (window.confirm("Deseja limpar toda a missão?")) {
+                onClearMission();
+                onClose();
+              }
+            }}
+            disabled={missionHydrants.length === 0}
+            className="flex items-center justify-center px-3 bg-slate-700 hover:bg-red-600 disabled:opacity-50 text-white font-bold py-2 rounded-lg shadow active:scale-95 transition-all"
+            title="Limpar Missão"
+          >
+            <X size={20} />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -13,6 +13,11 @@ import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission } from './utils/storage';
 
 function App() {
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('netuno_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [hidrantes, setHidrantes] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
   const [isFilterVisible, setIsFilterVisible] = useState(true);
@@ -62,6 +67,7 @@ function App() {
         // Cria uma nova missão com esses IDs importados
         const newMission = createNewMission("Missão Importada");
         newMission.selectedIds = ids;
+        newMission.createdBy = currentUser?.matricula;
         setMissions(prev => [...prev, newMission]);
         setOpenMissionIds(prev => [...prev, newMission.id]);
         setActiveMissionId(newMission.id);
@@ -85,6 +91,7 @@ function App() {
     // Se tentar adicionar mas não tiver missão ativa, cria uma automaticamente
     if (!currentId) {
       const newMission = createNewMission();
+      newMission.createdBy = currentUser?.matricula;
       setMissions(prev => [...prev, newMission]);
       setOpenMissionIds(prev => [...prev, newMission.id]);
       setActiveMissionId(newMission.id);
@@ -112,6 +119,7 @@ function App() {
 
     if (!currentId) {
       const newMission = createNewMission();
+      newMission.createdBy = currentUser?.matricula;
       setMissions(prev => [...prev, newMission]);
       setOpenMissionIds(prev => [...prev, newMission.id]);
       setActiveMissionId(newMission.id);
@@ -199,6 +207,7 @@ function App() {
   // ---- Controle de Missões ----
   const handleNewMission = () => {
     const newMission = createNewMission();
+    newMission.createdBy = currentUser?.matricula;
     setMissions(prev => [...prev, newMission]);
     setOpenMissionIds(prev => [...prev, newMission.id]);
     setActiveMissionId(newMission.id);
@@ -224,6 +233,83 @@ function App() {
     handleCloseTab(id);
   };
 
+  const handleLogin = (e) => {
+    e.preventDefault();
+    const mat = e.target.matricula.value;
+    const senha = e.target.senha.value;
+    
+    // Simulação do backend
+    if (senha !== '123' && senha !== 'senha123' && senha !== 'admin') {
+      alert('Senha incorreta para testes. (Dica: use 123)');
+      return;
+    }
+
+    let user = null;
+    if (mat === '123') {
+      user = { matricula: '123', nome: 'Vistoriador Silva', role: 'vistoriador' };
+    } else if (mat === '456') {
+      user = { matricula: '456', nome: 'Gestor Souza', role: 'gestor' };
+    } else if (mat === '789') {
+      user = { matricula: '789', nome: 'Gestor Oliveira', role: 'gestor' };
+    }
+    if (user) {
+      localStorage.setItem('netuno_user', JSON.stringify(user));
+      setCurrentUser(user);
+    } else {
+      alert('Matrícula inválida. Use 123 (Vistoriador), 456 ou 789 (Gestores).');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('netuno_user');
+    setCurrentUser(null);
+    setOpenMissionIds([]);
+    setActiveMissionId(null);
+    setIsRouteModuleOpen(false);
+    setIsReportVisible(false);
+    setIsTableVisible(false);
+  };
+
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans items-center justify-center p-4">
+        <div className="bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700 w-full max-w-sm">
+          <h1 className="text-3xl font-black tracking-tight text-emerald-400 drop-shadow-md text-center mb-2">NETUNO</h1>
+          <p className="text-slate-400 text-center text-sm mb-6">Sistema de mapeamento de hidrantes urbanos de incêndio - SEHUR/GPCIU</p>
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <div>
+              <label className="text-slate-400 text-sm font-bold mb-2 block">Matrícula Militar</label>
+              <input 
+                name="matricula" 
+                type="text" 
+                defaultValue="456"
+                autoComplete="off"
+                className="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 font-mono text-center text-lg tracking-widest" 
+                placeholder="Ex: 123, 456, 789" 
+                required 
+              />
+            </div>
+            <div>
+              <label className="text-slate-400 text-sm font-bold mb-2 block">Senha</label>
+              <input 
+                name="senha" 
+                type="password" 
+                defaultValue="123"
+                autoComplete="off"
+                className="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 font-mono text-center text-lg tracking-widest" 
+                placeholder="***" 
+                required 
+              />
+            </div>
+            <button type="submit" className="w-full py-3 bg-emerald-600 text-white font-bold rounded shadow-lg shadow-emerald-900/50 hover:bg-emerald-500 active:scale-95 transition-all mt-2">
+              Acessar Sistema
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
       
@@ -232,12 +318,13 @@ function App() {
           hidrante={inspectingHidrante}
           onClose={() => setInspectingHidrante(null)}
           onSave={handleSaveInspection}
+          currentUser={currentUser}
         />
       )}
 
       {/* Header com Botão de Upload */}
       <header className="flex justify-between items-center p-3 bg-slate-900 border-b border-slate-700 z-50">
-        <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md">ARGOS 2.1</h1>
+        <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md">NETUNO</h1>
         
         <div className="flex gap-2">
           <button 
@@ -247,17 +334,6 @@ function App() {
             <FolderOpen size={18} />
             <span className="hidden sm:inline">Central de Missões</span>
           </button>
-          
-          <label className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white font-semibold rounded shadow-sm cursor-pointer hover:bg-emerald-500 active:scale-95 transition-all">
-            <Upload size={18} />
-            <span className="hidden sm:inline">Carregar Planilha (CSV)</span>
-            <input 
-              type="file" 
-              accept=".csv" 
-              className="hidden" 
-              onChange={handleFileUpload} 
-            />
-          </label>
         </div>
       </header>
 
@@ -268,14 +344,15 @@ function App() {
         openMissionIds={openMissionIds}
         onTabClick={setActiveMissionId}
         onCloseTab={handleCloseTab}
-        onNewMission={handleNewMission}
+        onNewMission={currentUser.role === 'gestor' ? handleNewMission : undefined}
+        currentUser={currentUser}
       />
 
       <main className="flex-1 overflow-y-auto w-full flex flex-col relative p-2 gap-2">
         
         {/* MÓDULO 1: BARRA DE FILTROS */}
         {hidrantes.length > 0 && (
-          <FilterBar onFilterChange={handleFilterChange} regions={regions} isVisible={isFilterVisible} />
+          <FilterBar onFilterChange={handleFilterChange} regions={regions} isVisible={isFilterVisible} currentUser={currentUser} onLogout={handleLogout} />
         )}
 
         {/* CONTROLES RETRÁTEIS */}
@@ -302,7 +379,7 @@ function App() {
               isTableVisible ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
             }`}
           >
-            Tabela
+            Lista
           </button>
           <button 
             onClick={() => setIsRouteModuleOpen(!isRouteModuleOpen)}
@@ -336,6 +413,7 @@ function App() {
               centerPosition={mapCenterPosition}
               selectedMissionIds={selectedMissionIds}
               onToggleMission={toggleMissionSelection}
+              currentUser={currentUser}
             />
           </div>
         )}
@@ -353,6 +431,7 @@ function App() {
               selectedMissionIds={selectedMissionIds}
               onToggleMission={toggleMissionSelection}
               onSelectAllMission={selectAllFiltered}
+              currentUser={currentUser}
             />
           </div>
         )}
@@ -375,6 +454,7 @@ function App() {
                 setMapCenterPosition(h);
                 setIsMapVisible(true);
               }}
+              currentUser={currentUser}
             />
           </div>
         )}
@@ -386,6 +466,7 @@ function App() {
               hidrantes={activeMissionId && selectedMissionIds.length > 0 ? hidrantes.filter(h => selectedMissionIds.includes(h.codHidrante || h.nomHidrante)) : filteredList}
               currentMission={currentMission}
               onClose={() => setIsReportVisible(false)}
+              currentUser={currentUser}
             />
           </div>
         )}
@@ -424,6 +505,7 @@ function App() {
           onOpenMission={handleOpenMission}
           onNewMission={handleNewMission}
           onDeleteMission={handleDeleteMission}
+          currentUser={currentUser}
         />
       )}
     </div>

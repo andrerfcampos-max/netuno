@@ -87,6 +87,7 @@
   .print-border { border: 1px solid #d1d5db !important; }
   .print-row-avoid { break-inside: avoid; }
   .page-break-inside-avoid { break-inside: avoid; }
+  .print-page-break-before { break-before: page; }
   
   @page {
     size: A4 portrait;
