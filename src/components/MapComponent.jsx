@@ -1,9 +1,9 @@
 import React, { useMemo, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit } from 'lucide-react';
+import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2 } from 'lucide-react';
 
 // Fix para ícones padrão do Leaflet não quebrarem (embora vamos usar divIcon)
 delete L.Icon.Default.prototype._getIconUrl;
@@ -82,7 +82,26 @@ const ScrollBehavior = () => {
 };
 
 
-const MapComponent = ({ hidrantes, onInspect, centerPosition, selectedMissionIds = [], onToggleMission, currentUser }) => {
+const MapClickHandler = ({ onMapClick }) => {
+  useMapEvents({
+    click() {
+      if (onMapClick) onMapClick();
+    },
+  });
+  return null;
+};
+
+const MapResizer = ({ isMapFullscreen }) => {
+  const map = useMap();
+  useEffect(() => {
+    // Dá um tempo para o CSS da transição/fixed terminar antes de recalcular
+    const timeout = setTimeout(() => map.invalidateSize(), 50);
+    return () => clearTimeout(timeout);
+  }, [isMapFullscreen, map]);
+  return null;
+};
+
+const MapComponent = ({ hidrantes, onInspect, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, isMapFullscreen }) => {
   const useClustering = hidrantes.length > 500;
   const isGestor = currentUser?.role === 'gestor';
 
@@ -179,7 +198,22 @@ const MapComponent = ({ hidrantes, onInspect, centerPosition, selectedMissionIds
   };
 
   return (
-    <div className="h-[60vh] min-h-[400px] w-full relative rounded-xl overflow-hidden border border-slate-700 shadow-inner z-0">
+    <div className={isMapFullscreen ? "fixed inset-0 z-[100] bg-slate-900" : "h-[60vh] min-h-[400px] w-full relative rounded-xl overflow-hidden border border-slate-700 shadow-inner z-0"}>
+      
+      {isMapFullscreen && (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation(); // Evita que o click vaze para o mapa
+            if (onMapClick) onMapClick();
+          }}
+          className="absolute top-6 left-1/2 transform -translate-x-1/2 z-[9999] bg-slate-900/90 hover:bg-slate-800 text-slate-100 font-bold px-6 py-3 rounded-full border border-emerald-500/50 shadow-[0_0_20px_rgba(0,0,0,0.6)] flex items-center gap-2 transition-all active:scale-95 animate-bounce-short"
+          style={{ animationIterationCount: 3 }} // Pisca um pouco pra chamar atenção e para
+        >
+          <Minimize2 size={20} className="text-emerald-400" />
+          Clique aqui para Sair da Tela Cheia
+        </button>
+      )}
+
       <MapContainer 
         center={mapCenter} 
         zoom={12} 
@@ -195,6 +229,8 @@ const MapComponent = ({ hidrantes, onInspect, centerPosition, selectedMissionIds
         
         <RecenterMap centerPosition={centerPosition} />
         <ScrollBehavior />
+        <MapClickHandler onMapClick={onMapClick} />
+        <MapResizer isMapFullscreen={isMapFullscreen} />
 
         
         {useClustering ? (

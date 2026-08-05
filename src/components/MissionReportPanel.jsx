@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet } from 'lucide-react';
+import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown } from 'lucide-react';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser }) => {
   const [isMaximized, setIsMaximized] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [reportType, setReportType] = useState('interno'); // 'interno' | 'caesb'
 
-  // Sort hydrants chronologically by datHoraUltimaVistoria (oldest to newest)
   const parseDate = (dateStr) => {
     if (!dateStr || dateStr === '-') return 0;
     const parts = dateStr.split(' ');
@@ -16,25 +16,35 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     return new Date(`${y}-${m}-${d}T${time}`).getTime();
   };
 
-  const sortedHidrantes = useMemo(() => {
+  const sortedHidrantesGeral = useMemo(() => {
     return [...hidrantes].sort((a, b) => parseDate(a.datHoraUltimaVistoria) - parseDate(b.datHoraUltimaVistoria));
   }, [hidrantes]);
 
-  // KPIs
-  const total = sortedHidrantes.length;
-  const operantes = sortedHidrantes.filter(h => h.flgAtivo).length;
+  const sortedHidrantesCaesb = useMemo(() => {
+    return sortedHidrantesGeral.filter(h => 
+      !h.flgAtivo && 
+      (!h.problemasHidrante || !h.problemasHidrante.toLowerCase().includes("removido ou não encontrado"))
+    );
+  }, [sortedHidrantesGeral]);
+
+  const currentData = reportType === 'interno' ? sortedHidrantesGeral : sortedHidrantesCaesb;
+
+  const total = currentData.length;
+  const operantes = currentData.filter(h => h.flgAtivo).length;
   const inoperantes = total - operantes;
   const operantesPercent = total > 0 ? ((operantes / total) * 100).toFixed(1) : 0;
   const inoperantesPercent = total > 0 ? ((inoperantes / total) * 100).toFixed(1) : 0;
 
-  // Top Defeitos
+  const rasPresentes = useMemo(() => {
+    const r = new Set(currentData.map(h => h.dscLocalidade).filter(Boolean));
+    return Array.from(r).sort().join(', ');
+  }, [currentData]);
+
   const topDefeitos = useMemo(() => {
     const defeitosCount = {};
     let totalDefeitos = 0;
-
-    sortedHidrantes.forEach(h => {
+    currentData.forEach(h => {
       if (!h.flgAtivo && h.problemasHidrante && h.problemasHidrante.trim() !== '-' && h.problemasHidrante.trim() !== '') {
-        // Pode haver múltiplos problemas separados por ';'
         const problemas = h.problemasHidrante.split(';').map(p => p.trim()).filter(p => p);
         problemas.forEach(p => {
           defeitosCount[p] = (defeitosCount[p] || 0) + 1;
@@ -42,23 +52,17 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         });
       }
     });
-
-    const sorted = Object.entries(defeitosCount)
+    return Object.entries(defeitosCount)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([nome, count]) => ({
-        nome,
-        count,
-        percent: totalDefeitos > 0 ? (count / totalDefeitos) * 100 : 0
+        nome, count, percent: totalDefeitos > 0 ? (count / totalDefeitos) * 100 : 0
       }));
+  }, [currentData]);
 
-    return sorted;
-  }, [sortedHidrantes]);
-
-  // Exportações
   const handlePrint = () => {
     const originalTitle = document.title;
-    document.title = currentMission ? currentMission.name : 'Rascunho de Hoje';
+    document.title = currentMission ? `${currentMission.name} - ${reportType === 'interno' ? 'CBMDF' : 'CAESB'}` : 'Relatório';
     window.print();
     document.title = originalTitle;
   };
@@ -66,36 +70,51 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   const handleCopySEI = async () => {
     try {
       let html = `<table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;" border="1">`;
-      html += `<tr style="background-color: #f2f2f2;">
-        <th style="padding: 8px; text-align: left;">CÓDIGO</th>
-        <th style="padding: 8px; text-align: left;">ENDEREÇO</th>
-        <th style="padding: 8px; text-align: left;">PONTO DE REFERÊNCIA</th>
-        <th style="padding: 8px; text-align: left;">DATA DA VISTORIA</th>
-        <th style="padding: 8px; text-align: left;">VISTORIADOR</th>
-        <th style="padding: 8px; text-align: center;">SITUAÇÃO ATUAL</th>
-        <th style="padding: 8px; text-align: left;">PROBLEMAS ENCONTRADOS</th>
-        <th style="padding: 8px; text-align: left;">OBSERVAÇÕES</th>
-        <th style="padding: 8px; text-align: left;">LOCALIZAÇÃO</th>
-      </tr>`;
       
-      sortedHidrantes.forEach(h => {
-        const wazeLink = `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`;
-        html += `<tr>
-          <td style="padding: 8px;">${h.nomHidrante || h.codHidrante}</td>
-          <td style="padding: 8px;">${h.dscEndereco || h.dscLocalidade || '-'}</td>
-          <td style="padding: 8px;">${h.dscPontoReferencia || '-'}</td>
-          <td style="padding: 8px;">${h.datHoraUltimaVistoria || '-'}</td>
-          <td style="padding: 8px;">${h.vistoriadorNome || '-'}</td>
-          <td style="padding: 8px; text-align: center; color: ${h.flgAtivo ? '#166534' : '#991b1b'}; font-weight: bold;">${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}</td>
-          <td style="padding: 8px; color: #991b1b;">${!h.flgAtivo && h.problemasHidrante ? h.problemasHidrante : '-'}</td>
-          <td style="padding: 8px;">${h.dscObservacao || h.observacoes || h.obsVistoria || '-'}</td>
-          <td style="padding: 8px;"><a href="${wazeLink}">Waze</a></td>
+      if (reportType === 'interno') {
+        html += `<tr style="background-color: #f2f2f2;">
+          <th style="padding: 8px; text-align: left;">CÓDIGO</th>
+          <th style="padding: 8px; text-align: left;">ENDEREÇO</th>
+          <th style="padding: 8px; text-align: left;">PONTO DE REFERÊNCIA</th>
+          <th style="padding: 8px; text-align: left;">DATA DA VISTORIA</th>
+          <th style="padding: 8px; text-align: left;">VISTORIADOR</th>
+          <th style="padding: 8px; text-align: center;">SITUAÇÃO ATUAL</th>
+          <th style="padding: 8px; text-align: left;">PROBLEMAS ENCONTRADOS</th>
+          <th style="padding: 8px; text-align: left;">OBSERVAÇÕES</th>
+          <th style="padding: 8px; text-align: left;">LOCALIZAÇÃO</th>
         </tr>`;
+      } else {
+        html += `<tr style="background-color: #f2f2f2;">
+          <th style="padding: 8px; text-align: left;">CÓDIGO</th>
+          <th style="padding: 8px; text-align: left;">ENDEREÇO</th>
+          <th style="padding: 8px; text-align: left;">PONTO DE REFERÊNCIA</th>
+          <th style="padding: 8px; text-align: left;">PROBLEMA DO HIDRANTE</th>
+          <th style="padding: 8px; text-align: left;">LOCALIZAÇÃO</th>
+        </tr>`;
+      }
+      
+      currentData.forEach(h => {
+        const wazeLink = `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`;
+        html += `<tr>`;
+        html += `<td style="padding: 8px;">${h.nomHidrante || h.codHidrante}</td>`;
+        html += `<td style="padding: 8px;">${h.dscEndereco || h.dscLocalidade || '-'}</td>`;
+        html += `<td style="padding: 8px;">${h.dscPontoReferencia || '-'}</td>`;
+        if (reportType === 'interno') {
+          html += `<td style="padding: 8px;">${h.datHoraUltimaVistoria || '-'}</td>`;
+          html += `<td style="padding: 8px;">${h.vistoriadorNome || '-'}</td>`;
+          html += `<td style="padding: 8px; text-align: center; color: ${h.flgAtivo ? '#166534' : '#991b1b'}; font-weight: bold;">${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}</td>`;
+          html += `<td style="padding: 8px; color: #991b1b;">${!h.flgAtivo && h.problemasHidrante ? h.problemasHidrante : '-'}</td>`;
+          html += `<td style="padding: 8px;">${h.dscObservacao || h.observacoes || h.obsVistoria || '-'}</td>`;
+        } else {
+          html += `<td style="padding: 8px; color: #991b1b;">${h.problemasHidrante || '-'}</td>`;
+        }
+        html += `<td style="padding: 8px;"><a href="${wazeLink}">Waze</a></td>`;
+        html += `</tr>`;
       });
       html += `</table>`;
 
       const blobHtml = new Blob([html], { type: 'text/html' });
-      const blobText = new Blob([sortedHidrantes.map(h => `${h.nomHidrante || h.codHidrante}\t${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}\t${h.problemasHidrante || '-'}`).join('\n')], { type: 'text/plain' });
+      const blobText = new Blob([currentData.map(h => `${h.nomHidrante || h.codHidrante}\t${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}\t${h.problemasHidrante || '-'}`).join('\n')], { type: 'text/plain' });
       
       await navigator.clipboard.write([
         new ClipboardItem({
@@ -114,15 +133,22 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   const handleWhatsApp = () => {
     const reportName = currentMission ? currentMission.name : 'Relatório Tático de Hidrantes';
-    let text = `*${reportName.toUpperCase()}*\n\n`;
-    text += `📊 *Resumo*\n`;
-    text += `• Total Inspecionado: ${total}\n`;
-    text += `• 🟢 Operantes: ${operantes} (${operantesPercent}%)\n`;
-    text += `• 🔴 Inoperantes: ${inoperantes} (${inoperantesPercent}%)\n\n`;
+    let text = `*${reportName.toUpperCase()} - ${reportType === 'interno' ? 'GERAL CBMDF' : 'MANUTENÇÃO CAESB'}*\n\n`;
+    
+    if (reportType === 'interno') {
+      text += `📊 *Resumo*\n`;
+      text += `• Total Vistoriado: ${total}\n`;
+      text += `• 🟢 Operantes: ${operantes} (${operantesPercent}%)\n`;
+      text += `• 🔴 Inoperantes: ${inoperantes} (${inoperantesPercent}%)\n\n`;
+    } else {
+      text += `📊 *Resumo de Manutenção*\n`;
+      text += `• Regiões Afetadas: ${rasPresentes || 'Nenhuma informada'}\n`;
+      text += `• Total para Reparo: ${total}\n\n`;
+    }
     
     if (inoperantes > 0) {
       text += `⚠️ *Prioridade de Manutenção:*\n`;
-      const priority = sortedHidrantes.filter(h => !h.flgAtivo).slice(0, 10);
+      const priority = currentData.filter(h => !h.flgAtivo).slice(0, 10);
       priority.forEach(h => {
         text += `- ${h.nomHidrante || h.codHidrante}: ${h.problemasHidrante ? h.problemasHidrante.split(';')[0] : 'Inoperante'}\n`;
       });
@@ -134,20 +160,33 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   };
 
   const handleExportCSV = () => {
-    const headers = ["CÓDIGO", "ENDEREÇO", "PONTO DE REFERÊNCIA", "DATA DA VISTORIA", "VISTORIADOR", "SITUAÇÃO ATUAL", "PROBLEMAS ENCONTRADOS", "OBSERVAÇÕES", "LOCALIZAÇÃO"];
-    const rows = sortedHidrantes.map(h => [
-      h.nomHidrante || h.codHidrante || '',
-      h.dscEndereco || h.dscLocalidade || '',
-      h.dscPontoReferencia || '',
-      h.datHoraUltimaVistoria || '',
-      h.vistoriadorNome || '',
-      h.flgAtivo ? 'OPERANTE' : 'INOPERANTE',
-      (h.problemasHidrante || '').replace(/;/g, ' | '),
-      (h.dscObservacao || h.observacoes || h.obsVistoria || '').replace(/;/g, ' | '),
-      `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`
-    ]);
+    let headers = [];
+    let rows = [];
     
-    // Adicionamos o BOM (\uFEFF) para forçar o Excel a abrir o CSV em UTF-8
+    if (reportType === 'interno') {
+      headers = ["CÓDIGO", "ENDEREÇO", "PONTO DE REFERÊNCIA", "DATA DA VISTORIA", "VISTORIADOR", "SITUAÇÃO ATUAL", "PROBLEMAS ENCONTRADOS", "OBSERVAÇÕES", "LOCALIZAÇÃO"];
+      rows = currentData.map(h => [
+        h.nomHidrante || h.codHidrante || '',
+        h.dscEndereco || h.dscLocalidade || '',
+        h.dscPontoReferencia || '',
+        h.datHoraUltimaVistoria || '',
+        h.vistoriadorNome || '',
+        h.flgAtivo ? 'OPERANTE' : 'INOPERANTE',
+        (h.problemasHidrante || '').replace(/;/g, ' | '),
+        (h.dscObservacao || h.observacoes || h.obsVistoria || '').replace(/;/g, ' | '),
+        `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`
+      ]);
+    } else {
+      headers = ["CÓDIGO", "ENDEREÇO", "PONTO DE REFERÊNCIA", "PROBLEMA DO HIDRANTE", "LOCALIZAÇÃO"];
+      rows = currentData.map(h => [
+        h.nomHidrante || h.codHidrante || '',
+        h.dscEndereco || h.dscLocalidade || '',
+        h.dscPontoReferencia || '',
+        (h.problemasHidrante || '').replace(/;/g, ' | '),
+        `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`
+      ]);
+    }
+    
     const csvContent = '\uFEFF' + [
       headers.join(';'),
       ...rows.map(r => r.join(';'))
@@ -157,122 +196,239 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `relatorio_hidrantes_${new Date().getTime()}.csv`);
+    link.setAttribute("download", `relatorio_${reportType}_${new Date().getTime()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Classes do container baseadas no estado maximizado
+  const scrollToTop = () => {
+    // Tenta encontrar o container principal rolável, senão rola a janela
+    const scrollContainer = document.querySelector('main') || window;
+    scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollToBottom = () => {
+    const scrollContainer = document.querySelector('main') || window;
+    scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+  };
+
   const containerClasses = isMaximized
-    ? "fixed inset-0 z-50 bg-slate-900 flex flex-col print-container overflow-hidden"
-    : "flex flex-col p-4 w-full h-full bg-slate-900 print-container overflow-hidden";
+    ? "fixed inset-0 z-[100] bg-slate-900 flex flex-col print-container overflow-y-auto p-4"
+    : "flex flex-col p-2 lg:p-4 w-full h-auto bg-slate-900/50 print-container";
 
   return (
     <div className={containerClasses}>
-      {/* TOOLBAR NO PRINT */}
-      <div className="flex justify-between items-start mb-4 pb-2 border-b border-slate-700 no-print p-4 lg:p-0">
+      
+      {/* BOTÕES FLUTUANTES (ELEVADOR) */}
+      <div className="fixed right-4 bottom-24 z-50 flex flex-col gap-2 no-print">
+        <button 
+          onClick={scrollToTop} 
+          className="p-3 bg-slate-700/80 backdrop-blur hover:bg-slate-600 text-white rounded-full shadow-[0_0_15px_rgba(0,0,0,0.3)] transition-all active:scale-95"
+          title="Ir para o topo"
+        >
+          <ArrowUp size={20} />
+        </button>
+        <button 
+          onClick={scrollToBottom} 
+          className="p-3 bg-slate-700/80 backdrop-blur hover:bg-slate-600 text-white rounded-full shadow-[0_0_15px_rgba(0,0,0,0.3)] transition-all active:scale-95"
+          title="Ir para o final"
+        >
+          <ArrowDown size={20} />
+        </button>
+      </div>
+
+
+      {/* TOOLBAR SUPERIOR NO PRINT */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 pb-2 border-b border-slate-700 no-print px-2 lg:px-0 gap-4">
         <h2 className="text-xl font-bold text-blue-400 flex items-center gap-2 drop-shadow-sm">
           <FileSpreadsheet size={24} /> 
           Módulo Relatório
         </h2>
-        <div className="flex gap-2">
+        
+        <div className="flex bg-slate-800 rounded-lg p-1 w-full lg:w-auto shadow-inner border border-slate-700">
+          <button 
+            onClick={() => setReportType('interno')}
+            className={`flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-md font-bold text-sm transition-all ${reportType === 'interno' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            <ShieldHalf size={16} /> Relatório Geral (CBMDF)
+          </button>
+          <button 
+            onClick={() => setReportType('caesb')}
+            className={`flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-md font-bold text-sm transition-all ${reportType === 'caesb' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            <Building2 size={16} /> Relatório de Alterações (CAESB)
+          </button>
+        </div>
+
+        <div className="flex gap-2 self-end lg:self-auto">
           <button 
             onClick={() => setIsMaximized(!isMaximized)} 
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full transition-colors"
+            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full transition-colors border border-slate-600"
             title={isMaximized ? "Minimizar" : "Maximizar"}
           >
             {isMaximized ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
           </button>
-          <button onClick={onClose} className="p-2 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 rounded-full transition-colors border border-slate-600">
             <X size={24} />
           </button>
         </div>
       </div>
 
       {/* ÁREA IMPRIMÍVEL (Relatório) */}
-      <div className="flex-1 overflow-y-auto bg-slate-800/50 lg:bg-slate-800 rounded-xl p-4 lg:p-6 border border-slate-700 report-content print-bg-white print-text-black">
+      <div className="w-full h-auto bg-slate-800/50 lg:bg-slate-800 rounded-xl p-4 lg:p-6 border border-slate-700 report-content print-bg-white print-text-black pb-24">
         
-        {/* CABEÇALHO CBMDF */}
+        {/* CABEÇALHO DA PÁGINA IMPRESSA */}
         <div className="text-center mb-8 border-b-2 border-slate-700 print-border-black pb-4">
-          <h1 className="text-2xl font-bold text-slate-100 print-text-black uppercase">Corpo de Bombeiros Militar do Distrito Federal</h1>
-          <h2 className="text-lg text-slate-300 print-text-black mt-1">SISTEMA ARGOS - RELATÓRIO TÁTICO DE VISTORIA</h2>
-          <div className="mt-4 flex flex-col md:flex-row justify-between text-sm text-slate-400 print-text-black">
-            <span><strong>Missão/Filtro:</strong> {currentMission ? currentMission.name : 'Geral (Filtrado)'}</span>
-            <span><strong>Data da Geração:</strong> {new Date().toLocaleString('pt-BR')}</span>
-          </div>
-          <div className="mt-4 text-left text-sm text-slate-400 print-text-black border-t border-slate-700 pt-4 print-border-gray">
-            <strong>Relatório gerado por:</strong> {currentUser?.nome ? `${currentUser.nome} (Matrícula: ${currentUser.matricula})` : '_________________________________________________'}
-          </div>
+          {reportType === 'interno' ? (
+            <>
+              <h1 className="text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
+              <h2 className="text-lg text-slate-300 print-text-black mt-1 uppercase">Sistema Netuno - Relatório Tático de Vistoria</h2>
+              <div className="mt-4 flex flex-col items-center text-sm text-slate-400 print-text-black bg-slate-700/30 print-bg-transparent py-2 rounded">
+                <span><strong>Filtro / Missão:</strong> {currentMission ? currentMission.name : 'Geral (Filtrado)'}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
+              <h2 className="text-lg text-emerald-400 print-text-black mt-1 uppercase font-black">Solicitação de Manutenção de Hidrantes Urbanos de Incêndio - CBMDF / CAESB</h2>
+              <p className="text-xs text-slate-400 print-text-gray mt-1 uppercase tracking-wider font-bold">
+                De acordo com o Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019
+              </p>
+              <div className="mt-4 flex flex-col items-center text-sm text-slate-300 print-text-black">
+                <span className="bg-slate-700/50 print-bg-transparent px-4 py-2 rounded-full border border-slate-600 print-border-gray shadow-sm">
+                  <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Nenhuma região filtrada'}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-slate-700 p-4 rounded-lg border border-slate-600 print-border-gray print-bg-white">
-            <div className="text-slate-400 text-sm font-bold uppercase mb-1">Total Inspecionado</div>
-            <div className="text-3xl font-black text-white print-text-black">{total}</div>
-          </div>
-          <div className="bg-emerald-900/40 p-4 rounded-lg border border-emerald-800 print-border-gray print-bg-white">
-            <div className="text-emerald-400 text-sm font-bold uppercase mb-1">Operantes</div>
-            <div className="flex items-end gap-2">
-              <div className="text-3xl font-black text-emerald-400 print-text-black">{operantes}</div>
-              <div className="text-emerald-500 mb-1">({operantesPercent}%)</div>
+        {/* KPIs e GRÁFICOS */}
+        {reportType === 'interno' ? (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8 print-flex print-flex-row">
+            
+            {/* Bloco de Totais */}
+            <div className="md:col-span-4 flex flex-col justify-between gap-4 print-w-1/3">
+              <div className="bg-slate-700 p-4 rounded-lg border border-slate-600 print-border-gray print-bg-white flex-1 flex flex-col justify-center">
+                <div className="text-slate-400 text-sm font-bold uppercase mb-1">Total Vistoriado</div>
+                <div className="text-3xl font-black text-white print-text-black">{total}</div>
+              </div>
+              <div className="bg-emerald-900/40 p-4 rounded-lg border border-emerald-800 print-border-gray print-bg-white flex-1 flex justify-between items-end">
+                <div>
+                  <div className="text-emerald-400 text-sm font-bold uppercase mb-1">Operantes</div>
+                  <div className="text-3xl font-black text-emerald-400 print-text-black">{operantes}</div>
+                </div>
+                <div className="text-emerald-500 font-bold mb-1 text-lg">{operantesPercent}%</div>
+              </div>
+              <div className="bg-red-900/40 p-4 rounded-lg border border-red-800 print-border-gray print-bg-white flex-1 flex justify-between items-end">
+                <div>
+                  <div className="text-red-400 text-sm font-bold uppercase mb-1">Inoperantes</div>
+                  <div className="text-3xl font-black text-red-500 print-text-black">{inoperantes}</div>
+                </div>
+                <div className="text-red-500 font-bold mb-1 text-lg">{inoperantesPercent}%</div>
+              </div>
             </div>
-          </div>
-          <div className="bg-red-900/40 p-4 rounded-lg border border-red-800 print-border-gray print-bg-white">
-            <div className="text-red-400 text-sm font-bold uppercase mb-1">Inoperantes</div>
-            <div className="flex items-end gap-2">
-              <div className="text-3xl font-black text-red-500 print-text-black">{inoperantes}</div>
-              <div className="text-red-500 mb-1">({inoperantesPercent}%)</div>
-            </div>
-          </div>
-        </div>
-
-        {/* TOP DEFEITOS */}
-        {topDefeitos.length > 0 && (
-          <div className="mb-8 page-break-inside-avoid">
-            <h3 className="text-lg font-bold text-slate-200 mb-4 print-text-black border-b border-slate-700 print-border-gray pb-2">Top Defeitos Registrados</h3>
-            <div className="space-y-4">
-              {topDefeitos.map((defeito, idx) => (
-                <div key={idx} className="flex flex-col gap-1">
-                  <div className="flex justify-between text-sm text-slate-300 print-text-black">
-                    <span className="truncate pr-4" title={defeito.nome}>{defeito.nome}</span>
-                    <span className="font-bold flex-shrink-0">{defeito.count} ocorr.</span>
-                  </div>
-                  <div className="w-full bg-slate-700 h-3 rounded-full overflow-hidden print-bg-gray">
-                    <div 
-                      className="bg-red-500 h-full print-bg-black" 
-                      style={{ width: `${defeito.percent}%` }}
-                    ></div>
+            
+            {/* Bloco de Gráficos */}
+            <div className="md:col-span-8 flex flex-col md:flex-row gap-6 bg-slate-800 p-4 rounded-lg border border-slate-700 print-border-gray print-bg-white items-center justify-around page-break-inside-avoid print-w-2/3">
+              <div className="flex flex-col items-center gap-4">
+                <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider text-center">Índice de Operacionalidade</h3>
+                <div className="relative w-36 h-36 rounded-full print-donut shadow-inner border-4 border-slate-900 print-border-white" style={{ background: `conic-gradient(#34d399 ${operantesPercent}%, #ef4444 ${operantesPercent}% 100%)` }}>
+                  <div className="absolute inset-2 bg-slate-800 print-bg-white rounded-full flex flex-col items-center justify-center shadow-md">
+                    <span className="text-2xl font-black text-white print-text-black">{operantesPercent}%</span>
+                    <span className="text-[10px] text-slate-400 print-text-black font-bold uppercase">OK</span>
                   </div>
                 </div>
-              ))}
+              </div>
+              
+              <div className="flex-1 w-full flex flex-col justify-center max-w-sm">
+                <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Top Defeitos Registrados</h3>
+                {topDefeitos.length > 0 ? (
+                  <div className="space-y-3">
+                    {topDefeitos.slice(0, 4).map((defeito, idx) => (
+                      <div key={idx} className="flex flex-col gap-1">
+                        <div className="flex justify-between text-xs text-slate-300 print-text-black">
+                          <span className="truncate pr-2 font-medium" title={defeito.nome}>{defeito.nome}</span>
+                          <span className="font-bold">{defeito.count}</span>
+                        </div>
+                        <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden print-bg-gray">
+                          <div className="bg-red-500 h-full print-bg-black transition-all duration-1000" style={{ width: `${defeito.percent}%` }}></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 text-center italic mt-4">Nenhum defeito registrado na região.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* CAESB KPIs e Gráficos */
+          <div className="flex flex-col md:flex-row gap-6 mb-8 page-break-inside-avoid">
+            <div className="bg-red-900/20 p-6 rounded-lg border border-red-800/50 print-border-gray print-bg-white flex-shrink-0 flex flex-col items-center justify-center min-w-[200px] shadow-sm">
+              <div className="text-slate-400 text-sm font-bold uppercase mb-2">Total de Reparos</div>
+              <div className="text-6xl font-black text-red-500 print-text-black drop-shadow-md">{total}</div>
+            </div>
+            
+            <div className="flex-1 bg-slate-800/50 p-6 rounded-lg border border-slate-700 print-border-gray print-bg-white shadow-sm">
+              <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Principais Tipos de Problemas (CAESB)</h3>
+              {topDefeitos.length > 0 ? (
+                <div className="space-y-4">
+                  {topDefeitos.map((defeito, idx) => (
+                    <div key={idx} className="flex flex-col gap-1">
+                      <div className="flex justify-between text-sm text-slate-300 print-text-black">
+                        <span className="truncate pr-4" title={defeito.nome}>{defeito.nome}</span>
+                        <span className="font-bold flex-shrink-0 text-orange-400 print-text-black">{defeito.count} ocorr.</span>
+                      </div>
+                      <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden print-bg-gray">
+                        <div className="bg-gradient-to-r from-orange-600 to-orange-400 h-full print-bg-black" style={{ width: `${defeito.percent}%` }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500 italic mt-4">Nenhum defeito de manutenção registrado.</p>
+              )}
             </div>
           </div>
         )}
 
         {/* TABELA CONSOLIDADA */}
         <div className="page-break-inside-avoid">
-          <h3 className="text-lg font-bold text-slate-200 mb-4 print-text-black border-b border-slate-700 print-border-gray pb-2">Relação de Hidrantes</h3>
-          <div className="overflow-x-auto">
+          <h3 className="text-lg font-bold text-slate-200 mb-4 print-text-black border-b border-slate-700 print-border-gray pb-2 flex items-center gap-2">
+            {reportType === 'interno' ? 'Relação Geral de Hidrantes' : 'Lista de Hidrantes com Problemas'}
+          </h3>
+          <div className="overflow-x-auto shadow-md rounded-lg">
             <table className="w-full text-left text-sm text-slate-300 print-text-black print-table">
-              <thead className="text-xs text-slate-400 uppercase bg-slate-700/50 print-bg-gray print-text-black">
-                <tr>
-                  <th className="px-4 py-3 rounded-tl-lg print-border">CÓDIGO</th>
-                  <th className="px-4 py-3 print-border">ENDEREÇO</th>
-                  <th className="px-4 py-3 print-border">PONTO DE REF.</th>
-                  <th className="px-4 py-3 print-border">DATA VISTORIA</th>
-                  <th className="px-4 py-3 print-border">VISTORIADOR</th>
-                  <th className="px-4 py-3 print-border text-center">SITUAÇÃO</th>
-                  <th className="px-4 py-3 print-border">PROBLEMAS</th>
-                  <th className="px-4 py-3 print-border">OBSERVAÇÕES</th>
-                  <th className="px-4 py-3 rounded-tr-lg print-border text-center">LOCALIZAÇÃO</th>
-                </tr>
+              <thead className="text-xs text-slate-400 uppercase bg-slate-700/80 print-bg-gray print-text-black">
+                {reportType === 'interno' ? (
+                  <tr>
+                    <th className="px-4 py-3 rounded-tl-lg print-border">CÓDIGO</th>
+                    <th className="px-4 py-3 print-border">ENDEREÇO</th>
+                    <th className="px-4 py-3 print-border">PONTO DE REF.</th>
+                    <th className="px-4 py-3 print-border">DATA VISTORIA</th>
+                    <th className="px-4 py-3 print-border">VISTORIADOR</th>
+                    <th className="px-4 py-3 print-border text-center">SITUAÇÃO</th>
+                    <th className="px-4 py-3 print-border">PROBLEMAS</th>
+                    <th className="px-4 py-3 print-border">OBSERVAÇÕES</th>
+                    <th className="px-4 py-3 rounded-tr-lg print-border text-center no-print">LOCALIZAÇÃO</th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <th className="px-4 py-3 rounded-tl-lg print-border">CÓDIGO</th>
+                    <th className="px-4 py-3 print-border">ENDEREÇO</th>
+                    <th className="px-4 py-3 print-border">PONTO DE REF.</th>
+                    <th className="px-4 py-3 print-border">PROBLEMA DO HIDRANTE</th>
+                    <th className="px-4 py-3 rounded-tr-lg print-border text-center no-print">LOCALIZAÇÃO</th>
+                  </tr>
+                )}
               </thead>
-              <tbody className="divide-y divide-slate-700/50 print-divide-gray">
-                {sortedHidrantes.map((h, i) => (
-                  <tr key={h.codHidrante || h.nomHidrante || i} className="hover:bg-slate-700/30 print-row-avoid">
-                    <td className="px-4 py-3 font-medium text-slate-200 print-text-black print-border">
+              <tbody className="divide-y divide-slate-700/50 print-divide-gray bg-slate-800/30 print-bg-transparent">
+                {currentData.map((h, i) => (
+                  <tr key={h.codHidrante || h.nomHidrante || i} className="hover:bg-slate-700/50 transition-colors print-row-avoid">
+                    <td className="px-4 py-3 font-medium text-slate-100 print-text-black print-border">
                       {h.nomHidrante || h.codHidrante}
                     </td>
                     <td className="px-4 py-3 text-slate-300 print-text-black print-border whitespace-normal" title={h.dscEndereco || h.dscLocalidade}>
@@ -281,27 +437,41 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                     <td className="px-4 py-3 text-slate-400 print-text-black print-border whitespace-normal" title={h.dscPontoReferencia}>
                       {h.dscPontoReferencia || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap print-border">{h.datHoraUltimaVistoria || '-'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap print-border text-emerald-300 print-text-black text-xs font-bold">{h.vistoriadorNome || '-'}</td>
-                    <td className={`px-4 py-3 font-bold text-center ${h.flgAtivo ? 'text-emerald-400' : 'text-red-400'} print-text-black print-border`}>
-                      {h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}
-                    </td>
-                    <td className="px-4 py-3 text-red-300 print-text-black print-border whitespace-normal" title={h.problemasHidrante}>
-                      {!h.flgAtivo && h.problemasHidrante ? h.problemasHidrante : '-'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-400 print-text-black print-border whitespace-normal" title={h.dscObservacao || h.observacoes || h.obsVistoria}>
-                      {h.dscObservacao || h.observacoes || h.obsVistoria || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-center print-border">
-                      <a href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`} target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-400 underline font-bold whitespace-nowrap">
+                    
+                    {reportType === 'interno' ? (
+                      <>
+                        <td className="px-4 py-3 whitespace-nowrap print-border text-xs">{h.datHoraUltimaVistoria || '-'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap print-border text-emerald-300 print-text-black text-xs font-bold">{h.vistoriadorNome || '-'}</td>
+                        <td className={`px-4 py-3 font-bold text-center ${h.flgAtivo ? 'text-emerald-400' : 'text-red-400'} print-text-black print-border`}>
+                          {h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}
+                        </td>
+                        <td className="px-4 py-3 text-red-300 print-text-black print-border whitespace-normal text-xs" title={h.problemasHidrante}>
+                          {!h.flgAtivo && h.problemasHidrante ? h.problemasHidrante : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-400 print-text-black print-border whitespace-normal text-xs" title={h.dscObservacao || h.observacoes || h.obsVistoria}>
+                          {h.dscObservacao || h.observacoes || h.obsVistoria || '-'}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-4 py-3 font-bold text-red-400 print-text-black print-border whitespace-normal text-xs" title={h.problemasHidrante}>
+                          {h.problemasHidrante || '-'}
+                        </td>
+                      </>
+                    )}
+                    
+                    <td className="px-4 py-3 text-center print-border no-print">
+                      <a href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`} target="_blank" rel="noreferrer" className="inline-block bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-3 py-1 rounded text-xs font-bold transition-all whitespace-nowrap">
                         Waze
                       </a>
                     </td>
                   </tr>
                 ))}
-                {sortedHidrantes.length === 0 && (
+                {currentData.length === 0 && (
                   <tr>
-                    <td colSpan="8" className="px-4 py-8 text-center text-slate-500 print-border">Nenhum hidrante para exibir no relatório.</td>
+                    <td colSpan={reportType === 'interno' ? 9 : 5} className="px-4 py-12 text-center text-slate-500 print-border text-lg font-bold">
+                      Nenhum hidrante correspondente aos filtros.
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -311,28 +481,28 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
         {/* ANEXO FOTOGRÁFICO */}
         {(() => {
-          const hidrantesComFoto = sortedHidrantes.filter(h => h.fotoVistoria);
+          const hidrantesComFoto = currentData.filter(h => h.fotoVistoria);
           if (hidrantesComFoto.length === 0) return null;
           
           return (
             <div className="mt-12 pt-8 border-t border-slate-700 print-border-gray print-page-break-before">
-              <h3 className="text-xl font-bold text-slate-200 mb-6 print-text-black border-b border-slate-700 print-border-gray pb-2 uppercase text-center">
+              <h3 className="text-xl font-bold text-slate-200 mb-6 print-text-black border-b border-slate-700 print-border-gray pb-2 uppercase text-center flex items-center justify-center gap-2">
                 Anexo Fotográfico - Registro de Defeitos
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {hidrantesComFoto.map((h, i) => (
-                  <div key={`foto-${h.codHidrante || i}`} className="bg-slate-700/30 p-4 rounded-lg border border-slate-600 print-border-gray print-bg-white page-break-inside-avoid shadow">
-                    <div className="font-bold text-slate-200 print-text-black mb-1 text-lg">
+                  <div key={`foto-${h.codHidrante || i}`} className="bg-slate-700/30 p-4 rounded-xl border border-slate-600 print-border-gray print-bg-white page-break-inside-avoid shadow-lg hover:shadow-xl transition-shadow">
+                    <div className="font-black text-slate-100 print-text-black mb-1 text-lg border-b border-slate-600 print-border-gray pb-1">
                       {h.nomHidrante || h.codHidrante}
                     </div>
-                    <div className="text-sm text-red-400 print-text-black font-bold mb-3">
+                    <div className="text-sm text-red-400 print-text-black font-bold mb-3 mt-2 line-clamp-2" title={h.problemasHidrante}>
                       Defeito: {h.problemasHidrante}
                     </div>
-                    <div className="flex justify-center bg-black/20 print-bg-transparent p-2 rounded">
+                    <div className="flex justify-center bg-black/40 print-bg-transparent p-2 rounded-lg overflow-hidden">
                       <img 
                         src={h.fotoVistoria} 
                         alt={`Defeito no hidrante ${h.nomHidrante || h.codHidrante}`} 
-                        className="w-full max-w-sm rounded border border-slate-500 object-contain max-h-64"
+                        className="w-full h-48 object-cover rounded shadow-inner hover:scale-105 transition-transform duration-300 cursor-pointer"
                       />
                     </div>
                   </div>
@@ -341,32 +511,41 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
             </div>
           );
         })()}
+
+        {/* RODAPÉ DO DOCUMENTO DE RELATÓRIO */}
+        <div className="mt-16 pt-6 border-t border-slate-700 print-border-black flex flex-col items-center justify-center text-sm text-slate-400 print-text-black page-break-inside-avoid">
+          <p className="mb-2"><strong>Gerado em:</strong> {new Date().toLocaleString('pt-BR')}</p>
+          {reportType === 'interno' && (
+            <p><strong>Relatório gerado por:</strong> {currentUser?.nome ? `${currentUser.nome} (Matrícula: ${currentUser.matricula})` : '_________________________________________________'}</p>
+          )}
+          <p className="mt-4 text-xs opacity-50">Sistema Netuno - CBMDF © {new Date().getFullYear()}</p>
+        </div>
+
       </div>
 
-      {/* BARRA DE EXPORTAÇÃO NO PRINT */}
-      <div className="grid grid-cols-2 lg:flex lg:flex-nowrap gap-2 mt-4 pt-4 border-t border-slate-700 no-print p-4 lg:p-0">
-        <button onClick={handlePrint} className="flex-1 flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-bold h-12 rounded-lg shadow active:scale-95 transition-all text-sm">
-          <Printer size={20} />
-          <span className="hidden sm:inline">Imprimir / PDF</span>
-          <span className="sm:hidden">PDF</span>
-        </button>
-        
-        <button onClick={handleCopySEI} className={`flex-1 flex items-center justify-center gap-2 ${copied ? 'bg-emerald-600' : 'bg-slate-700 hover:bg-slate-600'} text-white font-bold h-12 rounded-lg shadow active:scale-95 transition-all text-sm`}>
-          <Copy size={20} />
-          <span className="hidden sm:inline">{copied ? 'Copiado!' : 'Copiar p/ SEI'}</span>
-          <span className="sm:hidden">{copied ? 'Copiado!' : 'SEI'}</span>
-        </button>
-        
-        <button onClick={handleWhatsApp} className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold h-12 rounded-lg shadow active:scale-95 transition-all text-sm">
-          <MessageCircle size={20} />
-          WhatsApp
-        </button>
-        
-        <button onClick={handleExportCSV} className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold h-12 rounded-lg shadow active:scale-95 transition-all text-sm">
-          <Download size={20} />
-          <span className="hidden sm:inline">Exportar CSV</span>
-          <span className="sm:hidden">CSV</span>
-        </button>
+      {/* BARRA FLUTUANTE DE EXPORTAÇÃO (Agrupada no final para Sticky Scroll) */}
+      <div className="sticky bottom-4 z-[90] flex justify-center w-full pointer-events-none no-print mt-4">
+        <div className="pointer-events-auto bg-slate-800/95 backdrop-blur border border-slate-600 p-2 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.5)] flex flex-wrap md:flex-nowrap gap-2 justify-center w-[95%] md:w-auto">
+          <button onClick={handlePrint} className="flex-1 md:flex-none px-4 flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-bold h-10 rounded-lg transition-all text-xs sm:text-sm">
+            <Printer size={16} />
+            <span className="hidden sm:inline">Imprimir / PDF</span>
+            <span className="sm:hidden">PDF</span>
+          </button>
+          <button onClick={handleCopySEI} className={`flex-1 md:flex-none px-4 flex items-center justify-center gap-2 ${copied ? 'bg-emerald-600' : 'bg-slate-700 hover:bg-slate-600'} text-white font-bold h-10 rounded-lg transition-all text-xs sm:text-sm`}>
+            <Copy size={16} />
+            <span className="hidden sm:inline">{copied ? 'Copiado!' : 'Copiar p/ SEI'}</span>
+            <span className="sm:hidden">{copied ? 'Copiado!' : 'SEI'}</span>
+          </button>
+          <button onClick={handleWhatsApp} className="flex-1 md:flex-none px-4 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold h-10 rounded-lg transition-all text-xs sm:text-sm">
+            <MessageCircle size={16} />
+            WhatsApp
+          </button>
+          <button onClick={handleExportCSV} className="flex-1 md:flex-none px-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold h-10 rounded-lg transition-all text-xs sm:text-sm">
+            <Download size={16} />
+            <span className="hidden sm:inline">Exportar CSV</span>
+            <span className="sm:hidden">CSV</span>
+          </button>
+        </div>
       </div>
     </div>
   );

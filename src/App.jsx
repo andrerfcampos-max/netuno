@@ -23,6 +23,7 @@ function App() {
   const [isFilterVisible, setIsFilterVisible] = useState(true);
   const [activeView, setActiveView] = useState('map'); // 'map' | 'table' | 'route' | 'report'
   const [activeFilters, setActiveFilters] = useState({});
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [inspectingHidrante, setInspectingHidrante] = useState(null);
   const [lastInspectedCoords, setLastInspectedCoords] = useState(null);
   const [mapCenterPosition, setMapCenterPosition] = useState(null);
@@ -441,7 +442,7 @@ function App() {
       )}
 
       {/* Header com Botão de Upload */}
-      <header className="flex justify-between items-center p-3 bg-slate-900 border-b border-slate-700 z-50">
+      <header className={isMapFullscreen ? "hidden" : "flex justify-between items-center p-3 bg-slate-900 border-b border-slate-700 z-50"}>
         <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md">NETUNO</h1>
         
         <div className="flex gap-2">
@@ -456,25 +457,27 @@ function App() {
       </header>
 
       {/* TABS DE MISSÃO GLOBAL */}
-      <MissionTabs 
-        missions={missions}
-        activeMissionId={activeMissionId}
-        openMissionIds={openMissionIds}
-        onTabClick={setActiveMissionId}
-        onCloseTab={handleCloseTab}
-        onNewMission={currentUser.role === 'gestor' ? handleNewMission : undefined}
-        currentUser={currentUser}
-      />
+      {!isMapFullscreen && (
+        <MissionTabs 
+          missions={missions}
+          activeMissionId={activeMissionId}
+          openMissionIds={openMissionIds}
+          onTabClick={setActiveMissionId}
+          onCloseTab={handleCloseTab}
+          onNewMission={currentUser.role === 'gestor' ? handleNewMission : undefined}
+          currentUser={currentUser}
+        />
+      )}
 
-      <main className="flex-1 overflow-y-auto w-full flex flex-col relative p-2 gap-2">
+      <main className={isMapFullscreen ? "h-full w-full p-0 m-0 relative" : "flex-1 overflow-y-auto w-full flex flex-col relative p-2 gap-2"}>
         
         {/* MÓDULO 1: BARRA DE FILTROS */}
         {hidrantes.length > 0 && (
-          <FilterBar onFilterChange={handleFilterChange} regions={regions} anos={anosVistoria} isVisible={isFilterVisible} currentUser={currentUser} onLogout={handleLogout} />
+          <FilterBar onFilterChange={handleFilterChange} regions={regions} anos={anosVistoria} isVisible={isFilterVisible && !isMapFullscreen} currentUser={currentUser} onLogout={handleLogout} />
         )}
 
         {/* CONTROLES RETRÁTEIS */}
-        <div className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur py-2 flex gap-2 w-full justify-center flex-wrap px-1 border-b border-slate-700/50 mb-2">
+        <div className={isMapFullscreen ? "hidden" : "sticky top-0 z-30 bg-slate-900/95 backdrop-blur py-2 flex gap-2 w-full justify-center flex-wrap px-1 border-b border-slate-700/50 mb-2"}>
           <button 
             onClick={() => setIsFilterVisible(!isFilterVisible)}
             className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
@@ -532,6 +535,8 @@ function App() {
               selectedMissionIds={selectedMissionIds}
               onToggleMission={toggleMissionSelection}
               currentUser={currentUser}
+              isMapFullscreen={isMapFullscreen}
+              onMapClick={() => setIsMapFullscreen(prev => !prev)}
             />
           </div>
         )}
@@ -579,7 +584,7 @@ function App() {
 
         {/* MÓDULO RELATÓRIO TÁTICO */}
         {activeView === 'report' && (
-          <div id="modulo-relatorio" className="w-full relative z-10 flex-shrink-0 h-[65vh] min-h-[400px] max-h-[800px] border border-slate-700 rounded-xl flex flex-col">
+          <div id="modulo-relatorio" className="w-full relative z-10 flex-shrink-0 min-h-[400px] h-auto flex-1 border border-slate-700 rounded-xl flex flex-col">
             <MissionReportPanel 
               hidrantes={activeMissionId && selectedMissionIds.length > 0 ? hidrantes.filter(h => selectedMissionIds.includes(h.codHidrante || h.nomHidrante)) : filteredList}
               currentMission={currentMission}
@@ -591,7 +596,7 @@ function App() {
       </main>
 
       {/* Barramento de Seleção Inferior */}
-      <footer className="bg-slate-900 border-t border-slate-700 p-3 flex justify-between items-center z-50">
+      <footer className={isMapFullscreen ? "hidden" : "bg-slate-900 border-t border-slate-700 p-3 flex justify-between items-center z-50"}>
         <div className="flex flex-col">
           <div className="text-sm font-semibold text-slate-400">
             {activeMissionId ? (

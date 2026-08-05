@@ -90,7 +90,7 @@
   .print-page-break-before { break-before: page; }
   
   @page {
-    size: A4 portrait;
-    margin: 1.5cm;
+    size: A4 landscape;
+    margin: 10mm;
   }
 }
