@@ -146,6 +146,19 @@ function App() {
     return Array.from(r).sort();
   }, [hidrantes]);
 
+  // Extrair Anos únicos
+  const anosVistoria = useMemo(() => {
+    const anos = new Set();
+    hidrantes.forEach(h => {
+      if (h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') {
+        // Assume formato DD/MM/YYYY ou similar que contenha o ano com 4 dígitos
+        const match = h.datHoraUltimaVistoria.match(/\b(20\d{2})\b/);
+        if (match) anos.add(match[1]);
+      }
+    });
+    return Array.from(anos).sort((a, b) => b - a); // decrescente
+  }, [hidrantes]);
+
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -168,6 +181,9 @@ function App() {
     }
     if (filters.ra) {
       result = result.filter(h => h.dscLocalidade === filters.ra);
+    }
+    if (filters.ano) {
+      result = result.filter(h => h.datHoraUltimaVistoria && h.datHoraUltimaVistoria.includes(filters.ano));
     }
     if (filters.status && filters.status !== 'Todos') {
       const isOperante = filters.status === 'Operante';
@@ -233,6 +249,69 @@ function App() {
     handleCloseTab(id);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('netuno_user');
+    setCurrentUser(null);
+    setOpenMissionIds([]);
+    setActiveMissionId(null);
+    setIsRouteModuleOpen(false);
+    setIsReportVisible(false);
+    setIsTableVisible(false);
+  };
+
+  // Sessão de 8h e renovação silenciosa
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const checkSession = () => {
+      const saved = localStorage.getItem('netuno_user');
+      if (saved) {
+        const user = JSON.parse(saved);
+        if (user.expiresAt && Date.now() > user.expiresAt) {
+          handleLogout();
+          alert('Sua sessão expirou por inatividade. Faça login novamente.');
+        }
+      }
+    };
+
+    // Estende a sessão em 8 horas
+    const extendSession = () => {
+      const saved = localStorage.getItem('netuno_user');
+      if (saved) {
+        const user = JSON.parse(saved);
+        user.expiresAt = Date.now() + 8 * 60 * 60 * 1000;
+        localStorage.setItem('netuno_user', JSON.stringify(user));
+        setCurrentUser(user);
+      }
+    };
+
+    // Checa a cada 5 minutos
+    const interval = setInterval(checkSession, 5 * 60 * 1000);
+
+    // Renova na interação, com "throttle" rudimentar para não inundar o localStorage
+    let throttleTimer;
+    const handleActivity = () => {
+      if (!throttleTimer) {
+        extendSession();
+        throttleTimer = setTimeout(() => { throttleTimer = null; }, 60000); // 1 min throttle
+      }
+    };
+
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+
+    // Checa na montagem inicial se já estava expirado
+    checkSession();
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+    };
+  }, [currentUser?.matricula]); // Depende apenas da matrícula para não refazer os listeners atoa
+
   const handleLogin = (e) => {
     e.preventDefault();
     const mat = e.target.matricula.value;
@@ -252,22 +331,14 @@ function App() {
     } else if (mat === '789') {
       user = { matricula: '789', nome: 'Gestor Oliveira', role: 'gestor' };
     }
+    
     if (user) {
+      user.expiresAt = Date.now() + 8 * 60 * 60 * 1000;
       localStorage.setItem('netuno_user', JSON.stringify(user));
       setCurrentUser(user);
     } else {
       alert('Matrícula inválida. Use 123 (Vistoriador), 456 ou 789 (Gestores).');
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('netuno_user');
-    setCurrentUser(null);
-    setOpenMissionIds([]);
-    setActiveMissionId(null);
-    setIsRouteModuleOpen(false);
-    setIsReportVisible(false);
-    setIsTableVisible(false);
   };
 
   if (!currentUser) {
@@ -352,7 +423,7 @@ function App() {
         
         {/* MÓDULO 1: BARRA DE FILTROS */}
         {hidrantes.length > 0 && (
-          <FilterBar onFilterChange={handleFilterChange} regions={regions} isVisible={isFilterVisible} currentUser={currentUser} onLogout={handleLogout} />
+          <FilterBar onFilterChange={handleFilterChange} regions={regions} anos={anosVistoria} isVisible={isFilterVisible} currentUser={currentUser} onLogout={handleLogout} />
         )}
 
         {/* CONTROLES RETRÁTEIS */}

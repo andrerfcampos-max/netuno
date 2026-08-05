@@ -37,10 +37,11 @@ const DEFEITOS_OFICIAIS = [
   "Vazamento no flange (operante)"
 ];
 
-const FilterBar = ({ onFilterChange, regions, isVisible, currentUser, onLogout }) => {
+const FilterBar = ({ onFilterChange, regions, anos = [], isVisible, currentUser, onLogout }) => {
   const [filters, setFilters] = useState({
     buscaGeral: '',
     ra: '',
+    ano: '',
     status: 'Todos',
     problema: ''
   });
@@ -65,7 +66,7 @@ const FilterBar = ({ onFilterChange, regions, isVisible, currentUser, onLogout }
         </div>
       )}
 
-      <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-900/50">
+      <div className="p-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 bg-slate-900/50">
           
           {/* Busca Textual (Geral) */}
           <div className="flex flex-col gap-1">
@@ -89,6 +90,19 @@ const FilterBar = ({ onFilterChange, regions, isVisible, currentUser, onLogout }
             >
               <option value="">Todas as RAs</option>
               {regions.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          {/* Filtro por Ano */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ano da Vistoria</label>
+            <select 
+              className="p-2 rounded bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+              value={filters.ano}
+              onChange={(e) => handleChange('ano', e.target.value)}
+            >
+              <option value="">Todos os Anos</option>
+              {anos.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
 
