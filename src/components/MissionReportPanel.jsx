@@ -256,7 +256,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
 
       {/* TOOLBAR SUPERIOR NO PRINT */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 pb-2 border-b border-slate-700 no-print px-2 lg:px-0 gap-4">
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 pb-2 border-b border-slate-700 no-print px-2 lg:px-0 gap-4 ${isMaximized ? 'sticky top-0 z-[110] bg-slate-900/95 backdrop-blur-sm pt-4 shadow-sm' : ''}`}>
         <h2 className="text-xl font-bold text-blue-400 flex items-center gap-2 drop-shadow-sm">
           <FileSpreadsheet size={24} /> 
           Módulo Relatório
@@ -399,7 +399,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                         <span className="font-bold flex-shrink-0 text-orange-400 print-text-black">{defeito.count} ocorr.</span>
                       </div>
                       <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden print-bg-gray">
-                        <div className="bg-gradient-to-r from-orange-600 to-orange-400 h-full print-bg-black" style={{ width: `${defeito.percent}%` }}></div>
+                        <div className="bg-gradient-to-r from-orange-600 to-orange-400 h-full print-bg-black transition-all duration-1000" style={{ width: `${defeito.percent}%` }}></div>
                       </div>
                     </div>
                   ))}
