@@ -1,10 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown } from 'lucide-react';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser }) => {
   const [isMaximized, setIsMaximized] = useState(false);
+  const panelRef = useRef(null);
   const [copied, setCopied] = useState(false);
-  const [reportType, setReportType] = useState('interno'); // 'interno' | 'caesb'
+  const [reportType, setReportType] = useState(() => {
+    return localStorage.getItem('lastReportType') || 'interno';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('lastReportType', reportType);
+  }, [reportType]);
 
   const parseDate = (dateStr) => {
     if (!dateStr || dateStr === '-') return 0;
@@ -203,14 +210,23 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   };
 
   const scrollToTop = () => {
-    // Tenta encontrar o container principal rolável, senão rola a janela
-    const scrollContainer = document.querySelector('main') || window;
-    scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    if (panelRef.current) {
+      if (isMaximized) {
+        panelRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        panelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
   };
 
   const scrollToBottom = () => {
-    const scrollContainer = document.querySelector('main') || window;
-    scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+    if (panelRef.current) {
+      if (isMaximized) {
+        panelRef.current.scrollTo({ top: panelRef.current.scrollHeight, behavior: 'smooth' });
+      } else {
+        panelRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
   };
 
   const containerClasses = isMaximized
@@ -218,7 +234,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     : "flex flex-col p-2 lg:p-4 w-full h-auto bg-slate-900/50 print-container";
 
   return (
-    <div className={containerClasses}>
+    <div className={containerClasses} ref={panelRef}>
       
       {/* BOTÕES FLUTUANTES (ELEVADOR) */}
       <div className="fixed right-4 bottom-24 z-50 flex flex-col gap-2 no-print">
