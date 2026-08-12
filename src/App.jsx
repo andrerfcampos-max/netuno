@@ -21,7 +21,32 @@ function App() {
   const [hidrantes, setHidrantes] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
   const [isFilterVisible, setIsFilterVisible] = useState(true);
-  const [activeView, setActiveView] = useState('map'); // 'map' | 'table' | 'route' | 'report'
+  const [activeView, _setActiveView] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('view') || 'map';
+  });
+
+  const setActiveView = (view) => {
+    _setActiveView(view);
+    window.history.pushState({ view }, '', `?view=${view}`);
+  };
+
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (event.state && event.state.view) {
+        _setActiveView(event.state.view);
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        _setActiveView(params.get('view') || 'map');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    if (!window.history.state) {
+      window.history.replaceState({ view: activeView }, '', `?view=${activeView}`);
+    }
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [activeView]);
+
   const [activeFilters, setActiveFilters] = useState({});
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [inspectingHidrante, setInspectingHidrante] = useState(null);
