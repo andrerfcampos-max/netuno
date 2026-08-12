@@ -54,6 +54,7 @@ function App() {
   const [inspectingHidrante, setInspectingHidrante] = useState(null);
   const [lastInspectedCoords, setLastInspectedCoords] = useState(null);
   const [mapCenterPosition, setMapCenterPosition] = useState(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
   // Controle de Missões Persistentes
   const [missions, setMissions] = useState(loadMissions());
@@ -379,12 +380,19 @@ function App() {
     // Checa na montagem inicial se já estava expirado
     checkSession();
 
+    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => setIsOffline(false);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+
     return () => {
       clearInterval(interval);
       clearTimeout(throttleTimer);
       window.removeEventListener('click', handleActivity);
       window.removeEventListener('keydown', handleActivity);
       window.removeEventListener('scroll', handleActivity);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
     };
   }, [currentUser?.matricula]); // Depende apenas da matrícula para não refazer os listeners atoa
 
@@ -461,8 +469,15 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
-      
+    <div className="flex flex-col h-[100dvh] bg-slate-900 text-slate-100 font-sans overflow-hidden w-full max-w-full">
+      {/* Banner Offline */}
+      {isOffline && (
+        <div className="bg-red-500 text-white text-center py-1 px-4 text-xs font-bold z-50 flex items-center justify-center relative w-full shadow-md animate-pulse">
+          ⚠️ VOCÊ ESTÁ OFFLINE. Algumas funcionalidades, como o mapa, podem falhar.
+        </div>
+      )}
+
+      {/* HEADER / FILTER BAR */}
       {inspectingHidrante && (
         <InspectionModal 
           hidrante={inspectingHidrante}
