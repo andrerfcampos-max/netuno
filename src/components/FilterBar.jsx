@@ -54,6 +54,20 @@ const FilterBar = ({ onFilterChange, regions, anos = [], isVisible, currentUser,
     onFilterChange(newFilters);
   };
 
+  const handleClearFilters = () => {
+    const defaultFilters = {
+      buscaGeral: '',
+      ra: '',
+      periodo: '',
+      dataInicio: '',
+      dataFim: '',
+      status: 'Todos',
+      problema: ''
+    };
+    setFilters(defaultFilters);
+    onFilterChange(defaultFilters);
+  };
+
   const handlePeriodoChange = (val) => {
     let newFilters = { ...filters, periodo: val };
     if (val !== 'personalizado') {
@@ -180,6 +194,16 @@ const FilterBar = ({ onFilterChange, regions, anos = [], isVisible, currentUser,
               <option value="">Qualquer problema / Nenhum</option>
               {DEFEITOS_OFICIAIS.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
+          </div>
+
+          {/* Botão Limpar Filtros */}
+          <div className="flex flex-col justify-end gap-1">
+            <button 
+              onClick={handleClearFilters}
+              className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-slate-300 hover:text-white transition-colors text-sm font-bold w-full"
+            >
+              LIMPAR FILTROS
+            </button>
           </div>
 
         </div>

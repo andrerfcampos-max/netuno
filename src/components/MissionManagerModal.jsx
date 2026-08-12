@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput } from 'lucide-react';
+import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput, FileSpreadsheet } from 'lucide-react';
 import { createNewFolder } from '../utils/storage';
 
 const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser }) => {
@@ -52,6 +52,43 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
       const newFolder = createNewFolder(name.trim(), currentFolderId, currentUser?.matricula);
       onFoldersChange([...folders, newFolder]);
     }
+  };
+
+  const handleExportFolderReport = () => {
+    if (!currentFolderId) {
+      alert("Navegue até uma pasta (grupamento) para exportar o relatório consolidado.");
+      return;
+    }
+    const folder = folders.find(f => f.id === currentFolderId);
+    const folderName = folder ? folder.name : "Central";
+    
+    const folderMissions = availableMissions.filter(m => m.parentFolderId === currentFolderId && !m.isDraft);
+    
+    if (folderMissions.length === 0) {
+      alert("Não há missões ativas nesta pasta para gerar o relatório.");
+      return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Relatorio Consolidado de Missoes - " + folderName + "\\n\\n";
+    csvContent += "Nome da Missao,Criador,Data de Criacao,Total Hidrantes,Vistorias Realizadas,Progresso (%)\\n";
+
+    folderMissions.forEach(m => {
+      const total = m.selectedIds.length;
+      const comp = m.completedIds.length;
+      const perc = total > 0 ? Math.round((comp / total) * 100) : 0;
+      const criador = m.createdBy || "-";
+      const date = new Date(m.createdAt).toLocaleDateString('pt-BR');
+      csvContent += `"${m.name}","${criador}","${date}",${total},${comp},${perc}%\\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Relatorio_Grupamento_${folderName.replace(/\\s+/g, '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleCreateMission = () => {
@@ -163,7 +200,16 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
 
           {/* Botão de Quartel Padrão */}
           {currentFolderId && (
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              {isGestor && (
+                <button 
+                  onClick={handleExportFolderReport}
+                  className="text-xs px-2 py-1 flex items-center gap-1 rounded border bg-blue-600/20 text-blue-400 border-blue-500 hover:bg-blue-600/40 transition-colors"
+                  title="Exportar Relatório (Produtividade/Cumprimento)"
+                >
+                  <FileSpreadsheet size={14} /> Exportar Relatório
+                </button>
+              )}
               <button 
                 onClick={handleSetDefaultFolder}
                 className={`text-xs px-2 py-1 rounded border transition-colors ${currentFolderId === defaultFolderId ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500' : 'bg-slate-700 text-slate-400 border-slate-600 hover:text-emerald-400'}`}

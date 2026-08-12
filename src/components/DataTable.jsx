@@ -242,9 +242,10 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                       <button 
                         onClick={() => onInspect(h)}
                         title="Cadastrar Vistoria"
-                        className="p-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded transition-colors active:scale-95 shadow-sm"
+                        className="flex items-center gap-1 p-1.5 px-2 bg-teal-600 hover:bg-teal-500 text-white rounded transition-colors active:scale-95 shadow-sm font-bold text-xs"
                       >
                         <Plus size={18} strokeWidth={3} />
+                        CAD. VIST.
                       </button>
                       {isGestor && (
                         <button 

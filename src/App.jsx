@@ -276,7 +276,7 @@ function App() {
       result = result.filter(h => h.flgAtivo === isOperante);
     }
     if (filters.problema) {
-      result = result.filter(h => h.problemasHidrante === filters.problema);
+      result = result.filter(h => h.problemasHidrante && h.problemasHidrante.includes(filters.problema));
     }
     return result;
   };

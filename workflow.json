@@ -129,9 +129,15 @@
     },
     {
       "id": 23,
-      "status": "pending",
+      "status": "completed",
       "name": "Integração Rota/Missões, Exportação WhatsApp e Ajustes de UI",
       "prompt": "Atue como Desenvolvedor Frontend e Especialista UX/UI. 1) Padronize o ícone de 'Cadastrar Vistoria' no Bloco de Lista e no Bloco de Rota de Missão para ficar igual ao ícone da dialog. 2) Crie o fluxo de 'Salvar Rota de Missão': um botão no bloco de rota que permite salvar os hidrantes selecionados na Central de Missões (em uma pasta à escolha do usuário), integrando a rota da tela principal à gestão de missões. 3) Ajuste o CSS (max-height/overflow/scroll) da dialog do hidrante para exibir todos os problemas registrados na última vistoria sem cortar conteúdo. 4) Adicione funcionalidade para exportar/compartilhar os dados da dialog de um hidrante específico via WhatsApp. 5) Revise a formatação da mensagem de WhatsApp da Rota de Missão: atualize o nome do sistema para 'NETUNO' e adicione a informação dos últimos problemas identificados na última vistoria na mensagem enviada. Responda 'ETAPA CONCLUIDA' ao finalizar."
+    },
+    {
+      "id": 24,
+      "status": "completed",
+      "name": "Gestão de Equipes, Compartilhamento WhatsApp e Refinamentos UX/UI",
+      "prompt": "Atue como Desenvolvedor Frontend e Especialista UX/UI. Implemente as seguintes melhorias: 1) Gestão de Equipes (Comando): Crie um botão para gestores/admins exportarem um relatório consolidado do andamento de várias ordens de missão por grupamento (pasta fixa), exibindo produtividade de vistorias e % de cumprimento, inspirado em visões de gestão de equipes (tipo Trello). 2) Compartilhamento WhatsApp (Missão): Revise o texto: coloque o link (curto) de carregar a missão no topo; corrija a codificação de caracteres; remova o termo 'rota otimizada'; adicione o nome da missão e pasta; informe a qtd de vistorias realizadas/pendentes; e na lista, deixe apenas o código do hidrante acompanhado do respectivo link curto do Waze, removendo os demais dados detalhados (problemas, endereço). 3) Filtros e Mapa: Corrija o bug onde o filtro de problemas não atualiza a lista corretamente ao trocar de seleção. Adicione um botão 'Limpar Filtros'. Remova a função de entrar em fullscreen ao clicar no mapa vazio, adicionando em substituição um botão de controle no canto do mapa para essa finalidade. 4) Salvar Rota de Missão: Melhore a usabilidade do processo de salvar rota na central (evite apenas digitar o nome, use uma interface melhor, ex: modal com seleção de pasta). Após salva, exiba o caminho da pasta no cabeçalho do bloco de rota. 5) Compartilhamento WhatsApp (Dialog Hidrante): Use o ícone oficial do WhatsApp no botão (também na rota); no texto compartilhado do hidrante, inclua a data da última vistoria e substitua o link do Maps pelo link do Waze. Responda 'ETAPA CONCLUIDA' ao finalizar."
     }
   ]
 }
