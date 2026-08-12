@@ -41,10 +41,13 @@ const MissionManagerModal = ({ missions, openMissionIds, onClose, onOpenMission,
 
   const formatDate = (isoString) => {
     try {
+      if (!isoString) return '';
       const d = new Date(isoString);
+      if (isNaN(d.getTime())) throw new Error("Data inválida");
       return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return '';
+    } catch (err) {
+      console.error('Erro de parse de data em MissionManagerModal:', err, 'Valor:', isoString);
+      return 'Data Inválida';
     }
   };
 

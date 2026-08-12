@@ -1,0 +1,53 @@
+{
+  "project": "Super Argos 2.1",
+  "current_status_file": "andamento_v3.md",
+  "memorial_file": "memorial_DESCRITIVO.MD.txt",
+  "steps": [
+    {
+      "id": 1,
+      "status": "completed",
+      "name": "Setup da Aplicação PWA e Parser de Dados (CSV)"
+    },
+    {
+      "id": 2,
+      "status": "completed",
+      "name": "Mapa Tático Integrado (Leaflet + Satélite Híbrido)"
+    },
+    {
+      "id": 3,
+      "status": "completed",
+      "name": "Balão de Informações (Popup) e Integração de GPS"
+    },
+    {
+      "id": 4,
+      "status": "completed",
+      "name": "Barra de Filtros Globais (FilterBar)"
+    },
+    {
+      "id": 5,
+      "status": "completed",
+      "name": "Modal de Vistoria (Lista Restrita de 33 Problemas)"
+    },
+    {
+      "id": 6,
+      "status": "completed",
+      "name": "Tabela de Dados Integrada com Ordenação e Exportação em CSV"
+    },
+    {
+      "id": 7,
+      "status": "completed",
+      "name": "Gerenciador de Seleção da Missão e Módulo Rota (TSP)"
+    },
+    {
+      "id": 8,
+      "status": "completed",
+      "name": "Módulo Relatório (Estatísticas, Filtro de Missão e Exportação PDF)"
+    },
+    {
+      "id": 9,
+      "status": "pending",
+      "name": "Testes Finais, Service Worker, Correções de Bugs Adicionais e Build PWA",
+      "prompt": "Atue como Arquiteto de Software e Desenvolvedor Frontend Sênior. Leia o andamento_v3.md e o memorial_DESCRITIVO.MD.txt. Implemente a ETAPA 9 focada na configuração do Service Worker (para transformá-lo em um PWA instalável offline) e testes finais. Utilize a ferramenta de navegador para validar o sistema rodando em localhost:5173. Caso encontre bugs, corrija-os. Responda com 'ETAPA CONCLUIDA' quando finalizar e aprovar os testes."
+    }
+  ]
+}

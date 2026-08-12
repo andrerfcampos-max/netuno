@@ -354,6 +354,7 @@ function App() {
 
     return () => {
       clearInterval(interval);
+      clearTimeout(throttleTimer);
       window.removeEventListener('click', handleActivity);
       window.removeEventListener('keydown', handleActivity);
       window.removeEventListener('scroll', handleActivity);
