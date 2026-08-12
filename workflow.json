@@ -1,5 +1,5 @@
 {
-  "project": "Super Argos 2.1",
+  "project": "Netuno",
   "current_status_file": "andamento_v3.md",
   "memorial_file": "memorial_DESCRITIVO.MD.txt",
   "steps": [
@@ -90,6 +90,36 @@
       "status": "completed",
       "name": "Correção de Bugs e Estabilização do Sistema",
       "prompt": "Atue como desenvolvedor especialista em Refatoração e Bug Fixing em React/Leaflet:\n1. Corrija o evento de clique no mapa aplicando stopPropagation para impedir duplicidade com o modo fullscreen.\n2. Crie a página/modal funcional de 'Editar Hidrante' para atualização de dados cadastrais.\n3. Corrija a métrica do relatório para contabilizar apenas hidrantes com vistoria cadastrada e crie a rotina de limpeza automática de rascunhos diários vencidos.\nResponda com 'ETAPA CONCLUIDA' quando finalizar e aprovar os testes."
+    },
+    {
+      "id": 17,
+      "status": "completed",
+      "name": "Rebranding Netuno e Ajustes de UI/UX Gerais",
+      "prompt": "Atue como Arquiteto e Desenvolvedor. O sistema agora se chama 'NETUNO' (atualize as referências de nome no projeto). Ajustes de UI: 1) Oculte o horário no relatório e no bloco de lista (mostre apenas data); o horário só deve aparecer no histórico de vistorias. 2) Crie um botão de 'Criar Novo Hidrante'. 3) Mude o nome do bloco 'ROTA' para 'ROTA DE MISSÃO'. 4) Adicione um botão 'Limpar Seleção de Rota' no bloco de rota. 5) Remova o botão 'Otimizar TSP' (já é automático) e remova também o botão sem função 'IR PARA ROTA'. Responda com 'ETAPA CONCLUIDA' quando finalizar."
+    },
+    {
+      "id": 18,
+      "status": "completed",
+      "name": "Novo Cadastro de Vistoria (Formato Etapas Rápidas)",
+      "prompt": "Refatore o Cadastro de Vistoria para ser um formulário de perguntas rápidas (tipo sim/não): 1) O HIDRANTE ESTÁ OPERANTE? SIM/NÃO. 2) TODOS OS TAMPÕES ESTÃO PRESENTES? (Sim/Não). 3) A CAIXA DE REGISTRO ESTÁ... OPERANTE, QUEBRADA, SOTERRADA. 4) O REGISTRO ESTÁ... OPERANTE, COM VAZAMENTO, EMPERRADO. 5) ALGUM OUTRO PROBLEMA? (Lista suspensa). A primeira opção (positiva) deve ter coloração esverdeada e as demais (negativas) avermelhadas, sugerindo visualmente a avaliação. Responda com 'ETAPA CONCLUIDA' quando finalizar."
+    },
+    {
+      "id": 19,
+      "status": "completed",
+      "name": "Ajustes de Edição de Hidrante e Mapa (Fullscreen e GPS)",
+      "prompt": "Atue como Desenvolvedor Frontend. 1) Na tela de Editar Hidrante: remova o campo Nome, torne o Código (ex: GUA00101) imutável. Permita edição da coordenada: clicando no mapa, as coordenadas são recalculadas e o pino é movido; ou digitando a coordenada, o pino é reposicionado. 2) Trava de 50m: aplique essa regra APENAS em dispositivos mobile, liberando o cadastro sem trava no desktop. 3) Mapa e Dialog: ao clicar no mapa para sair da dialog aberta, o primeiro clique apenas fecha a dialog. Um segundo clique avulso abre fullscreen. Evite a dupla ação no mesmo clique ou no retorno de outra janela. 4) Garanta a exibição da foto de perfil (retrato) na dialog do hidrante. Responda com 'ETAPA CONCLUIDA' quando finalizar."
+    },
+    {
+      "id": 20,
+      "status": "completed",
+      "name": "Central de Missões (Quartéis) e Relatórios em PDF",
+      "prompt": "1) Implemente as Pastas Fixas de Quartéis (com subpastas opcionais) na Central de Missões seguindo a hierarquia listada neste documento: https://docs.google.com/document/d/1FZgyEwdg_zvbOk1PvUK9m7Xs7RMGPsCH_B4Zjc-tk7o/edit. 2) Modifique a exportação de PDF dos relatórios para incluir um campo/espaço para assinatura do responsável ao final da página. Responda com 'ETAPA CONCLUIDA' quando finalizar."
+    },
+    {
+      "id": 21,
+      "status": "completed",
+      "name": "Contas de Teste e Credenciais de Acesso",
+      "prompt": "Crie ou garanta que exista o perfil de Administrador fixo para a fase de testes com as credenciais - Matrícula: '1997400', Senha: '123', Nome: 'Sgt Roméro'. Responda com 'ETAPA CONCLUIDA' quando finalizar."
     }
   ]
 }

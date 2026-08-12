@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 
-// A MESMA LISTA ESTRITA DE 33 PROBLEMAS
 const DEFEITOS_OFICIAIS = [
   "Caixa do hidrante obstruída com esgoto",
   "Hidrante sem água",
@@ -38,8 +37,12 @@ const DEFEITOS_OFICIAIS = [
 ];
 
 const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
-  const [isOperante, setIsOperante] = useState(hidrante.flgAtivo);
-  const [problema, setProblema] = useState(hidrante.problemasHidrante || '');
+  const [q1, setQ1] = useState(hidrante.flgAtivo ? 'SIM' : 'NÃO');
+  const [q2, setQ2] = useState(null);
+  const [q3, setQ3] = useState(null);
+  const [q4, setQ4] = useState(null);
+  const [q5, setQ5] = useState('');
+  
   const [fotoBase64, setFotoBase64] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -73,7 +76,6 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Comprime para JPEG qualidade 60%
         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
         setFotoBase64(compressedBase64);
       };
@@ -83,32 +85,43 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
   };
 
   const handleSave = () => {
-    if (!isOperante && problema === '') {
-      // Confirmação de segurança caso Inoperante sem problema
-      if (!window.confirm("Atenção: Você está marcando como INOPERANTE sem selecionar o defeito. Tem certeza?")) {
+    if (q1 === null || q2 === null || q3 === null || q4 === null) {
+      alert("Por favor, responda todas as perguntas obrigatórias (1 a 4).");
+      return;
+    }
+
+    const isOperante = q1 === 'SIM';
+    let problemas = [];
+    
+    if (q2 === 'NÃO') problemas.push("Faltam tampões");
+    if (q3 !== 'OPERANTE') problemas.push(`Caixa de registro ${q3.toLowerCase()}`);
+    if (q4 !== 'OPERANTE') problemas.push(`Registro ${q4.toLowerCase()}`);
+    if (q5) problemas.push(q5);
+
+    const problemaFinal = problemas.join(" | ");
+
+    if (!isOperante && problemas.length === 0) {
+      if (!window.confirm("Atenção: Você está marcando como INOPERANTE sem defeitos listados. Tem certeza?")) {
         return;
       }
     }
 
     const agora = new Date();
-    // Formato: DD/MM/YYYY, HH:MM:SS
     const dataFormatada = agora.toLocaleString('pt-BR');
 
-    // Dados da vistoria
     const vistoriaAtualizada = {
       ...hidrante,
       flgAtivo: isOperante,
-      problemasHidrante: problema,
+      problemasHidrante: problemaFinal,
       datHoraUltimaVistoria: dataFormatada,
       fotoVistoria: fotoBase64,
       vistoriadorNome: currentUser?.nome,
       vistoriadorMatricula: currentUser?.matricula,
-      // O histórico de vistorias idealmente iria para o backend
       HISTORICO_VISTORIAS: [
         ...(hidrante.HISTORICO_VISTORIAS || []),
         {
           datHoraVistoria: dataFormatada,
-          problemasHidrante: problema,
+          problemasHidrante: problemaFinal,
           flgAtivo: isOperante,
           fotoVistoria: fotoBase64,
           vistoriadorNome: currentUser?.nome,
@@ -120,71 +133,108 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
     onSave(vistoriaAtualizada);
   };
 
+  const renderOption = (value, currentVal, setVal, isPositive) => {
+    const isSelected = currentVal === value;
+    const baseClass = "flex-1 py-2 font-bold text-sm rounded shadow-sm border transition-all active:scale-95";
+    
+    if (isSelected) {
+      return (
+        <button 
+          onClick={() => setVal(value)}
+          className={`${baseClass} ${isPositive ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-red-600 border-red-500 text-white'}`}
+        >
+          {value}
+        </button>
+      );
+    }
+    return (
+      <button 
+        onClick={() => setVal(value)}
+        className={`${baseClass} bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600`}
+      >
+        {value}
+      </button>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md border border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
         
         <div className="bg-slate-900 p-4 border-b border-slate-700">
-          <h2 className="text-xl font-bold text-white">Cadastrar Vistoria</h2>
+          <h2 className="text-xl font-bold text-white">Vistoria Rápida</h2>
           <p className="text-sm text-slate-400">Hidrante: {hidrante.nomHidrante || hidrante.codHidrante}</p>
         </div>
 
-        <div className="p-5 flex flex-col gap-4 overflow-y-auto">
+        <div className="p-4 flex flex-col gap-4 overflow-y-auto">
           
-          <div className="grid grid-cols-2 gap-2 text-sm text-slate-300 bg-slate-900/50 p-3 rounded">
-            <div><strong className="text-slate-500">Lat:</strong> {hidrante.numLatitude}</div>
-            <div><strong className="text-slate-500">Lng:</strong> {hidrante.numLongitude}</div>
-            <div className="col-span-2"><strong className="text-slate-500">Data/Hora:</strong> {new Date().toLocaleString('pt-BR')} (Automático)</div>
-            <div className="col-span-2 text-xs text-amber-400 font-bold border-t border-slate-700/50 pt-2 mt-1">
-              Registro Auditável: {currentUser?.nome} (Mat. {currentUser?.matricula})
+          {/* Pergunta 1 */}
+          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+            <label className="font-bold text-slate-300 text-sm">1) O HIDRANTE ESTÁ OPERANTE?</label>
+            <div className="flex gap-2">
+              {renderOption('SIM', q1, setQ1, true)}
+              {renderOption('NÃO', q1, setQ1, false)}
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="font-bold text-slate-300">Status Operacional</label>
-            <div className="flex rounded overflow-hidden border border-slate-600 bg-slate-700 text-lg">
-              <button 
-                onClick={() => setIsOperante(true)}
-                className={`flex-1 py-3 ${isOperante ? 'bg-emerald-600 text-white font-bold shadow-inner' : 'text-slate-300'}`}
-              >
-                OPERANTE
-              </button>
-              <button 
-                onClick={() => setIsOperante(false)}
-                className={`flex-1 py-3 ${!isOperante ? 'bg-red-600 text-white font-bold shadow-inner' : 'text-slate-300'}`}
-              >
-                INOPERANTE
-              </button>
+          {/* Pergunta 2 */}
+          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+            <label className="font-bold text-slate-300 text-sm">2) TODOS OS TAMPÕES ESTÃO PRESENTES?</label>
+            <div className="flex gap-2">
+              {renderOption('SIM', q2, setQ2, true)}
+              {renderOption('NÃO', q2, setQ2, false)}
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 mt-2">
-            <label className="font-bold text-slate-300">Defeito Técnico Encontrado</label>
+          {/* Pergunta 3 */}
+          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+            <label className="font-bold text-slate-300 text-sm">3) A CAIXA DE REGISTRO ESTÁ...</label>
+            <div className="flex gap-2">
+              {renderOption('OPERANTE', q3, setQ3, true)}
+              {renderOption('QUEBRADA', q3, setQ3, false)}
+              {renderOption('SOTERRADA', q3, setQ3, false)}
+            </div>
+          </div>
+
+          {/* Pergunta 4 */}
+          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+            <label className="font-bold text-slate-300 text-sm">4) O REGISTRO ESTÁ...</label>
+            <div className="flex gap-2">
+              {renderOption('OPERANTE', q4, setQ4, true)}
+              {renderOption('COM VAZAMENTO', q4, setQ4, false)}
+              {renderOption('EMPERRADO', q4, setQ4, false)}
+            </div>
+          </div>
+
+          {/* Pergunta 5 */}
+          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+            <label className="font-bold text-slate-300 text-sm">5) ALGUM OUTRO PROBLEMA? (Opcional)</label>
             <select 
-              className="p-3 rounded bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 w-full"
-              value={problema}
-              onChange={(e) => setProblema(e.target.value)}
+              className="p-2 rounded bg-slate-700 border border-slate-600 text-sm text-white focus:outline-none focus:border-emerald-500 w-full"
+              value={q5}
+              onChange={(e) => setQ5(e.target.value)}
             >
-              <option value="">Nenhum problema registrado</option>
+              <option value="">Nenhum</option>
               {DEFEITOS_OFICIAIS.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
 
-          <div className="flex flex-col gap-2 mt-2">
-            <label className="font-bold text-slate-300">Anexo Fotográfico (Opcional)</label>
+          {/* Foto */}
+          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+            <label className="font-bold text-slate-300 text-sm">Anexo Fotográfico (Opcional)</label>
             {!fotoBase64 ? (
               <button
                 onClick={() => fileInputRef.current.click()}
-                className="p-3 rounded bg-slate-700 border border-slate-600 text-white font-bold hover:bg-slate-600 active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="p-2 rounded bg-slate-700 border border-slate-600 text-white font-bold text-sm hover:bg-slate-600 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
-                📸 Tirar Foto do Defeito
+                📸 Tirar Foto
               </button>
             ) : (
               <div className="relative">
-                <img src={fotoBase64} alt="Preview do Defeito" className="w-full h-48 object-cover rounded border border-slate-600" />
+                <img src={fotoBase64} alt="Preview do Defeito" className="w-full h-32 object-cover rounded border border-slate-600" />
                 <button
                   onClick={() => setFotoBase64(null)}
-                  className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full font-bold text-xs shadow"
+                  className="absolute top-2 right-2 bg-red-600 text-white p-1 px-3 rounded-full font-bold text-xs shadow"
                 >
                   Remover
                 </button>
@@ -202,16 +252,16 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
         </div>
 
-        <div className="p-4 bg-slate-900 border-t border-slate-700 flex gap-3">
+        <div className="p-3 bg-slate-900 border-t border-slate-700 flex gap-3">
           <button 
             onClick={onClose}
-            className="flex-1 py-3 rounded font-bold bg-slate-700 text-white hover:bg-slate-600 active:scale-95 transition-all"
+            className="flex-1 py-2.5 rounded font-bold bg-slate-700 text-white hover:bg-slate-600 active:scale-95 transition-all"
           >
             Cancelar
           </button>
           <button 
             onClick={handleSave}
-            className="flex-[2] py-3 rounded font-bold bg-emerald-600 text-white hover:bg-emerald-500 active:scale-95 transition-all shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+            className="flex-[2] py-2.5 rounded font-bold bg-emerald-600 text-white hover:bg-emerald-500 active:scale-95 transition-all shadow-[0_0_15px_rgba(16,185,129,0.4)]"
           >
             Salvar Vistoria
           </button>

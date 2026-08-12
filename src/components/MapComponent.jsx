@@ -14,20 +14,22 @@ L.Icon.Default.mergeOptions({
 });
 
 // Estilização dos Marcadores (CSS Puro com Alto Contraste)
-const createDivIcon = (isOperante, isSelected) => {
+const createDivIcon = (isOperante, isSelected, fotoPerfil) => {
   const statusColor = isOperante ? '#00FF00' : '#FF0000'; // Neon Verde ou Vermelho
   
   // Se selecionado, o pino fica "vazio" (fundo transparente) com borda ciano muito destacada
-  const bgColor = isSelected ? 'rgba(0,0,0,0.5)' : statusColor; 
-  const borderColor = isSelected ? '#00FFFF' : 'white';
+  const bgColor = fotoPerfil ? 'transparent' : (isSelected ? 'rgba(0,0,0,0.5)' : statusColor); 
+  const bgImage = fotoPerfil ? `background-image: url(${fotoPerfil}); background-size: cover; background-position: center;` : `background-color: ${bgColor};`;
+  
+  const borderColor = isSelected ? '#00FFFF' : (fotoPerfil ? statusColor : 'white');
   const borderWidth = isSelected ? '4px' : '2px';
-  const shadow = isSelected ? '0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9)' : '0 0 5px rgba(0,0,0,0.8)';
-  const size = isSelected ? 26 : 20;
+  const shadow = isSelected ? '0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9)' : `0 0 5px ${statusColor}`;
+  const size = isSelected ? 32 : (fotoPerfil ? 28 : 20);
   
   return L.divIcon({
     className: 'custom-div-icon',
     html: `<div style="
-      background-color: ${bgColor};
+      ${bgImage}
       width: ${size}px;
       height: ${size}px;
       border-radius: 50%;
@@ -38,10 +40,10 @@ const createDivIcon = (isOperante, isSelected) => {
       align-items: center;
       justify-content: center;
     ">
-      ${isSelected ? `<div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></div>` : ''}
+      ${(isSelected && !fotoPerfil) ? `<div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></div>` : ''}
     </div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
   });
 };
 
@@ -102,6 +104,26 @@ const MapResizer = ({ isMapFullscreen }) => {
   return null;
 };
 
+const UserLocationTracker = ({ userLocation }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (userLocation && window.innerWidth < 768) {
+      map.setView([userLocation.lat, userLocation.lng], 18, { animate: true });
+      map.setMinZoom(18);
+      map.setMaxZoom(18);
+      
+      return () => {
+        map.setMinZoom(0);
+        map.setMaxZoom(20);
+      };
+    } else {
+      map.setMinZoom(0);
+      map.setMaxZoom(20);
+    }
+  }, [userLocation, map]);
+  return null;
+};
+
 const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, isMapFullscreen }) => {
   const useClustering = hidrantes.length > 500;
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
@@ -138,7 +160,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
       <Marker 
         key={id || i} 
         position={[h.numLatitude, h.numLongitude]}
-        icon={createDivIcon(h.flgAtivo, isSelected)}
+        icon={createDivIcon(h.flgAtivo, isSelected, h.fotoPerfil)}
       >
         <Popup minWidth={260} className="argos-popup">
           <div className="flex flex-col gap-1 p-0.5 text-slate-800 text-xs w-full leading-tight">
@@ -283,6 +305,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         <ScrollBehavior />
         <MapClickHandler onMapClick={onMapClick} />
         <MapResizer isMapFullscreen={isMapFullscreen} />
+        <UserLocationTracker userLocation={userLocation} />
 
         
         {useClustering ? (

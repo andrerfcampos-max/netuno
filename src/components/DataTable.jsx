@@ -199,7 +199,9 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                       {h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}
                     </span>
                   </td>
-                  <td className="p-2 font-mono text-xs">{h.datHoraUltimaVistoria || '-'}</td>
+                  <td className="p-2 font-mono text-xs">
+                    {h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' ? h.datHoraUltimaVistoria.split(' ')[0] : '-'}
+                  </td>
                   <td className="p-2">{h.problemasHidrante || '-'}</td>
                   <td className="p-2">
                     <div className="flex flex-nowrap items-center justify-center gap-1.5">

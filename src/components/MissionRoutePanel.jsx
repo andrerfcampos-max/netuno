@@ -436,15 +436,6 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
 
       <div className="flex flex-wrap sm:flex-nowrap gap-2 pb-2 pt-2 border-t border-slate-700">
         <button 
-          onClick={handleOptimizeRoute} 
-          disabled={pendingRoute.length < 2 || isOptimizing}
-          className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-3 rounded-lg shadow active:scale-95 transition-all text-sm"
-        >
-          {isOptimizing ? <RotateCcw className="animate-spin" size={18} /> : <LocateFixed size={18} />}
-          OTIMIZAR (TSP)
-        </button>
-        
-        <button 
           onClick={handleShareWhatsApp}
           disabled={pendingRoute.length === 0}
           className="flex-1 flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#20bd5a] disabled:opacity-50 text-white font-bold py-2 px-3 rounded-lg shadow active:scale-95 transition-all text-sm"
@@ -456,16 +447,16 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
         {(!currentMission || !currentMission.createdBy || currentMission.createdBy === currentUser?.matricula) && (
           <button 
             onClick={() => {
-              if (window.confirm("Deseja limpar toda a missão?")) {
+              if (window.confirm("Deseja limpar a seleção de rota?")) {
                 onClearMission();
-                onClose();
               }
             }}
             disabled={missionHydrants.length === 0}
-            className="flex items-center justify-center px-3 bg-slate-700 hover:bg-red-600 disabled:opacity-50 text-white font-bold py-2 rounded-lg shadow active:scale-95 transition-all"
-            title="Limpar Missão"
+            className="flex items-center justify-center gap-1.5 px-3 flex-1 sm:flex-none bg-slate-700 hover:bg-red-600 disabled:opacity-50 text-white font-bold py-2 rounded-lg shadow active:scale-95 transition-all text-sm"
+            title="Limpar Seleção de Rota"
           >
-            <X size={20} />
+            <X size={18} />
+            LIMPAR ROTA
           </button>
         )}
       </div>

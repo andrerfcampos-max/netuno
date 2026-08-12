@@ -31,14 +31,35 @@ export const saveMissions = (missions) => {
   }
 };
 
+const DEFAULT_FOLDERS = [
+  { id: 'f-1gbm', name: '1º GBM - Esplanada dos Ministérios', parentFolderId: null, isFixed: true },
+  { id: 'f-2gbm', name: '2º GBM - Taguatinga', parentFolderId: null, isFixed: true },
+  { id: 'f-3gbm', name: '3º GBM - SIA', parentFolderId: null, isFixed: true },
+  { id: 'f-4gbm', name: '4º GBM - Asa Norte', parentFolderId: null, isFixed: true },
+  { id: 'f-6gbm', name: '6º GBM - Nucleo Bandeirante', parentFolderId: null, isFixed: true },
+  { id: 'f-8gbm', name: '8º GBM - Ceilândia', parentFolderId: null, isFixed: true },
+  { id: 'f-9gbm', name: '9º GBM - Planaltina', parentFolderId: null, isFixed: true },
+  { id: 'f-15gbm', name: '15º GBM - Asa Sul', parentFolderId: null, isFixed: true },
+  { id: 'f-16gbm', name: '16º GBM - Gama', parentFolderId: null, isFixed: true },
+  { id: 'f-17gbm', name: '17º GBM - São Sebastião', parentFolderId: null, isFixed: true },
+  { id: 'f-34gbm', name: '34º GBM - Lago Norte', parentFolderId: null, isFixed: true },
+  { id: 'f-45gbm', name: '45º GBM - Sudoeste', parentFolderId: null, isFixed: true }
+];
+
 export const loadFolders = () => {
   try {
     const data = localStorage.getItem(FOLDERS_STORAGE_KEY);
-    if (data) return JSON.parse(data);
+    let folders = [];
+    if (data) {
+      folders = JSON.parse(data);
+    }
+    const fixedIds = DEFAULT_FOLDERS.map(f => f.id);
+    const customFolders = folders.filter(f => !fixedIds.includes(f.id));
+    return [...DEFAULT_FOLDERS, ...customFolders];
   } catch (error) {
     console.error("Erro ao ler pastas do localStorage", error);
   }
-  return [];
+  return DEFAULT_FOLDERS;
 };
 
 export const saveFolders = (folders) => {

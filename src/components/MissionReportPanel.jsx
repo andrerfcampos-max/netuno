@@ -630,12 +630,17 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         })()}
 
         {/* RODAPÉ DO DOCUMENTO DE RELATÓRIO */}
-        <div className="mt-16 pt-6 border-t border-slate-700 print-border-black flex flex-col items-center justify-center text-sm text-slate-400 print-text-black page-break-inside-avoid">
-          <p className="mb-2"><strong>Gerado em:</strong> {new Date().toLocaleString('pt-BR')}</p>
-          {reportType === 'interno' && (
-            <p><strong>Relatório gerado por:</strong> {currentUser?.nome ? `${currentUser.nome} (Matrícula: ${currentUser.matricula})` : '_________________________________________________'}</p>
+        <div className="mt-24 pt-6 flex flex-col items-center justify-center text-sm text-slate-400 print-text-black page-break-inside-avoid">
+          <div className="w-64 border-t border-slate-400 print-border-black mb-2 mt-8"></div>
+          <p className="font-bold text-center text-lg text-slate-200 print-text-black">
+            {currentUser?.nome ? `${currentUser.nome}` : 'Assinatura do Responsável'}
+          </p>
+          {currentUser?.matricula && (
+            <p className="text-center text-slate-300 print-text-black">Matrícula: {currentUser.matricula}</p>
           )}
-          <p className="mt-4 text-xs opacity-50">Sistema Netuno - CBMDF © {new Date().getFullYear()}</p>
+          
+          <p className="mt-8 mb-2"><strong>Gerado em:</strong> {new Date().toLocaleString('pt-BR')}</p>
+          <p className="mt-2 text-xs opacity-50">Sistema Netuno - CBMDF © {new Date().getFullYear()}</p>
         </div>
 
       </div>

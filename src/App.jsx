@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Upload, GitMerge, FolderOpen } from 'lucide-react';
+import { Upload, GitMerge, FolderOpen, PlusCircle } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
@@ -345,13 +345,23 @@ function App() {
   };
 
   const handleSaveEdit = (updatedHidrante) => {
+    let exists = false;
     const newHidrantes = hidrantes.map(h => {
-      if (h._internalId === updatedHidrante._internalId || 
-         (h.nomHidrante === updatedHidrante.nomHidrante && h.codHidrante === updatedHidrante.codHidrante)) {
+      if ((h._internalId && h._internalId === updatedHidrante._internalId) || 
+         (h.codHidrante && h.codHidrante === updatedHidrante.codHidrante)) {
+        exists = true;
         return updatedHidrante;
       }
       return h;
     });
+    
+    if (!exists) {
+      if (!updatedHidrante._internalId) {
+         updatedHidrante._internalId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+      }
+      newHidrantes.push(updatedHidrante);
+    }
+    
     setHidrantes(newHidrantes);
     applyFilters(activeFilters, newHidrantes);
     setEditingHydrante(null);
@@ -475,6 +485,8 @@ function App() {
       user = { matricula: '789', nome: 'Gestor Oliveira', role: 'gestor' };
     } else if (mat === 'admin') {
       user = { matricula: 'admin', nome: 'Administrador', role: 'admin' };
+    } else if (mat === '1997400') {
+      user = { matricula: '1997400', nome: 'Sgt Roméro', role: 'admin' };
     }
     
     if (user) {
@@ -482,7 +494,7 @@ function App() {
       localStorage.setItem('netuno_user', JSON.stringify(user));
       setCurrentUser(user);
     } else {
-      toast.error('Matrícula inválida. Use 123, 456, 789 ou admin.');
+      toast.error('Matrícula inválida. Use 123, 456, 789, admin ou 1997400.');
     }
   };
 
@@ -502,7 +514,7 @@ function App() {
                 defaultValue="456"
                 autoComplete="off"
                 className="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 font-mono text-center text-lg tracking-widest" 
-                placeholder="Ex: 123, 456, admin" 
+                placeholder="Ex: 123, 456, admin, 1997400" 
                 required 
               />
             </div>
@@ -574,6 +586,15 @@ function App() {
               <span className="hidden sm:inline">Painel Admin</span>
             </button>
           )}
+          {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+            <button 
+              onClick={() => setEditingHydrante({})}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-900/30 border border-blue-700/50 text-blue-400 font-semibold rounded shadow-sm hover:bg-blue-900/50 active:scale-95 transition-all"
+            >
+              <PlusCircle size={18} />
+              <span className="hidden sm:inline">Novo Hidrante</span>
+            </button>
+          )}
           <button 
             onClick={() => setIsMissionManagerOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm hover:bg-slate-700 active:scale-95 transition-all"
@@ -641,7 +662,7 @@ function App() {
             }`}
             disabled={!activeMissionId}
           >
-            Rota ({selectedMissionIds.length})
+            Rota de Missão ({selectedMissionIds.length})
           </button>
           <button 
             onClick={() => setActiveView('report')}
@@ -743,16 +764,6 @@ function App() {
             Desenvolvido por Sgt Roméro
           </span>
         </div>
-        {selectedMissionIds.length > 0 && (
-          <button 
-            onClick={() => {
-              setActiveView('route');
-            }}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold shadow-lg shadow-emerald-900/50 active:scale-95 transition-all animate-pulse"
-          >
-            IR PARA A ROTA
-          </button>
-        )}
       </footer>
 
       {isMissionManagerOpen && (
