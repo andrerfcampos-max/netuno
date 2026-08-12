@@ -2,6 +2,7 @@ import json
 import asyncio
 import sys
 import subprocess
+import datetime
 from google.antigravity import Agent, LocalAgentConfig, CapabilitiesConfig
 
 def read_workflow():
@@ -20,6 +21,18 @@ def run_git_commit(step_id, step_name):
         print("[Git] Commit realizado com sucesso!")
     except subprocess.CalledProcessError as e:
         print(f"[Git] Erro ao realizar commit. Pode não haver arquivos modificados. Detalhes: {e}")
+
+def log_to_history(step_id, step_name):
+    print(f"\n[Logs] Registrando Etapa {step_id} no histórico de implementações...")
+    date_str = datetime.datetime.now().strftime('%d/%m/%Y')
+    entry = f"\n### [{date_str}] Etapa {step_id} Concluída Automaticamente\n- **{step_name}** foi executada e validada com sucesso pelo agente orquestrador.\n"
+    
+    try:
+        with open('historico_implementacoes.md', 'a', encoding='utf-8') as f:
+            f.write(entry)
+        print("[Logs] Histórico atualizado com sucesso!")
+    except Exception as e:
+        print(f"[Logs] Erro ao atualizar histórico: {e}")
 
 async def process_step(step):
     print(f"\n=================================================")
@@ -75,6 +88,7 @@ async def main():
                 # Atualiza status e faz commit
                 step["status"] = "completed"
                 write_workflow(workflow)
+                log_to_history(step["id"], step["name"])
                 run_git_commit(step["id"], step["name"])
                 
                 # Contexto é resetado automaticamente quando o 'async with Agent' encerra
