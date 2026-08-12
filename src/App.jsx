@@ -6,13 +6,27 @@ import { parseHydrantsCSV } from './utils/csvParser';
 import MapComponent from './components/MapComponent';
 import FilterBar from './components/FilterBar';
 import InspectionModal from './components/InspectionModal';
+import EditHydrantModal from './components/EditHydrantModal';
+import UserManagerModal from './components/UserManagerModal';
 import DataTable from './components/DataTable';
 import MissionRoutePanel from './components/MissionRoutePanel';
 import MissionReportPanel from './components/MissionReportPanel';
 import MissionTabs from './components/MissionTabs';
 import MissionManagerModal from './components/MissionManagerModal';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
-import { loadMissions, saveMissions, createNewMission } from './utils/storage';
+import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders } from './utils/storage';
+
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Raio da Terra em km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -52,15 +66,47 @@ function App() {
   const [activeFilters, setActiveFilters] = useState({});
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [inspectingHidrante, setInspectingHidrante] = useState(null);
+  const [editingHydrante, setEditingHydrante] = useState(null);
   const [lastInspectedCoords, setLastInspectedCoords] = useState(null);
   const [mapCenterPosition, setMapCenterPosition] = useState(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
   // Controle de Missões Persistentes
   const [missions, setMissions] = useState(loadMissions());
+  const [folders, setFolders] = useState(loadFolders());
   const [openMissionIds, setOpenMissionIds] = useState([]);
   const [activeMissionId, setActiveMissionId] = useState(null);
   const [isMissionManagerOpen, setIsMissionManagerOpen] = useState(false);
+  const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
+
+  const handleInspect = (h) => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const dist = calculateDistance(pos.coords.latitude, pos.coords.longitude, h.numLatitude, h.numLongitude);
+          if (dist > 0.05) { // 50 metros
+            if (window.confirm(`[TRAVA DE SEGURANÇA]\n\nVocê está a mais de 50 metros deste hidrante (${Math.round(dist * 1000)}m de distância).\n\nTem certeza que deseja registrar a vistoria à distância?`)) {
+              setInspectingHidrante(h);
+            }
+          } else {
+            setInspectingHidrante(h);
+          }
+        },
+        (err) => {
+          console.warn('Geofencing fallback (Erro de GPS)', err);
+          setInspectingHidrante(h);
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 }
+      );
+    } else {
+      setInspectingHidrante(h);
+    }
+  };
+
+  // Sincroniza estado de pastas com LocalStorage
+  useEffect(() => {
+    saveFolders(folders);
+  }, [folders]);
 
   // Derivações da Missão Ativa
   const currentMission = missions.find(m => m.id === activeMissionId);
@@ -298,9 +344,22 @@ function App() {
     setInspectingHidrante(null);
   };
 
+  const handleSaveEdit = (updatedHidrante) => {
+    const newHidrantes = hidrantes.map(h => {
+      if (h._internalId === updatedHidrante._internalId || 
+         (h.nomHidrante === updatedHidrante.nomHidrante && h.codHidrante === updatedHidrante.codHidrante)) {
+        return updatedHidrante;
+      }
+      return h;
+    });
+    setHidrantes(newHidrantes);
+    applyFilters(activeFilters, newHidrantes);
+    setEditingHydrante(null);
+  };
+
   // ---- Controle de Missões ----
-  const handleNewMission = () => {
-    const newMission = createNewMission();
+  const handleNewMission = (parentFolderId = null) => {
+    const newMission = createNewMission("Rascunho de Hoje", parentFolderId);
     newMission.createdBy = currentUser?.matricula;
     setMissions(prev => [...prev, newMission]);
     setOpenMissionIds(prev => [...prev, newMission.id]);
@@ -403,7 +462,7 @@ function App() {
     
     // Simulação do backend
     if (senha !== '123' && senha !== 'senha123' && senha !== 'admin') {
-      toast.error('Senha incorreta para testes. (Dica: use 123)');
+      toast.error('Senha incorreta para testes. (Dica: use 123 ou admin)');
       return;
     }
 
@@ -414,6 +473,8 @@ function App() {
       user = { matricula: '456', nome: 'Gestor Souza', role: 'gestor' };
     } else if (mat === '789') {
       user = { matricula: '789', nome: 'Gestor Oliveira', role: 'gestor' };
+    } else if (mat === 'admin') {
+      user = { matricula: 'admin', nome: 'Administrador', role: 'admin' };
     }
     
     if (user) {
@@ -421,7 +482,7 @@ function App() {
       localStorage.setItem('netuno_user', JSON.stringify(user));
       setCurrentUser(user);
     } else {
-      toast.error('Matrícula inválida. Use 123 (Vistoriador), 456 ou 789 (Gestores).');
+      toast.error('Matrícula inválida. Use 123, 456, 789 ou admin.');
     }
   };
 
@@ -441,7 +502,7 @@ function App() {
                 defaultValue="456"
                 autoComplete="off"
                 className="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 font-mono text-center text-lg tracking-widest" 
-                placeholder="Ex: 123, 456, 789" 
+                placeholder="Ex: 123, 456, admin" 
                 required 
               />
             </div>
@@ -486,12 +547,33 @@ function App() {
           currentUser={currentUser}
         />
       )}
+      
+      {editingHydrante && (
+        <EditHydrantModal 
+          hidrante={editingHydrante}
+          onClose={() => setEditingHydrante(null)}
+          onSave={handleSaveEdit}
+          currentUser={currentUser}
+        />
+      )}
+
+      {isUserManagerOpen && (
+        <UserManagerModal onClose={() => setIsUserManagerOpen(false)} />
+      )}
 
       {/* Header com Botão de Upload */}
       <header className={isMapFullscreen ? "hidden" : "flex justify-between items-center p-3 bg-slate-900 border-b border-slate-700 z-50"}>
         <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md">NETUNO</h1>
         
         <div className="flex gap-2">
+          {currentUser.role === 'admin' && (
+            <button 
+              onClick={() => setIsUserManagerOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-900/30 border border-red-700/50 text-red-400 font-semibold rounded shadow-sm hover:bg-red-900/50 active:scale-95 transition-all"
+            >
+              <span className="hidden sm:inline">Painel Admin</span>
+            </button>
+          )}
           <button 
             onClick={() => setIsMissionManagerOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm hover:bg-slate-700 active:scale-95 transition-all"
@@ -576,7 +658,8 @@ function App() {
           <div className="w-full relative z-0 flex-1 flex-shrink-0 min-h-[400px]">
             <MapComponent 
               hidrantes={filteredList} 
-              onInspect={(h) => setInspectingHidrante(h)}
+              onInspect={handleInspect}
+              onEdit={(h) => setEditingHydrante(h)}
               centerPosition={mapCenterPosition}
               selectedMissionIds={selectedMissionIds}
               onToggleMission={toggleMissionSelection}
@@ -592,7 +675,8 @@ function App() {
           <div className="w-full flex-1 flex-shrink-0 min-h-[400px] bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
             <DataTable 
               data={filteredList} 
-              onInspect={(h) => setInspectingHidrante(h)}
+              onInspect={handleInspect}
+              onEdit={(h) => setEditingHydrante(h)}
               onCenterMap={(h) => {
                 setMapCenterPosition(h);
                 setActiveView('map');
@@ -618,7 +702,8 @@ function App() {
               onClearMission={() => updateCurrentMission({ selectedIds: [], completedIds: [] })}
               onRemoveFromMission={toggleMissionSelection}
               lastInspectedCoords={lastInspectedCoords} 
-              onInspect={(h) => setInspectingHidrante(h)}
+              onInspect={handleInspect}
+              onEdit={(h) => setEditingHydrante(h)}
               onCenterMap={(h) => {
                 setMapCenterPosition(h);
                 setActiveView('map');
@@ -673,11 +758,14 @@ function App() {
       {isMissionManagerOpen && (
         <MissionManagerModal 
           missions={missions}
+          folders={folders}
           openMissionIds={openMissionIds}
           onClose={() => setIsMissionManagerOpen(false)}
           onOpenMission={handleOpenMission}
           onNewMission={handleNewMission}
           onDeleteMission={handleDeleteMission}
+          onFoldersChange={setFolders}
+          onMissionsChange={setMissions}
           currentUser={currentUser}
         />
       )}

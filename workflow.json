@@ -48,6 +48,48 @@
       "status": "completed",
       "name": "Testes Finais, Service Worker, Correções de Bugs Adicionais e Build PWA",
       "prompt": "Atue como Arquiteto de Software e Desenvolvedor Frontend Sênior. Leia o andamento_v3.md e o memorial_DESCRITIVO.MD.txt. Implemente a ETAPA 9 focada na configuração do Service Worker (para transformá-lo em um PWA instalável offline) e testes finais. Utilize a ferramenta de navegador para validar o sistema rodando em localhost:5173. Caso encontre bugs, corrija-os. Responda com 'ETAPA CONCLUIDA' quando finalizar e aprovar os testes."
+    },
+    {
+      "id": 10,
+      "status": "completed",
+      "name": "Central de Missões - Pastas e Subpastas por Quartel",
+      "prompt": "Atue como desenvolvedor especialista em React e Gerenciamento de Estado. Implemente a estrutura hierárquica de Pastas/Subpastas para a Central de Missões:\n1. Crie o modelo de dados de pastas e missões (id, name, parentFolderId, gbmUnitId).\n2. Adicione navegação por Breadcrumbs e suporte para definir a 'Pasta do Quartel Padrão'.\n3. Garanta persistência no LocalStorage/IndexedDB e interface intuitiva para mover missões entre pastas.\nResponda com 'ETAPA CONCLUIDA' quando finalizar e aprovar os testes."
+    },
+    {
+      "id": 11,
+      "status": "completed",
+      "name": "Bloco de Missão Dinâmico, Recálculo por GPS e Throttling",
+      "prompt": "Atue como desenvolvedor especialista em Geolocalização e UI Mobile em React:\n1. Integre o hook de GPS em tempo real (watchPosition) com o Bloco de Missão.\n2. Implemente os gatilhos de recálculo de proximidade: no evento visibilitychange (foco da janela ao voltar do Waze), na expansão do bloco e por throttling de tempo EXCLUSIVAMENTE quando o bloco de missão estiver aberto na tela.\n3. Reordene a lista colocando o mais próximo no topo e aplique o estilo visual em degradê de opacidade baseada na distância.\n4. Adicione o contador de 'Vistorias Realizadas Hoje' no cabeçalho do bloco e o botão de atalho '+ Cadastrar Vistoria' no card do topo.\nResponda com 'ETAPA CONCLUIDA' quando finalizar e aprovar os testes."
+    },
+    {
+      "id": 12,
+      "status": "completed",
+      "name": "Trava de Segurança e Geofencing de Vistoria (> 50m)",
+      "prompt": "Atue como desenvolvedor especialista em Regras de Negócio e Modais de Confirmação:\n1. Ao clicar em 'Cadastrar Vistoria', valide se a distância do GPS para o hidrante é maior que 50 metros.\n2. Se a distância for > 50m, exiba o modal de alerta informando a distância atual e indicando o código do hidrante realmente mais próximo no momento.\n3. Exija confirmação do usuário antes de abrir o InspectionModal.\nResponda com 'ETAPA CONCLUIDA' quando finalizar e aprovar os testes."
+    },
+    {
+      "id": 13,
+      "status": "completed",
+      "name": "Foto de Perfil do Hidrante e Ajuste do Pino do GPS no Mapa",
+      "prompt": "Atue como desenvolvedor especialista em Leaflet e Manipulação de Imagens no Browser:\n1. Adicione o campo de Foto de Perfil do Hidrante (orientação retrato) com compressão via Canvas no upload (máx 100KB em WebP/JPEG).\n2. Renderize a miniatura de perfil na dialog/popup do pino e na lista de missões, com clique para expansão em modal fullscreen com zoom.\n3. Ajuste o pino azul da localização atual do GPS para ter `interactive: false` e zIndexOffset inferior aos pinos de hidrantes no Leaflet.\nResponda com 'ETAPA CONCLUIDA' quando finalizar e aprovar os testes."
+    },
+    {
+      "id": 14,
+      "status": "completed",
+      "name": "Controle de Acesso e Gestão de Usuários (RBAC)",
+      "prompt": "Atue como desenvolvedor especialista em Autenticação e Autorização (RBAC) em React:\n1. Crie a estrutura de usuários com login simples e perfis: Vistoriador, Gestor e Administrador.\n2. Bloqueie/libere recursos de acordo com o perfil: Gestor pode adicionar/remover hidrantes e missões; Administrador pode gerenciar permissões de usuários e editar a lista oficial de 33 problemas.\n3. Crie a tela de gerenciamento de usuários para o perfil Administrador.\nResponda com 'ETAPA CONCLUIDA' quando finalizar e aprovar os testes."
+    },
+    {
+      "id": 15,
+      "status": "completed",
+      "name": "Relatório de Gestão do Comando e Gráficos Multidimensionais",
+      "prompt": "Atue como desenvolvedor especialista em Dashboard e Charts (Recharts/Chart.js) em React:\n1. Crie o 'Relatório de Gestão do Comando' para pastas de Grupamento, com % de cumprimento de OMs e exportação para PDF A4, SEI e CSV.\n2. Expanda o Relatório Geral com gráficos individuais para Cidade (RA), Ano e Problemas Técnicos, indicando Total, Operantes (Qtd e %) e Inoperantes (Qtd e %).\n3. Padronize a exibição de temporalidade: apenas Data nos relatórios/listas e Data com Horário Completo no Histórico de Vistorias.\nResponda com 'ETAPA CONCLUIDA' quando finalizar e aprovar os testes."
+    },
+    {
+      "id": 16,
+      "status": "completed",
+      "name": "Correção de Bugs e Estabilização do Sistema",
+      "prompt": "Atue como desenvolvedor especialista em Refatoração e Bug Fixing em React/Leaflet:\n1. Corrija o evento de clique no mapa aplicando stopPropagation para impedir duplicidade com o modo fullscreen.\n2. Crie a página/modal funcional de 'Editar Hidrante' para atualização de dados cadastrais.\n3. Corrija a métrica do relatório para contabilizar apenas hidrantes com vistoria cadastrada e crie a rotina de limpeza automática de rascunhos diários vencidos.\nResponda com 'ETAPA CONCLUIDA' quando finalizar e aprovar os testes."
     }
   ]
 }

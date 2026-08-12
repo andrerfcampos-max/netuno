@@ -23,8 +23,24 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     return new Date(`${y}-${m}-${d}T${time}`).getTime();
   };
 
+  const formatDateOnly = (dateStr) => {
+    if (!dateStr || dateStr === '-') return '-';
+    return dateStr.split(' ')[0];
+  };
+
+  const getYear = (dateStr) => {
+    if (!dateStr || dateStr === '-') return 'N/A';
+    const parts = dateStr.split(' ');
+    if (parts.length < 1) return 'N/A';
+    const [d, m, y] = parts[0].split('/');
+    return y || 'N/A';
+  };
+
+  // Correção: somar apenas hidrantes de fato vistoriados (com data de vistoria)
   const sortedHidrantesGeral = useMemo(() => {
-    return [...hidrantes].sort((a, b) => parseDate(a.datHoraUltimaVistoria) - parseDate(b.datHoraUltimaVistoria));
+    return [...hidrantes]
+      .filter(h => h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' && h.datHoraUltimaVistoria !== '')
+      .sort((a, b) => parseDate(a.datHoraUltimaVistoria) - parseDate(b.datHoraUltimaVistoria));
   }, [hidrantes]);
 
   const sortedHidrantesCaesb = useMemo(() => {
@@ -67,6 +83,33 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       }));
   }, [currentData]);
 
+  const raStats = useMemo(() => {
+    const counts = {};
+    currentData.forEach(h => {
+      const ra = h.dscLocalidade || 'N/A';
+      counts[ra] = (counts[ra] || 0) + 1;
+    });
+    const max = Math.max(...Object.values(counts), 1);
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([nome, count]) => ({ nome, count, percent: (count / max) * 100 }));
+  }, [currentData]);
+
+  const yearStats = useMemo(() => {
+    const counts = {};
+    currentData.forEach(h => {
+      const year = getYear(h.datHoraUltimaVistoria);
+      if (year !== 'N/A') {
+        counts[year] = (counts[year] || 0) + 1;
+      }
+    });
+    const max = Math.max(...Object.values(counts), 1);
+    return Object.entries(counts)
+      .sort((a, b) => b[0].localeCompare(a[0])) // Sort by year descending
+      .map(([nome, count]) => ({ nome, count, percent: (count / max) * 100 }));
+  }, [currentData]);
+
   const handlePrint = () => {
     const originalTitle = document.title;
     document.title = currentMission ? `${currentMission.name} - ${reportType === 'interno' ? 'CBMDF' : 'CAESB'}` : 'Relatório';
@@ -107,7 +150,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         html += `<td style="padding: 8px;">${h.dscEndereco || h.dscLocalidade || '-'}</td>`;
         html += `<td style="padding: 8px;">${h.dscPontoReferencia || '-'}</td>`;
         if (reportType === 'interno') {
-          html += `<td style="padding: 8px;">${h.datHoraUltimaVistoria || '-'}</td>`;
+          html += `<td style="padding: 8px;">${formatDateOnly(h.datHoraUltimaVistoria)}</td>`;
           html += `<td style="padding: 8px;">${h.vistoriadorNome || '-'}</td>`;
           html += `<td style="padding: 8px; text-align: center; color: ${h.flgAtivo ? '#166534' : '#991b1b'}; font-weight: bold;">${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}</td>`;
           html += `<td style="padding: 8px; color: #991b1b;">${!h.flgAtivo && h.problemasHidrante ? h.problemasHidrante : '-'}</td>`;
@@ -176,7 +219,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         h.nomHidrante || h.codHidrante || '',
         h.dscEndereco || h.dscLocalidade || '',
         h.dscPontoReferencia || '',
-        h.datHoraUltimaVistoria || '',
+        formatDateOnly(h.datHoraUltimaVistoria),
         h.vistoriadorNome || '',
         h.flgAtivo ? 'OPERANTE' : 'INOPERANTE',
         (h.problemasHidrante || '').replace(/;/g, ' | '),
@@ -235,6 +278,17 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   return (
     <div className={containerClasses} ref={panelRef}>
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 15mm; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: white; }
+          .page-break-inside-avoid { break-inside: avoid; }
+          .print-bg-white { background-color: white !important; }
+          .print-text-black { color: black !important; }
+          .print-border-black { border-color: black !important; }
+          .print-divide-gray > :not([hidden]) ~ :not([hidden]) { border-color: #e5e7eb !important; }
+        }
+      `}</style>
       
       {/* BOTÕES FLUTUANTES (ELEVADOR) */}
       <div className="fixed right-4 bottom-24 z-50 flex flex-col gap-2 no-print">
@@ -346,37 +400,84 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
               </div>
             </div>
             
-            {/* Bloco de Gráficos */}
-            <div className="md:col-span-8 flex flex-col md:flex-row gap-6 bg-slate-800 p-4 rounded-lg border border-slate-700 print-border-gray print-bg-white items-center justify-around page-break-inside-avoid print-w-2/3">
-              <div className="flex flex-col items-center gap-4">
-                <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider text-center">Índice de Operacionalidade</h3>
-                <div className="relative w-36 h-36 rounded-full print-donut shadow-inner border-4 border-slate-900 print-border-white" style={{ background: `conic-gradient(#34d399 ${operantesPercent}%, #ef4444 ${operantesPercent}% 100%)` }}>
-                  <div className="absolute inset-2 bg-slate-800 print-bg-white rounded-full flex flex-col items-center justify-center shadow-md">
-                    <span className="text-2xl font-black text-white print-text-black">{operantesPercent}%</span>
-                    <span className="text-[10px] text-slate-400 print-text-black font-bold uppercase">OK</span>
+            {/* Bloco de Gráficos Principais */}
+            <div className="md:col-span-8 flex flex-col gap-4">
+              <div className="flex flex-col md:flex-row gap-6 bg-slate-800 p-4 rounded-lg border border-slate-700 print-border-gray print-bg-white items-center justify-around page-break-inside-avoid print-w-full">
+                <div className="flex flex-col items-center gap-4">
+                  <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider text-center">Índice de Operacionalidade</h3>
+                  <div className="relative w-32 h-32 rounded-full print-donut shadow-inner border-4 border-slate-900 print-border-white" style={{ background: `conic-gradient(#34d399 ${operantesPercent}%, #ef4444 ${operantesPercent}% 100%)` }}>
+                    <div className="absolute inset-2 bg-slate-800 print-bg-white rounded-full flex flex-col items-center justify-center shadow-md">
+                      <span className="text-xl font-black text-white print-text-black">{operantesPercent}%</span>
+                      <span className="text-[10px] text-slate-400 print-text-black font-bold uppercase">OK</span>
+                    </div>
                   </div>
                 </div>
+                
+                <div className="flex-1 w-full flex flex-col justify-center max-w-sm">
+                  <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Top Defeitos Registrados</h3>
+                  {topDefeitos.length > 0 ? (
+                    <div className="space-y-3">
+                      {topDefeitos.slice(0, 4).map((defeito, idx) => (
+                        <div key={idx} className="flex flex-col gap-1">
+                          <div className="flex justify-between text-xs text-slate-300 print-text-black">
+                            <span className="truncate pr-2 font-medium" title={defeito.nome}>{defeito.nome}</span>
+                            <span className="font-bold">{defeito.count}</span>
+                          </div>
+                          <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden print-bg-gray">
+                            <div className="bg-red-500 h-full print-bg-black transition-all duration-1000" style={{ width: `${defeito.percent}%` }}></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 text-center italic mt-4">Nenhum defeito registrado.</p>
+                  )}
+                </div>
               </div>
-              
-              <div className="flex-1 w-full flex flex-col justify-center max-w-sm">
-                <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Top Defeitos Registrados</h3>
-                {topDefeitos.length > 0 ? (
-                  <div className="space-y-3">
-                    {topDefeitos.slice(0, 4).map((defeito, idx) => (
-                      <div key={idx} className="flex flex-col gap-1">
-                        <div className="flex justify-between text-xs text-slate-300 print-text-black">
-                          <span className="truncate pr-2 font-medium" title={defeito.nome}>{defeito.nome}</span>
-                          <span className="font-bold">{defeito.count}</span>
+
+              {/* Gráficos de RA e Anos */}
+              <div className="flex flex-col md:flex-row gap-4 page-break-inside-avoid">
+                <div className="flex-1 bg-slate-800 p-4 rounded-lg border border-slate-700 print-border-gray print-bg-white flex flex-col justify-center">
+                  <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Distribuição por Região (RAs)</h3>
+                  {raStats.length > 0 ? (
+                    <div className="space-y-3">
+                      {raStats.map((ra, idx) => (
+                        <div key={idx} className="flex flex-col gap-1">
+                          <div className="flex justify-between text-xs text-slate-300 print-text-black">
+                            <span className="font-medium">{ra.nome}</span>
+                            <span className="font-bold">{ra.count} vist.</span>
+                          </div>
+                          <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden print-bg-gray">
+                            <div className="bg-blue-500 h-full print-bg-black transition-all duration-1000" style={{ width: `${ra.percent}%` }}></div>
+                          </div>
                         </div>
-                        <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden print-bg-gray">
-                          <div className="bg-red-500 h-full print-bg-black transition-all duration-1000" style={{ width: `${defeito.percent}%` }}></div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 text-center italic mt-4">Sem dados regionais.</p>
+                  )}
+                </div>
+                
+                <div className="flex-1 bg-slate-800 p-4 rounded-lg border border-slate-700 print-border-gray print-bg-white flex flex-col justify-center">
+                  <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Vistorias por Ano</h3>
+                  {yearStats.length > 0 ? (
+                    <div className="space-y-3">
+                      {yearStats.map((y, idx) => (
+                        <div key={idx} className="flex flex-col gap-1">
+                          <div className="flex justify-between text-xs text-slate-300 print-text-black">
+                            <span className="font-medium">{y.nome}</span>
+                            <span className="font-bold">{y.count} vist.</span>
+                          </div>
+                          <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden print-bg-gray">
+                            <div className="bg-emerald-500 h-full print-bg-black transition-all duration-1000" style={{ width: `${y.percent}%` }}></div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500 text-center italic mt-4">Nenhum defeito registrado na região.</p>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 text-center italic mt-4">Sem histórico temporal.</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -456,7 +557,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                     
                     {reportType === 'interno' ? (
                       <>
-                        <td className="px-4 py-3 whitespace-nowrap print-border text-xs">{h.datHoraUltimaVistoria || '-'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap print-border text-xs">{formatDateOnly(h.datHoraUltimaVistoria)}</td>
                         <td className="px-4 py-3 whitespace-nowrap print-border text-emerald-300 print-text-black text-xs font-bold">{h.vistoriadorNome || '-'}</td>
                         <td className={`px-4 py-3 font-bold text-center ${h.flgAtivo ? 'text-emerald-400' : 'text-red-400'} print-text-black print-border`}>
                           {h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}

@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
@@ -84,7 +84,8 @@ const ScrollBehavior = () => {
 
 const MapClickHandler = ({ onMapClick }) => {
   useMapEvents({
-    click() {
+    click(e) {
+      if (e.originalEvent) e.originalEvent.stopPropagation();
       if (onMapClick) onMapClick();
     },
   });
@@ -101,9 +102,25 @@ const MapResizer = ({ isMapFullscreen }) => {
   return null;
 };
 
-const MapComponent = ({ hidrantes, onInspect, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, isMapFullscreen }) => {
+const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, isMapFullscreen }) => {
   const useClustering = hidrantes.length > 500;
-  const isGestor = currentUser?.role === 'gestor';
+  const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
+
+  const [userLocation, setUserLocation] = useState(null);
+
+  useEffect(() => {
+    let watchId;
+    if ('geolocation' in navigator) {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.warn('Erro GPS no MapComponent', err),
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+      );
+    }
+    return () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+    };
+  }, []);
 
   // Centro padrão (Brasília)
   const defaultCenter = [-15.793, -47.882];
@@ -125,7 +142,37 @@ const MapComponent = ({ hidrantes, onInspect, centerPosition, selectedMissionIds
       >
         <Popup minWidth={260} className="argos-popup">
           <div className="flex flex-col gap-1 p-0.5 text-slate-800 text-xs w-full leading-tight">
-            <div className="font-bold text-base border-b border-slate-200 pb-1 mb-1">{h.nomHidrante || h.codHidrante}</div>
+            <div className="flex gap-2 items-center border-b border-slate-200 pb-1 mb-1">
+              {h.fotoPerfil && (
+                <img 
+                  src={h.fotoPerfil} 
+                  alt="Hidrante" 
+                  className="w-12 h-12 rounded object-cover cursor-pointer hover:scale-105 transition-transform border border-slate-300"
+                  onClick={(e) => {
+                    // Simples visualizador full screen sem libs
+                    const img = document.createElement('img');
+                    img.src = h.fotoPerfil;
+                    img.style.maxWidth = '90%';
+                    img.style.maxHeight = '90%';
+                    img.style.objectFit = 'contain';
+                    
+                    const div = document.createElement('div');
+                    div.style.position = 'fixed';
+                    div.style.inset = '0';
+                    div.style.backgroundColor = 'rgba(0,0,0,0.9)';
+                    div.style.zIndex = '999999';
+                    div.style.display = 'flex';
+                    div.style.alignItems = 'center';
+                    div.style.justifyContent = 'center';
+                    
+                    div.onclick = () => document.body.removeChild(div);
+                    div.appendChild(img);
+                    document.body.appendChild(div);
+                  }}
+                />
+              )}
+              <div className="font-bold text-base flex-1">{h.nomHidrante || h.codHidrante}</div>
+            </div>
             
             <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 mb-1">
               <div className="font-semibold text-slate-500">Status:</div>
@@ -184,10 +231,15 @@ const MapComponent = ({ hidrantes, onInspect, centerPosition, selectedMissionIds
                   <ClipboardPlus size={14} />
                   CAD. VIST.
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-1 py-2 bg-amber-700 text-white rounded font-bold hover:bg-amber-600 active:scale-95 transition-all">
-                  <Edit size={14} />
-                  EDITAR
-                </button>
+                {isGestor && (
+                  <button 
+                    onClick={() => onEdit && onEdit(h)}
+                    className="flex-1 flex items-center justify-center gap-1 py-2 bg-amber-700 text-white rounded font-bold hover:bg-amber-600 active:scale-95 transition-all"
+                  >
+                    <Edit size={14} />
+                    EDITAR
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -239,6 +291,20 @@ const MapComponent = ({ hidrantes, onInspect, centerPosition, selectedMissionIds
           </MarkerClusterGroup>
         ) : (
           <>{renderMarkers()}</>
+        )}
+
+        {userLocation && (
+          <Marker 
+            position={[userLocation.lat, userLocation.lng]}
+            icon={L.divIcon({
+              className: 'custom-div-icon',
+              html: `<div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);"></div>`,
+              iconSize: [16, 16],
+              iconAnchor: [8, 8]
+            })}
+            interactive={false}
+            zIndexOffset={1000}
+          />
         )}
       </MapContainer>
     </div>

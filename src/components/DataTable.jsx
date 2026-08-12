@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { LocateFixed, Navigation, Download, Map as MapIcon, MapPin, ClipboardPlus, Edit } from 'lucide-react';
 
-const DataTable = ({ data, onCenterMap, onInspect, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
+const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [displayCount, setDisplayCount] = useState(50);
-  const isGestor = currentUser?.role === 'gestor';
+  const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
 
   const sortedData = useMemo(() => {
     let sortableItems = [...data];
@@ -244,12 +244,15 @@ const DataTable = ({ data, onCenterMap, onInspect, selectedMissionIds = [], onTo
                       >
                         <ClipboardPlus size={16} />
                       </button>
-                      <button 
-                        title="Editar Hidrante"
-                        className="p-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded transition-colors active:scale-95 shadow-sm"
-                      >
-                        <Edit size={16} />
-                      </button>
+                      {isGestor && (
+                        <button 
+                          onClick={() => onEdit && onEdit(h)}
+                          title="Editar Hidrante"
+                          className="p-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded transition-colors active:scale-95 shadow-sm"
+                        >
+                          <Edit size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

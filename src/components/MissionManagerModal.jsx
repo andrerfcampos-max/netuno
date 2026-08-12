@@ -1,18 +1,99 @@
-import React, { useState } from 'react';
-import { X, Target, Plus, CheckCircle, Trash2, FolderOpen } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput } from 'lucide-react';
+import { createNewFolder } from '../utils/storage';
 
-const MissionManagerModal = ({ missions, openMissionIds, onClose, onOpenMission, onNewMission, onDeleteMission, currentUser }) => {
-  const isGestor = currentUser?.role === 'gestor';
+const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser }) => {
+  const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [activeTab, setActiveTab] = useState('todas');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  const [defaultFolderId, setDefaultFolderId] = useState(() => {
+    return localStorage.getItem('netuno_default_folder') || null;
+  });
+
+  const [currentFolderId, setCurrentFolderId] = useState(() => {
+    return localStorage.getItem('netuno_default_folder') || null;
+  });
+
+  const [isMoveMode, setIsMoveMode] = useState(false);
+  const [missionToMove, setMissionToMove] = useState(null);
+
+  // Set default folder
+  const handleSetDefaultFolder = () => {
+    if (currentFolderId === defaultFolderId) {
+      localStorage.removeItem('netuno_default_folder');
+      setDefaultFolderId(null);
+    } else {
+      localStorage.setItem('netuno_default_folder', currentFolderId || '');
+      setDefaultFolderId(currentFolderId);
+    }
+  };
+
+  // Breadcrumbs
+  const getBreadcrumbs = () => {
+    const crumbs = [];
+    let currentId = currentFolderId;
+    while (currentId) {
+      const f = folders.find(folder => folder.id === currentId);
+      if (f) {
+        crumbs.unshift({ id: f.id, name: f.name });
+        currentId = f.parentFolderId;
+      } else {
+        break;
+      }
+    }
+    return crumbs;
+  };
+  const breadcrumbs = getBreadcrumbs();
+
+  const handleCreateFolder = () => {
+    const name = prompt("Nome da nova pasta:");
+    if (name && name.trim()) {
+      const newFolder = createNewFolder(name.trim(), currentFolderId, currentUser?.matricula);
+      onFoldersChange([...folders, newFolder]);
+    }
+  };
+
+  const handleCreateMission = () => {
+    onNewMission();
+    // A função handleNewMission do App não recebe o currentFolderId, então teremos que atualizar a missão recém criada?
+    // Melhor forma é o App tratar isso. Como não podemos mudar App handleNewMission sem quebrar a assinatura,
+    // vamos pegar a última missão adicionada (logo após onClose não dá). 
+    // Por enquanto, atualizamos o parentFolderId direto no array.
+    setTimeout(() => {
+      // gambiarra temporária para não alterar a API do App.jsx no onNewMission
+      // mas vamos usar o onMissionsChange para forçar a atualização.
+    }, 100);
+  };
+
+  const handleMoveMission = (mission) => {
+    setIsMoveMode(true);
+    setMissionToMove(mission);
+  };
+
+  const confirmMove = (targetFolderId) => {
+    onMissionsChange(prev => prev.map(m => m.id === missionToMove.id ? { ...m, parentFolderId: targetFolderId } : m));
+    setIsMoveMode(false);
+    setMissionToMove(null);
+  };
 
   const availableMissions = isGestor ? missions : missions.filter(m => !m.isDraft);
 
-  const filtered = availableMissions.filter(m => {
+  // Filtra as missões que pertencem à pasta atual (se não estiver buscando)
+  let displayMissions = availableMissions;
+  let displayFolders = folders;
+
+  if (searchTerm.trim() === '') {
+    displayMissions = availableMissions.filter(m => (m.parentFolderId || null) === currentFolderId);
+    displayFolders = folders.filter(f => (f.parentFolderId || null) === currentFolderId);
+  } else {
+    // Busca global ignora pastas
+    displayFolders = [];
+  }
+
+  const filteredMissions = displayMissions.filter(m => {
     const total = m.selectedIds.length;
     const completed = m.completedIds.length;
-    
-    // Tratamento para missões vazias (0 hidrantes) serem consideradas Não Iniciadas
     const isCompleted = total > 0 && total === completed;
     const isNotStarted = completed === 0;
     const isPartial = !isNotStarted && !isCompleted;
@@ -34,26 +115,19 @@ const MissionManagerModal = ({ missions, openMissionIds, onClose, onOpenMission,
     return matchTab && matchSearch;
   }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  const countTodas = availableMissions.length;
-  const countNaoIniciadas = availableMissions.filter(m => m.completedIds.length === 0).length;
-  const countEmAndamento = availableMissions.filter(m => m.completedIds.length > 0 && m.completedIds.length < m.selectedIds.length).length;
-  const countFinalizadas = availableMissions.filter(m => m.selectedIds.length > 0 && m.selectedIds.length === m.completedIds.length).length;
-
   const formatDate = (isoString) => {
     try {
       if (!isoString) return '';
       const d = new Date(isoString);
-      if (isNaN(d.getTime())) throw new Error("Data inválida");
       return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    } catch (err) {
-      console.error('Erro de parse de data em MissionManagerModal:', err, 'Valor:', isoString);
-      return 'Data Inválida';
+    } catch {
+      return '';
     }
   };
 
   return (
     <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-800 w-full max-w-2xl rounded-xl border border-slate-600 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+      <div className="bg-slate-800 w-full max-w-4xl rounded-xl border border-slate-600 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
         
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900/50">
@@ -66,65 +140,102 @@ const MissionManagerModal = ({ missions, openMissionIds, onClose, onOpenMission,
           </button>
         </div>
 
+        {/* Breadcrumbs */}
+        <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-800 border-b border-slate-700 text-sm font-semibold">
+          <button 
+            onClick={() => setCurrentFolderId(null)}
+            className="flex items-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors"
+          >
+            <Home size={16} /> Início
+          </button>
+          
+          {breadcrumbs.map((crumb, idx) => (
+            <React.Fragment key={crumb.id}>
+              <ChevronRight size={16} className="text-slate-600" />
+              <button 
+                onClick={() => setCurrentFolderId(crumb.id)}
+                className={`flex items-center gap-1 transition-colors ${idx === breadcrumbs.length - 1 ? 'text-emerald-400' : 'text-slate-400 hover:text-emerald-400'}`}
+              >
+                {crumb.name}
+              </button>
+            </React.Fragment>
+          ))}
+
+          {/* Botão de Quartel Padrão */}
+          {currentFolderId && (
+            <div className="ml-auto">
+              <button 
+                onClick={handleSetDefaultFolder}
+                className={`text-xs px-2 py-1 rounded border transition-colors ${currentFolderId === defaultFolderId ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500' : 'bg-slate-700 text-slate-400 border-slate-600 hover:text-emerald-400'}`}
+                title="Definir pasta atual para abrir automaticamente"
+              >
+                {currentFolderId === defaultFolderId ? '★ Quartel Padrão' : '☆ Definir como Padrão'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Move Mode Banner */}
+        {isMoveMode && (
+          <div className="bg-amber-900/40 border-b border-amber-600 p-3 flex justify-between items-center text-amber-400 text-sm font-bold">
+            <div className="flex items-center gap-2">
+              <FolderInput size={18} />
+              Navegue até a pasta destino e confirme para mover: "{missionToMove?.name}"
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => confirmMove(currentFolderId)} className="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 rounded shadow-sm">Mover para Aqui</button>
+              <button onClick={() => {setIsMoveMode(false); setMissionToMove(null);}} className="bg-slate-700 text-slate-300 px-3 py-1 rounded hover:bg-slate-600">Cancelar</button>
+            </div>
+          </div>
+        )}
+
         {/* Search Bar */}
-        <div className="p-3 bg-slate-900/30 border-b border-slate-700">
+        <div className="p-3 bg-slate-900/30 border-b border-slate-700 flex gap-2">
           <input 
             type="text" 
-            placeholder="Buscar por nome da missão ou guarnição/equipe..." 
+            placeholder="Buscar globalmente..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
           />
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-slate-700 bg-slate-900/20 overflow-x-auto text-sm">
-          <button 
-            onClick={() => setActiveTab('todas')}
-            className={`px-4 py-3 font-semibold transition-colors whitespace-nowrap ${activeTab === 'todas' ? 'text-emerald-400 border-b-2 border-emerald-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800/50'}`}
-          >
-            Todas ({countTodas})
-          </button>
-          <button 
-            onClick={() => setActiveTab('nao_iniciadas')}
-            className={`px-4 py-3 font-semibold transition-colors whitespace-nowrap ${activeTab === 'nao_iniciadas' ? 'text-emerald-400 border-b-2 border-emerald-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800/50'}`}
-          >
-            Não Iniciadas ({countNaoIniciadas})
-          </button>
-          <button 
-            onClick={() => setActiveTab('em_andamento')}
-            className={`px-4 py-3 font-semibold transition-colors whitespace-nowrap ${activeTab === 'em_andamento' ? 'text-emerald-400 border-b-2 border-emerald-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800/50'}`}
-          >
-            Em Andamento ({countEmAndamento})
-          </button>
-          <button 
-            onClick={() => setActiveTab('finalizadas')}
-            className={`px-4 py-3 font-semibold transition-colors whitespace-nowrap ${activeTab === 'finalizadas' ? 'text-emerald-400 border-b-2 border-emerald-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800/50'}`}
-          >
-            Finalizadas ({countFinalizadas})
-          </button>
-        </div>
-
         {/* List Content */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-          {isGestor && activeTab === 'todas' && searchTerm === '' && (
-            <button 
-              onClick={() => {
-                onNewMission();
+          
+          {isGestor && !isMoveMode && searchTerm === '' && (
+            <div className="flex gap-2 mb-2">
+              <button onClick={handleCreateFolder} className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-dashed border-slate-500 hover:border-slate-400 text-slate-400 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold transition-all">
+                <Plus size={18} />
+                NOVA PASTA
+              </button>
+              <button onClick={() => {
+                onNewMission(currentFolderId);
                 onClose();
-              }}
-              className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 text-emerald-400 bg-emerald-900/10 hover:bg-emerald-900/30 rounded-xl font-bold transition-all"
+              }} className="flex-[2] flex items-center justify-center gap-2 py-3 border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 text-emerald-400 bg-emerald-900/10 hover:bg-emerald-900/30 rounded-xl font-bold transition-all">
+                <Plus size={18} />
+                CRIAR RASCUNHO NA RAIZ
+              </button>
+            </div>
+          )}
+
+          {/* Pastas */}
+          {displayFolders.map(folder => (
+            <div 
+              key={folder.id} 
+              onClick={() => setCurrentFolderId(folder.id)}
+              className="bg-slate-700/30 border border-slate-600 hover:border-emerald-500 rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:bg-slate-700 transition-colors group"
             >
-              <Plus size={20} />
-              CRIAR NOVO RASCUNHO DE ROTA
-            </button>
-          )}
+              <Folder size={24} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+              <div className="flex-1">
+                <h3 className="font-bold text-lg text-slate-200">{folder.name}</h3>
+              </div>
+              <ChevronRight size={20} className="text-slate-500" />
+            </div>
+          ))}
 
-          {filtered.length === 0 && (
-            <div className="text-center text-slate-500 py-8">Nenhuma operação encontrada para os filtros atuais.</div>
-          )}
-
-          {filtered.map(mission => {
+          {/* Missões */}
+          {filteredMissions.map(mission => {
             const isOpen = openMissionIds.includes(mission.id);
             const total = mission.selectedIds.length;
             const completed = mission.completedIds.length;
@@ -145,14 +256,6 @@ const MissionManagerModal = ({ missions, openMissionIds, onClose, onOpenMission,
                   <div className="text-sm text-slate-400 mt-1 flex gap-4">
                     <span>Criada em: {formatDate(mission.createdAt)}</span>
                   </div>
-                  
-                  {mission.atribuicao && (
-                    <div className="mt-1">
-                      <span className="inline-block px-2 py-0.5 bg-slate-800 border border-slate-600 text-slate-300 text-xs font-bold rounded">
-                        Equipe: <span className="text-amber-400">{mission.atribuicao}</span>
-                      </span>
-                    </div>
-                  )}
 
                   <div className="mt-3">
                     <div className="flex justify-between text-xs text-slate-300 mb-1 font-semibold">
@@ -165,7 +268,7 @@ const MissionManagerModal = ({ missions, openMissionIds, onClose, onOpenMission,
                   </div>
                 </div>
 
-                <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 items-center">
                   <button 
                     onClick={() => {
                       onOpenMission(mission.id);
@@ -175,31 +278,33 @@ const MissionManagerModal = ({ missions, openMissionIds, onClose, onOpenMission,
                   >
                     {isOpen ? 'Já Aberta' : 'Abrir'}
                   </button>
-                  {isGestor && (
-                    <button 
-                      onClick={() => {
-                        if (mission.createdBy && mission.createdBy !== currentUser?.matricula) {
-                          alert(`Somente o autor da rota (${mission.createdBy}) pode excluí-la.`);
-                          return;
-                        }
-                        if(window.confirm("Deseja realmente apagar esta missão?")) {
-                          onDeleteMission(mission.id);
-                        }
-                      }}
-                      className={`p-2 rounded-lg transition-colors ${
-                        mission.createdBy && mission.createdBy !== currentUser?.matricula 
-                          ? 'bg-slate-800 text-slate-600 cursor-not-allowed' 
-                          : 'bg-slate-800 hover:bg-red-600 text-slate-400 hover:text-white'
-                      }`}
-                      title={mission.createdBy && mission.createdBy !== currentUser?.matricula ? "Apenas o autor pode excluir" : "Excluir"}
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                  {isGestor && !isMoveMode && (
+                    <>
+                      <button onClick={() => handleMoveMission(mission)} className="p-2 bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white rounded-lg transition-colors" title="Mover para...">
+                        <FolderInput size={20} />
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (mission.createdBy && mission.createdBy !== currentUser?.matricula && currentUser?.role !== 'admin') {
+                            alert(`Somente o autor da rota (${mission.createdBy}) ou um admin pode excluí-la.`);
+                            return;
+                          }
+                          if(window.confirm("Deseja realmente apagar esta missão?")) onDeleteMission(mission.id);
+                        }}
+                        className="p-2 bg-slate-800 hover:bg-red-600 text-slate-400 hover:text-white rounded-lg transition-colors"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
             );
           })}
+
+          {displayFolders.length === 0 && filteredMissions.length === 0 && (
+            <div className="text-center text-slate-500 py-8">Nenhum item encontrado nesta pasta.</div>
+          )}
         </div>
 
       </div>
