@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Upload, GitMerge, FolderOpen } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
 import MapComponent from './components/MapComponent';
 import FilterBar from './components/FilterBar';
@@ -342,7 +344,7 @@ function App() {
         const user = JSON.parse(saved);
         if (user.expiresAt && Date.now() > user.expiresAt) {
           handleLogout();
-          alert('Sua sessão expirou por inatividade. Faça login novamente.');
+          toast.error('Sua sessão expirou por inatividade. Faça login novamente.');
         }
       }
     };
@@ -393,7 +395,7 @@ function App() {
     
     // Simulação do backend
     if (senha !== '123' && senha !== 'senha123' && senha !== 'admin') {
-      alert('Senha incorreta para testes. (Dica: use 123)');
+      toast.error('Senha incorreta para testes. (Dica: use 123)');
       return;
     }
 
@@ -411,7 +413,7 @@ function App() {
       localStorage.setItem('netuno_user', JSON.stringify(user));
       setCurrentUser(user);
     } else {
-      alert('Matrícula inválida. Use 123 (Vistoriador), 456 ou 789 (Gestores).');
+      toast.error('Matrícula inválida. Use 123 (Vistoriador), 456 ou 789 (Gestores).');
     }
   };
 
@@ -427,6 +429,7 @@ function App() {
               <input 
                 name="matricula" 
                 type="text" 
+                maxLength={20}
                 defaultValue="456"
                 autoComplete="off"
                 className="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 font-mono text-center text-lg tracking-widest" 
@@ -439,6 +442,7 @@ function App() {
               <input 
                 name="senha" 
                 type="password" 
+                maxLength={50}
                 defaultValue="123"
                 autoComplete="off"
                 className="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 font-mono text-center text-lg tracking-widest" 
@@ -450,6 +454,7 @@ function App() {
               Acessar Sistema
             </button>
           </form>
+          <ToastContainer theme="dark" position="bottom-center" />
         </div>
       </div>
     );
@@ -661,6 +666,8 @@ function App() {
           currentUser={currentUser}
         />
       )}
+      {/* Toasts */}
+      <ToastContainer theme="dark" position="bottom-center" />
     </div>
   );
 }
