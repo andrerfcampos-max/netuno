@@ -3,6 +3,7 @@ import { LocateFixed, Navigation, Download, Map as MapIcon, MapPin, ClipboardPlu
 
 const DataTable = ({ data, onCenterMap, onInspect, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [displayCount, setDisplayCount] = useState(50);
   const isGestor = currentUser?.role === 'gestor';
 
   const sortedData = useMemo(() => {
@@ -176,7 +177,7 @@ const DataTable = ({ data, onCenterMap, onInspect, selectedMissionIds = [], onTo
               </tr>
             </thead>
             <tbody>
-              {sortedData.map((h, i) => {
+              {sortedData.slice(0, displayCount).map((h, i) => {
                 const id = h.codHidrante || h._internalId || h.nomHidrante;
                 const isSelected = selectedMissionIds.includes(id);
                 return (
@@ -256,6 +257,16 @@ const DataTable = ({ data, onCenterMap, onInspect, selectedMissionIds = [], onTo
               })}
             </tbody>
           </table>
+          {sortedData.length > displayCount && (
+            <div className="flex justify-center p-4">
+              <button 
+                onClick={() => setDisplayCount(prev => prev + 50)}
+                className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-6 rounded-full transition-colors shadow-lg active:scale-95 text-sm border border-slate-500"
+              >
+                Carregar Mais ({sortedData.length - displayCount} restantes)
+              </button>
+            </div>
+          )}
         </div>
       )}
     </section>
