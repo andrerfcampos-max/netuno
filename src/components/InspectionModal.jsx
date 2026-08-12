@@ -41,7 +41,8 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
   const [q2, setQ2] = useState(null);
   const [q3, setQ3] = useState(null);
   const [q4, setQ4] = useState(null);
-  const [q5, setQ5] = useState('');
+  const [q5, setQ5] = useState(null);
+  const [q6, setQ6] = useState('');
   
   const [fotoBase64, setFotoBase64] = useState(null);
   const fileInputRef = useRef(null);
@@ -85,8 +86,8 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
   };
 
   const handleSave = () => {
-    if (q1 === null || q2 === null || q3 === null || q4 === null) {
-      alert("Por favor, responda todas as perguntas obrigatórias (1 a 4).");
+    if (q1 === null || q2 === null || q3 === null || q4 === null || q5 === null) {
+      alert("Por favor, responda todas as perguntas obrigatórias (1 a 5).");
       return;
     }
 
@@ -94,13 +95,26 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
     let problemas = [];
     
     if (q2 === 'NÃO') problemas.push("Faltam tampões");
-    if (q3 !== 'OPERANTE') problemas.push(`Caixa de registro ${q3.toLowerCase()}`);
-    if (q4 !== 'OPERANTE') problemas.push(`Registro ${q4.toLowerCase()}`);
-    if (q5) problemas.push(q5);
+    
+    if (q3 === 'SOTERRADA') problemas.push("Hidrante soterrado");
+    else if (q3 === 'TAMPA QUEBRADA') problemas.push("Caixa de registro quebrada");
+    
+    if (q4 === 'SOTERRADO') problemas.push("Registro soterrado");
+    else if (q4 === 'COM VAZAMENTO') problemas.push("Registro com vazamento");
+    else if (q4 === 'EMPERRADO') problemas.push("Registro emperrado");
+
+    if (q5 === 'NÃO, FALTA LUVA') problemas.push("Falta cabeçote da haste do registro (luva)");
+
+    if (q6) problemas.push(q6);
 
     const problemaFinal = problemas.join(" | ");
 
-    if (!isOperante && problemas.length === 0) {
+    let statusFinal = isOperante;
+    if (q4 === 'SOTERRADO' || q4 === 'EMPERRADO') {
+      statusFinal = false; // Força INOPERANTE
+    }
+
+    if (!statusFinal && problemas.length === 0) {
       if (!window.confirm("Atenção: Você está marcando como INOPERANTE sem defeitos listados. Tem certeza?")) {
         return;
       }
@@ -111,7 +125,7 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
     const vistoriaAtualizada = {
       ...hidrante,
-      flgAtivo: isOperante,
+      flgAtivo: statusFinal,
       problemasHidrante: problemaFinal,
       datHoraUltimaVistoria: dataFormatada,
       fotoVistoria: fotoBase64,
@@ -122,7 +136,7 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
         {
           datHoraVistoria: dataFormatada,
           problemasHidrante: problemaFinal,
-          flgAtivo: isOperante,
+          flgAtivo: statusFinal,
           fotoVistoria: fotoBase64,
           vistoriadorNome: currentUser?.nome,
           vistoriadorMatricula: currentUser?.matricula
@@ -188,19 +202,20 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
           {/* Pergunta 3 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">3) A CAIXA DE REGISTRO ESTÁ...</label>
+            <label className="font-bold text-slate-300 text-sm">3) A CAIXA DO REGISTRO ESTÁ...</label>
             <div className="flex gap-2">
-              {renderOption('OPERANTE', q3, setQ3, true)}
-              {renderOption('QUEBRADA', q3, setQ3, false)}
+              {renderOption('SEM ALTERAÇÃO', q3, setQ3, true)}
               {renderOption('SOTERRADA', q3, setQ3, false)}
+              {renderOption('TAMPA QUEBRADA', q3, setQ3, false)}
             </div>
           </div>
 
           {/* Pergunta 4 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
             <label className="font-bold text-slate-300 text-sm">4) O REGISTRO ESTÁ...</label>
-            <div className="flex gap-2">
-              {renderOption('OPERANTE', q4, setQ4, true)}
+            <div className="flex flex-wrap gap-2">
+              {renderOption('SEM ALTERAÇÃO', q4, setQ4, true)}
+              {renderOption('SOTERRADO', q4, setQ4, false)}
               {renderOption('COM VAZAMENTO', q4, setQ4, false)}
               {renderOption('EMPERRADO', q4, setQ4, false)}
             </div>
@@ -208,11 +223,20 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
           {/* Pergunta 5 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">5) ALGUM OUTRO PROBLEMA? (Opcional)</label>
+            <label className="font-bold text-slate-300 text-sm">5) A CHAVE TIPO T ENCAIXA NO REGISTRO?</label>
+            <div className="flex gap-2">
+              {renderOption('SIM', q5, setQ5, true)}
+              {renderOption('NÃO, FALTA LUVA', q5, setQ5, false)}
+            </div>
+          </div>
+
+          {/* Pergunta 6 */}
+          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+            <label className="font-bold text-slate-300 text-sm">6) ALGUM OUTRO PROBLEMA? (Opcional)</label>
             <select 
               className="p-2 rounded bg-slate-700 border border-slate-600 text-sm text-white focus:outline-none focus:border-emerald-500 w-full"
-              value={q5}
-              onChange={(e) => setQ5(e.target.value)}
+              value={q6}
+              onChange={(e) => setQ6(e.target.value)}
             >
               <option value="">Nenhum</option>
               {DEFEITOS_OFICIAIS.map(d => <option key={d} value={d}>{d}</option>)}

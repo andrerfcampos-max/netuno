@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 're
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2 } from 'lucide-react';
+import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2, Plus } from 'lucide-react';
 
 // Fix para ícones padrão do Leaflet não quebrarem (embora vamos usar divIcon)
 delete L.Icon.Default.prototype._getIconUrl;
@@ -14,17 +14,17 @@ L.Icon.Default.mergeOptions({
 });
 
 // Estilização dos Marcadores (CSS Puro com Alto Contraste)
-const createDivIcon = (isOperante, isSelected, fotoPerfil) => {
+const createDivIcon = (isOperante, isSelected) => {
   const statusColor = isOperante ? '#00FF00' : '#FF0000'; // Neon Verde ou Vermelho
   
   // Se selecionado, o pino fica "vazio" (fundo transparente) com borda ciano muito destacada
-  const bgColor = fotoPerfil ? 'transparent' : (isSelected ? 'rgba(0,0,0,0.5)' : statusColor); 
-  const bgImage = fotoPerfil ? `background-image: url(${fotoPerfil}); background-size: cover; background-position: center;` : `background-color: ${bgColor};`;
+  const bgColor = isSelected ? 'rgba(0,0,0,0.5)' : statusColor; 
+  const bgImage = `background-color: ${bgColor};`;
   
-  const borderColor = isSelected ? '#00FFFF' : (fotoPerfil ? statusColor : 'white');
+  const borderColor = isSelected ? '#00FFFF' : 'white';
   const borderWidth = isSelected ? '4px' : '2px';
   const shadow = isSelected ? '0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9)' : `0 0 5px ${statusColor}`;
-  const size = isSelected ? 32 : (fotoPerfil ? 28 : 20);
+  const size = isSelected ? 32 : 20;
   
   return L.divIcon({
     className: 'custom-div-icon',
@@ -40,7 +40,7 @@ const createDivIcon = (isOperante, isSelected, fotoPerfil) => {
       align-items: center;
       justify-content: center;
     ">
-      ${(isSelected && !fotoPerfil) ? `<div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></div>` : ''}
+      ${isSelected ? `<div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></div>` : ''}
     </div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14]
@@ -85,9 +85,19 @@ const ScrollBehavior = () => {
 
 
 const MapClickHandler = ({ onMapClick }) => {
+  const [popupOpen, setPopupOpen] = useState(false);
   useMapEvents({
+    popupopen: () => {
+      setPopupOpen(true);
+    },
+    popupclose: () => {
+      setTimeout(() => setPopupOpen(false), 200);
+    },
     click(e) {
       if (e.originalEvent) e.originalEvent.stopPropagation();
+      if (popupOpen) {
+        return; // Apenas fecha a dialog, não dispara fullscreen
+      }
       if (onMapClick) onMapClick();
     },
   });
@@ -160,7 +170,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
       <Marker 
         key={id || i} 
         position={[h.numLatitude, h.numLongitude]}
-        icon={createDivIcon(h.flgAtivo, isSelected, h.fotoPerfil)}
+        icon={createDivIcon(h.flgAtivo, isSelected)}
       >
         <Popup minWidth={260} className="argos-popup">
           <div className="flex flex-col gap-1 p-0.5 text-slate-800 text-xs w-full leading-tight">
@@ -250,7 +260,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                   onClick={() => onInspect(h)}
                   className="flex-1 flex items-center justify-center gap-1 py-2 bg-teal-600 text-white rounded font-bold hover:bg-teal-500 active:scale-95 transition-all"
                 >
-                  <ClipboardPlus size={14} />
+                  <Plus size={20} strokeWidth={3} />
                   CAD. VIST.
                 </button>
                 {isGestor && (

@@ -32,18 +32,40 @@ export const saveMissions = (missions) => {
 };
 
 const DEFAULT_FOLDERS = [
-  { id: 'f-1gbm', name: '1º GBM - Esplanada dos Ministérios', parentFolderId: null, isFixed: true },
+  { id: 'f-sehur', name: 'SEHUR', parentFolderId: null, isFixed: true },
+  { id: 'f-1gbm', name: '1º GBM - Brasília', parentFolderId: null, isFixed: true },
   { id: 'f-2gbm', name: '2º GBM - Taguatinga', parentFolderId: null, isFixed: true },
   { id: 'f-3gbm', name: '3º GBM - SIA', parentFolderId: null, isFixed: true },
   { id: 'f-4gbm', name: '4º GBM - Asa Norte', parentFolderId: null, isFixed: true },
-  { id: 'f-6gbm', name: '6º GBM - Nucleo Bandeirante', parentFolderId: null, isFixed: true },
+  { id: 'f-6gbm', name: '6º GBM - Núcleo Bandeirante', parentFolderId: null, isFixed: true },
+  { id: 'f-7gbm', name: '7º GBM - Brazlândia', parentFolderId: null, isFixed: true },
   { id: 'f-8gbm', name: '8º GBM - Ceilândia', parentFolderId: null, isFixed: true },
   { id: 'f-9gbm', name: '9º GBM - Planaltina', parentFolderId: null, isFixed: true },
+  { id: 'f-10gbm', name: '10º GBM - Paranoá', parentFolderId: null, isFixed: true },
+  { id: 'f-11gbm', name: '11º GBM - Lago Sul', parentFolderId: null, isFixed: true },
+  { id: 'f-13gbm', name: '13º GBM - Guará I', parentFolderId: null, isFixed: true },
   { id: 'f-15gbm', name: '15º GBM - Asa Sul', parentFolderId: null, isFixed: true },
   { id: 'f-16gbm', name: '16º GBM - Gama', parentFolderId: null, isFixed: true },
   { id: 'f-17gbm', name: '17º GBM - São Sebastião', parentFolderId: null, isFixed: true },
+  { id: 'f-18gbm', name: '18º GBM - Santa Maria', parentFolderId: null, isFixed: true },
+  { id: 'f-19gbm', name: '19º GBM - Candangolândia', parentFolderId: null, isFixed: true },
+  { id: 'f-21gbm', name: '21º GBM - Riacho Fundo I', parentFolderId: null, isFixed: true },
+  { id: 'f-22gbm', name: '22º GBM - Sobradinho', parentFolderId: null, isFixed: true },
+  { id: 'f-25gbm', name: '25º GBM - Águas Claras', parentFolderId: null, isFixed: true },
   { id: 'f-34gbm', name: '34º GBM - Lago Norte', parentFolderId: null, isFixed: true },
-  { id: 'f-45gbm', name: '45º GBM - Sudoeste', parentFolderId: null, isFixed: true }
+  { id: 'f-36gbm', name: '36º GBM - Recanto das Emas Central', parentFolderId: null, isFixed: true },
+  { id: 'f-37gbm', name: '37º GBM - Samambaia Centro', parentFolderId: null, isFixed: true },
+  { id: 'f-37gbm-sierra3', name: '37º GBM/ SIERRA 3 - Subgrupamento de Bombeiro Militar - BR 060', parentFolderId: null, isFixed: true },
+  { id: 'f-41gbm', name: '41º GBM - Setor Industrial da Ceilândia', parentFolderId: null, isFixed: true },
+  { id: 'f-45gbm', name: '45º GBM - Sudoeste e Octogonal', parentFolderId: null, isFixed: true },
+  { id: 'f-gaeph', name: 'GAEPH - GRUPAMENTO DE ATENDIMENTO DE EMERGÊNCIA PRÉ-HOSPITALAR', parentFolderId: null, isFixed: true },
+  { id: 'f-gavop', name: 'GAVOP - GRUPAMENTO DE AVIAÇÃO OPERACIONAL', parentFolderId: null, isFixed: true },
+  { id: 'f-gbmot', name: 'GBMOT - GRUPAMENTO DE BOMBEIRO MILITAR DE MOTOMECANIZAÇÃO', parentFolderId: null, isFixed: true },
+  { id: 'f-gbs', name: 'GBS - GRUPAMENTO DE BUSCA E SALVAMENTO', parentFolderId: null, isFixed: true },
+  { id: 'f-gpciu', name: 'GPCIU - GRUPAMENTO DE PREVENÇÃO E COMBATE A INCÊNDIO URBANO', parentFolderId: null, isFixed: true },
+  { id: 'f-gpram', name: 'GPRAM - GRUPAMENTO DE PROTEÇÃO AMBIENTAL', parentFolderId: null, isFixed: true },
+  { id: 'f-gpram-sam', name: 'GPRAM/SAMAMBAIA - GPRAM/SAMAMBAIA', parentFolderId: null, isFixed: true },
+  { id: 'f-op-externa', name: 'OP EXTERNA - OPERAÇÕES EXTERNAS', parentFolderId: null, isFixed: true }
 ];
 
 export const loadFolders = () => {

@@ -577,31 +577,41 @@ function App() {
       <header className={isMapFullscreen ? "hidden" : "flex justify-between items-center p-3 bg-slate-900 border-b border-slate-700 z-50"}>
         <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md">NETUNO</h1>
         
-        <div className="flex gap-2">
-          {currentUser.role === 'admin' && (
-            <button 
-              onClick={() => setIsUserManagerOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-900/30 border border-red-700/50 text-red-400 font-semibold rounded shadow-sm hover:bg-red-900/50 active:scale-95 transition-all"
-            >
-              <span className="hidden sm:inline">Painel Admin</span>
-            </button>
-          )}
-          {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-            <button 
-              onClick={() => setEditingHydrante({})}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-900/30 border border-blue-700/50 text-blue-400 font-semibold rounded shadow-sm hover:bg-blue-900/50 active:scale-95 transition-all"
-            >
-              <PlusCircle size={18} />
-              <span className="hidden sm:inline">Novo Hidrante</span>
-            </button>
-          )}
-          <button 
-            onClick={() => setIsMissionManagerOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm hover:bg-slate-700 active:scale-95 transition-all"
-          >
-            <FolderOpen size={18} />
-            <span className="hidden sm:inline">Central de Missões</span>
-          </button>
+        <div className="relative z-50">
+          <details className="group">
+            <summary className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm cursor-pointer list-none hover:bg-slate-700 transition-all">
+              <span className="hidden sm:inline">Menu</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+            </summary>
+            <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex flex-col gap-1 p-2">
+              {currentUser.role === 'admin' && (
+                <button 
+                  onClick={(e) => { setIsUserManagerOpen(true); e.currentTarget.closest('details').removeAttribute('open'); }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-left bg-red-900/30 text-red-400 font-semibold rounded hover:bg-red-900/50 transition-all"
+                >
+                  Painel Admin
+                </button>
+              )}
+              {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                <button 
+                  onClick={(e) => { setEditingHydrante({}); e.currentTarget.closest('details').removeAttribute('open'); }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-left bg-blue-900/30 text-blue-400 font-semibold rounded hover:bg-blue-900/50 transition-all"
+                >
+                  <PlusCircle size={18} />
+                  Novo Hidrante
+                </button>
+              )}
+              <button 
+                onClick={(e) => { setIsMissionManagerOpen(true); e.currentTarget.closest('details').removeAttribute('open'); }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-700 text-emerald-400 font-semibold rounded hover:bg-slate-600 transition-all"
+              >
+                <FolderOpen size={18} />
+                Central de Missões
+              </button>
+            </div>
+          </details>
         </div>
       </header>
 

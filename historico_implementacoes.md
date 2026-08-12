@@ -41,3 +41,6 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 
 ### [12/08/2026] Etapas 10 a 16 Concluídas Automaticamente
 - **Atualização Super Argos 2.1** foi executada e validada com sucesso pelo agente orquestrador.
+
+### [12/08/2026] Etapa 22 Concluída (Execução Manual via Agente)
+- **Ajustes Finos de UI/UX e Atualização do Modal de Vistoria** aplicados no repositório. Inclui revisão do formulário de vistorias (regras de equivalência do registro inoperante e novos defeitos), correção de cliques no mapa, agrupamento de ações em menu dropdown superior e atualização da lista oficial das 34 pastas dos quartéis.

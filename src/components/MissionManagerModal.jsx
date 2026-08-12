@@ -214,7 +214,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
                 onClose();
               }} className="flex-[2] flex items-center justify-center gap-2 py-3 border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 text-emerald-400 bg-emerald-900/10 hover:bg-emerald-900/30 rounded-xl font-bold transition-all">
                 <Plus size={18} />
-                CRIAR RASCUNHO NA RAIZ
+                CRIAR RASCUNHO
               </button>
             </div>
           )}
