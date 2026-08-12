@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { X, Navigation, LocateFixed, GitMerge, Share2, MapPin, Map as MapIcon, RotateCcw, ClipboardPlus, Edit, CheckCircle } from 'lucide-react';
+import { X, Navigation, LocateFixed, GitMerge, Share2, MapPin, Map as MapIcon, RotateCcw, Plus, Save, Edit, CheckCircle } from 'lucide-react';
 
 // Fórmula de Haversine para cálculo de distância (retorna km)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -97,7 +97,7 @@ const optimizeRouteMultiMode = async (hidrantes, startLat, startLng) => {
   }
 };
 
-const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds = [], currentMission, onUpdateMission, onClose, onClearMission, onRemoveFromMission, lastInspectedCoords, onInspect, onEdit, onCenterMap, currentUser }) => {
+const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds = [], currentMission, onUpdateMission, onClose, onClearMission, onRemoveFromMission, lastInspectedCoords, onInspect, onEdit, onCenterMap, currentUser, folders, onSaveRouteToFolder }) => {
   const [pendingRoute, setPendingRoute] = useState([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -192,14 +192,19 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     const idsString = pendingRoute.map(h => h.codHidrante || h.nomHidrante).join(',');
     const magicLink = `${baseUrl}?ds=${idsString}`;
     
-    let text = `*ARGOS 2.1 - MISSÃO TÁTICA*\n\n`;
+    let text = `*NETUNO - MISSÃO TÁTICA*\n\n`;
     text += `*Total Pendentes:* ${pendingRoute.length} Hidrantes\n`;
     text += `*Status:* Rota Otimizada\n\n`;
     pendingRoute.forEach((h, i) => {
       text += `*${i + 1}. ${h.nomHidrante || h.codHidrante}*\n`;
-      text += `📍 ${h.dscEndereco || ''} ${h.dscPontoReferencia ? `(${h.dscPontoReferencia})` : ''}\n\n`;
+      text += `📍 ${h.dscEndereco || ''} ${h.dscPontoReferencia ? `(${h.dscPontoReferencia})` : ''}\n`;
+      if (h.problemasHidrante) {
+        text += `⚠️ *Problemas:* ${h.problemasHidrante}\n\n`;
+      } else {
+        text += `\n`;
+      }
     });
-    text += `*Carregar Missão no Argos:* \n${magicLink}`;
+    text += `*Carregar Missão no Netuno:* \n${magicLink}`;
     
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
@@ -284,10 +289,10 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
           {/* Botão de ação rápida visível diretamente no primeiro lugar */}
           {(!isCompleted && index === 0) ? (
             <button onClick={() => onInspect && onInspect(h)} title="Cadastrar Vistoria" className="flex items-center gap-1 p-1.5 px-3 bg-teal-600 hover:bg-teal-500 text-white rounded active:scale-95 transition-transform font-bold">
-               <ClipboardPlus size={16}/> CADAST. VISTORIA
+               <Plus size={18} strokeWidth={3}/> CAD. VIST.
             </button>
           ) : (
-             <button onClick={() => onInspect && onInspect(h)} title="Cadastrar Vistoria" className="p-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded active:scale-95 transition-transform"><ClipboardPlus size={16}/></button>
+             <button onClick={() => onInspect && onInspect(h)} title="Cadastrar Vistoria" className="p-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded active:scale-95 transition-transform"><Plus size={18} strokeWidth={3}/></button>
           )}
 
           {(!isCompleted && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) && (
@@ -356,6 +361,23 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
                       <span className="bg-amber-900/50 text-amber-500 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border border-amber-800 flex-shrink-0">
                         Não Salvo
                       </span>
+                    )}
+                    {(currentMission.isDraft && onSaveRouteToFolder && folders) && (
+                      <button 
+                        onClick={() => {
+                          const name = prompt("Digite um nome para a Missão:", currentMission.name);
+                          if (!name) return;
+                          // Um prompt simples para pasta (Idealmente seria um select modal, mas usamos prompt simplificado pelo contexto)
+                          // Se tiver só 1 pasta ou o usuário quiser a raiz
+                          const folderOptions = folders.map(f => `${f.id}: ${f.name}`).join('\n');
+                          const fId = prompt(`Em qual pasta salvar? (Deixe em branco para salvar na raiz)\n\nPastas Disponíveis (Digite o ID):\n${folderOptions}`);
+                          onSaveRouteToFolder(fId || null, name);
+                        }}
+                        className="flex items-center gap-1 text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded transition-colors"
+                      >
+                        <Save size={12} />
+                        SALVAR NA CENTRAL
+                      </button>
                     )}
                     {(!currentMission.createdBy || currentMission.createdBy === currentUser?.matricula) && (
                       <button onClick={() => { setEditedName(currentMission.name === 'Rascunho de Hoje' ? '' : currentMission.name); setIsEditingName(true); }} className="text-slate-400 hover:text-emerald-400 transition-colors p-1 bg-slate-800 rounded flex-shrink-0">

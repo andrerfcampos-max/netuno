@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { LocateFixed, Navigation, Download, Map as MapIcon, MapPin, ClipboardPlus, Edit } from 'lucide-react';
+import { LocateFixed, Navigation, Download, Map as MapIcon, MapPin, Plus, Edit } from 'lucide-react';
 
 const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -244,7 +244,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                         title="Cadastrar Vistoria"
                         className="p-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded transition-colors active:scale-95 shadow-sm"
                       >
-                        <ClipboardPlus size={16} />
+                        <Plus size={18} strokeWidth={3} />
                       </button>
                       {isGestor && (
                         <button 

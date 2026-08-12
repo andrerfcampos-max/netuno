@@ -183,7 +183,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   const handleWhatsApp = () => {
     const reportName = currentMission ? currentMission.name : 'Relatório Tático de Hidrantes';
-    let text = `*${reportName.toUpperCase()} - ${reportType === 'interno' ? 'GERAL CBMDF' : 'MANUTENÇÃO CAESB'}*\n\n`;
+    let text = `*NETUNO - ${reportName.toUpperCase()} (${reportType === 'interno' ? 'GERAL' : 'MANUTENÇÃO'})*\n\n`;
     
     if (reportType === 'interno') {
       text += `📊 *Resumo*\n`;

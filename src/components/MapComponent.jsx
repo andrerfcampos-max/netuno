@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 're
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2, Plus } from 'lucide-react';
+import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2, Plus, Share2 } from 'lucide-react';
 
 // Fix para ícones padrão do Leaflet não quebrarem (embora vamos usar divIcon)
 delete L.Icon.Default.prototype._getIconUrl;
@@ -225,22 +225,22 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
               <div className="text-slate-700 font-bold truncate">{h.datHoraUltimaVistoria || 'Sem registro'}</div>
 
               <div className="font-semibold text-slate-500 mt-1">Problema:</div>
-              <div className="text-slate-700 font-bold text-red-600 truncate" title={h.problemasHidrante}>{h.problemasHidrante || 'Nenhum'}</div>
+              <div className="text-slate-700 font-bold text-red-600 break-words max-h-32 overflow-y-auto" title={h.problemasHidrante}>{h.problemasHidrante || 'Nenhum'}</div>
             </div>
 
             {/* Navegação Externa GPS (Botões Reduzidos) */}
-            <div className="grid grid-cols-3 gap-1 mt-1">
-              <a href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-blue-500 !text-white !rounded font-bold hover:!bg-blue-400 transition-colors">
+            <div className="grid grid-cols-4 gap-1 mt-1">
+              <a href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-blue-500 !text-white !rounded font-bold hover:!bg-blue-400 transition-colors" title="Waze">
                 <Navigation size={14} />
-                Waze
               </a>
-              <a href={`https://maps.google.com/maps?q=${h.numLatitude},${h.numLongitude}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-emerald-600 !text-white !rounded font-bold hover:!bg-emerald-500 transition-colors">
+              <a href={`https://maps.google.com/maps?q=${h.numLatitude},${h.numLongitude}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-emerald-600 !text-white !rounded font-bold hover:!bg-emerald-500 transition-colors" title="Google Maps">
                 <MapIcon size={14} />
-                Maps
               </a>
-              <a href={`https://maps.google.com/maps?q=&layer=c&cbll=${h.numLatitude},${h.numLongitude}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-orange-500 !text-white !rounded font-bold hover:!bg-orange-400 transition-colors">
+              <a href={`https://maps.google.com/maps?q=&layer=c&cbll=${h.numLatitude},${h.numLongitude}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-orange-500 !text-white !rounded font-bold hover:!bg-orange-400 transition-colors" title="Street View">
                 <MapPin size={14} />
-                Street
+              </a>
+              <a href={`https://wa.me/?text=${encodeURIComponent(`*Hidrante:* ${h.nomHidrante || h.codHidrante}\n*RA:* ${h.dscLocalidade || '-'}\n*Status:* ${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}\n*Problemas:* ${h.problemasHidrante || 'Nenhum'}\n*Endereço:* ${h.dscEndereco || ''} ${h.dscPontoReferencia ? `(${h.dscPontoReferencia})` : ''}\n*Maps:* https://maps.google.com/maps?q=${h.numLatitude},${h.numLongitude}`)}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-green-500 !text-white !rounded font-bold hover:!bg-green-400 transition-colors" title="WhatsApp">
+                <Share2 size={14} />
               </a>
             </div>
 

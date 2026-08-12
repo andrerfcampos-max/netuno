@@ -740,6 +740,15 @@ function App() {
                 setActiveView('map');
               }}
               currentUser={currentUser}
+              folders={folders}
+              onSaveRouteToFolder={(folderId, newName) => {
+                updateCurrentMission({
+                  parentFolderId: folderId,
+                  name: newName || currentMission.name,
+                  isDraft: false
+                });
+                alert('Rota salva na Central de Missões!');
+              }}
             />
           </div>
         )}
