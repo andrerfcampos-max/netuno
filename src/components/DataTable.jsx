@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { LocateFixed, Navigation, Download, Map as MapIcon, MapPin, Plus, Edit } from 'lucide-react';
+import { LocateFixed, Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, MessageSquareText } from 'lucide-react';
 
 const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -173,6 +173,12 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                 <th className="p-2 cursor-pointer hover:bg-slate-600 transition-colors" onClick={() => requestSort('problemasHidrante')}>
                   Problemas do Hidrante{getSortIndicator('problemasHidrante')}
                 </th>
+                <th className="p-2 cursor-pointer hover:bg-slate-600 transition-colors" onClick={() => requestSort('dscEndereco')}>
+                  Endereço{getSortIndicator('dscEndereco')}
+                </th>
+                <th className="p-2 cursor-pointer hover:bg-slate-600 transition-colors" onClick={() => requestSort('dscPontoReferencia')}>
+                  Referência{getSortIndicator('dscPontoReferencia')}
+                </th>
                 <th className="p-2 text-center">Ações</th>
               </tr>
             </thead>
@@ -202,15 +208,16 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                   <td className="p-2 font-mono text-xs">
                     {h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' ? h.datHoraUltimaVistoria.split(' ')[0] : '-'}
                   </td>
-                  <td className="p-2">{h.problemasHidrante || '-'}</td>
+                  <td className="p-2 truncate max-w-[150px]" title={h.dscEndereco}>{h.dscEndereco || '-'}</td>
+                  <td className="p-2 truncate max-w-[120px]" title={h.dscPontoReferencia}>{h.dscPontoReferencia || '-'}</td>
                   <td className="p-2">
                     <div className="flex flex-nowrap items-center justify-center gap-1.5">
                       <button
                         onClick={() => onCenterMap(h)}
-                        title="Centralizar no Mapa"
-                        className="p-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors active:scale-95 flex-shrink-0"
+                        title="Abrir Dialog no Mapa"
+                        className="flex items-center justify-center gap-1 p-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors active:scale-95 flex-shrink-0 font-bold text-xs"
                       >
-                        <LocateFixed size={16} />
+                        <MessageSquareText size={16} />
                       </button>
                       <a
                         href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`}

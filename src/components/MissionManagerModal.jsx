@@ -99,61 +99,99 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
     const printWindow = window.open('', '', 'width=1000,height=800');
     const today = new Date().toLocaleDateString('pt-BR');
     
-    const folderStats = [];
-    folders.forEach(f => {
-      const ms = availableMissions.filter(m => m.parentFolderId === f.id);
-      if (ms.length > 0) {
-        folderStats.push({ folder: f, missions: ms });
-      }
-    });
-
     let html = `
       <html><head><title>Relatório - Visão de Comando</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        h1, h2 { text-align: center; }
-        .folder-box { margin-bottom: 20px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; }
-        .folder-title { font-weight: bold; font-size: 18px; margin-bottom: 10px; background: #f0f0f0; padding: 5px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+        h1 { text-align: center; color: #1e293b; margin-bottom: 5px; }
+        h2 { text-align: center; color: #64748b; font-size: 14px; margin-top: 0; margin-bottom: 30px; }
+        .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .folder-box { width: 300px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); break-inside: avoid; margin-bottom: 20px; }
+        .folder-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; }
+        .folder-title { font-weight: bold; font-size: 16px; color: #0f172a; }
+        .folder-badge { font-size: 11px; background: #e2e8f0; padding: 3px 8px; border-radius: 12px; color: #475569; }
+        .progress-bar-bg { width: 100%; background-color: #e2e8f0; border-radius: 8px; height: 16px; position: relative; margin-bottom: 15px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background-color: #3b82f6; border-radius: 8px; }
+        .progress-bar-fill.complete { background-color: #10b981; }
+        .progress-text { position: absolute; width: 100%; text-align: center; top: 0; left: 0; font-size: 10px; font-weight: bold; color: #fff; line-height: 16px; text-shadow: 0 0 2px rgba(0,0,0,0.8); }
+        .stats-grid { display: flex; justify-content: space-between; gap: 10px; text-align: center; }
+        .stat-box { flex: 1; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 0; background: #f8fafc; }
+        .stat-label { font-size: 10px; color: #64748b; display: block; text-transform: uppercase; }
+        .stat-value { font-size: 18px; font-weight: bold; color: #0f172a; display: block; margin-top: 4px; }
+        .stat-box.planejadas { border-color: #cbd5e1; }
+        .stat-box.andamento { border-color: #fcd34d; background: #fffbeb; }
+        .stat-box.concluidas { border-color: #6ee7b7; background: #ecfdf5; }
+        .signature { margin-top: 60px; text-align: center; page-break-inside: avoid; }
       </style></head>
       <body>
         <h1>NETUNO - RELATÓRIO DE VISÃO DE COMANDO</h1>
         <h2>Data de Emissão: ${today}</h2>
+        <div class="grid">
     `;
     
-    folderStats.forEach(fs => {
-       html += `<div class="folder-box">
-         <div class="folder-title">${fs.folder.name}</div>
-         <table>
-           <tr><th>Missão</th><th>Criador</th><th>Criado Em</th><th>Progresso</th></tr>`;
-       fs.missions.forEach(m => {
-          const total = m.selectedIds.length;
-          const completed = m.completedIds.length;
-          const prog = total > 0 ? Math.round((completed / total) * 100) : 0;
-          const date = new Date(m.createdAt).toLocaleDateString('pt-BR');
-          html += `<tr>
-            <td>${m.name}</td>
-            <td>${m.createdBy || '-'}</td>
-            <td>${date}</td>
-            <td>${completed}/${total} (${prog}%)</td>
-          </tr>`;
-       });
-       html += `</table></div>`;
+    folders.forEach(folder => {
+      const fMissions = availableMissions.filter(m => m.parentFolderId === folder.id);
+      
+      let totalHidrantes = 0;
+      let totalConcluidos = 0;
+      let naoIniciadas = 0;
+      let emAndamento = 0;
+      let concluidas = 0;
+
+      fMissions.forEach(m => {
+        const t = m.selectedIds.length;
+        const c = m.completedIds.length;
+        totalHidrantes += t;
+        totalConcluidos += c;
+        if (t > 0 && c === t) concluidas++;
+        else if (c > 0) emAndamento++;
+        else naoIniciadas++;
+      });
+      
+      const progGeral = totalHidrantes > 0 ? Math.round((totalConcluidos / totalHidrantes) * 100) : 0;
+      const progressClass = progGeral === 100 ? 'progress-bar-fill complete' : 'progress-bar-fill';
+
+      html += `
+        <div class="folder-box">
+          <div class="folder-header">
+            <span class="folder-title">${folder.name}</span>
+            <span class="folder-badge">${fMissions.length} Missões</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="${progressClass}" style="width: ${progGeral}%"></div>
+            <div class="progress-text">${progGeral}% (${totalConcluidos}/${totalHidrantes})</div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-box planejadas">
+              <span class="stat-label">Planejadas</span>
+              <span class="stat-label stat-value">${naoIniciadas}</span>
+            </div>
+            <div class="stat-box andamento">
+              <span class="stat-label">Andamento</span>
+              <span class="stat-label stat-value">${emAndamento}</span>
+            </div>
+            <div class="stat-box concluidas">
+              <span class="stat-label">Concluídas</span>
+              <span class="stat-label stat-value">${concluidas}</span>
+            </div>
+          </div>
+        </div>
+      `;
     });
 
     html += `
-        <div style="margin-top: 50px; text-align: center;">
+        </div>
+        <div class="signature">
           <br><br>_________________________________________<br>
           Assinatura do Responsável
         </div>
       </body></html>
     `;
+    
     printWindow.document.write(html);
     printWindow.document.close();
     printWindow.focus();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
   };
 
 

@@ -44,3 +44,7 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 
 ### [12/08/2026] Etapa 22 Concluída (Execução Manual via Agente)
 - **Ajustes Finos de UI/UX e Atualização do Modal de Vistoria** aplicados no repositório. Inclui revisão do formulário de vistorias (regras de equivalência do registro inoperante e novos defeitos), correção de cliques no mapa, agrupamento de ações em menu dropdown superior e atualização da lista oficial das 34 pastas dos quartéis.
+
+### [14/08/2026] Etapas 28 e 29 Concluídas (Execução Manual via Agente)
+- **Etapa 28**: Ajustes de UI no Bloco de Lista (inclusão de Endereço, Referência e botão de Abrir Dialog) e implementação da Memória de Estado do Mapa (preservação do zoom e centro ao navegar entre telas). O primeiro clique no pino também foi corrigido para abrir a dialog imediatamente.
+- **Etapa 29**: Implementação do Módulo de Estudo Técnico de Hidrantes (focado nas regras da ABNT NBR 12.218/2017). Adicionado cálculo automático espacial de coberturas (raios de 300, 600 e 800m), sugestões de alocação de novos hidrantes, plotagem visual via Leaflet e exportação de Parecer Técnico em PDF. Módulo restrito aos perfis Gestor e Admin.

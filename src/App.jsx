@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Upload, GitMerge, FolderOpen, PlusCircle } from 'lucide-react';
+import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
@@ -13,6 +13,7 @@ import MissionRoutePanel from './components/MissionRoutePanel';
 import MissionReportPanel from './components/MissionReportPanel';
 import MissionTabs from './components/MissionTabs';
 import MissionManagerModal from './components/MissionManagerModal';
+import TechnicalStudyModal from './components/TechnicalStudyModal';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders } from './utils/storage';
 
@@ -84,6 +85,7 @@ function App() {
   const [activeMissionId, setActiveMissionId] = useState(null);
   const [isMissionManagerOpen, setIsMissionManagerOpen] = useState(false);
   const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
+  const [isTechnicalStudyOpen, setIsTechnicalStudyOpen] = useState(false);
 
   const handleInspect = (h) => {
     if ('geolocation' in navigator) {
@@ -624,6 +626,15 @@ function App() {
                   Novo Hidrante
                 </button>
               )}
+              {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                <button 
+                  onClick={(e) => { setIsTechnicalStudyOpen(true); e.currentTarget.closest('details').removeAttribute('open'); }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-left bg-purple-900/30 text-purple-400 font-semibold rounded hover:bg-purple-900/50 transition-all"
+                >
+                  <Calculator size={18} />
+                  Estudo Técnico
+                </button>
+              )}
               <button 
                 onClick={(e) => { setIsMissionManagerOpen(true); e.currentTarget.closest('details').removeAttribute('open'); }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-700 text-emerald-400 font-semibold rounded hover:bg-slate-600 transition-all"
@@ -706,21 +717,20 @@ function App() {
         </div>
 
         {/* MÓDULO 2: MAPA TÁTICO INTEGRADO */}
-        {activeView === 'map' && (
-          <div className="w-full relative z-0 flex-1 flex-shrink-0 min-h-[400px]">
-            <MapComponent 
-              hidrantes={filteredList} 
-              onInspect={handleInspect}
-              onEdit={(h) => setEditingHydrante(h)}
-              centerPosition={mapCenterPosition}
-              selectedMissionIds={selectedMissionIds}
-              onToggleMission={toggleMissionSelection}
-              currentUser={currentUser}
-              isMapFullscreen={isMapFullscreen}
-              onMapClick={() => setIsMapFullscreen(prev => !prev)}
-            />
-          </div>
-        )}
+        <div className={`w-full relative z-0 flex-1 flex-shrink-0 min-h-[400px] ${activeView === 'map' ? 'block' : 'hidden'}`}>
+          <MapComponent 
+            hidrantes={filteredList} 
+            onInspect={handleInspect}
+            onEdit={(h) => setEditingHydrante(h)}
+            centerPosition={mapCenterPosition}
+            selectedMissionIds={selectedMissionIds}
+            onToggleMission={toggleMissionSelection}
+            currentUser={currentUser}
+            isMapFullscreen={isMapFullscreen}
+            onMapClick={() => setIsMapFullscreen(prev => !prev)}
+            activeView={activeView}
+          />
+        </div>
 
         {/* MÓDULO 4: TABELA */}
         {activeView === 'table' && (
@@ -822,6 +832,13 @@ function App() {
       )}
       {/* Toasts */}
       <ToastContainer theme="dark" position="bottom-center" />
+
+      <TechnicalStudyModal
+        isOpen={isTechnicalStudyOpen}
+        onClose={() => setIsTechnicalStudyOpen(false)}
+        hidrantes={hidrantes}
+        currentUser={currentUser}
+      />
     </div>
   );
 }
