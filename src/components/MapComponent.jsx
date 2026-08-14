@@ -66,6 +66,22 @@ const RecenterMap = ({ centerPosition }) => {
   return null;
 };
 
+const MapMemory = () => {
+  const map = useMapEvents({
+    moveend: () => {
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      localStorage.setItem('netuno_map_state', JSON.stringify({ lat: center.lat, lng: center.lng, zoom }));
+    },
+    zoomend: () => {
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      localStorage.setItem('netuno_map_state', JSON.stringify({ lat: center.lat, lng: center.lng, zoom }));
+    }
+  });
+  return null;
+};
+
 // Gerencia o comportamento do scroll wheel (Ctrl + scroll = zoom)
 const ScrollBehavior = () => {
   const map = useMap();
@@ -151,9 +167,21 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
   // Centro padrão (Brasília)
   const defaultCenter = [-15.793, -47.882];
   
-  const mapCenter = hidrantes.length > 0 
+  let initialCenter = hidrantes.length > 0 
     ? [hidrantes[0].numLatitude, hidrantes[0].numLongitude] 
     : defaultCenter;
+  let initialZoom = 12;
+
+  try {
+    const savedState = localStorage.getItem('netuno_map_state');
+    if (savedState) {
+      const parsed = JSON.parse(savedState);
+      if (parsed.lat && parsed.lng && parsed.zoom) {
+        initialCenter = [parsed.lat, parsed.lng];
+        initialZoom = parsed.zoom;
+      }
+    }
+  } catch(e) {}
 
   const renderMarkers = () => {
     return hidrantes.map((h, i) => {
@@ -165,13 +193,20 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         key={id || i} 
         position={[h.numLatitude, h.numLongitude]}
         icon={createDivIcon(h.flgAtivo, isSelected)}
-        ref={(r) => {
-          if (r && centerPosition && (centerPosition.codHidrante === h.codHidrante || centerPosition.nomHidrante === h.nomHidrante)) {
-            setTimeout(() => {
-              if (r.isPopupOpen && !r.isPopupOpen()) {
-                r.openPopup();
-              }
-            }, 300); // Aguarda a animação de pan terminar para abrir o popup
+        eventHandlers={{
+          add: (e) => {
+            if (centerPosition && (centerPosition.codHidrante === h.codHidrante || centerPosition.nomHidrante === h.nomHidrante)) {
+              setTimeout(() => {
+                if (e.target.isPopupOpen && !e.target.isPopupOpen()) {
+                  e.target.openPopup();
+                }
+              }, 300);
+            }
+          },
+          click: (e) => {
+            if (e.target.isPopupOpen && !e.target.isPopupOpen()) {
+              e.target.openPopup();
+            }
           }
         }}
       >
@@ -305,8 +340,8 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
       )}
 
       <MapContainer 
-        center={mapCenter} 
-        zoom={12} 
+        center={initialCenter} 
+        zoom={initialZoom} 
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={false}
       >
@@ -318,6 +353,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         />
         
         <RecenterMap centerPosition={centerPosition} />
+        <MapMemory />
         <ScrollBehavior />
         <MapClickHandler onMapClick={onMapClick} />
         <MapResizer isMapFullscreen={isMapFullscreen} activeView={activeView} />
