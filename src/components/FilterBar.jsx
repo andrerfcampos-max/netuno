@@ -37,7 +37,7 @@ const DEFEITOS_OFICIAIS = [
   "Vazamento no flange (operante)"
 ];
 
-const FilterBar = ({ onFilterChange, regions, anos = [], isVisible, currentUser, onLogout }) => {
+const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], isVisible, currentUser, onLogout }) => {
   const [filters, setFilters] = useState({
     buscaGeral: '',
     ra: '',
@@ -192,7 +192,7 @@ const FilterBar = ({ onFilterChange, regions, anos = [], isVisible, currentUser,
               onChange={(e) => handleChange('problema', e.target.value)}
             >
               <option value="">Qualquer problema / Nenhum</option>
-              {DEFEITOS_OFICIAIS.map(d => <option key={d} value={d}>{d}</option>)}
+              {problemasAtivos.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
 

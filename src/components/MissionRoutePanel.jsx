@@ -206,8 +206,10 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     text += `*Vistorias:* Realizadas: ${completedHydrants.length} / Pendentes: ${pendingRoute.length}\n\n`;
     
     pendingRoute.forEach((h, i) => {
+      const id = h.codHidrante || h.nomHidrante;
+      const linkNetuno = `${baseUrl}?hid=${id}`;
       const linkWaze = `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`;
-      text += `*${i + 1}. ${h.nomHidrante || h.codHidrante}* - Waze: ${linkWaze}\n`;
+      text += `*${i + 1}. ${id}*\nNetuno: ${linkNetuno}\nWaze: ${linkWaze}\n\n`;
     });
     
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;

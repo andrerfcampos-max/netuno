@@ -39,11 +39,14 @@ function App() {
   const [isFilterVisible, setIsFilterVisible] = useState(true);
   const [activeView, _setActiveView] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('view') || 'map';
+    const view = params.get('view');
+    if (view) return view;
+    return localStorage.getItem('netuno_active_view') || 'map';
   });
 
   const setActiveView = (view) => {
     _setActiveView(view);
+    localStorage.setItem('netuno_active_view', view);
     window.history.pushState({ view }, '', `?view=${view}`);
   };
 
@@ -51,9 +54,12 @@ function App() {
     const handlePopState = (event) => {
       if (event.state && event.state.view) {
         _setActiveView(event.state.view);
+        localStorage.setItem('netuno_active_view', event.state.view);
       } else {
         const params = new URLSearchParams(window.location.search);
-        _setActiveView(params.get('view') || 'map');
+        const view = params.get('view') || localStorage.getItem('netuno_active_view') || 'map';
+        _setActiveView(view);
+        localStorage.setItem('netuno_active_view', view);
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -297,12 +303,26 @@ function App() {
     const anos = new Set();
     dataForAno.forEach(h => {
       if (h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') {
-        // Assume formato DD/MM/YYYY ou similar que contenha o ano com 4 dígitos
         const match = h.datHoraUltimaVistoria.match(/\b(20\d{2})\b/);
         if (match) anos.add(match[1]);
       }
     });
     return Array.from(anos).sort((a, b) => b - a); // decrescente
+  }, [hidrantes, activeFilters]);
+
+  // Extrair Problemas dinamicamente
+  const problemasVistoria = useMemo(() => {
+    const filtersWithoutProblema = { ...activeFilters, problema: '' };
+    const dataForProblema = getFilteredData(filtersWithoutProblema, hidrantes);
+    const problemas = new Set();
+    dataForProblema.forEach(h => {
+      if (h.problemasHidrante && h.problemasHidrante.trim() !== '') {
+        // Se houver múltiplos problemas separados por vírgula, podemos querer dividir, mas o sistema salva como string única geralmente ou separados por vírgula.
+        const list = h.problemasHidrante.split(',').map(p => p.trim()).filter(Boolean);
+        list.forEach(p => problemas.add(p));
+      }
+    });
+    return Array.from(problemas).sort();
   }, [hidrantes, activeFilters]);
 
   const handleFileUpload = (event) => {
@@ -381,6 +401,7 @@ function App() {
       setOpenMissionIds(prev => [...prev, id]);
     }
     setActiveMissionId(id);
+    setActiveView('route');
   };
 
   const handleCloseTab = (id) => {
@@ -632,7 +653,7 @@ function App() {
         
         {/* MÓDULO 1: BARRA DE FILTROS */}
         {hidrantes.length > 0 && (
-          <FilterBar onFilterChange={handleFilterChange} regions={regions} anos={anosVistoria} isVisible={isFilterVisible && !isMapFullscreen} currentUser={currentUser} onLogout={handleLogout} />
+          <FilterBar onFilterChange={handleFilterChange} regions={regions} anos={anosVistoria} problemasAtivos={problemasVistoria} isVisible={isFilterVisible && !isMapFullscreen} currentUser={currentUser} onLogout={handleLogout} />
         )}
 
         {/* CONTROLES RETRÁTEIS */}
@@ -747,7 +768,7 @@ function App() {
                   name: newName || currentMission.name,
                   isDraft: false
                 });
-                alert('Rota salva na Central de Missões!');
+                toast.success('Rota salva na Central de Missões!');
               }}
             />
           </div>
