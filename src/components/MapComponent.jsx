@@ -5,6 +5,15 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2, Maximize2, Plus, Share2 } from 'lucide-react';
 
+const fixEncoding = (str) => {
+  if (!str) return str;
+  try {
+    return decodeURIComponent(escape(str));
+  } catch(e) {
+    return str;
+  }
+};
+
 // Fix para ícones padrão do Leaflet não quebrarem (embora vamos usar divIcon)
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -212,19 +221,19 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
               </div>
               
               <div className="font-semibold text-slate-500">RA:</div>
-              <div>{h.dscLocalidade || '-'}</div>
+              <div>{fixEncoding(h.dscLocalidade) || '-'}</div>
               
               <div className="font-semibold text-slate-500">Endereço:</div>
-              <div className="col-span-2 leading-tight">{h.dscEndereco || '-'}</div>
+              <div className="col-span-2 leading-tight">{fixEncoding(h.dscEndereco) || '-'}</div>
               
               <div className="font-semibold text-slate-500">Ponto de referência:</div>
-              <div className="col-span-2 leading-tight italic">{h.dscPontoReferencia || '-'}</div>
+              <div className="col-span-2 leading-tight italic">{fixEncoding(h.dscPontoReferencia) || '-'}</div>
 
               <div className="font-semibold text-slate-500 mt-1">Dt Vistoria:</div>
               <div className="text-slate-700 font-bold truncate">{h.datHoraUltimaVistoria || 'Sem registro'}</div>
 
               <div className="font-semibold text-slate-500 mt-1">Problema:</div>
-              <div className="text-slate-700 font-bold text-red-600 break-words max-h-60 overflow-y-auto pr-2" title={h.problemasHidrante}>{h.problemasHidrante || 'Nenhum'}</div>
+              <div className="text-slate-700 font-bold text-red-600 break-words max-h-60 overflow-y-auto pr-2" title={fixEncoding(h.problemasHidrante)}>{fixEncoding(h.problemasHidrante) || 'Nenhum'}</div>
             </div>
 
             {/* Navegação Externa GPS (Botões Reduzidos) */}
@@ -301,7 +310,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
             e.stopPropagation();
             if (onMapClick) onMapClick();
           }}
-          className="absolute top-4 right-4 z-[400] p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full transition-colors border border-slate-600 shadow-md active:scale-95"
+          className="absolute top-4 right-4 z-[9999] p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full transition-colors border border-slate-600 shadow-md active:scale-95"
           title="Modo Tela Cheia"
         >
           <Maximize2 size={24} />

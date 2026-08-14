@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput, FileSpreadsheet } from 'lucide-react';
+import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput, FileSpreadsheet, Printer } from 'lucide-react';
 import { createNewFolder } from '../utils/storage';
 
 const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser }) => {
@@ -79,17 +79,79 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
       const perc = total > 0 ? Math.round((comp / total) * 100) : 0;
       const criador = m.createdBy || "-";
       const date = new Date(m.createdAt).toLocaleDateString('pt-BR');
-      csvContent += `"${m.name}","${criador}","${date}",${total},${comp},${perc}%\\n`;
+      csvContent += `"${m.name}","${criador}","${date}",${total},${comp},${perc}%\n`;
     });
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Relatorio_Grupamento_${folderName.replace(/\\s+/g, '_')}.csv`);
+    link.setAttribute("download", `Relatorio_Grupamento_${folderName.replace(/\s+/g, '_')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
+
+  const handleExportPDFComando = () => {
+    const printWindow = window.open('', '', 'width=1000,height=800');
+    const today = new Date().toLocaleDateString('pt-BR');
+    
+    const folderStats = [];
+    folders.forEach(f => {
+      const ms = availableMissions.filter(m => m.parentFolderId === f.id);
+      if (ms.length > 0) {
+        folderStats.push({ folder: f, missions: ms });
+      }
+    });
+
+    let html = `
+      <html><head><title>Relatório - Visão de Comando</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1, h2 { text-align: center; }
+        .folder-box { margin-bottom: 20px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; }
+        .folder-title { font-weight: bold; font-size: 18px; margin-bottom: 10px; background: #f0f0f0; padding: 5px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+      </style></head>
+      <body>
+        <h1>NETUNO - RELATÓRIO DE VISÃO DE COMANDO</h1>
+        <h2>Data de Emissão: ${today}</h2>
+    `;
+    
+    folderStats.forEach(fs => {
+       html += `<div class="folder-box">
+         <div class="folder-title">${fs.folder.name}</div>
+         <table>
+           <tr><th>Missão</th><th>Criador</th><th>Criado Em</th><th>Progresso</th></tr>`;
+       fs.missions.forEach(m => {
+          const total = m.selectedIds.length;
+          const completed = m.completedIds.length;
+          const prog = total > 0 ? Math.round((completed / total) * 100) : 0;
+          const date = new Date(m.createdAt).toLocaleDateString('pt-BR');
+          html += `<tr>
+            <td>${m.name}</td>
+            <td>${m.createdBy || '-'}</td>
+            <td>${date}</td>
+            <td>${completed}/${total} (${prog}%)</td>
+          </tr>`;
+       });
+       html += `</table></div>`;
+    });
+
+    html += `
+        <div style="margin-top: 50px; text-align: center;">
+          <br><br>_________________________________________<br>
+          Assinatura do Responsável
+        </div>
+      </body></html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
+  };
+
 
   const handleCreateMission = () => {
     onNewMission();
@@ -238,9 +300,12 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
         {/* Tabs Principais */}
         <div className="flex border-b border-slate-700 bg-slate-900/40">
           <button onClick={() => setActiveTab('todas')} className={`flex-1 py-3 text-sm font-bold ${activeTab === 'todas' ? 'text-emerald-400 border-b-2 border-emerald-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'}`}>Pastas & Missões</button>
-          <button onClick={() => setActiveTab('visao_comando')} className={`flex-1 py-3 text-sm font-bold flex justify-center items-center gap-2 ${activeTab === 'visao_comando' ? 'text-blue-400 border-b-2 border-blue-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'}`}>
-             <Target size={16} /> Visão de Comando
-          </button>
+          {/* RBAC: Apenas Gestores e Admins acessam a Visão de Comando */}
+          {isGestor && (
+            <button onClick={() => setActiveTab('visao_comando')} className={`flex-1 py-3 text-sm font-bold flex justify-center items-center gap-2 ${activeTab === 'visao_comando' ? 'text-blue-400 border-b-2 border-blue-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'}`}>
+               <Target size={16} /> Visão de Comando
+            </button>
+          )}
         </div>
 
         {/* Search Bar (Only if not in comando) */}
@@ -260,56 +325,75 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
         <div className={`flex-1 overflow-y-auto ${activeTab === 'visao_comando' ? 'p-0' : 'p-4'} flex flex-col gap-3`}>
           
           {activeTab === 'visao_comando' && (
-            <div className="flex h-full w-full bg-slate-900 overflow-x-auto gap-4 p-4 pb-8 items-start">
-              {['nao_iniciadas', 'em_andamento', 'finalizadas'].map(colStatus => {
-                const colName = colStatus === 'nao_iniciadas' ? 'Planejamento / Não Iniciadas' : colStatus === 'em_andamento' ? 'Em Andamento' : 'Concluídas';
-                const colMissions = availableMissions.filter(m => {
-                  const total = m.selectedIds.length;
-                  const completed = m.completedIds.length;
-                  if (colStatus === 'nao_iniciadas') return completed === 0;
-                  if (colStatus === 'em_andamento') return completed > 0 && completed < total;
-                  if (colStatus === 'finalizadas') return total > 0 && completed === total;
-                  return false;
-                }).sort((a,b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+            <div className="flex flex-col h-full w-full bg-slate-900 overflow-y-auto gap-4 p-4 pb-8 items-start">
+              <div className="flex flex-col md:flex-row justify-between w-full items-start md:items-center mb-2 gap-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                   <Target className="text-blue-400" /> Dashboard de Comando
+                </h3>
+                <button 
+                  onClick={handleExportPDFComando}
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-lg transition-transform active:scale-95"
+                >
+                  <Printer size={18} /> Exportar Relatório (PDF)
+                </button>
+              </div>
 
-                return (
-                  <div key={colStatus} className="min-w-[300px] max-w-[350px] w-full bg-slate-800/80 border border-slate-700 rounded-xl p-3 flex flex-col h-fit max-h-full">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-bold text-slate-300 uppercase tracking-wider text-xs">{colName}</h4>
-                      <span className="bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded-full font-bold">{colMissions.length}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                {folders.map(folder => {
+                  const fMissions = availableMissions.filter(m => m.parentFolderId === folder.id);
+                  if (fMissions.length === 0) return null;
+                  
+                  let totalHidrantes = 0;
+                  let totalConcluidos = 0;
+                  let naoIniciadas = 0;
+                  let emAndamento = 0;
+                  let concluidas = 0;
+
+                  fMissions.forEach(m => {
+                    const t = m.selectedIds.length;
+                    const c = m.completedIds.length;
+                    totalHidrantes += t;
+                    totalConcluidos += c;
+                    if (t > 0 && c === t) concluidas++;
+                    else if (c > 0) emAndamento++;
+                    else naoIniciadas++;
+                  });
+                  
+                  const progGeral = totalHidrantes > 0 ? Math.round((totalConcluidos / totalHidrantes) * 100) : 0;
+
+                  return (
+                    <div key={folder.id} className="bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col gap-3 shadow-md">
+                       <h4 className="font-bold text-emerald-400 text-lg border-b border-slate-700 pb-2 flex justify-between items-center">
+                          {folder.name}
+                          <span className="text-xs bg-emerald-900/50 text-emerald-300 px-2 py-1 rounded-full">{fMissions.length} Missões</span>
+                       </h4>
+                       
+                       <div className="w-full bg-slate-700 rounded-full h-4 mb-1 overflow-hidden border border-slate-600 relative">
+                         <div className={`h-full ${progGeral === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${progGeral}%` }}></div>
+                         <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">{progGeral}% ({totalConcluidos}/{totalHidrantes})</div>
+                       </div>
+                       
+                       <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold mt-2">
+                         <div className="bg-slate-700/50 rounded py-2 border border-slate-600 flex flex-col">
+                           <span className="text-slate-400">Planejadas</span>
+                           <span className="text-lg text-slate-200">{naoIniciadas}</span>
+                         </div>
+                         <div className="bg-amber-900/20 rounded py-2 border border-amber-900/50 flex flex-col">
+                           <span className="text-amber-500">Andamento</span>
+                           <span className="text-lg text-amber-400">{emAndamento}</span>
+                         </div>
+                         <div className="bg-emerald-900/20 rounded py-2 border border-emerald-900/50 flex flex-col">
+                           <span className="text-emerald-500">Concluídas</span>
+                           <span className="text-lg text-emerald-400">{concluidas}</span>
+                         </div>
+                       </div>
                     </div>
-                    <div className="flex flex-col gap-2 overflow-y-auto pr-1 pb-2">
-                      {colMissions.map(m => {
-                        const total = m.selectedIds.length;
-                        const completed = m.completedIds.length;
-                        const prog = total > 0 ? Math.round((completed / total) * 100) : 0;
-                        const folder = folders.find(f => f.id === m.parentFolderId);
-                        
-                        return (
-                          <div key={m.id} className="bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg p-3 shadow-sm cursor-pointer transition-colors" onClick={() => { onOpenMission(m.id); onClose(); }}>
-                            <div className="flex justify-between items-start mb-1">
-                               <h5 className="font-bold text-sm text-emerald-400 line-clamp-2">{m.name}</h5>
-                            </div>
-                            <div className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1">
-                               <Folder size={12}/> {folder ? folder.name : 'Central'}
-                            </div>
-                            <div className="w-full bg-slate-800 rounded-full h-1.5 mb-1">
-                              <div className={`h-1.5 rounded-full ${prog === 100 ? 'bg-emerald-500' : 'bg-blue-400'}`} style={{ width: `${prog}%` }}></div>
-                            </div>
-                            <div className="flex justify-between text-[10px] text-slate-400 font-bold">
-                               <span>Progresso</span>
-                               <span>{completed}/{total} ({prog}%)</span>
-                            </div>
-                          </div>
-                        )
-                      })}
-                      {colMissions.length === 0 && (
-                        <div className="text-center p-4 text-slate-500 text-xs italic border-2 border-dashed border-slate-700 rounded-lg">Nenhuma missão</div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+                {availableMissions.length === 0 && (
+                  <div className="col-span-full text-center text-slate-500 py-8">Nenhuma missão registrada.</div>
+                )}
+              </div>
             </div>
           )}
 
