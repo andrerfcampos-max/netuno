@@ -1,5 +1,15 @@
 import React, { useState, useRef } from 'react';
 
+const fixEncoding = (str) => {
+  if (!str) return str;
+  try {
+    return decodeURIComponent(escape(str));
+  } catch(e) {
+    return str;
+  }
+};
+
+
 const DEFEITOS_OFICIAIS = [
   "Caixa do hidrante obstruída com esgoto",
   "Hidrante sem água",
@@ -177,7 +187,7 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
         
         <div className="bg-slate-900 p-4 border-b border-slate-700">
           <h2 className="text-xl font-bold text-white">Vistoria Rápida</h2>
-          <p className="text-sm text-slate-400">Hidrante: {hidrante.nomHidrante || hidrante.codHidrante}</p>
+          <p className="text-sm text-slate-400">Hidrante: {fixEncoding(hidrante.nomHidrante) || hidrante.codHidrante}</p>
         </div>
 
         <div className="p-4 flex flex-col gap-4 overflow-y-auto">

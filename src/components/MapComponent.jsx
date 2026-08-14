@@ -211,7 +211,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                   }}
                 />
               )}
-              <div className="font-bold text-base flex-1">{h.nomHidrante || h.codHidrante}</div>
+              <div className="font-bold text-base flex-1">{fixEncoding(h.nomHidrante) || h.codHidrante}</div>
             </div>
             
             <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 mb-1">
@@ -292,7 +292,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
   return (
     <div className={isMapFullscreen ? "fixed inset-0 z-[100] bg-slate-900" : "h-[60vh] min-h-[400px] w-full relative rounded-xl overflow-hidden border border-slate-700 shadow-inner z-0"}>
       
-      {isMapFullscreen ? (
+      {isMapFullscreen && (
         <button 
           onClick={(e) => {
             e.stopPropagation(); // Evita que o click vaze para o mapa
@@ -303,17 +303,6 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         >
           <Minimize2 size={20} className="text-emerald-400" />
           Clique aqui para Sair da Tela Cheia
-        </button>
-      ) : (
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onMapClick) onMapClick();
-          }}
-          className="absolute top-4 right-4 z-[9999] p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full transition-colors border border-slate-600 shadow-md active:scale-95"
-          title="Modo Tela Cheia"
-        >
-          <Maximize2 size={24} />
         </button>
       )}
 
@@ -359,6 +348,19 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
           />
         )}
       </MapContainer>
+
+      {!isMapFullscreen && (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onMapClick) onMapClick();
+          }}
+          className="absolute top-4 right-4 z-[9999] p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full transition-colors border border-slate-600 shadow-md active:scale-95"
+          title="Modo Tela Cheia"
+        >
+          <Maximize2 size={24} />
+        </button>
+      )}
     </div>
   );
 };

@@ -319,7 +319,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     <div className="flex flex-col p-4 w-full h-full bg-slate-900 relative">
 
       <div className="flex justify-between items-start mb-4 pb-2 border-b border-slate-700 relative">
-        <div className="flex flex-col gap-1 w-full">
+        <div className="flex flex-col gap-1 flex-1 min-w-0 mr-2">
           {currentMission ? (
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
@@ -475,7 +475,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
               title="Salvar Rota na Central"
             >
               <Save size={18} />
-              {currentMission?.isDraft ? 'SALVAR ROTA' : 'SALVAR CÓPIA'}
+              SALVAR ROTA
             </button>
             
             {showSaveMenu && (

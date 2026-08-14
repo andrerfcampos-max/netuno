@@ -32,8 +32,12 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
   // Breadcrumbs
   const getBreadcrumbs = () => {
     const crumbs = [];
+    const visited = new Set();
     let currentId = currentFolderId;
     while (currentId) {
+      if (visited.has(currentId)) break; // Proteção contra loop infinito/tela preta
+      visited.add(currentId);
+      
       const f = folders.find(folder => folder.id === currentId);
       if (f) {
         crumbs.unshift({ id: f.id, name: f.name });
@@ -341,7 +345,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                 {folders.map(folder => {
                   const fMissions = availableMissions.filter(m => m.parentFolderId === folder.id);
-                  if (fMissions.length === 0) return null;
+                  // if (fMissions.length === 0) return null; // Removido para garantir que todos os quartéis sejam visíveis
                   
                   let totalHidrantes = 0;
                   let totalConcluidos = 0;

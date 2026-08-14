@@ -9,26 +9,29 @@ export const parseHydrantsCSV = (csvFile, onComplete) => {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        // Sanitização estrita exigida
-        const sanitizedData = results.data
+         const sanitizedData = results.data
+          .filter(row => Object.keys(row).length > 1) // ignora linhas vazias
           .map((row, index) => {
-            const rawLat = row.numLatitude ? String(row.numLatitude).replace(',', '.') : '';
-            const rawLng = row.numLongitude ? String(row.numLongitude).replace(',', '.') : '';
+            const rawLatVal = row.numLatitude !== undefined ? row.numLatitude : (row.Latitude || row.latitude || row.num_latitude || row.LATITUDE);
+            const rawLngVal = row.numLongitude !== undefined ? row.numLongitude : (row.Longitude || row.longitude || row.num_longitude || row.LONGITUDE);
+            
+            const rawLat = rawLatVal ? String(rawLatVal).replace(/,/g, '.') : '';
+            const rawLng = rawLngVal ? String(rawLngVal).replace(/,/g, '.') : '';
 
             const lat = parseFloat(rawLat);
             const lng = parseFloat(rawLng);
 
-              const ativoStr = row.flgAtivo ? String(row.flgAtivo).trim().toLowerCase() : '';
-              const isAtivo = ['true', '1', 'v', 'verdadeiro', 'sim', 's', 'operante', 'ativo'].includes(ativoStr) || row.flgAtivo === true;
+            const flgAtivoRaw = row.flgAtivo !== undefined ? row.flgAtivo : row.Status;
+            const ativoStr = flgAtivoRaw ? String(flgAtivoRaw).trim().toLowerCase() : '';
+            const isAtivo = ['true', '1', 'v', 'verdadeiro', 'sim', 's', 'operante', 'ativo'].includes(ativoStr) || flgAtivoRaw === true;
 
             return {
               ...row,
-              // Fallback ID to ensure updates work if missing from CSV
               _internalId: index,
               numLatitude: lat,
               numLongitude: lng,
               flgAtivo: isAtivo,
-              problemasHidrante: row.problemasHidrante || '',
+              problemasHidrante: row.problemasHidrante || row.Problema || '',
               datHoraUltimaVistoria: row.datHoraUltimaVistoria || row.datHoraVistoria || row.DataVistoria || row.data_vistoria || row['Última Vistoria'] || row['Ultima Vistoria'] || row.dataHoraUltimaVistoria || '',
             };
           })

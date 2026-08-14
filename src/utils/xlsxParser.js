@@ -14,8 +14,11 @@ export const loadPreloadedDatabase = async (onComplete) => {
     
     const sanitizedData = rawData
       .map((row, index) => {
-        const rawLat = row.numLatitude ? String(row.numLatitude).replace(',', '.') : '';
-        const rawLng = row.numLongitude ? String(row.numLongitude).replace(',', '.') : '';
+        const rawLatVal = row.numLatitude !== undefined ? row.numLatitude : (row.Latitude || row.latitude || row.num_latitude || row.LATITUDE);
+        const rawLngVal = row.numLongitude !== undefined ? row.numLongitude : (row.Longitude || row.longitude || row.num_longitude || row.LONGITUDE);
+        
+        const rawLat = rawLatVal ? String(rawLatVal).replace(/,/g, '.') : '';
+        const rawLng = rawLngVal ? String(rawLngVal).replace(/,/g, '.') : '';
 
         const lat = parseFloat(rawLat);
         const lng = parseFloat(rawLng);
