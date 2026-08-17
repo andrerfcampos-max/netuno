@@ -246,15 +246,16 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
           }
         }}
       >
-        <Popup minWidth={300} className="argos-popup">
-          <div className="flex flex-col gap-2 p-1 text-slate-800 text-sm w-full leading-snug">
+        <Popup minWidth={310} className="argos-popup">
+          <div className="flex flex-col gap-2 p-1.5 text-slate-800 text-sm w-full leading-normal">
+            {/* Cabeçalho do Hidrante com Foto e Status */}
             <div className="flex gap-3 items-center border-b border-slate-200 pb-2 mb-1">
               {h.fotoPerfil && (
                 <img 
                   src={h.fotoPerfil} 
-                  alt="Hidrante" 
-                  className="w-14 h-14 rounded-md object-cover cursor-pointer hover:scale-105 transition-transform border shadow-sm"
-                  onClick={(e) => {
+                  alt="Foto Hidrante" 
+                  className="w-14 h-14 rounded-lg object-cover cursor-pointer hover:scale-105 transition-transform border border-slate-300 shadow-sm"
+                  onClick={() => {
                     const img = document.createElement('img');
                     img.src = h.fotoPerfil;
                     img.style.maxWidth = '90%';
@@ -276,75 +277,102 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                   }}
                 />
               )}
-              <div className="font-black text-lg text-slate-900 flex-1">{fixEncoding(h.nomHidrante) || h.codHidrante}</div>
+              <div className="flex flex-col flex-1 min-w-0">
+                <span className="font-extrabold text-base tracking-tight text-slate-900 truncate">
+                  {fixEncoding(h.nomHidrante) || h.codHidrante}
+                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-black tracking-wide ${
+                    h.flgAtivo 
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                      : 'bg-red-100 text-red-800 border border-red-300'
+                  }`}>
+                    {h.flgAtivo ? '● OPERANTE' : '● INOPERANTE'}
+                  </span>
+                </div>
+              </div>
             </div>
             
-            <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 mb-2">
-              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide flex items-center">Status</div>
-              <div className={h.flgAtivo ? 'text-emerald-600 font-black' : 'text-red-600 font-black'}>
-                {h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}
+            {/* Informações Estruturadas */}
+            <div className="flex flex-col gap-1.5 text-xs text-slate-700 bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+              <div className="flex justify-between items-center py-0.5 border-b border-slate-200/60">
+                <span className="font-bold text-slate-500 uppercase tracking-wider text-[11px]">RA / Cidade</span>
+                <span className="font-semibold text-slate-900">{fixEncoding(h.dscLocalidade) || '-'}</span>
               </div>
               
-              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide">RA</div>
-              <div className="text-slate-700 font-medium">{fixEncoding(h.dscLocalidade) || '-'}</div>
+              <div className="flex flex-col py-0.5 border-b border-slate-200/60">
+                <span className="font-bold text-slate-500 uppercase tracking-wider text-[11px]">Endereço</span>
+                <span className="font-medium text-slate-800 mt-0.5 leading-tight">{fixEncoding(h.dscEndereco) || '-'}</span>
+              </div>
               
-              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide">Endereço</div>
-              <div className="col-span-2 text-slate-700">{fixEncoding(h.dscEndereco) || '-'}</div>
-              
-              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide">Ponto Ref.</div>
-              <div className="col-span-2 text-slate-600 italic text-xs">{fixEncoding(h.dscPontoReferencia) || '-'}</div>
+              {h.dscPontoReferencia && (
+                <div className="flex flex-col py-0.5 border-b border-slate-200/60">
+                  <span className="font-bold text-slate-500 uppercase tracking-wider text-[11px]">Ponto de Referência</span>
+                  <span className="italic text-slate-600 mt-0.5 leading-tight">{fixEncoding(h.dscPontoReferencia)}</span>
+                </div>
+              )}
 
-              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide">Dt Vistoria</div>
-              <div className="text-slate-700 font-bold truncate">{h.datHoraUltimaVistoria || 'Sem registro'}</div>
+              <div className="flex justify-between items-center py-0.5 border-b border-slate-200/60">
+                <span className="font-bold text-slate-500 uppercase tracking-wider text-[11px]">Última Vistoria</span>
+                <span className="font-bold text-slate-800">{h.datHoraUltimaVistoria || 'Sem registro'}</span>
+              </div>
               
-              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide mt-1">Coordenadas</div>
-              <div className="text-slate-700 text-xs font-mono mt-1">{h.numLatitude}, {h.numLongitude}</div>
+              <div className="flex justify-between items-center py-0.5 border-b border-slate-200/60">
+                <span className="font-bold text-slate-500 uppercase tracking-wider text-[11px]">Coordenadas</span>
+                <span className="font-mono text-slate-700 font-semibold">{h.numLatitude?.toFixed(6) || h.numLatitude}, {h.numLongitude?.toFixed(6) || h.numLongitude}</span>
+              </div>
 
-              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide mt-1">Problema</div>
-              <div className="text-slate-700 font-bold text-red-600 break-words max-h-60 overflow-y-auto pr-2 mt-1" title={fixEncoding(h.problemasHidrante)}>{fixEncoding(h.problemasHidrante) || 'Nenhum'}</div>
+              {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (
+                <div className="flex flex-col py-0.5">
+                  <span className="font-bold text-red-600 uppercase tracking-wider text-[11px]">Problemas Registrados</span>
+                  <span className="font-bold text-red-700 mt-0.5 break-words bg-red-50 p-1.5 rounded border border-red-200 max-h-24 overflow-y-auto">
+                    {fixEncoding(h.problemasHidrante)}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Navegação Externa GPS (Botões Reduzidos) */}
-            <div className="grid grid-cols-4 gap-1 mt-1">
-              <a href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-blue-500 !text-white !rounded font-bold hover:!bg-blue-400 transition-colors" title="Waze">
-                <Navigation size={14} />
+            {/* Navegação Externa GPS */}
+            <div className="grid grid-cols-4 gap-1.5 mt-1">
+              <a href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-blue-600 !text-white !rounded-md font-bold text-xs hover:!bg-blue-500 transition-colors shadow-sm" title="Abrir no Waze">
+                <Navigation size={14} /> Waze
               </a>
-              <a href={`https://maps.google.com/maps?q=${h.numLatitude},${h.numLongitude}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-emerald-600 !text-white !rounded font-bold hover:!bg-emerald-500 transition-colors" title="Google Maps">
-                <MapIcon size={14} />
+              <a href={`https://maps.google.com/maps?q=${h.numLatitude},${h.numLongitude}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-emerald-600 !text-white !rounded-md font-bold text-xs hover:!bg-emerald-500 transition-colors shadow-sm" title="Google Maps">
+                <MapIcon size={14} /> Maps
               </a>
-              <a href={`https://maps.google.com/maps?q=&layer=c&cbll=${h.numLatitude},${h.numLongitude}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-orange-500 !text-white !rounded font-bold hover:!bg-orange-400 transition-colors" title="Street View">
-                <MapPin size={14} />
+              <a href={`https://maps.google.com/maps?q=&layer=c&cbll=${h.numLatitude},${h.numLongitude}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-orange-500 !text-white !rounded-md font-bold text-xs hover:!bg-orange-400 transition-colors shadow-sm" title="Street View">
+                <MapPin size={14} /> 360°
               </a>
-              <a href={`https://wa.me/?text=${encodeURIComponent(`🚒 *Hidrante:* ${h.nomHidrante || h.codHidrante}\n📍 *RA:* ${h.dscLocalidade || '-'}\n${h.flgAtivo ? '🟢 *Status:* OPERANTE' : '🔴 *Status:* INOPERANTE'}\n📅 *Última Vistoria:* ${h.datHoraUltimaVistoria || 'Sem registro'}\n⚠️ *Problemas:* ${h.problemasHidrante || 'Nenhum'}\n🗺️ *Endereço:* ${h.dscEndereco || ''} ${h.dscPontoReferencia ? `(${h.dscPontoReferencia})` : ''}\n\n🌐 *Netuno:* ${window.location.origin}${window.location.pathname}?hid=${id}\n🚗 *Waze:* https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}`)}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-green-500 !text-white !rounded font-bold hover:!bg-green-400 transition-colors" title="WhatsApp">
+              <a href={`https://wa.me/?text=${encodeURIComponent(`🚒 *Hidrante:* ${h.nomHidrante || h.codHidrante}\n📍 *RA:* ${h.dscLocalidade || '-'}\n${h.flgAtivo ? '🟢 *Status:* OPERANTE' : '🔴 *Status:* INOPERANTE'}\n📅 *Última Vistoria:* ${h.datHoraUltimaVistoria || 'Sem registro'}\n⚠️ *Problemas:* ${h.problemasHidrante || 'Nenhum'}\n🗺️ *Endereço:* ${h.dscEndereco || ''} ${h.dscPontoReferencia ? `(${h.dscPontoReferencia})` : ''}\n\n🌐 *Netuno:* ${window.location.origin}${window.location.pathname}?hid=${id}\n🚗 *Waze:* https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}`)}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-1.5 !bg-green-600 !text-white !rounded-md font-bold text-xs hover:!bg-green-500 transition-colors shadow-sm" title="Compartilhar no WhatsApp">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a5.8 5.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
               </a>
             </div>
 
-            {/* Ações Táticas (Reduzidas) */}
-            <div className="flex flex-col gap-1 mt-1">
+            {/* Ações Táticas */}
+            <div className="flex flex-col gap-1.5 mt-1">
               {isGestor && (
                 <button 
                   onClick={() => onToggleMission && onToggleMission(id)}
-                  className={`flex w-full items-center justify-center gap-1 py-2 rounded font-bold transition-all active:scale-95 ${isSelected ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}
+                  className={`flex w-full items-center justify-center gap-1.5 py-2 rounded-lg font-bold text-xs transition-all active:scale-95 shadow-sm ${isSelected ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}
                 >
                   {isSelected ? 'REMOVER DA MISSÃO' : 'ADICIONAR À MISSÃO'}
                 </button>
               )}
               
-              <div className="flex gap-1">
+              <div className="flex gap-1.5">
                 <button 
                   onClick={() => onInspect(h)}
-                  className="flex-1 flex items-center justify-center gap-1 py-2 bg-teal-600 text-white rounded font-bold hover:bg-teal-500 active:scale-95 transition-all"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-teal-600 text-white rounded-lg font-bold text-xs hover:bg-teal-500 active:scale-95 transition-all shadow-sm"
                 >
-                  <Plus size={20} strokeWidth={3} />
-                  CAD. VIST.
+                  <Plus size={18} strokeWidth={2.5} />
+                  CAD. VISTORIA
                 </button>
                 {isGestor && (
                   <button 
                     onClick={() => onEdit && onEdit(h)}
-                    className="flex-1 flex items-center justify-center gap-1 py-2 bg-amber-700 text-white rounded font-bold hover:bg-amber-600 active:scale-95 transition-all"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-amber-700 text-white rounded-lg font-bold text-xs hover:bg-amber-600 active:scale-95 transition-all shadow-sm"
                   >
-                    <Edit size={14} />
+                    <Edit size={15} />
                     EDITAR
                   </button>
                 )}

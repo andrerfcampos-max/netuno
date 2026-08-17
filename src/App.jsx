@@ -16,6 +16,7 @@ import MissionManagerModal from './components/MissionManagerModal';
 import TechnicalStudyModal from './components/TechnicalStudyModal';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders } from './utils/storage';
+import { normalizeRAName, RA_LIST } from './utils/raList';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Raio da Terra em km
@@ -41,7 +42,7 @@ function App() {
   const [activeView, _setActiveView] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const view = params.get('view');
-    if (view) return view;
+    if (view && ['map', 'table', 'route', 'report'].includes(view)) return view;
     return localStorage.getItem('netuno_active_view') || 'map';
   });
   const [reportMode, setReportMode] = useState('global');
@@ -49,7 +50,9 @@ function App() {
   const setActiveView = (view) => {
     _setActiveView(view);
     localStorage.setItem('netuno_active_view', view);
-    window.history.pushState({ view }, '', `?view=${view}`);
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', view);
+    window.history.pushState({ view }, '', url.toString());
   };
 
   useEffect(() => {
@@ -65,11 +68,8 @@ function App() {
       }
     };
     window.addEventListener('popstate', handlePopState);
-    if (!window.history.state) {
-      window.history.replaceState({ view: activeView }, '', `?view=${activeView}`);
-    }
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [activeView]);
+  }, []);
 
   const [activeFilters, setActiveFilters] = useState({});
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
@@ -88,54 +88,57 @@ function App() {
   const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
   const [isTechnicalStudyOpen, setIsTechnicalStudyOpen] = useState(false);
 
-  // Touch Swipe na tela principal para alternar abas
-  const mainTouchStartX = useRef(null);
-  const mainTouchStartY = useRef(null);
-
-  const handleMainTouchStart = (e) => {
-    mainTouchStartX.current = e.touches[0].clientX;
-    mainTouchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleMainTouchEnd = (e) => {
-    if (mainTouchStartX.current === null || mainTouchStartY.current === null) return;
-    const diffX = mainTouchStartX.current - e.changedTouches[0].clientX;
-    const diffY = mainTouchStartY.current - e.changedTouches[0].clientY;
-
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 60) {
-      const views = ['map', 'table'];
-      if (activeMissionId && selectedMissionIds.length > 0) views.push('route');
-      if (currentUser?.role === 'gestor' || currentUser?.role === 'admin') views.push('report');
-
-      const currentIndex = views.indexOf(activeView);
-      if (currentIndex !== -1) {
-        if (diffX > 0 && currentIndex < views.length - 1) {
-          // Arrastou para esquerda -> próxima aba
-          setActiveView(views[currentIndex + 1]);
-        } else if (diffX < 0 && currentIndex > 0) {
-          // Arrastou para direita -> aba anterior
-          setActiveView(views[currentIndex - 1]);
-        }
-      }
-    }
-    mainTouchStartX.current = null;
-    mainTouchStartY.current = null;
-  };
-
   // Suporte a abertura direta de modais via link/URL parameter
   useEffect(() => {
+    if (!currentUser) return;
     const params = new URLSearchParams(window.location.search);
-    const modal = params.get('modal');
-    if (modal === 'estudo-tecnico' && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
+    const modal = params.get('modal') || params.get('view');
+    if ((modal === 'estudo-tecnico' || modal === 'technical-study') && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
       setIsTechnicalStudyOpen(true);
-    } else if (modal === 'novo-hidrante' && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
+    } else if ((modal === 'novo-hidrante' || modal === 'new-hydrant') && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
       setEditingHydrante({});
     } else if (modal === 'admin' && currentUser?.role === 'admin') {
       setIsUserManagerOpen(true);
-    } else if (modal === 'central-missoes' || modal === 'missoes') {
+    } else if (modal === 'central-missoes' || modal === 'missoes' || modal === 'missions') {
       setIsMissionManagerOpen(true);
     }
   }, [currentUser]);
+
+  const handleCloseTechnicalStudy = () => {
+    setIsTechnicalStudyOpen(false);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('modal')) {
+      url.searchParams.delete('modal');
+      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+    }
+  };
+
+  const handleCloseMissionManager = () => {
+    setIsMissionManagerOpen(false);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('modal')) {
+      url.searchParams.delete('modal');
+      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+    }
+  };
+
+  const handleCloseUserManager = () => {
+    setIsUserManagerOpen(false);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('modal')) {
+      url.searchParams.delete('modal');
+      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+    }
+  };
+
+  const handleCloseEditHydrant = () => {
+    setEditingHydrante(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('modal')) {
+      url.searchParams.delete('modal');
+      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+    }
+  };
 
   const handleInspect = (h) => {
     if ('geolocation' in navigator) {
@@ -339,12 +342,50 @@ function App() {
     return result;
   };
 
+  // Touch Swipe na tela principal para alternar abas
+  const mainTouchStartX = useRef(null);
+  const mainTouchStartY = useRef(null);
+
+  const handleMainTouchStart = (e) => {
+    mainTouchStartX.current = e.touches[0].clientX;
+    mainTouchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleMainTouchEnd = (e) => {
+    if (mainTouchStartX.current === null || mainTouchStartY.current === null) return;
+    const diffX = mainTouchStartX.current - e.changedTouches[0].clientX;
+    const diffY = mainTouchStartY.current - e.changedTouches[0].clientY;
+
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 60) {
+      const views = ['map', 'table'];
+      if (activeMissionId && selectedMissionIds.length > 0) views.push('route');
+      if (currentUser?.role === 'gestor' || currentUser?.role === 'admin') views.push('report');
+
+      const currentIndex = views.indexOf(activeView);
+      if (currentIndex !== -1) {
+        if (diffX > 0 && currentIndex < views.length - 1) {
+          // Arrastou para esquerda -> próxima aba
+          setActiveView(views[currentIndex + 1]);
+        } else if (diffX < 0 && currentIndex > 0) {
+          // Arrastou para direita -> aba anterior
+          setActiveView(views[currentIndex - 1]);
+        }
+      }
+    }
+    mainTouchStartX.current = null;
+    mainTouchStartY.current = null;
+  };
+
   // Extrair Regiões (RAs) únicas dinamicamente
   const regions = useMemo(() => {
     const filtersWithoutRA = { ...activeFilters, ra: '' };
     const dataForRA = getFilteredData(filtersWithoutRA, hidrantes);
-    const r = new Set(dataForRA.map(h => h.dscLocalidade).filter(Boolean));
-    return Array.from(r).sort();
+    const r = new Set();
+    dataForRA.forEach(h => {
+      const norm = normalizeRAName(h.dscLocalidade);
+      if (norm) r.add(norm);
+    });
+    return Array.from(r).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }, [hidrantes, activeFilters]);
 
   // Extrair Anos únicos dinamicamente
@@ -369,7 +410,6 @@ function App() {
     const problemas = new Set();
     dataForProblema.forEach(h => {
       if (h.problemasHidrante && h.problemasHidrante.trim() !== '') {
-        // Se houver múltiplos problemas separados por vírgula, podemos querer dividir, mas o sistema salva como string única geralmente ou separados por vírgula.
         const list = h.problemasHidrante.split(',').map(p => p.trim()).filter(Boolean);
         list.forEach(p => problemas.add(p));
       }
@@ -397,46 +437,55 @@ function App() {
   };
 
   const handleSaveInspection = (updatedHidrante) => {
+    const sanitized = {
+      ...updatedHidrante,
+      dscLocalidade: normalizeRAName(updatedHidrante.dscLocalidade)
+    };
     const newHidrantes = hidrantes.map(h => {
-      if (h._internalId === updatedHidrante._internalId || 
-         (h.nomHidrante === updatedHidrante.nomHidrante && h.codHidrante === updatedHidrante.codHidrante)) {
-        return updatedHidrante;
+      if (h._internalId === sanitized._internalId || 
+         (h.nomHidrante === sanitized.nomHidrante && h.codHidrante === sanitized.codHidrante)) {
+        return sanitized;
       }
       return h;
     });
     setHidrantes(newHidrantes);
     
-    const id = updatedHidrante.codHidrante || updatedHidrante.nomHidrante;
+    const id = sanitized.codHidrante || sanitized.nomHidrante;
     if (activeMissionId && selectedMissionIds.includes(id) && !completedMissionIds.includes(id)) {
       updateCurrentMission({ completedIds: [...completedMissionIds, id] });
     }
 
     applyFilters(activeFilters, newHidrantes);
-    setLastInspectedCoords({ lat: updatedHidrante.numLatitude, lng: updatedHidrante.numLongitude });
+    setLastInspectedCoords({ lat: sanitized.numLatitude, lng: sanitized.numLongitude });
     setInspectingHidrante(null);
   };
 
   const handleSaveEdit = (updatedHidrante) => {
+    const sanitized = {
+      ...updatedHidrante,
+      dscLocalidade: normalizeRAName(updatedHidrante.dscLocalidade)
+    };
     let exists = false;
     const newHidrantes = hidrantes.map(h => {
-      if ((h._internalId && h._internalId === updatedHidrante._internalId) || 
-         (h.codHidrante && h.codHidrante === updatedHidrante.codHidrante)) {
+      if ((h._internalId && h._internalId === sanitized._internalId) || 
+         (h.codHidrante && h.codHidrante === sanitized.codHidrante) ||
+         (h.nomHidrante && h.nomHidrante === sanitized.nomHidrante)) {
         exists = true;
-        return updatedHidrante;
+        return sanitized;
       }
       return h;
     });
     
     if (!exists) {
-      if (!updatedHidrante._internalId) {
-         updatedHidrante._internalId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+      if (!sanitized._internalId) {
+         sanitized._internalId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
       }
-      newHidrantes.push(updatedHidrante);
+      newHidrantes.push(sanitized);
     }
     
     setHidrantes(newHidrantes);
     applyFilters(activeFilters, newHidrantes);
-    setEditingHydrante(null);
+    handleCloseEditHydrant();
   };
 
   // ---- Controle de Missões ----

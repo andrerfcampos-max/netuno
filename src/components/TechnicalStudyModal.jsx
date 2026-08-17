@@ -3,6 +3,7 @@ import { X, Map as MapIcon, Calculator, FileText, CheckCircle, XCircle, Crosshai
 import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { RA_LIST, normalizeRAName } from '../utils/raList';
 
 // Fix icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -70,6 +71,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
   const [docRef, setDocRef] = useState('');
   const [infoGerais, setInfoGerais] = useState('');
   const [studyType, setStudyType] = useState('relocation');
+  const [selectedRA, setSelectedRA] = useState('');
   const [occupation, setOccupation] = useState('unifamiliar');
   const [rawPolygon, setRawPolygon] = useState('');
   const [rawWaterNetwork, setRawWaterNetwork] = useState('');
@@ -145,7 +147,6 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
     if (refPos) {
       // Nova regra de cálculo espacial:
       // Considerar na análise hidrantes adjacentes cujos raios de cobertura alcancem/cubram os pontos do perímetro da área de cobertura do hidrante alvo.
-      // Ou seja, hidrantes cuja distância até o hidrante alvo é de até 2 * radius (podendo estar fora do raio direto, mas com área de cobertura sobreposta).
       const searchRadius = studyType === 'relocation' ? (radius * 2.1) : (radius * 3);
       nearest = hidrantes.filter(h => {
         if (evalHydrant && (h.codHidrante === evalHydrant.codHidrante || h._internalId === evalHydrant._internalId)) return false;
@@ -157,6 +158,22 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
         return da - db;
       }).slice(0, 8);
     }
+
+    // Identificar a cidade (RA) do estudo
+    const city = evalHydrant ? normalizeRAName(evalHydrant.dscLocalidade) : (selectedRA || (nearest[0] ? normalizeRAName(nearest[0].dscLocalidade) : ''));
+
+    // Plotar todos os hidrantes da cidade referida no estudo
+    const cityHydrants = hidrantes.filter(h => {
+      if (evalHydrant && (h.codHidrante === evalHydrant.codHidrante || h._internalId === evalHydrant._internalId)) return false;
+      const hRA = normalizeRAName(h.dscLocalidade);
+      return city && hRA && hRA.toLowerCase() === city.toLowerCase();
+    });
+
+    // Unir hidrantes da cidade com adjacentes próximos (sem duplicar)
+    const mapHydrantsMap = new Map();
+    cityHydrants.forEach(h => mapHydrantsMap.set(h.codHidrante || h._internalId || h.nomHidrante, h));
+    nearest.forEach(h => mapHydrantsMap.set(h.codHidrante || h._internalId || h.nomHidrante, h));
+    const allMapAdjacentHydrants = Array.from(mapHydrantsMap.values());
 
     if (studyType === 'relocation') {
       analysisPolyCoords = [];
@@ -209,7 +226,9 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
       suggestedPos,
       maxDist,
       isApproved,
-      nearest
+      nearest,
+      city,
+      allMapAdjacentHydrants
     });
   };
 
@@ -358,6 +377,22 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                 </select>
               </div>
 
+              {studyType === 'new_hydrant' && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-400 mb-1">Região Administrativa (RA do Estudo)</label>
+                  <select 
+                    value={selectedRA} 
+                    onChange={e => setSelectedRA(e.target.value)} 
+                    className="w-full bg-slate-700 border border-slate-600 text-white p-2 rounded focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+                  >
+                    <option value="">Selecione uma RA...</option>
+                    {RA_LIST.map(ra => (
+                      <option key={ra.name} value={ra.name}>{ra.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-semibold text-slate-400 mb-1">Classificação da Ocupação (Raio NBR)</label>
                 <select value={occupation} onChange={e => setOccupation(e.target.value)} className="w-full bg-slate-700 border border-slate-600 text-white p-2 rounded focus:ring-2 focus:ring-emerald-500 outline-none text-sm">
@@ -464,8 +499,16 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                     <p><strong>Exigência Normativa:</strong> Conforme a norma ABNT NBR 12.218/2017, a ocupação predominante exige um raio de cobertura de até <strong>{results.radius} metros</strong> a partir do hidrante para garantir a proteção de todas as edificações contidas no perímetro.</p>
                     
                     <div className="my-6 border border-slate-300 rounded overflow-hidden shadow-sm page-break-inside-avoid">
-                      <div className="h-[400px] w-full relative z-0">
-                        <MapContainer center={mapCenter} zoom={15} style={{ height: '100%', width: '100%' }} zoomControl={false} scrollWheelZoom={false}>
+                      <div className="h-[420px] w-full relative z-0">
+                        <MapContainer 
+                          center={mapCenter} 
+                          zoom={15} 
+                          style={{ height: '100%', width: '100%' }} 
+                          zoomControl={true} 
+                          scrollWheelZoom={true}
+                          dragging={true}
+                          doubleClickZoom={true}
+                        >
                           <TileLayer url="http://mt0.google.com/vt/lyrs=y&hl=pt-BR&x={x}&y={y}&z={z}" maxZoom={20} />
                           {results.polyCoords.length > 0 && <Polygon positions={results.polyCoords} pathOptions={{ color: '#eab308', fillColor: '#eab308', fillOpacity: 0.2 }} />}
                           {results.waterCoords.length > 0 && <Polyline positions={results.waterCoords} pathOptions={{ color: '#06b6d4', weight: 4 }} />}
@@ -474,7 +517,13 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                           {results.targetPos && (
                             <>
                               <Marker position={results.targetPos} icon={customDivIcon('#f97316', '#ffffff', '3.5px')}>
-                                <Popup>Hidrante Avaliado: {results.evalHydrant?.nomHidrante}</Popup>
+                                <Popup>
+                                  <strong>Hidrante Avaliado:</strong> {results.evalHydrant?.nomHidrante || results.evalHydrant?.codHidrante}
+                                  <br />
+                                  <strong>RA:</strong> {results.evalHydrant?.dscLocalidade || '-'}
+                                  <br />
+                                  <strong>Endereço:</strong> {results.evalHydrant?.dscEndereco || '-'}
+                                </Popup>
                               </Marker>
                               {studyType === 'relocation' && (
                                 <Circle center={results.targetPos} radius={results.radius} pathOptions={{ color: '#ea580c', weight: 3, fillColor: '#f97316', fillOpacity: 0.12, dashArray: '6, 8' }} />
@@ -482,13 +531,29 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                             </>
                           )}
 
-                          {/* Hidrantes Adjacentes - Marcadores Pretos com borda grossa */}
-                          {results.nearest.map(h => (
-                            <React.Fragment key={h.codHidrante || h._internalId}>
+                          {/* Hidrantes da Cidade e Adjacentes - Marcadores Pretos com Circunferência Tracejada Preta */}
+                          {(results.allMapAdjacentHydrants || results.nearest).map(h => (
+                            <React.Fragment key={h.codHidrante || h._internalId || h.nomHidrante}>
                               <Marker position={[h.numLatitude, h.numLongitude]} icon={customDivIcon('#000000', '#ffffff', '3.5px')}>
-                                <Popup>{h.nomHidrante || h.codHidrante}</Popup>
+                                <Popup>
+                                  <strong>{h.nomHidrante || h.codHidrante}</strong>
+                                  <br />
+                                  <span>{h.dscLocalidade || '-'}</span>
+                                  <br />
+                                  <span className="text-xs">{h.dscEndereco || '-'}</span>
+                                </Popup>
                               </Marker>
-                              <Circle center={[h.numLatitude, h.numLongitude]} radius={results.radius} pathOptions={{ color: '#000000', weight: 2.5, fillColor: '#000000', fillOpacity: 0.06 }} />
+                              <Circle 
+                                center={[h.numLatitude, h.numLongitude]} 
+                                radius={results.radius} 
+                                pathOptions={{ 
+                                  color: '#000000', 
+                                  weight: 2.5, 
+                                  fillColor: '#000000', 
+                                  fillOpacity: 0.05,
+                                  dashArray: '6, 6'
+                                }} 
+                              />
                             </React.Fragment>
                           ))}
 
@@ -510,8 +575,8 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                           </div>
                         )}
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded-full border-2 border-black bg-slate-300"></div>
-                          <span className="font-semibold text-slate-900">Hidrantes Adjacentes Cobertura (Raio {results.radius}m)</span>
+                          <div className="w-4 h-4 rounded-full border-2 border-black bg-slate-300" style={{ borderStyle: 'dashed' }}></div>
+                          <span className="font-semibold text-slate-900">Hidrantes da Cidade / Adjacentes (Raio {results.radius}m - Tracejado Preto)</span>
                         </div>
                         {studyType === 'new_hydrant' && (
                           <div className="flex items-center gap-2">

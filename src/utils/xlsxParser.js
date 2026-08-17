@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { normalizeRAName } from './raList';
 
 export const loadPreloadedDatabase = async (onComplete) => {
   try {
@@ -27,9 +28,17 @@ export const loadPreloadedDatabase = async (onComplete) => {
         const ativoStr = flgAtivoRaw ? String(flgAtivoRaw).trim().toLowerCase() : '';
         const isAtivo = ['true', '1', 'v', 'verdadeiro', 'sim', 's', 'operante', 'ativo'].includes(ativoStr) || flgAtivoRaw === true;
 
+        const rawRA = row.dscLocalidade || row.Localidade || row.RA || row.Cidade || '';
+        const cleanRA = normalizeRAName(rawRA);
+
+        const nomHidrante = row.nomHidrante || row.codHidrante || `HID${index + 1}`;
+
         return {
           ...row,
           _internalId: index,
+          nomHidrante: nomHidrante,
+          codHidrante: row.codHidrante || nomHidrante,
+          dscLocalidade: cleanRA,
           numLatitude: lat,
           numLongitude: lng,
           flgAtivo: isAtivo,

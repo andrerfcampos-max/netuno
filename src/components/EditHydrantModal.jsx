@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, ImagePlus, Save } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import { RA_LIST, normalizeRAName, generateNextHydrantCode } from '../utils/raList';
 
 const customIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -13,119 +14,13 @@ const customIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-const RA_LIST = [
-  { name: 'Plano Piloto', lat: -15.793, lng: -47.882 },
-  { name: 'Gama', lat: -16.015, lng: -48.065 },
-  { name: 'Taguatinga', lat: -15.833, lng: -48.056 },
-  { name: 'Brazlândia', lat: -15.670, lng: -48.198 },
-  { name: 'Sobradinho', lat: -15.651, lng: -47.794 },
-  { name: 'Planaltina', lat: -15.617, lng: -47.653 },
-  { name: 'Paranoá', lat: -15.768, lng: -47.771 },
-  { name: 'Núcleo Bandeirante', lat: -15.873, lng: -47.962 },
-  { name: 'Ceilândia', lat: -15.823, lng: -48.113 },
-  { name: 'Guará', lat: -15.820, lng: -47.983 },
-  { name: 'Cruzeiro', lat: -15.791, lng: -47.936 },
-  { name: 'Samambaia', lat: -15.875, lng: -48.083 },
-  { name: 'Santa Maria', lat: -16.019, lng: -47.987 },
-  { name: 'São Sebastião', lat: -15.908, lng: -47.769 },
-  { name: 'Recanto das Emas', lat: -15.903, lng: -48.064 },
-  { name: 'Lago Sul', lat: -15.845, lng: -47.848 },
-  { name: 'Riacho Fundo', lat: -15.882, lng: -48.016 },
-  { name: 'Lago Norte', lat: -15.733, lng: -47.854 },
-  { name: 'Candangolândia', lat: -15.850, lng: -47.947 },
-  { name: 'Águas Claras', lat: -15.836, lng: -48.026 },
-  { name: 'Riacho Fundo II', lat: -15.903, lng: -48.037 },
-  { name: 'Sudoeste/Octogonal', lat: -15.801, lng: -47.923 },
-  { name: 'Varjão', lat: -15.708, lng: -47.882 },
-  { name: 'Park Way', lat: -15.874, lng: -47.962 },
-  { name: 'SCIA/Estrutural', lat: -15.779, lng: -47.994 },
-  { name: 'Sobradinho II', lat: -15.626, lng: -47.817 },
-  { name: 'Jardim Botânico', lat: -15.877, lng: -47.781 },
-  { name: 'Itapoã', lat: -15.738, lng: -47.766 },
-  { name: 'SIA', lat: -15.803, lng: -47.957 },
-  { name: 'Vicente Pires', lat: -15.802, lng: -48.028 },
-  { name: 'Fercal', lat: -15.589, lng: -47.869 },
-  { name: 'Sol Nascente/Pôr do Sol', lat: -15.811, lng: -48.140 },
-  { name: 'Arniqueira', lat: -15.852, lng: -48.015 }
-];
-
-const generateNextHydrantCode = (raName, allHidrantes = []) => {
-  if (!raName) return '';
-  
-  // Localizar hidrantes existentes nesta RA
-  const raHidrantes = allHidrantes.filter(h => 
-    h.dscLocalidade && h.dscLocalidade.trim().toLowerCase() === raName.trim().toLowerCase()
-  );
-  
-  let prefix = '';
-  let maxNum = 0;
-  let numDigits = 5;
-  
-  if (raHidrantes.length > 0) {
-    for (const h of raHidrantes) {
-      const code = (h.codHidrante || h.nomHidrante || '').trim();
-      const match = code.match(/^([A-Za-z]+)(\d+)$/);
-      if (match) {
-        if (!prefix) prefix = match[1].toUpperCase();
-        const num = parseInt(match[2], 10);
-        if (num > maxNum) {
-          maxNum = num;
-          numDigits = match[2].length;
-        }
-      }
-    }
-  }
-  
-  if (!prefix) {
-    const prefixMap = {
-      'Plano Piloto': 'PLA',
-      'Gama': 'GAM',
-      'Taguatinga': 'TAG',
-      'Brazlândia': 'BRA',
-      'Sobradinho': 'SOB',
-      'Planaltina': 'PLN',
-      'Paranoá': 'PAR',
-      'Núcleo Bandeirante': 'NUB',
-      'Ceilândia': 'CEI',
-      'Guará': 'GUA',
-      'Cruzeiro': 'CRU',
-      'Samambaia': 'SAM',
-      'Santa Maria': 'SMA',
-      'São Sebastião': 'SSB',
-      'Recanto das Emas': 'REC',
-      'Lago Sul': 'LGS',
-      'Riacho Fundo': 'RIA',
-      'Lago Norte': 'LGN',
-      'Candangolândia': 'CAN',
-      'Águas Claras': 'ACL',
-      'Riacho Fundo II': 'RF2',
-      'Sudoeste/Octogonal': 'SUD',
-      'Varjão': 'VAR',
-      'Park Way': 'PKW',
-      'SCIA/Estrutural': 'STR',
-      'Sobradinho II': 'SB2',
-      'Jardim Botânico': 'JDB',
-      'Itapoã': 'ITP',
-      'SIA': 'SIA',
-      'Vicente Pires': 'VCP',
-      'Fercal': 'FRC',
-      'Sol Nascente/Pôr do Sol': 'SNP',
-      'Arniqueira': 'ARN'
-    };
-    prefix = prefixMap[raName] || raName.substring(0, 3).toUpperCase();
-  }
-  
-  const nextNum = maxNum + 1;
-  const formattedNum = String(nextNum).padStart(Math.max(numDigits, 3), '0');
-  return `${prefix}${formattedNum}`;
-};
-
 const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes = [] }) => {
-  const isNew = !hidrante._internalId && !hidrante.codHidrante;
+  const isNew = !hidrante._internalId && !hidrante.codHidrante && !hidrante.nomHidrante;
+  const initialCode = hidrante.nomHidrante || hidrante.codHidrante || '';
   
   const [formData, setFormData] = useState({
-    codHidrante: hidrante.codHidrante || '',
-    dscLocalidade: hidrante.dscLocalidade || '',
+    codHidrante: isNew ? '' : initialCode,
+    dscLocalidade: normalizeRAName(hidrante.dscLocalidade) || '',
     dscEndereco: hidrante.dscEndereco || '',
     dscPontoReferencia: hidrante.dscPontoReferencia || '',
     numLatitude: hidrante.numLatitude || (isNew ? -15.793 : -15.793),
@@ -189,6 +84,14 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
       alert("Por favor, selecione a Região Administrativa (RA).");
       return;
     }
+    if (isNew && (!formData.dscEndereco || !formData.dscEndereco.trim())) {
+      alert("Por favor, preencha o campo Endereço para cadastrar o novo hidrante.");
+      return;
+    }
+    if (isNew && (!formData.dscPontoReferencia || !formData.dscPontoReferencia.trim())) {
+      alert("Por favor, preencha o campo Ponto de Referência para cadastrar o novo hidrante.");
+      return;
+    }
     if (isNew && !formData.codHidrante) {
       const generated = generateNextHydrantCode(formData.dscLocalidade, allHidrantes);
       formData.codHidrante = generated;
@@ -196,7 +99,9 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
     onSave({
       ...hidrante,
       ...formData,
-      nomHidrante: hidrante.nomHidrante || formData.codHidrante,
+      nomHidrante: formData.codHidrante || hidrante.nomHidrante,
+      codHidrante: formData.codHidrante || hidrante.codHidrante,
+      dscLocalidade: normalizeRAName(formData.dscLocalidade),
       numLatitude: parseFloat(formData.numLatitude),
       numLongitude: parseFloat(formData.numLongitude)
     });
@@ -283,7 +188,9 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-slate-400 font-bold uppercase">Região Administrativa (RA)</label>
+                <label className="text-xs text-slate-400 font-bold uppercase">
+                  Região Administrativa (RA) {isNew && <span className="text-red-400">*</span>}
+                </label>
                 <select 
                   name="dscLocalidade" 
                   value={formData.dscLocalidade} 
@@ -317,13 +224,31 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-slate-400 font-bold uppercase">Endereço</label>
-                <input name="dscEndereco" value={formData.dscEndereco} onChange={handleChange} className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500" />
+                <label className="text-xs text-slate-400 font-bold uppercase">
+                  Endereço {isNew && <span className="text-red-400">*</span>}
+                </label>
+                <input 
+                  name="dscEndereco" 
+                  value={formData.dscEndereco} 
+                  onChange={handleChange} 
+                  required={isNew}
+                  placeholder="Ex: Quadra 02 Conjunto A Lote 15"
+                  className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500" 
+                />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-slate-400 font-bold uppercase">Ponto de Referência</label>
-                <input name="dscPontoReferencia" value={formData.dscPontoReferencia} onChange={handleChange} className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500" />
+                <label className="text-xs text-slate-400 font-bold uppercase">
+                  Ponto de Referência {isNew && <span className="text-red-400">*</span>}
+                </label>
+                <input 
+                  name="dscPontoReferencia" 
+                  value={formData.dscPontoReferencia} 
+                  onChange={handleChange} 
+                  required={isNew}
+                  placeholder="Ex: Em frente à farmácia / esquina"
+                  className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500" 
+                />
               </div>
               
               <div className="grid grid-cols-2 gap-2">

@@ -77,5 +77,24 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Remoção de "(Consulta Automática)" e inclusão de coordenadas geográficas na lista de equipamentos adjacentes.
   - Estilização do mapa: hidrante alvo em destaque laranja e hidrantes adjacentes em preto com borda mais espessa.
   - Nova regra de cálculo espacial: análise baseada em pontos de perímetro para considerar equipamentos com cobertura concorrente sobre a área de proteção do alvo.
-  - Campo de upload de foto do hidrante atual (renderizado no Item II - Finalidade) e campo de texto de informações gerais (segundo parágrafo do Item I - Referência).
-
+### [17/08/2026] Etapa 33 Concluída: Validação de Cadastro, Navegação por Nova Guia, Unificação de RAs, Edição de Hidrante e Melhorias no Estudo Técnico
+- **1. Validação Obrigatória no Cadastro de Novo Hidrante (`EditHydrantModal.jsx`):**
+  - Os campos `Endereço` e `Ponto de Referência` passaram a ser estritamente obrigatórios no cadastro de novos hidrantes (`isNew`).
+  - Ao tentar salvar sem preenchê-los, o sistema bloqueia o envio e exibe alerta orientando o usuário a preencher os respectivos campos, além de sinalizadores visuais (`*`).
+- **2. Navegação e Abertura em Nova Guia (`App.jsx`):**
+  - Implementado interceptador de rotas e parâmetros de URL (`?modal=...` e `?view=...`) na inicialização do sistema.
+  - Ao abrir links do menu em nova guia via botão direito do mouse ("Abrir link em nova guia"), a aplicação preserva a sessão de autenticação do `localStorage` e abre diretamente a tela solicitada (Central de Missões, Estudo Técnico, Novo Hidrante, etc.) sem resetar para a tela inicial.
+- **3. Centralização e Unificação da Lista de Cidades / RAs (`src/utils/raList.js`):**
+  - Criado módulo centralizado com as 35 Regiões Administrativas oficiais do Distrito Federal, coordenadas geográficas, prefixos de código e função de normalização `normalizeRAName`.
+  - Unificada a lista de cidades compartilhada entre `FilterBar` (Filtro Global), `EditHydrantModal` (Cadastro e Edição), `TechnicalStudyModal` e relatórios.
+  - Padronização oficial de "Brasília" (removendo divergências de "Plano Piloto").
+  - Remoção/normalização de duplicidades na base de dados (ex: 'gama' minúsculo com 1 hidrante normalizado para a RA oficial 'Gama').
+- **4. Código do Hidrante na Tela de Edição (`EditHydrantModal.jsx`):**
+  - Corrigida a exibição do código do hidrante na edição para exibir o padrão oficial completo com 3 letras do prefixo + número (ex: `TAG00001`, `GUA00101`, `BSB00120`) em vez de números inteiros sequenciais internos do banco.
+- **5. Revisão Visual da Dialog do Hidrante (`MapComponent.jsx`):**
+  - Reformulação tipográfica, hierarquia visual, espaçamentos e organização das informações no popup do hidrante.
+  - Adicionado badge destacado de status (`OPERANTE` / `INOPERANTE`), alinhamento claro de labels e valores com contraste alto, coordenadas com precisão e botões com visual moderno.
+- **6. Aprimoramentos no Módulo de Estudo Técnico (`TechnicalStudyModal.jsx`):**
+  - Circunferência dos hidrantes adjacentes/cidade renderizada em linha tracejada preta (`dashArray: '6, 6'`).
+  - Habilitados controles suaves de mapa (`scrollWheelZoom={true}`, `zoomControl={true}`, `dragging={true}`, `doubleClickZoom={true}`) para permitir o enquadramento perfeito para prints e relatórios técnicos.
+  - Plotagem de todos os hidrantes da cidade (RA) do estudo com suas respectivas circunferências de área de cobertura.
