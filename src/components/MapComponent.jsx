@@ -66,6 +66,37 @@ const RecenterMap = ({ centerPosition }) => {
   return null;
 };
 
+const AutoFitFilteredBounds = ({ hidrantes, centerPosition }) => {
+  const map = useMap();
+  const prevCountRef = React.useRef(hidrantes.length);
+  const prevFirstIdRef = React.useRef(hidrantes[0]?.codHidrante || hidrantes[0]?.nomHidrante);
+
+  useEffect(() => {
+    if (centerPosition) return;
+
+    if (hidrantes && hidrantes.length > 0) {
+      const firstId = hidrantes[0]?.codHidrante || hidrantes[0]?.nomHidrante;
+      if (prevCountRef.current !== hidrantes.length || prevFirstIdRef.current !== firstId) {
+        prevCountRef.current = hidrantes.length;
+        prevFirstIdRef.current = firstId;
+
+        const validCoords = hidrantes
+          .filter(h => h.numLatitude && h.numLongitude && !isNaN(h.numLatitude) && !isNaN(h.numLongitude))
+          .map(h => [h.numLatitude, h.numLongitude]);
+
+        if (validCoords.length > 0) {
+          const bounds = L.latLngBounds(validCoords);
+          if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16, animate: true });
+          }
+        }
+      }
+    }
+  }, [hidrantes, centerPosition, map]);
+
+  return null;
+};
+
 const MapMemory = () => {
   const map = useMapEvents({
     moveend: () => {
@@ -188,6 +219,22 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         position={[h.numLatitude, h.numLongitude]}
         icon={createDivIcon(h.flgAtivo, isSelected)}
         eventHandlers={{
+          click: (e) => {
+            if (e.originalEvent && (e.originalEvent.ctrlKey || e.originalEvent.metaKey)) {
+              if (onToggleMission) {
+                onToggleMission(id);
+                e.originalEvent.preventDefault();
+                e.originalEvent.stopPropagation();
+              }
+            }
+          },
+          dblclick: (e) => {
+            if (onToggleMission && isGestor) {
+              onToggleMission(id);
+              e.originalEvent.preventDefault();
+              e.originalEvent.stopPropagation();
+            }
+          },
           add: (e) => {
             if (isCentered) {
               setTimeout(() => {
@@ -341,6 +388,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         />
         
         <RecenterMap centerPosition={centerPosition} />
+        <AutoFitFilteredBounds hidrantes={hidrantes} centerPosition={centerPosition} />
         <MapMemory />
         <ScrollBehavior />
         <MapClickHandler onMapClick={onMapClick} />

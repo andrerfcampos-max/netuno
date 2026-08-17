@@ -49,11 +49,82 @@ const RA_LIST = [
   { name: 'Arniqueira', lat: -15.852, lng: -48.015 }
 ];
 
-const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
+const generateNextHydrantCode = (raName, allHidrantes = []) => {
+  if (!raName) return '';
+  
+  // Localizar hidrantes existentes nesta RA
+  const raHidrantes = allHidrantes.filter(h => 
+    h.dscLocalidade && h.dscLocalidade.trim().toLowerCase() === raName.trim().toLowerCase()
+  );
+  
+  let prefix = '';
+  let maxNum = 0;
+  let numDigits = 5;
+  
+  if (raHidrantes.length > 0) {
+    for (const h of raHidrantes) {
+      const code = (h.codHidrante || h.nomHidrante || '').trim();
+      const match = code.match(/^([A-Za-z]+)(\d+)$/);
+      if (match) {
+        if (!prefix) prefix = match[1].toUpperCase();
+        const num = parseInt(match[2], 10);
+        if (num > maxNum) {
+          maxNum = num;
+          numDigits = match[2].length;
+        }
+      }
+    }
+  }
+  
+  if (!prefix) {
+    const prefixMap = {
+      'Plano Piloto': 'PLA',
+      'Gama': 'GAM',
+      'Taguatinga': 'TAG',
+      'Brazlândia': 'BRA',
+      'Sobradinho': 'SOB',
+      'Planaltina': 'PLN',
+      'Paranoá': 'PAR',
+      'Núcleo Bandeirante': 'NUB',
+      'Ceilândia': 'CEI',
+      'Guará': 'GUA',
+      'Cruzeiro': 'CRU',
+      'Samambaia': 'SAM',
+      'Santa Maria': 'SMA',
+      'São Sebastião': 'SSB',
+      'Recanto das Emas': 'REC',
+      'Lago Sul': 'LGS',
+      'Riacho Fundo': 'RIA',
+      'Lago Norte': 'LGN',
+      'Candangolândia': 'CAN',
+      'Águas Claras': 'ACL',
+      'Riacho Fundo II': 'RF2',
+      'Sudoeste/Octogonal': 'SUD',
+      'Varjão': 'VAR',
+      'Park Way': 'PKW',
+      'SCIA/Estrutural': 'STR',
+      'Sobradinho II': 'SB2',
+      'Jardim Botânico': 'JDB',
+      'Itapoã': 'ITP',
+      'SIA': 'SIA',
+      'Vicente Pires': 'VCP',
+      'Fercal': 'FRC',
+      'Sol Nascente/Pôr do Sol': 'SNP',
+      'Arniqueira': 'ARN'
+    };
+    prefix = prefixMap[raName] || raName.substring(0, 3).toUpperCase();
+  }
+  
+  const nextNum = maxNum + 1;
+  const formattedNum = String(nextNum).padStart(Math.max(numDigits, 3), '0');
+  return `${prefix}${formattedNum}`;
+};
+
+const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes = [] }) => {
   const isNew = !hidrante._internalId && !hidrante.codHidrante;
   
   const [formData, setFormData] = useState({
-    codHidrante: hidrante.codHidrante || (isNew ? 'GUA' : ''),
+    codHidrante: hidrante.codHidrante || '',
     dscLocalidade: hidrante.dscLocalidade || '',
     dscEndereco: hidrante.dscEndereco || '',
     dscPontoReferencia: hidrante.dscPontoReferencia || '',
@@ -70,11 +141,20 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
   const handleRAChange = (e) => {
     const raName = e.target.value;
-    setFormData(prev => ({ ...prev, dscLocalidade: raName }));
     const ra = RA_LIST.find(r => r.name === raName);
-    if (ra) {
-      setFormData(prev => ({ ...prev, numLatitude: ra.lat, numLongitude: ra.lng }));
+    
+    let nextCode = formData.codHidrante;
+    if (isNew && raName) {
+      nextCode = generateNextHydrantCode(raName, allHidrantes);
     }
+
+    setFormData(prev => ({
+      ...prev,
+      dscLocalidade: raName,
+      codHidrante: isNew ? nextCode : prev.codHidrante,
+      numLatitude: ra ? ra.lat : prev.numLatitude,
+      numLongitude: ra ? ra.lng : prev.numLongitude
+    }));
   };
 
   const handleImageUpload = (e) => {
@@ -108,6 +188,10 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
     if (isNew && !formData.dscLocalidade) {
       alert("Por favor, selecione a Região Administrativa (RA).");
       return;
+    }
+    if (isNew && !formData.codHidrante) {
+      const generated = generateNextHydrantCode(formData.dscLocalidade, allHidrantes);
+      formData.codHidrante = generated;
     }
     onSave({
       ...hidrante,
@@ -145,9 +229,18 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
       <div className="bg-slate-800 w-full max-w-2xl rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-600">
         
         <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900">
-          <h2 className="text-xl font-bold text-amber-400">
-            {isNew ? 'Criar Novo Hidrante' : 'Editar Cadastro de Hidrante'}
-          </h2>
+          <div className="flex items-center gap-3">
+            <button 
+              type="button"
+              onClick={onClose} 
+              className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded font-semibold transition-colors"
+            >
+              ← Voltar
+            </button>
+            <h2 className="text-xl font-bold text-amber-400">
+              {isNew ? 'Criar Novo Hidrante' : 'Editar Cadastro de Hidrante'}
+            </h2>
+          </div>
           <button onClick={onClose} className="text-slate-400 hover:text-red-400 transition-colors">
             <X size={24} />
           </button>
@@ -190,24 +283,13 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-slate-400 font-bold uppercase">Código do Hidrante</label>
-                <input 
-                  name="codHidrante" 
-                  value={formData.codHidrante} 
-                  onChange={handleChange} 
-                  disabled={!isNew}
-                  className={`border border-slate-700 rounded p-2 text-sm font-mono ${!isNew ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-slate-900 text-white'}`} 
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-400 font-bold uppercase">Região Administrativa (RA)</label>
                 <select 
                   name="dscLocalidade" 
                   value={formData.dscLocalidade} 
                   onChange={handleRAChange} 
                   required={isNew}
-                  className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white"
+                  className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500"
                 >
                   <option value="">Selecione uma RA...</option>
                   {RA_LIST.map(ra => (
@@ -217,13 +299,31 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
               </div>
 
               <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs text-slate-400 font-bold uppercase">Código do Hidrante</label>
+                  {isNew && (
+                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800">
+                      Preenchimento Automático
+                    </span>
+                  )}
+                </div>
+                <input 
+                  name="codHidrante" 
+                  value={formData.codHidrante} 
+                  readOnly
+                  placeholder={isNew ? "Gerado automaticamente ao escolher a RA..." : ""}
+                  className="border border-slate-700 rounded p-2 text-sm font-mono bg-slate-900/70 text-emerald-400 font-bold cursor-not-allowed" 
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-400 font-bold uppercase">Endereço</label>
-                <input name="dscEndereco" value={formData.dscEndereco} onChange={handleChange} className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white" />
+                <input name="dscEndereco" value={formData.dscEndereco} onChange={handleChange} className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500" />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-400 font-bold uppercase">Ponto de Referência</label>
-                <input name="dscPontoReferencia" value={formData.dscPontoReferencia} onChange={handleChange} className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white" />
+                <input name="dscPontoReferencia" value={formData.dscPontoReferencia} onChange={handleChange} className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500" />
               </div>
               
               <div className="grid grid-cols-2 gap-2">
@@ -249,10 +349,22 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
             </div>
           </div>
 
-          <button type="submit" className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded shadow-lg active:scale-95 transition-transform">
-            <Save size={20} />
-            {isNew ? 'SALVAR NOVO HIDRANTE' : 'SALVAR ALTERAÇÕES'}
-          </button>
+          <div className="flex gap-3 mt-2">
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded shadow active:scale-95 transition-all"
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit" 
+              className="flex-[2] flex items-center justify-center gap-2 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded shadow-lg active:scale-95 transition-transform"
+            >
+              <Save size={20} />
+              {isNew ? 'SALVAR NOVO HIDRANTE' : 'SALVAR ALTERAÇÕES'}
+            </button>
+          </div>
         </form>
 
       </div>

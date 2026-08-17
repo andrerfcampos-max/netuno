@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -87,6 +87,55 @@ function App() {
   const [isMissionManagerOpen, setIsMissionManagerOpen] = useState(false);
   const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
   const [isTechnicalStudyOpen, setIsTechnicalStudyOpen] = useState(false);
+
+  // Touch Swipe na tela principal para alternar abas
+  const mainTouchStartX = useRef(null);
+  const mainTouchStartY = useRef(null);
+
+  const handleMainTouchStart = (e) => {
+    mainTouchStartX.current = e.touches[0].clientX;
+    mainTouchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleMainTouchEnd = (e) => {
+    if (mainTouchStartX.current === null || mainTouchStartY.current === null) return;
+    const diffX = mainTouchStartX.current - e.changedTouches[0].clientX;
+    const diffY = mainTouchStartY.current - e.changedTouches[0].clientY;
+
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 60) {
+      const views = ['map', 'table'];
+      if (activeMissionId && selectedMissionIds.length > 0) views.push('route');
+      if (currentUser?.role === 'gestor' || currentUser?.role === 'admin') views.push('report');
+
+      const currentIndex = views.indexOf(activeView);
+      if (currentIndex !== -1) {
+        if (diffX > 0 && currentIndex < views.length - 1) {
+          // Arrastou para esquerda -> próxima aba
+          setActiveView(views[currentIndex + 1]);
+        } else if (diffX < 0 && currentIndex > 0) {
+          // Arrastou para direita -> aba anterior
+          setActiveView(views[currentIndex - 1]);
+        }
+      }
+    }
+    mainTouchStartX.current = null;
+    mainTouchStartY.current = null;
+  };
+
+  // Suporte a abertura direta de modais via link/URL parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const modal = params.get('modal');
+    if (modal === 'estudo-tecnico' && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
+      setIsTechnicalStudyOpen(true);
+    } else if (modal === 'novo-hidrante' && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
+      setEditingHydrante({});
+    } else if (modal === 'admin' && currentUser?.role === 'admin') {
+      setIsUserManagerOpen(true);
+    } else if (modal === 'central-missoes' || modal === 'missoes') {
+      setIsMissionManagerOpen(true);
+    }
+  }, [currentUser]);
 
   const handleInspect = (h) => {
     if ('geolocation' in navigator) {
@@ -590,6 +639,7 @@ function App() {
           onClose={() => setEditingHydrante(null)}
           onSave={handleSaveEdit}
           currentUser={currentUser}
+          allHidrantes={hidrantes}
         />
       )}
 
@@ -597,7 +647,7 @@ function App() {
         <UserManagerModal onClose={() => setIsUserManagerOpen(false)} />
       )}
 
-      {/* Header com Botão de Upload */}
+      {/* Header */}
       <header className={isMapFullscreen ? "hidden" : "flex justify-between items-center p-3 bg-slate-900 border-b border-slate-700 z-50"}>
         <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md">NETUNO</h1>
         
@@ -610,6 +660,7 @@ function App() {
               {currentUser.role === 'gestor' ? 'Gestor' : currentUser.role === 'admin' ? 'Admin' : 'Vistoriador'}
             </span>
           </div>
+
           <button 
             onClick={handleLogout} 
             className="flex items-center justify-center p-2 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 border border-slate-700 rounded shadow-sm transition-all"
@@ -617,49 +668,97 @@ function App() {
           >
             <LogOut size={20} />
           </button>
-          <details className="group">
-            <summary className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm cursor-pointer list-none hover:bg-slate-700 transition-all">
-              <span className="hidden sm:inline">Menu</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-              </svg>
-            </summary>
-            <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex flex-col gap-1 p-2">
-              {currentUser.role === 'admin' && (
-                <button 
-                  onClick={(e) => { setIsUserManagerOpen(true); e.currentTarget.closest('details').removeAttribute('open'); }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-left bg-red-900/30 text-red-400 font-semibold rounded hover:bg-red-900/50 transition-all"
+
+          {/* Vistoriador visualiza apenas a Central de Missões diretamente */}
+          {currentUser.role === 'vistoriador' ? (
+            <a 
+              href="?modal=central-missoes"
+              onClick={(e) => {
+                if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                  e.preventDefault();
+                  setIsMissionManagerOpen(true);
+                }
+              }}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm hover:bg-slate-700 transition-all text-sm"
+              title="Central de Missões"
+            >
+              <FolderOpen size={18} />
+              <span className="hidden sm:inline">Central de Missões</span>
+            </a>
+          ) : (
+            /* Gestores e Admins visualizam o Menu dropdown com todas as opções */
+            <details className="group">
+              <summary className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm cursor-pointer list-none hover:bg-slate-700 transition-all">
+                <span className="hidden sm:inline">Menu</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                </svg>
+              </summary>
+              <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex flex-col gap-1 p-2">
+                {currentUser.role === 'admin' && (
+                  <a 
+                    href="?modal=admin"
+                    onClick={(e) => {
+                      if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                        e.preventDefault();
+                        setIsUserManagerOpen(true);
+                        e.currentTarget.closest('details')?.removeAttribute('open');
+                      }
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-left bg-red-900/30 text-red-400 font-semibold rounded hover:bg-red-900/50 transition-all"
+                  >
+                    Painel Admin
+                  </a>
+                )}
+                {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                  <a 
+                    href="?modal=novo-hidrante"
+                    onClick={(e) => {
+                      if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                        e.preventDefault();
+                        setEditingHydrante({});
+                        e.currentTarget.closest('details')?.removeAttribute('open');
+                      }
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-left bg-blue-900/30 text-blue-400 font-semibold rounded hover:bg-blue-900/50 transition-all"
+                  >
+                    <PlusCircle size={18} />
+                    Novo Hidrante
+                  </a>
+                )}
+                {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                  <a 
+                    href="?modal=estudo-tecnico"
+                    onClick={(e) => {
+                      if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                        e.preventDefault();
+                        setIsTechnicalStudyOpen(true);
+                        e.currentTarget.closest('details')?.removeAttribute('open');
+                      }
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-left bg-purple-900/30 text-purple-400 font-semibold rounded hover:bg-purple-900/50 transition-all"
+                  >
+                    <Calculator size={18} />
+                    Estudo Técnico
+                  </a>
+                )}
+                <a 
+                  href="?modal=central-missoes"
+                  onClick={(e) => {
+                    if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                      e.preventDefault();
+                      setIsMissionManagerOpen(true);
+                      e.currentTarget.closest('details')?.removeAttribute('open');
+                    }
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-700 text-emerald-400 font-semibold rounded hover:bg-slate-600 transition-all"
                 >
-                  Painel Admin
-                </button>
-              )}
-              {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-                <button 
-                  onClick={(e) => { setEditingHydrante({}); e.currentTarget.closest('details').removeAttribute('open'); }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-left bg-blue-900/30 text-blue-400 font-semibold rounded hover:bg-blue-900/50 transition-all"
-                >
-                  <PlusCircle size={18} />
-                  Novo Hidrante
-                </button>
-              )}
-              {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-                <button 
-                  onClick={(e) => { setIsTechnicalStudyOpen(true); e.currentTarget.closest('details').removeAttribute('open'); }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-left bg-purple-900/30 text-purple-400 font-semibold rounded hover:bg-purple-900/50 transition-all"
-                >
-                  <Calculator size={18} />
-                  Estudo Técnico
-                </button>
-              )}
-              <button 
-                onClick={(e) => { setIsMissionManagerOpen(true); e.currentTarget.closest('details').removeAttribute('open'); }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-700 text-emerald-400 font-semibold rounded hover:bg-slate-600 transition-all"
-              >
-                <FolderOpen size={18} />
-                Central de Missões
-              </button>
-            </div>
-          </details>
+                  <FolderOpen size={18} />
+                  Central de Missões
+                </a>
+              </div>
+            </details>
+          )}
         </div>
       </header>
 
@@ -671,12 +770,16 @@ function App() {
           openMissionIds={openMissionIds}
           onTabClick={setActiveMissionId}
           onCloseTab={handleCloseTab}
-          onNewMission={currentUser.role === 'gestor' ? handleNewMission : undefined}
+          onNewMission={currentUser.role === 'gestor' || currentUser.role === 'admin' ? handleNewMission : undefined}
           currentUser={currentUser}
         />
       )}
 
-      <main className={isMapFullscreen ? "h-full w-full p-0 m-0 relative" : "flex-1 overflow-y-auto w-full flex flex-col relative p-2 gap-2"}>
+      <main 
+        onTouchStart={handleMainTouchStart}
+        onTouchEnd={handleMainTouchEnd}
+        className={isMapFullscreen ? "h-full w-full p-0 m-0 relative" : "flex-1 overflow-y-auto w-full flex flex-col relative p-2 gap-2 select-none touch-pan-y"}
+      >
         
         {/* MÓDULO 1: BARRA DE FILTROS */}
         {hidrantes.length > 0 && (

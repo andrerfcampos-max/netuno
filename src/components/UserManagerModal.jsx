@@ -22,10 +22,19 @@ const UserManagerModal = ({ onClose }) => {
       <div className="bg-slate-800 w-full max-w-2xl rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-600">
         
         <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900">
-          <h2 className="text-xl font-bold text-red-400 flex items-center gap-2">
-            <Shield size={24} />
-            Gerenciamento de Acesso (RBAC)
-          </h2>
+          <div className="flex items-center gap-3">
+            <button 
+              type="button"
+              onClick={onClose} 
+              className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded font-semibold transition-colors"
+            >
+              ← Voltar
+            </button>
+            <h2 className="text-xl font-bold text-red-400 flex items-center gap-2">
+              <Shield size={24} />
+              Gerenciamento de Acesso (RBAC)
+            </h2>
+          </div>
           <button onClick={onClose} className="text-slate-400 hover:text-red-400 transition-colors">
             <X size={24} />
           </button>

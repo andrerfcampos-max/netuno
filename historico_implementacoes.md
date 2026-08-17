@@ -48,3 +48,34 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 ### [14/08/2026] Etapas 28 e 29 Concluídas (Execução Manual via Agente)
 - **Etapa 28**: Ajustes de UI no Bloco de Lista (inclusão de Endereço, Referência e botão de Abrir Dialog) e implementação da Memória de Estado do Mapa (preservação do zoom e centro ao navegar entre telas). O primeiro clique no pino também foi corrigido para abrir a dialog imediatamente.
 - **Etapa 29**: Implementação do Módulo de Estudo Técnico de Hidrantes (focado nas regras da ABNT NBR 12.218/2017). Adicionado cálculo automático espacial de coberturas (raios de 300, 600 e 800m), sugestões de alocação de novos hidrantes, plotagem visual via Leaflet e exportação de Parecer Técnico em PDF. Módulo restrito aos perfis Gestor e Admin.
+
+### [17/08/2026] Etapa 32 Concluída: Dashboard de Comando, Vistoria, Estudo Técnico, Permissões e Refinamentos UX/UI
+- **1. Dashboard de Comando & Relatórios:**
+  - Padronização de nomenclatura de "Visão de Comando" para "Dashboard de Comando".
+  - Eliminação da duplicidade de relatórios: mantido relatório unificado no Dashboard de Comando.
+  - Navegação ao clicar em cards de quartel no Dashboard de Comando: abre diretamente a pasta de missões correspondente.
+- **2. Navegação, Menu, Botões de Voltar & Permissões:**
+  - Header visível nas telas e modais (Estudo Técnico, Central de Missões, Novo Hidrante, etc.).
+  - Adicionados botões funcionais de "← Voltar" nos modais secundários.
+  - Links do menu com tags `<a>` e `href="?modal=..."`, permitindo abrir páginas em nova guia via botão direito do mouse sem perder o contexto.
+  - Separação de visibilidade por perfil: vistoriador visualiza diretamente apenas o atalho para a "Central de Missões", enquanto gestores e administradores acessam o menu completo.
+- **3. Mapa, Filtros e Atalhos de Gestos:**
+  - Auto-pan/FitBounds no mapa: o mapa enquadra e centraliza automaticamente a visualização sempre que a RA ou os filtros globais são alterados.
+  - Seleção para rota de missão no mapa via `Ctrl + Clique` ou duplo clique no marcador.
+  - Atalho de arrastar para o lado (swipe) na tela principal para alternar entre abas (Mapa, Lista, Rota, Relatório).
+  - Atalho de arrastar para o lado no bloco de relatório para alternar entre "Relatório Geral" e "Relatório CAESB".
+- **4. Cadastro de Novo Hidrante:**
+  - Numeração automática do código com base no prefixo da RA e no número sequencial posterior ao último hidrante cadastrado naquela localidade (campo de código bloqueado para digitação manual).
+- **5. Cadastro de Nova Vistoria (Regras e Travas de Inoperância):**
+  - Pergunta 3 atualizada: "3) A TAMPA DA CAIXA ESTÁ... Sem alteração / Lacrada / Quebrada / Removida".
+  - Pergunta 4 atualizada: "4) TODOS OS TAMPÕES ESTÃO PRESENTES? Sim / Falta 1 tampão / Faltam 2 tampões / Faltam todos os tampões" (2+ tampões inativa automaticamente).
+  - Remoção de itens de tampa e tampão da lista suspensa de defeitos (mantendo o registro nos problemas da vistoria).
+  - Exigência de preenchimento de todas as perguntas antes de salvar a vistoria.
+  - Trava estrita de inoperância: se houver qualquer problema inativador (ex: registro soterrado, registro emperrado, 2+ tampões ausentes, tampa lacrada, etc.), bloqueia marcar o hidrante como operante e exibe alerta explicativo da inconsistência.
+- **6. Módulo de Estudo Técnico:**
+  - Botão de copiar parecer técnico em formato rico/HTML para colagem direta no SEI, omitindo cabeçalhos e assinaturas redundantes.
+  - Remoção de "(Consulta Automática)" e inclusão de coordenadas geográficas na lista de equipamentos adjacentes.
+  - Estilização do mapa: hidrante alvo em destaque laranja e hidrantes adjacentes em preto com borda mais espessa.
+  - Nova regra de cálculo espacial: análise baseada em pontos de perímetro para considerar equipamentos com cobertura concorrente sobre a área de proteção do alvo.
+  - Campo de upload de foto do hidrante atual (renderizado no Item II - Finalidade) e campo de texto de informações gerais (segundo parágrafo do Item I - Referência).
+

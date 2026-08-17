@@ -4,7 +4,7 @@ import { createNewFolder } from '../utils/storage';
 
 const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
-  const [activeTab, setActiveTab] = useState('todas'); // todas, nao_iniciadas, em_andamento, finalizadas, visao_comando
+  const [activeTab, setActiveTab] = useState('todas'); // todas, nao_iniciadas, em_andamento, finalizadas, dashboard_comando
   const [searchTerm, setSearchTerm] = useState('');
   
   const [defaultFolderId, setDefaultFolderId] = useState(() => {
@@ -58,49 +58,12 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
     }
   };
 
-  const handleExportFolderReport = () => {
-    if (!currentFolderId) {
-      alert("Navegue até uma pasta (grupamento) para exportar o relatório consolidado.");
-      return;
-    }
-    const folder = folders.find(f => f.id === currentFolderId);
-    const folderName = folder ? folder.name : "Central";
-    
-    const folderMissions = availableMissions.filter(m => m.parentFolderId === currentFolderId && !m.isDraft);
-    
-    if (folderMissions.length === 0) {
-      alert("Não há missões ativas nesta pasta para gerar o relatório.");
-      return;
-    }
-
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Relatorio Consolidado de Missoes - " + folderName + "\\n\\n";
-    csvContent += "Nome da Missao,Criador,Data de Criacao,Total Hidrantes,Vistorias Realizadas,Progresso (%)\\n";
-
-    folderMissions.forEach(m => {
-      const total = m.selectedIds.length;
-      const comp = m.completedIds.length;
-      const perc = total > 0 ? Math.round((comp / total) * 100) : 0;
-      const criador = m.createdBy || "-";
-      const date = new Date(m.createdAt).toLocaleDateString('pt-BR');
-      csvContent += `"${m.name}","${criador}","${date}",${total},${comp},${perc}%\n`;
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Relatorio_Grupamento_${folderName.replace(/\s+/g, '_')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const handleExportPDFComando = () => {
     const printWindow = window.open('', '', 'width=1000,height=800');
     const today = new Date().toLocaleDateString('pt-BR');
     
     let html = `
-      <html><head><title>Relatório - Visão de Comando</title>
+      <html><head><title>Relatório - Dashboard de Comando</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
         h1 { text-align: center; color: #1e293b; margin-bottom: 5px; }
@@ -124,7 +87,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
         .signature { margin-top: 60px; text-align: center; page-break-inside: avoid; }
       </style></head>
       <body>
-        <h1>NETUNO - RELATÓRIO DE VISÃO DE COMANDO</h1>
+        <h1>NETUNO - RELATÓRIO DO DASHBOARD DE COMANDO</h1>
         <h2>Data de Emissão: ${today}</h2>
         <div class="grid">
     `;
@@ -194,17 +157,8 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
     setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
   };
 
-
   const handleCreateMission = () => {
-    onNewMission();
-    // A função handleNewMission do App não recebe o currentFolderId, então teremos que atualizar a missão recém criada?
-    // Melhor forma é o App tratar isso. Como não podemos mudar App handleNewMission sem quebrar a assinatura,
-    // vamos pegar a última missão adicionada (logo após onClose não dá). 
-    // Por enquanto, atualizamos o parentFolderId direto no array.
-    setTimeout(() => {
-      // gambiarra temporária para não alterar a API do App.jsx no onNewMission
-      // mas vamos usar o onMissionsChange para forçar a atualização.
-    }, 100);
+    onNewMission(currentFolderId);
   };
 
   const handleMoveMission = (mission) => {
@@ -273,10 +227,19 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
         
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900/50">
-          <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <FolderOpen className="text-emerald-400" />
-            Central de Missões
-          </h2>
+          <div className="flex items-center gap-3">
+            <button 
+              type="button"
+              onClick={onClose} 
+              className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded font-semibold transition-colors"
+            >
+              ← Voltar
+            </button>
+            <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+              <FolderOpen className="text-emerald-400" />
+              Central de Missões
+            </h2>
+          </div>
           <button onClick={onClose} className="text-slate-400 hover:text-red-400 transition-colors">
             <X size={24} />
           </button>
@@ -306,15 +269,6 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
           {/* Botão de Quartel Padrão */}
           {currentFolderId && (
             <div className="ml-auto flex items-center gap-2">
-              {isGestor && (
-                <button 
-                  onClick={handleExportFolderReport}
-                  className="text-xs px-2 py-1 flex items-center gap-1 rounded border bg-blue-600/20 text-blue-400 border-blue-500 hover:bg-blue-600/40 transition-colors"
-                  title="Exportar Relatório (Produtividade/Cumprimento)"
-                >
-                  <FileSpreadsheet size={14} /> Exportar Relatório
-                </button>
-              )}
               <button 
                 onClick={handleSetDefaultFolder}
                 className={`text-xs px-2 py-1 rounded border transition-colors ${currentFolderId === defaultFolderId ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500' : 'bg-slate-700 text-slate-400 border-slate-600 hover:text-emerald-400'}`}
@@ -343,16 +297,16 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
         {/* Tabs Principais */}
         <div className="flex border-b border-slate-700 bg-slate-900/40">
           <button onClick={() => setActiveTab('todas')} className={`flex-1 py-3 text-sm font-bold ${activeTab === 'todas' ? 'text-emerald-400 border-b-2 border-emerald-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'}`}>Pastas & Missões</button>
-          {/* RBAC: Apenas Gestores e Admins acessam a Visão de Comando */}
+          {/* RBAC: Apenas Gestores e Admins acessam o Dashboard de Comando */}
           {isGestor && (
-            <button onClick={() => setActiveTab('visao_comando')} className={`flex-1 py-3 text-sm font-bold flex justify-center items-center gap-2 ${activeTab === 'visao_comando' ? 'text-blue-400 border-b-2 border-blue-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'}`}>
-               <Target size={16} /> Visão de Comando
+            <button onClick={() => setActiveTab('dashboard_comando')} className={`flex-1 py-3 text-sm font-bold flex justify-center items-center gap-2 ${activeTab === 'dashboard_comando' ? 'text-blue-400 border-b-2 border-blue-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'}`}>
+               <Target size={16} /> Dashboard de Comando
             </button>
           )}
         </div>
 
         {/* Search Bar (Only if not in comando) */}
-        {activeTab !== 'visao_comando' && (
+        {activeTab !== 'dashboard_comando' && (
           <div className="p-3 bg-slate-900/30 border-b border-slate-700 flex gap-2">
             <input 
               type="text" 
@@ -365,17 +319,20 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
         )}
 
         {/* List Content */}
-        <div className={`flex-1 overflow-y-auto ${activeTab === 'visao_comando' ? 'p-0' : 'p-4'} flex flex-col gap-3`}>
+        <div className={`flex-1 overflow-y-auto ${activeTab === 'dashboard_comando' ? 'p-0' : 'p-4'} flex flex-col gap-3`}>
           
-          {activeTab === 'visao_comando' && (
+          {activeTab === 'dashboard_comando' && (
             <div className="flex flex-col h-full w-full bg-slate-900 overflow-y-auto gap-4 p-4 pb-8 items-start">
               <div className="flex flex-col md:flex-row justify-between w-full items-start md:items-center mb-2 gap-4">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                   <Target className="text-blue-400" /> Dashboard de Comando
-                </h3>
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                     <Target className="text-blue-400" /> Dashboard de Comando
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Clique em qualquer quartel para abrir diretamente a pasta de missões.</p>
+                </div>
                 <button 
                   onClick={handleExportPDFComando}
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-lg transition-transform active:scale-95"
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-lg transition-transform active:scale-95 text-sm"
                 >
                   <Printer size={18} /> Exportar Relatório (PDF)
                 </button>
@@ -384,7 +341,6 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                 {folders.map(folder => {
                   const fMissions = availableMissions.filter(m => m.parentFolderId === folder.id);
-                  // if (fMissions.length === 0) return null; // Removido para garantir que todos os quartéis sejam visíveis
                   
                   let totalHidrantes = 0;
                   let totalConcluidos = 0;
@@ -405,8 +361,16 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
                   const progGeral = totalHidrantes > 0 ? Math.round((totalConcluidos / totalHidrantes) * 100) : 0;
 
                   return (
-                    <div key={folder.id} className="bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col gap-3 shadow-md">
-                       <h4 className="font-bold text-emerald-400 text-lg border-b border-slate-700 pb-2 flex justify-between items-center">
+                    <div 
+                      key={folder.id} 
+                      onClick={() => {
+                        setCurrentFolderId(folder.id);
+                        setActiveTab('todas');
+                      }}
+                      className="bg-slate-800 border border-slate-700 hover:border-emerald-500 rounded-xl p-4 flex flex-col gap-3 shadow-md cursor-pointer hover:scale-[1.02] transition-all group"
+                      title="Clique para abrir esta pasta de missões"
+                    >
+                       <h4 className="font-bold text-emerald-400 group-hover:text-emerald-300 text-lg border-b border-slate-700 pb-2 flex justify-between items-center">
                           {folder.name}
                           <span className="text-xs bg-emerald-900/50 text-emerald-300 px-2 py-1 rounded-full">{fMissions.length} Missões</span>
                        </h4>
@@ -440,7 +404,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
             </div>
           )}
 
-          {activeTab !== 'visao_comando' && isGestor && !isMoveMode && searchTerm === '' && (
+          {activeTab !== 'dashboard_comando' && isGestor && !isMoveMode && searchTerm === '' && (
             <div className="flex gap-2 mb-2">
               <button onClick={handleCreateFolder} className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-dashed border-slate-500 hover:border-slate-400 text-slate-400 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold transition-all">
                 <Plus size={18} />
@@ -456,7 +420,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
             </div>
           )}
 
-          {activeTab !== 'visao_comando' && displayFolders.map(folder => (
+          {activeTab !== 'dashboard_comando' && displayFolders.map(folder => (
             <div 
               key={folder.id} 
               onClick={() => setCurrentFolderId(folder.id)}
@@ -470,7 +434,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
             </div>
           ))}
 
-          {activeTab !== 'visao_comando' && filteredMissions.map(mission => {
+          {activeTab !== 'dashboard_comando' && filteredMissions.map(mission => {
             const isOpen = openMissionIds.includes(mission.id);
             const total = mission.selectedIds.length;
             const completed = mission.completedIds.length;
@@ -537,7 +501,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
             );
           })}
 
-          {activeTab !== 'visao_comando' && displayFolders.length === 0 && filteredMissions.length === 0 && (
+          {activeTab !== 'dashboard_comando' && displayFolders.length === 0 && filteredMissions.length === 0 && (
             <div className="text-center text-slate-500 py-8">Nenhum item encontrado nesta pasta.</div>
           )}
         </div>
