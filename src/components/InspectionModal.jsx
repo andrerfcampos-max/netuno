@@ -23,11 +23,7 @@ const DEFEITOS_OFICIAIS = [
   "Caixa de registro muito profunda",
   "Caixa de registro cheia de lixo",
   "Caixa de registro cheia d'água",
-  "Caixa de registro quebrada",
   "Caixa de registro com enxame de abelhas",
-  "Falta cabeçote da haste do registro (luva)",
-  "Registro com vazamento",
-  "Registro emperrado",
   "Faltam bujões e tampões",
   "Rosca de tampão danificado",
   "Carretel do registro danificado",
@@ -40,19 +36,18 @@ const DEFEITOS_OFICIAIS = [
   "Falta flange",
   "Registro não funciona",
   "Hidrante quebrado",
-  "Hidrante soterrado",
-  "Registro soterrado",
   "Hidrante empenado",
   "Vazamento no flange (operante)"
 ];
 
 const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
-  const [q1, setQ1] = useState(hidrante.flgAtivo ? 'SIM' : 'NÃO');
-  const [q2, setQ2] = useState(null);
-  const [q3, setQ3] = useState(null);
-  const [q4, setQ4] = useState(null);
-  const [q5, setQ5] = useState(null);
-  const [q6, setQ6] = useState('');
+  const [q1, setQ1] = useState(null); // Chave tipo T
+  const [q2, setQ2] = useState(null); // Registro
+  const [q3, setQ3] = useState(null); // Caixa do registro
+  const [q4, setQ4] = useState(null); // Tampões
+  const [q5, setQ5] = useState(hidrante.flgAtivo ? 'SIM' : 'NÃO'); // Operante
+  const [q6, setQ6] = useState(''); // Algum outro problema
+  const [q7, setQ7] = useState(''); // Observações
   
   const [fotoBase64, setFotoBase64] = useState(null);
   const fileInputRef = useRef(null);
@@ -101,26 +96,36 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
       return;
     }
 
-    const isOperante = q1 === 'SIM';
     let problemas = [];
     
-    if (q2 === 'NÃO') problemas.push("Faltam tampões");
+    // q1: Chave T
+    if (q1 === 'NÃO, FALTA LUVA') problemas.push("Falta cabeçote da haste do registro (luva)");
     
+    // q2: Registro
+    if (q2 === 'SOTERRADO') problemas.push("Registro soterrado");
+    else if (q2 === 'COM VAZAMENTO') problemas.push("Registro com vazamento");
+    else if (q2 === 'EMPERRADO') problemas.push("Registro emperrado");
+
+    // q3: Caixa do registro
     if (q3 === 'SOTERRADA') problemas.push("Hidrante soterrado");
     else if (q3 === 'TAMPA QUEBRADA') problemas.push("Caixa de registro quebrada");
-    
-    if (q4 === 'SOTERRADO') problemas.push("Registro soterrado");
-    else if (q4 === 'COM VAZAMENTO') problemas.push("Registro com vazamento");
-    else if (q4 === 'EMPERRADO') problemas.push("Registro emperrado");
 
-    if (q5 === 'NÃO, FALTA LUVA') problemas.push("Falta cabeçote da haste do registro (luva)");
+    // q4: Tampões
+    if (q4 === 'NÃO') problemas.push("Faltam tampões");
 
+    // q6: Outro
     if (q6) problemas.push(q6);
+
+    // q7: Observações
+    if (q7.trim() !== '') problemas.push(`Obs: ${q7.trim()}`);
 
     const problemaFinal = problemas.join(" | ");
 
-    let statusFinal = isOperante;
-    if (q4 === 'SOTERRADO' || q4 === 'EMPERRADO') {
+    // q5: Operante
+    let statusFinal = q5 === 'SIM';
+    
+    // Regras de negócio restritas
+    if (q2 === 'SOTERRADO' || q2 === 'EMPERRADO') {
       statusFinal = false; // Força INOPERANTE
     }
 
@@ -194,19 +199,21 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
           
           {/* Pergunta 1 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">1) O HIDRANTE ESTÁ OPERANTE?</label>
+            <label className="font-bold text-slate-300 text-sm">1) A CHAVE TIPO T ENCAIXA NO REGISTRO?</label>
             <div className="flex gap-2">
               {renderOption('SIM', q1, setQ1, true)}
-              {renderOption('NÃO', q1, setQ1, false)}
+              {renderOption('NÃO, FALTA LUVA', q1, setQ1, false)}
             </div>
           </div>
 
           {/* Pergunta 2 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">2) TODOS OS TAMPÕES ESTÃO PRESENTES?</label>
-            <div className="flex gap-2">
-              {renderOption('SIM', q2, setQ2, true)}
-              {renderOption('NÃO', q2, setQ2, false)}
+            <label className="font-bold text-slate-300 text-sm">2) O REGISTRO ESTÁ...</label>
+            <div className="flex flex-wrap gap-2">
+              {renderOption('SEM ALTERAÇÃO', q2, setQ2, true)}
+              {renderOption('SOTERRADO', q2, setQ2, false)}
+              {renderOption('COM VAZAMENTO', q2, setQ2, false)}
+              {renderOption('EMPERRADO', q2, setQ2, false)}
             </div>
           </div>
 
@@ -222,21 +229,19 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
           {/* Pergunta 4 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">4) O REGISTRO ESTÁ...</label>
-            <div className="flex flex-wrap gap-2">
-              {renderOption('SEM ALTERAÇÃO', q4, setQ4, true)}
-              {renderOption('SOTERRADO', q4, setQ4, false)}
-              {renderOption('COM VAZAMENTO', q4, setQ4, false)}
-              {renderOption('EMPERRADO', q4, setQ4, false)}
+            <label className="font-bold text-slate-300 text-sm">4) TODOS OS TAMPÕES ESTÃO PRESENTES?</label>
+            <div className="flex gap-2">
+              {renderOption('SIM', q4, setQ4, true)}
+              {renderOption('NÃO', q4, setQ4, false)}
             </div>
           </div>
 
           {/* Pergunta 5 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">5) A CHAVE TIPO T ENCAIXA NO REGISTRO?</label>
+            <label className="font-bold text-slate-300 text-sm">5) O HIDRANTE ESTÁ OPERANTE?</label>
             <div className="flex gap-2">
               {renderOption('SIM', q5, setQ5, true)}
-              {renderOption('NÃO, FALTA LUVA', q5, setQ5, false)}
+              {renderOption('NÃO', q5, setQ5, false)}
             </div>
           </div>
 
@@ -251,6 +256,17 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
               <option value="">Nenhum</option>
               {DEFEITOS_OFICIAIS.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
+          </div>
+
+          {/* Pergunta 7 */}
+          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+            <label className="font-bold text-slate-300 text-sm">7) OBSERVAÇÕES (Opcional)</label>
+            <textarea
+              className="p-2 rounded bg-slate-700 border border-slate-600 text-sm text-white focus:outline-none focus:border-emerald-500 w-full h-16 resize-none"
+              placeholder="Digite alguma observação adicional..."
+              value={q7}
+              onChange={(e) => setQ7(e.target.value)}
+            />
           </div>
 
           {/* Foto */}

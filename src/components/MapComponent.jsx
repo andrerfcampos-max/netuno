@@ -82,29 +82,11 @@ const MapMemory = () => {
   return null;
 };
 
-// Gerencia o comportamento do scroll wheel (Ctrl + scroll = zoom)
 const ScrollBehavior = () => {
   const map = useMap();
-  
   useEffect(() => {
-    map.scrollWheelZoom.disable();
-    
-    const handleWheel = (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        map.scrollWheelZoom.enable();
-      } else {
-        map.scrollWheelZoom.disable();
-      }
-    };
-    
-    const container = map.getContainer();
-    container.addEventListener('wheel', handleWheel, { capture: true });
-    
-    return () => {
-      container.removeEventListener('wheel', handleWheel, { capture: true });
-    };
+    map.scrollWheelZoom.enable();
   }, [map]);
-  
   return null;
 };
 
@@ -117,7 +99,18 @@ const MapResizer = ({ isMapFullscreen, activeView }) => {
   const map = useMap();
   useEffect(() => {
     if (activeView === 'map' || isMapFullscreen) {
-      const timeout = setTimeout(() => map.invalidateSize(), 50);
+      const timeout = setTimeout(() => {
+        map.invalidateSize();
+        try {
+          const savedState = localStorage.getItem('netuno_map_state');
+          if (savedState) {
+            const parsed = JSON.parse(savedState);
+            if (parsed.lat && parsed.lng && parsed.zoom) {
+              map.setView([parsed.lat, parsed.lng], parsed.zoom, { animate: false });
+            }
+          }
+        } catch(e) {}
+      }, 50);
       return () => clearTimeout(timeout);
     }
   }, [isMapFullscreen, activeView, map]);
@@ -187,39 +180,34 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
     return hidrantes.map((h, i) => {
       const id = h.codHidrante || h._internalId || h.nomHidrante;
       const isSelected = selectedMissionIds.includes(id);
+      const isCentered = centerPosition && (centerPosition.codHidrante === h.codHidrante || centerPosition.nomHidrante === h.nomHidrante);
       
       return (
       <Marker 
-        key={id || i} 
+        key={isCentered ? `${id}-center` : (id || i)} 
         position={[h.numLatitude, h.numLongitude]}
         icon={createDivIcon(h.flgAtivo, isSelected)}
         eventHandlers={{
           add: (e) => {
-            if (centerPosition && (centerPosition.codHidrante === h.codHidrante || centerPosition.nomHidrante === h.nomHidrante)) {
+            if (isCentered) {
               setTimeout(() => {
                 if (e.target.isPopupOpen && !e.target.isPopupOpen()) {
                   e.target.openPopup();
                 }
               }, 300);
             }
-          },
-          click: (e) => {
-            if (e.target.isPopupOpen && !e.target.isPopupOpen()) {
-              e.target.openPopup();
-            }
           }
         }}
       >
-        <Popup minWidth={260} className="argos-popup">
-          <div className="flex flex-col gap-1 p-0.5 text-slate-800 text-xs w-full leading-tight">
-            <div className="flex gap-2 items-center border-b border-slate-200 pb-1 mb-1">
+        <Popup minWidth={300} className="argos-popup">
+          <div className="flex flex-col gap-2 p-1 text-slate-800 text-sm w-full leading-snug">
+            <div className="flex gap-3 items-center border-b border-slate-200 pb-2 mb-1">
               {h.fotoPerfil && (
                 <img 
                   src={h.fotoPerfil} 
                   alt="Hidrante" 
-                  className="w-12 h-12 rounded object-cover cursor-pointer hover:scale-105 transition-transform border border-slate-300"
+                  className="w-14 h-14 rounded-md object-cover cursor-pointer hover:scale-105 transition-transform border shadow-sm"
                   onClick={(e) => {
-                    // Simples visualizador full screen sem libs
                     const img = document.createElement('img');
                     img.src = h.fotoPerfil;
                     img.style.maxWidth = '90%';
@@ -241,32 +229,32 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                   }}
                 />
               )}
-              <div className="font-bold text-base flex-1">{fixEncoding(h.nomHidrante) || h.codHidrante}</div>
+              <div className="font-black text-lg text-slate-900 flex-1">{fixEncoding(h.nomHidrante) || h.codHidrante}</div>
             </div>
             
-            <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 mb-1">
-              <div className="font-semibold text-slate-500">Status:</div>
-              <div className={h.flgAtivo ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+            <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 mb-2">
+              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide flex items-center">Status</div>
+              <div className={h.flgAtivo ? 'text-emerald-600 font-black' : 'text-red-600 font-black'}>
                 {h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}
               </div>
               
-              <div className="font-semibold text-slate-500">RA:</div>
-              <div>{fixEncoding(h.dscLocalidade) || '-'}</div>
+              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide">RA</div>
+              <div className="text-slate-700 font-medium">{fixEncoding(h.dscLocalidade) || '-'}</div>
               
-              <div className="font-semibold text-slate-500">Endereço:</div>
-              <div className="col-span-2 leading-tight">{fixEncoding(h.dscEndereco) || '-'}</div>
+              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide">Endereço</div>
+              <div className="col-span-2 text-slate-700">{fixEncoding(h.dscEndereco) || '-'}</div>
               
-              <div className="font-semibold text-slate-500">Ponto de referência:</div>
-              <div className="col-span-2 leading-tight italic">{fixEncoding(h.dscPontoReferencia) || '-'}</div>
+              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide">Ponto Ref.</div>
+              <div className="col-span-2 text-slate-600 italic text-xs">{fixEncoding(h.dscPontoReferencia) || '-'}</div>
 
-              <div className="font-semibold text-slate-500 mt-1">Dt Vistoria:</div>
+              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide">Dt Vistoria</div>
               <div className="text-slate-700 font-bold truncate">{h.datHoraUltimaVistoria || 'Sem registro'}</div>
               
-              <div className="font-semibold text-slate-500 mt-1">Coordenadas:</div>
-              <div className="text-slate-700 text-xs font-mono">{h.numLatitude}, {h.numLongitude}</div>
+              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide mt-1">Coordenadas</div>
+              <div className="text-slate-700 text-xs font-mono mt-1">{h.numLatitude}, {h.numLongitude}</div>
 
-              <div className="font-semibold text-slate-500 mt-1">Problema:</div>
-              <div className="text-slate-700 font-bold text-red-600 break-words max-h-60 overflow-y-auto pr-2" title={fixEncoding(h.problemasHidrante)}>{fixEncoding(h.problemasHidrante) || 'Nenhum'}</div>
+              <div className="font-bold text-slate-500 text-xs uppercase tracking-wide mt-1">Problema</div>
+              <div className="text-slate-700 font-bold text-red-600 break-words max-h-60 overflow-y-auto pr-2 mt-1" title={fixEncoding(h.problemasHidrante)}>{fixEncoding(h.problemasHidrante) || 'Nenhum'}</div>
             </div>
 
             {/* Navegação Externa GPS (Botões Reduzidos) */}
@@ -343,7 +331,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         center={initialCenter} 
         zoom={initialZoom} 
         style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={false}
+        scrollWheelZoom={true}
       >
         {/* Camada OBRIGATÓRIA Google Satélite Híbrido */}
         <TileLayer

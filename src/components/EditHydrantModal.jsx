@@ -13,15 +13,52 @@ const customIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+const RA_LIST = [
+  { name: 'Plano Piloto', lat: -15.793, lng: -47.882 },
+  { name: 'Gama', lat: -16.015, lng: -48.065 },
+  { name: 'Taguatinga', lat: -15.833, lng: -48.056 },
+  { name: 'Brazlândia', lat: -15.670, lng: -48.198 },
+  { name: 'Sobradinho', lat: -15.651, lng: -47.794 },
+  { name: 'Planaltina', lat: -15.617, lng: -47.653 },
+  { name: 'Paranoá', lat: -15.768, lng: -47.771 },
+  { name: 'Núcleo Bandeirante', lat: -15.873, lng: -47.962 },
+  { name: 'Ceilândia', lat: -15.823, lng: -48.113 },
+  { name: 'Guará', lat: -15.820, lng: -47.983 },
+  { name: 'Cruzeiro', lat: -15.791, lng: -47.936 },
+  { name: 'Samambaia', lat: -15.875, lng: -48.083 },
+  { name: 'Santa Maria', lat: -16.019, lng: -47.987 },
+  { name: 'São Sebastião', lat: -15.908, lng: -47.769 },
+  { name: 'Recanto das Emas', lat: -15.903, lng: -48.064 },
+  { name: 'Lago Sul', lat: -15.845, lng: -47.848 },
+  { name: 'Riacho Fundo', lat: -15.882, lng: -48.016 },
+  { name: 'Lago Norte', lat: -15.733, lng: -47.854 },
+  { name: 'Candangolândia', lat: -15.850, lng: -47.947 },
+  { name: 'Águas Claras', lat: -15.836, lng: -48.026 },
+  { name: 'Riacho Fundo II', lat: -15.903, lng: -48.037 },
+  { name: 'Sudoeste/Octogonal', lat: -15.801, lng: -47.923 },
+  { name: 'Varjão', lat: -15.708, lng: -47.882 },
+  { name: 'Park Way', lat: -15.874, lng: -47.962 },
+  { name: 'SCIA/Estrutural', lat: -15.779, lng: -47.994 },
+  { name: 'Sobradinho II', lat: -15.626, lng: -47.817 },
+  { name: 'Jardim Botânico', lat: -15.877, lng: -47.781 },
+  { name: 'Itapoã', lat: -15.738, lng: -47.766 },
+  { name: 'SIA', lat: -15.803, lng: -47.957 },
+  { name: 'Vicente Pires', lat: -15.802, lng: -48.028 },
+  { name: 'Fercal', lat: -15.589, lng: -47.869 },
+  { name: 'Sol Nascente/Pôr do Sol', lat: -15.811, lng: -48.140 },
+  { name: 'Arniqueira', lat: -15.852, lng: -48.015 }
+];
+
 const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
   const isNew = !hidrante._internalId && !hidrante.codHidrante;
   
   const [formData, setFormData] = useState({
     codHidrante: hidrante.codHidrante || (isNew ? 'GUA' : ''),
+    dscLocalidade: hidrante.dscLocalidade || '',
     dscEndereco: hidrante.dscEndereco || '',
     dscPontoReferencia: hidrante.dscPontoReferencia || '',
-    numLatitude: hidrante.numLatitude || -22.9068,
-    numLongitude: hidrante.numLongitude || -43.1729,
+    numLatitude: hidrante.numLatitude || (isNew ? -15.793 : -15.793),
+    numLongitude: hidrante.numLongitude || (isNew ? -47.882 : -47.882),
     fotoPerfil: hidrante.fotoPerfil || ''
   });
 
@@ -29,6 +66,15 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleRAChange = (e) => {
+    const raName = e.target.value;
+    setFormData(prev => ({ ...prev, dscLocalidade: raName }));
+    const ra = RA_LIST.find(r => r.name === raName);
+    if (ra) {
+      setFormData(prev => ({ ...prev, numLatitude: ra.lat, numLongitude: ra.lng }));
+    }
   };
 
   const handleImageUpload = (e) => {
@@ -59,6 +105,10 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isNew && !formData.dscLocalidade) {
+      alert("Por favor, selecione a Região Administrativa (RA).");
+      return;
+    }
     onSave({
       ...hidrante,
       ...formData,
@@ -81,7 +131,7 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
     useEffect(() => {
       if (formData.numLatitude && formData.numLongitude) {
-        map.flyTo([formData.numLatitude, formData.numLongitude], map.getZoom());
+        map.flyTo([formData.numLatitude, formData.numLongitude], map.getZoom() < 13 ? 15 : map.getZoom());
       }
     }, [formData.numLatitude, formData.numLongitude, map]);
 
@@ -151,6 +201,22 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
               </div>
 
               <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-400 font-bold uppercase">Região Administrativa (RA)</label>
+                <select 
+                  name="dscLocalidade" 
+                  value={formData.dscLocalidade} 
+                  onChange={handleRAChange} 
+                  required={isNew}
+                  className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white"
+                >
+                  <option value="">Selecione uma RA...</option>
+                  {RA_LIST.map(ra => (
+                    <option key={ra.name} value={ra.name}>{ra.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-400 font-bold uppercase">Endereço</label>
                 <input name="dscEndereco" value={formData.dscEndereco} onChange={handleChange} className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white" />
               </div>
@@ -173,7 +239,7 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser }) => {
             </div>
 
             <div className="w-full md:w-1/2 h-[300px] md:h-auto border border-slate-600 rounded overflow-hidden">
-               <MapContainer center={[formData.numLatitude || -22.9068, formData.numLongitude || -43.1729]} zoom={15} style={{ height: '100%', width: '100%' }}>
+               <MapContainer center={[formData.numLatitude || -15.793, formData.numLongitude || -47.882]} zoom={isNew && !formData.dscLocalidade ? 10 : 15} style={{ height: '100%', width: '100%' }}>
                   <TileLayer
                     url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                     attribution="Tiles &copy; Esri"

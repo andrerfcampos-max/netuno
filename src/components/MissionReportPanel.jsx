@@ -36,10 +36,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     return y || 'N/A';
   };
 
-  // Correção: somar apenas hidrantes de fato vistoriados (com data de vistoria)
   const sortedHidrantesGeral = useMemo(() => {
     return [...hidrantes]
-      .filter(h => h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' && h.datHoraUltimaVistoria !== '')
       .sort((a, b) => parseDate(a.datHoraUltimaVistoria) - parseDate(b.datHoraUltimaVistoria));
   }, [hidrantes]);
 
@@ -68,7 +66,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     let totalDefeitos = 0;
     currentData.forEach(h => {
       if (!h.flgAtivo && h.problemasHidrante && h.problemasHidrante.trim() !== '-' && h.problemasHidrante.trim() !== '') {
-        const problemas = h.problemasHidrante.split(';').map(p => p.trim()).filter(p => p);
+        const problemas = h.problemasHidrante.split(/[;|]/).map(p => p.trim()).filter(p => p);
         problemas.forEach(p => {
           defeitosCount[p] = (defeitosCount[p] || 0) + 1;
           totalDefeitos++;
@@ -200,7 +198,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       text += `⚠️ *Prioridade de Manutenção:*\n`;
       const priority = currentData.filter(h => !h.flgAtivo).slice(0, 10);
       priority.forEach(h => {
-        text += `- ${h.nomHidrante || h.codHidrante}: ${h.problemasHidrante ? h.problemasHidrante.split(';')[0] : 'Inoperante'}\n`;
+        text += `- ${h.nomHidrante || h.codHidrante}: ${h.problemasHidrante ? h.problemasHidrante.split(/[;|]/)[0].trim() : 'Inoperante'}\n`;
       });
       if (inoperantes > 10) text += `- ...e mais ${inoperantes - 10}\n`;
     }
@@ -222,8 +220,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         formatDateOnly(h.datHoraUltimaVistoria),
         h.vistoriadorNome || '',
         h.flgAtivo ? 'OPERANTE' : 'INOPERANTE',
-        (h.problemasHidrante || '').replace(/;/g, ' | '),
-        (h.dscObservacao || h.observacoes || h.obsVistoria || '').replace(/;/g, ' | '),
+        (h.problemasHidrante || '').replace(/[;|]/g, ' - '),
+        (h.dscObservacao || h.observacoes || h.obsVistoria || '').replace(/[;|]/g, ' - '),
         `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`
       ]);
     } else {
@@ -232,7 +230,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         h.nomHidrante || h.codHidrante || '',
         h.dscEndereco || h.dscLocalidade || '',
         h.dscPontoReferencia || '',
-        (h.problemasHidrante || '').replace(/;/g, ' | '),
+        (h.problemasHidrante || '').replace(/[;|]/g, ' - '),
         `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`
       ]);
     }

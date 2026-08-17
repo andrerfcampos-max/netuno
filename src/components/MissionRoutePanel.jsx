@@ -97,7 +97,7 @@ const optimizeRouteMultiMode = async (hidrantes, startLat, startLng) => {
   }
 };
 
-const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds = [], currentMission, onUpdateMission, onClose, onClearMission, onRemoveFromMission, lastInspectedCoords, onInspect, onEdit, onCenterMap, currentUser, folders, onSaveRouteToFolder }) => {
+const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds = [], currentMission, onUpdateMission, onClose, onClearMission, onRemoveFromMission, lastInspectedCoords, onInspect, onEdit, onCenterMap, currentUser, folders, onSaveRouteToFolder, onGenerateReport }) => {
   const [pendingRoute, setPendingRoute] = useState([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -533,6 +533,18 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
           >
             <X size={18} />
             LIMPAR ROTA
+          </button>
+        )}
+        
+        {(currentUser?.role === 'gestor' || currentUser?.role === 'admin') && onGenerateReport && (
+          <button 
+            onClick={onGenerateReport}
+            disabled={missionHydrants.length === 0}
+            className="flex items-center justify-center gap-1.5 px-3 flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold py-2 rounded-lg shadow active:scale-95 transition-all text-sm"
+            title="Gerar Relatório da Missão"
+          >
+            <FolderOpen size={18} />
+            GERAR RELATÓRIO DA MISSÃO
           </button>
         )}
       </div>

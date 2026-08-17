@@ -81,16 +81,7 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
   return (
     <div className={`w-full z-40 bg-slate-800/80 backdrop-blur-md border border-slate-700 shadow-lg rounded-xl overflow-hidden transition-all duration-300 ${isVisible ? 'block' : 'hidden'}`}>
       
-      {currentUser && (
-        <div className="bg-slate-900 px-3 py-1 flex justify-between items-center border-b border-slate-700/50">
-          <span className="text-[10px] uppercase tracking-wider text-slate-300 font-bold">
-            {currentUser.nome} - {currentUser.role === 'gestor' ? 'Gestor de hidrante' : 'Vistoriador de hidrante'}
-          </span>
-          <button onClick={onLogout} className="text-[10px] text-slate-500 hover:text-red-400 flex items-center gap-1 transition-colors">
-            <LogOut size={12} /> Sair
-          </button>
-        </div>
-      )}
+
 
       <div className="p-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 bg-slate-900/50">
           

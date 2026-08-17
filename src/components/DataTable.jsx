@@ -208,7 +208,11 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                   <td className="p-2 font-mono text-xs">
                     {h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' ? h.datHoraUltimaVistoria.split(' ')[0] : '-'}
                   </td>
-                  <td className="p-2 truncate max-w-[150px] text-red-400 font-bold" title={h.problemasHidrante}>{h.problemasHidrante || '-'}</td>
+                  <td className="p-2 max-w-[150px]">
+                    <div className="truncate text-red-400 font-bold" title={h.problemasHidrante || ''}>
+                      {h.problemasHidrante || '-'}
+                    </div>
+                  </td>
                   <td className="p-2 truncate max-w-[150px]" title={h.dscEndereco}>{h.dscEndereco || '-'}</td>
                   <td className="p-2 truncate max-w-[120px]" title={h.dscPontoReferencia}>{h.dscPontoReferencia || '-'}</td>
                   <td className="p-2">

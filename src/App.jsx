@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator } from 'lucide-react';
+import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
@@ -44,6 +44,7 @@ function App() {
     if (view) return view;
     return localStorage.getItem('netuno_active_view') || 'map';
   });
+  const [reportMode, setReportMode] = useState('global');
 
   const setActiveView = (view) => {
     _setActiveView(view);
@@ -600,7 +601,22 @@ function App() {
       <header className={isMapFullscreen ? "hidden" : "flex justify-between items-center p-3 bg-slate-900 border-b border-slate-700 z-50"}>
         <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md">NETUNO</h1>
         
-        <div className="relative z-50">
+        <div className="relative z-50 flex items-center gap-2">
+          <div className="hidden md:flex flex-col items-end mr-2">
+            <span className="text-[10px] uppercase tracking-wider text-slate-300 font-bold">
+              {currentUser.nome}
+            </span>
+            <span className="text-[9px] text-emerald-500">
+              {currentUser.role === 'gestor' ? 'Gestor' : currentUser.role === 'admin' ? 'Admin' : 'Vistoriador'}
+            </span>
+          </div>
+          <button 
+            onClick={handleLogout} 
+            className="flex items-center justify-center p-2 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 border border-slate-700 rounded shadow-sm transition-all"
+            title="Sair do sistema"
+          >
+            <LogOut size={20} />
+          </button>
           <details className="group">
             <summary className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm cursor-pointer list-none hover:bg-slate-700 transition-all">
               <span className="hidden sm:inline">Menu</span>
@@ -706,14 +722,16 @@ function App() {
           >
             Rota de Missão ({selectedMissionIds.length})
           </button>
-          <button 
-            onClick={() => setActiveView('report')}
-            className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
-              activeView === 'report' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
-            }`}
-          >
-            Relatório
-          </button>
+          {(currentUser?.role === 'gestor' || currentUser?.role === 'admin') && (
+            <button 
+              onClick={() => setActiveView('report')}
+              className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+                activeView === 'report' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+              }`}
+            >
+              Relatório
+            </button>
+          )}
         </div>
 
         {/* MÓDULO 2: MAPA TÁTICO INTEGRADO */}
@@ -740,7 +758,7 @@ function App() {
               onInspect={handleInspect}
               onEdit={(h) => setEditingHydrante(h)}
               onCenterMap={(h) => {
-                setMapCenterPosition(h);
+                setMapCenterPosition({...h, _ts: Date.now()});
                 setActiveView('map');
               }} 
               selectedMissionIds={selectedMissionIds}
@@ -767,15 +785,26 @@ function App() {
               onInspect={handleInspect}
               onEdit={(h) => setEditingHydrante(h)}
               onCenterMap={(h) => {
-                setMapCenterPosition(h);
+                setMapCenterPosition({...h, _ts: Date.now()});
                 setActiveView('map');
               }}
               currentUser={currentUser}
               folders={folders}
+              onGenerateReport={() => {
+                setReportMode('mission');
+                setActiveView('report');
+              }}
               onSaveRouteToFolder={(folderId, newName) => {
+                const finalName = newName || currentMission.name;
+                const isDuplicate = missions.some(m => m.id !== currentMission.id && m.parentFolderId === folderId && m.name.toLowerCase() === finalName.toLowerCase());
+                if (isDuplicate) {
+                  if (!window.confirm(`Já existe uma missão com o nome "${finalName}" nesta pasta. Deseja salvar assim mesmo e duplicar?`)) {
+                    return;
+                  }
+                }
                 updateCurrentMission({
                   parentFolderId: folderId,
-                  name: newName || currentMission.name,
+                  name: finalName,
                   isDraft: false
                 });
                 toast.success('Rota salva na Central de Missões!');
@@ -788,10 +817,11 @@ function App() {
         {activeView === 'report' && (
           <div id="modulo-relatorio" className="w-full relative flex-shrink-0 min-h-[400px] h-auto flex-1 border border-slate-700 rounded-xl flex flex-col">
             <MissionReportPanel 
-              hidrantes={activeMissionId && selectedMissionIds.length > 0 ? hidrantes.filter(h => selectedMissionIds.includes(h.codHidrante || h.nomHidrante)) : filteredList}
-              currentMission={currentMission}
-              onClose={() => setActiveView('map')}
+              hidrantes={reportMode === 'mission' ? hidrantes.filter(h => selectedMissionIds.includes(h.codHidrante || h.nomHidrante)) : filteredList}
+              currentMission={reportMode === 'mission' ? currentMission : null}
+              onClose={() => { setActiveView('map'); setReportMode('global'); }}
               currentUser={currentUser}
+              isMissionReport={reportMode === 'mission'}
             />
           </div>
         )}
