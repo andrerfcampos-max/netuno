@@ -15,8 +15,19 @@ export const loadPreloadedDatabase = async (onComplete) => {
     
     const sanitizedData = rawData
       .map((row, index) => {
-        const rawLatVal = row.numLatitude !== undefined ? row.numLatitude : (row.Latitude || row.latitude || row.num_latitude || row.LATITUDE);
-        const rawLngVal = row.numLongitude !== undefined ? row.numLongitude : (row.Longitude || row.longitude || row.num_longitude || row.LONGITUDE);
+        let rawLatVal = row.numLatitude !== undefined ? row.numLatitude : (row.Latitude || row.latitude || row.num_latitude || row.LATITUDE);
+        let rawLngVal = row.numLongitude !== undefined ? row.numLongitude : (row.Longitude || row.longitude || row.num_longitude || row.LONGITUDE);
+        
+        let rawNom = row.nomHidrante || row.codHidrante || '';
+        let rawCod = row.codHidrante || row.nomHidrante || '';
+
+        // Detecção de colunas deslocadas na planilha onde nomHidrante é -15.xxx e datHoraVistoria é -48.xxx
+        if ((!rawLatVal || isNaN(parseFloat(String(rawLatVal).replace(',', '.')))) && String(row.nomHidrante).trim().startsWith('-15')) {
+          rawLatVal = row.nomHidrante;
+          if (String(row.datHoraVistoria).trim().startsWith('-4')) {
+            rawLngVal = row.datHoraVistoria;
+          }
+        }
         
         const rawLat = rawLatVal ? String(rawLatVal).replace(/,/g, '.') : '';
         const rawLng = rawLngVal ? String(rawLngVal).replace(/,/g, '.') : '';
@@ -31,22 +42,22 @@ export const loadPreloadedDatabase = async (onComplete) => {
         const rawRA = row.dscLocalidade || row.Localidade || row.RA || row.Cidade || '';
         const cleanRA = normalizeRAName(rawRA);
 
-        const nomHidrante = row.nomHidrante || row.codHidrante || `HID${index + 1}`;
+        const nomHidrante = rawNom || rawCod || `HID${index + 1}`;
 
         return {
           ...row,
           _internalId: `hid_${index}`,
           nomHidrante: nomHidrante,
-          codHidrante: row.codHidrante || nomHidrante,
+          codHidrante: rawCod || nomHidrante,
           dscLocalidade: cleanRA,
-          numLatitude: lat,
-          numLongitude: lng,
+          numLatitude: isNaN(lat) ? 0 : lat,
+          numLongitude: isNaN(lng) ? 0 : lng,
           flgAtivo: isAtivo,
           problemasHidrante: row.problemasHidrante || row.Problema || '',
           datHoraUltimaVistoria: row.datHoraUltimaVistoria || row.datHoraVistoria || row.DataVistoria || row.data_vistoria || row['Última Vistoria'] || row['Ultima Vistoria'] || row.dataHoraUltimaVistoria || '',
         };
       })
-      .filter(h => !isNaN(h.numLatitude) && !isNaN(h.numLongitude));
+      .filter(h => h.dscEndereco || h.dscLocalidade || h.nomHidrante || h.codHidrante);
       
     onComplete(sanitizedData);
   } catch (error) {

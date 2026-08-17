@@ -717,7 +717,11 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                           scrollWheelZoom={true} 
                           className="h-full w-full"
                         >
-                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                          <TileLayer 
+                            attribution='&copy; Google Maps'
+                            url="https://mt0.google.com/vt/lyrs=y&hl=pt-BR&x={x}&y={y}&z={z}"
+                            maxZoom={20}
+                          />
                           
                           {results.polyCoords.length > 0 && (
                             <Polygon positions={results.polyCoords} pathOptions={{ color: '#eab308', fillOpacity: 0.2 }} />

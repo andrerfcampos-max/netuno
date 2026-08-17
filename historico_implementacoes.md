@@ -133,3 +133,15 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - A lista simples com marcadores (bullets) foi substituída por uma **TABELA** formal e elegante tanto na visualização em tela quanto no modo de impressão PDF e no HTML copiado para o SEI (`handleCopySEI`).
   - Colunas da tabela: **Código**, **Distância ao Alvo (metros)**, **Coordenadas Geográficas (Lat, Lng em 6 decimais)**, **Endereço / Localidade** e **Status Operacional (OPERANTE / INOPERANTE)** com estilização e destaque visual.
 
+### [17/08/2026] Etapa 36 Concluída: Correção de Longitude na Edição de Hidrantes Inconsistentes e Satélite no Estudo Técnico
+- **1. Correção de Longitude e Inicialização Segura de Coordenadas (`EditHydrantModal.jsx`):**
+  - Ao abrir o modal de edição para qualquer hidrante com coordenadas anômalas, nulas ou fora do DF, o sistema inicializa automaticamente a posição do mapa e do formulário centrada na Região Administrativa correspondente do hidrante (ou Brasília).
+  - A longitude mantém rigorosamente o sinal negativo e precisão decimal formatada (`.toFixed(6)`), impedindo inversões de sinal ou números corrompidos.
+  - Campos de entrada de Lat e Lng suportam digitação flexível (com ponto ou vírgula) com tratamento no `onBlur` e reposicionamento instantâneo do pino ao clicar no mapa.
+  - O mapa interno do modal de edição foi atualizado para a camada **Google Satélite Híbrido** com zoom e scroll suaves.
+- **2. Mapa de Satélite Híbrido no Módulo de Estudo Técnico (`TechnicalStudyModal.jsx`):**
+  - O mapa do Módulo de Estudo Técnico agora utiliza SEMPRE a camada de **Google Satélite Híbrido** (`https://mt0.google.com/vt/lyrs=y&hl=pt-BR&x={x}&y={y}&z={z}` com maxZoom 20), exatamente com as mesmas configurações de visualização do mapa da tela principal.
+- **3. Preservação de Dados no Parser de Planilha (`xlsxParser.js`):**
+  - Aprimorado o parser para recuperar coordenadas mesmo de linhas com colunas deslocadas e preservar 100% dos hidrantes na base de dados, permitindo que registros com inconsistências fiquem visíveis no painel para saneamento pelos gestores.
+
+
