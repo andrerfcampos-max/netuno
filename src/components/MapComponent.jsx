@@ -428,7 +428,15 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
 
         
         {useClustering ? (
-          <MarkerClusterGroup chunkedLoading>
+          <MarkerClusterGroup 
+            chunkedLoading={true}
+            chunkInterval={100}
+            chunkDelay={50}
+            removeOutsideVisibleBounds={true}
+            maxClusterRadius={60}
+            spiderfyOnMaxZoom={true}
+            disableClusteringAtZoom={18}
+          >
             {renderMarkers()}
           </MarkerClusterGroup>
         ) : (

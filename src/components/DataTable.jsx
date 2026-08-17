@@ -224,33 +224,27 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                       >
                         <MessageSquareText size={16} />
                       </button>
-                      <a
-                        href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')}
                         title="Abrir no Waze"
                         className="p-1.5 bg-blue-500 hover:bg-blue-400 text-white rounded transition-colors active:scale-95"
                       >
                         <Navigation size={16} />
-                      </a>
-                      <a
-                        href={`https://maps.google.com/maps?q=${h.numLatitude},${h.numLongitude}`}
-                        target="_blank"
-                        rel="noreferrer"
+                      </button>
+                      <button
+                        onClick={() => window.open(`https://maps.google.com/maps?q=${h.numLatitude},${h.numLongitude}`, '_blank')}
                         title="Google Maps"
                         className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors active:scale-95"
                       >
                         <MapIcon size={16} />
-                      </a>
-                      <a
-                        href={`https://maps.google.com/maps?q=&layer=c&cbll=${h.numLatitude},${h.numLongitude}`}
-                        target="_blank"
-                        rel="noreferrer"
+                      </button>
+                      <button
+                        onClick={() => window.open(`https://maps.google.com/maps?q=&layer=c&cbll=${h.numLatitude},${h.numLongitude}`, '_blank')}
                         title="Street View"
                         className="p-1.5 bg-orange-500 hover:bg-orange-400 text-white rounded transition-colors active:scale-95"
                       >
                         <MapPin size={16} />
-                      </a>
+                      </button>
                       <button 
                         onClick={() => onInspect(h)}
                         title="Cadastrar Vistoria"

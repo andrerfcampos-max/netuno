@@ -97,16 +97,34 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
             />
           </div>
 
-          {/* Filtro por RA */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Região Administrativa</label>
+          {/* Filtro por RA - Destaque Colorido Tático */}
+          <div className="flex flex-col gap-1 relative">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1 text-emerald-400">
+                <MapPin size={13} className="text-emerald-400 animate-pulse" />
+                Escolha a Cidade / RA
+              </label>
+              {filters.ra ? (
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded border border-emerald-500/40 animate-pulse">
+                  Filtro Ativo
+                </span>
+              ) : (
+                <span className="text-[10px] bg-cyan-900/40 text-cyan-300 font-semibold px-1.5 py-0.5 rounded border border-cyan-700/50">
+                  Todas
+                </span>
+              )}
+            </div>
             <select 
-              className="p-2 rounded bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className={`p-2 rounded text-sm text-white focus:outline-none transition-all duration-300 font-medium ${
+                filters.ra 
+                  ? 'bg-slate-800 border-2 border-emerald-500 ring-2 ring-emerald-500/30 text-emerald-300' 
+                  : 'bg-gradient-to-r from-slate-800 via-slate-800 to-cyan-950/40 border-2 border-cyan-500/60 ring-2 ring-cyan-500/20 hover:border-cyan-400'
+              }`}
               value={filters.ra}
               onChange={(e) => handleChange('ra', e.target.value)}
             >
-              <option value="">Todas as RAs</option>
-              {regions.map(r => <option key={r} value={r}>{r}</option>)}
+              <option value="" className="bg-slate-900 text-slate-300">🎯 Todas as Cidades (Visão DF Completo)</option>
+              {regions.map(r => <option key={r} value={r} className="bg-slate-900 text-white">{r}</option>)}
             </select>
           </div>
 

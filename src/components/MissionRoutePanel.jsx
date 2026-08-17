@@ -291,7 +291,15 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
         
         <div className="flex flex-wrap items-center justify-end gap-1.5 flex-shrink-0 w-full lg:w-auto mt-2 lg:mt-0 border-t lg:border-t-0 border-slate-700 pt-2 lg:pt-0">
           <button onClick={() => { onCenterMap && onCenterMap(h); onClose(); }} title="Centralizar no Mapa" className="p-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded active:scale-95 transition-transform"><LocateFixed size={16}/></button>
-          {!isCompleted && <a href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`} target="_blank" rel="noreferrer" title="Waze" className="p-1.5 bg-blue-500 hover:bg-blue-400 text-white rounded active:scale-95 transition-transform"><Navigation size={16}/></a>}
+          {!isCompleted && (
+            <button 
+              onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')} 
+              title="Waze" 
+              className="p-1.5 bg-blue-500 hover:bg-blue-400 text-white rounded active:scale-95 transition-transform"
+            >
+              <Navigation size={16}/>
+            </button>
+          )}
           {/* Botão de ação rápida visível em todos para padronizar com a dialog */}
           {!isCompleted && (
             <button onClick={() => onInspect && onInspect(h)} title="Cadastrar Vistoria" className={`flex items-center gap-1 p-1.5 px-3 bg-teal-600 hover:bg-teal-500 text-white rounded active:scale-95 transition-transform font-bold ${index === 0 ? '' : 'text-xs'}`}>

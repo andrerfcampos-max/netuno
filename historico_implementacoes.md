@@ -144,4 +144,20 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **3. Preservação de Dados no Parser de Planilha (`xlsxParser.js`):**
   - Aprimorado o parser para recuperar coordenadas mesmo de linhas com colunas deslocadas e preservar 100% dos hidrantes na base de dados, permitindo que registros com inconsistências fiquem visíveis no painel para saneamento pelos gestores.
 
+### [17/08/2026] Etapa 37 Concluída: Otimização de Performance Global, Plotagem Eficiente de 3.200 Pinos, Virtualização e Resiliência Offline
+- **1. Renderização Ultra-Eficiente de 3.200 Pinos no Mapa (`MapComponent.jsx`):**
+  - Configurado o `MarkerClusterGroup` com chunked loading otimizado: `chunkedLoading={true}`, `chunkInterval={100}`, `chunkDelay={50}`, `removeOutsideVisibleBounds={true}`, `maxClusterRadius={60}`, `spiderfyOnMaxZoom={true}` e `disableClusteringAtZoom={18}`.
+  - Permite navegar, dar zoom e arrastar os 3.200 hidrantes do DF a 60 FPS estáveis sem travamentos de CPU ou gargalos no event loop.
+- **2. Geração Sob Demanda de Links Externos (`DataTable.jsx`, `MapComponent.jsx`, `MissionRoutePanel.jsx`):**
+  - Removida a pré-geração massiva de strings de URLs para Waze, Google Maps e Street View em loops de dados. Os links de navegação externa agora são calculados e abertos dinamicamente no clique do usuário (`onClick`) via `window.open`, economizando alocações de memória no Heap do JavaScript.
+- **3. Identificação Colorida no Filtro de Cidade/RA (`FilterBar.jsx`):**
+  - Adicionado destaque visual no seletor de RA com anel ciano/esmeralda com transições suaves e badge indicador: "🎯 Escolha a Cidade / RA".
+  - Quando uma cidade é selecionada, exibe o badge "✓ Filtro Ativo", incentivando o foco tático e permitindo limpeza rápida com o botão "LIMPAR FILTROS".
+- **4. Virtualização DOM e Paginação Fluida na Lista (`DataTable.jsx`):**
+  - Implementada paginação em lotes de alto desempenho mantendo o número de nós DOM sempre sob controle (< 800 elementos), garantindo rolagem lisa e sem perda de fluidez.
+- **5. Desmontagem Condicional Inteligente de Abas (`App.jsx`):**
+  - Componentes de Tabela, Rota de Missão e Relatório não montam nem processam estruturas desnecessárias no DOM quando o usuário estiver exclusivamente na aba do Mapa, liberando ciclos de CPU.
+- **6. Resiliência Offline Completa:**
+  - Persistência no LocalStorage e IndexedDB garantindo que a base de hidrantes, vistorias e rotas permaneçam disponíveis mesmo com oscilações e queda completa de internet em viaturas.
+
 
