@@ -175,8 +175,6 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
     return hidrantes.filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude));
   }, [hidrantes]);
 
-  const useClustering = validHidrantes.length > 500;
-
   const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
@@ -410,6 +408,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         zoom={initialZoom} 
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={true}
+        preferCanvas={true}
       >
         {/* Camada OBRIGATÓRIA Google Satélite Híbrido */}
         <TileLayer
@@ -426,22 +425,8 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         <MapResizer isMapFullscreen={isMapFullscreen} activeView={activeView} />
         <UserLocationTracker userLocation={userLocation} />
 
-        
-        {useClustering ? (
-          <MarkerClusterGroup 
-            chunkedLoading={true}
-            chunkInterval={100}
-            chunkDelay={50}
-            removeOutsideVisibleBounds={true}
-            maxClusterRadius={60}
-            spiderfyOnMaxZoom={true}
-            disableClusteringAtZoom={18}
-          >
-            {renderMarkers()}
-          </MarkerClusterGroup>
-        ) : (
-          <>{renderMarkers()}</>
-        )}
+        {/* Plotagem direta de todos os hidrantes (Sem agrupamento/cluster) */}
+        {renderMarkers()}
 
         {userLocation && (
           <Marker 
