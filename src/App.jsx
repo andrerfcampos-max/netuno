@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut } from 'lucide-react';
+import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut, ShieldAlert } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
@@ -14,9 +14,11 @@ import MissionReportPanel from './components/MissionReportPanel';
 import MissionTabs from './components/MissionTabs';
 import MissionManagerModal from './components/MissionManagerModal';
 import TechnicalStudyModal from './components/TechnicalStudyModal';
+import InconsistentHydrantsModal from './components/InconsistentHydrantsModal';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders } from './utils/storage';
 import { normalizeRAName, RA_LIST } from './utils/raList';
+import { isValidDFCoordinate } from './utils/geoUtils';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Raio da Terra em km
@@ -87,6 +89,11 @@ function App() {
   const [isMissionManagerOpen, setIsMissionManagerOpen] = useState(false);
   const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
   const [isTechnicalStudyOpen, setIsTechnicalStudyOpen] = useState(false);
+  const [isInconsistentModalOpen, setIsInconsistentModalOpen] = useState(false);
+
+  const inconsistentCount = useMemo(() => {
+    return hidrantes.filter(h => !isValidDFCoordinate(h.numLatitude, h.numLongitude)).length;
+  }, [hidrantes]);
 
   // Suporte a abertura direta de modais via link/URL parameter
   useEffect(() => {
@@ -99,6 +106,8 @@ function App() {
       setEditingHydrante({});
     } else if (modal === 'admin' && currentUser?.role === 'admin') {
       setIsUserManagerOpen(true);
+    } else if (modal === 'inconsistentes' && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
+      setIsInconsistentModalOpen(true);
     } else if (modal === 'central-missoes' || modal === 'missoes' || modal === 'missions') {
       setIsMissionManagerOpen(true);
     }
@@ -492,6 +501,20 @@ function App() {
     handleCloseEditHydrant();
   };
 
+  const handleDeleteHydrant = (hydrantToDelete) => {
+    const newHidrantes = hidrantes.filter(h => {
+      if (hydrantToDelete._internalId && h._internalId) {
+        return h._internalId !== hydrantToDelete._internalId;
+      }
+      const idA = hydrantToDelete.codHidrante || hydrantToDelete.nomHidrante;
+      const idB = h.codHidrante || h.nomHidrante;
+      return idA !== idB;
+    });
+    setHidrantes(newHidrantes);
+    applyFilters(activeFilters, newHidrantes);
+    toast.success('Hidrante excluído da base com sucesso!');
+  };
+
   // ---- Controle de Missões ----
   const handleNewMission = (parentFolderId = null) => {
     const newMission = createNewMission("Rascunho de Hoje", parentFolderId);
@@ -700,6 +723,17 @@ function App() {
         <UserManagerModal onClose={() => setIsUserManagerOpen(false)} />
       )}
 
+      {isInconsistentModalOpen && (
+        <InconsistentHydrantsModal
+          isOpen={isInconsistentModalOpen}
+          onClose={() => setIsInconsistentModalOpen(false)}
+          hidrantes={hidrantes}
+          onEditHydrant={(h) => setEditingHydrante(h)}
+          onDeleteHydrant={handleDeleteHydrant}
+          currentUser={currentUser}
+        />
+      )}
+
       {/* Header */}
       <header className={isMapFullscreen ? "hidden" : "flex justify-between items-center p-3 bg-slate-900 border-b border-slate-700 z-50"}>
         <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md">NETUNO</h1>
@@ -741,13 +775,16 @@ function App() {
           ) : (
             /* Gestores e Admins visualizam o Menu dropdown com todas as opções */
             <details className="group">
-              <summary className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm cursor-pointer list-none hover:bg-slate-700 transition-all">
+              <summary className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm cursor-pointer list-none hover:bg-slate-700 transition-all relative">
                 <span className="hidden sm:inline">Menu</span>
+                {inconsistentCount > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping absolute top-2 right-2"></span>
+                )}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
                 </svg>
               </summary>
-              <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex flex-col gap-1 p-2">
+              <div className="absolute right-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex flex-col gap-1 p-2">
                 {currentUser.role === 'admin' && (
                   <a 
                     href="?modal=admin"
@@ -793,6 +830,29 @@ function App() {
                   >
                     <Calculator size={18} />
                     Estudo Técnico
+                  </a>
+                )}
+                {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                  <a 
+                    href="?modal=inconsistentes"
+                    onClick={(e) => {
+                      if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                        e.preventDefault();
+                        setIsInconsistentModalOpen(true);
+                        e.currentTarget.closest('details')?.removeAttribute('open');
+                      }
+                    }}
+                    className="flex items-center justify-between w-full px-3 py-2 text-left bg-amber-900/30 text-amber-300 font-semibold rounded hover:bg-amber-900/50 transition-all"
+                  >
+                    <span className="flex items-center gap-2">
+                      <ShieldAlert size={18} className="text-amber-400" />
+                      Hidrantes Inconsistentes
+                    </span>
+                    {inconsistentCount > 0 && (
+                      <span className="bg-amber-500/30 text-amber-300 text-[10px] px-1.5 py-0.5 rounded-full border border-amber-500/50 font-bold">
+                        {inconsistentCount}
+                      </span>
+                    )}
                   </a>
                 )}
                 <a 

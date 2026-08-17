@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useRef } from 'react';
-import { X, Map as MapIcon, Calculator, FileText, CheckCircle, XCircle, Crosshair, MapPin, Copy, Check, Upload, ImagePlus } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { X, Map as MapIcon, Calculator, FileText, CheckCircle, XCircle, Crosshair, MapPin, Copy, Check, Upload, ImagePlus, Search, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { RA_LIST, normalizeRAName } from '../utils/raList';
+import { isValidDFCoordinate } from '../utils/geoUtils';
 
 // Fix icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -67,7 +68,7 @@ const findClosestPointOnLines = (point, lines) => {
   return closest;
 };
 
-const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
+const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) => {
   const [docRef, setDocRef] = useState('');
   const [infoGerais, setInfoGerais] = useState('');
   const [studyType, setStudyType] = useState('relocation');
@@ -76,11 +77,58 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
   const [rawPolygon, setRawPolygon] = useState('');
   const [rawWaterNetwork, setRawWaterNetwork] = useState('');
   const [targetCode, setTargetCode] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [fotoHidrante, setFotoHidrante] = useState(null);
   const [copiedSEI, setCopiedSEI] = useState(false);
   const [results, setResults] = useState(null);
 
   const fileInputRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  // Fecha dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Sugestões inteligentes para o autocomplete de código de hidrante
+  const targetCodeSuggestions = useMemo(() => {
+    const term = (targetCode || '').trim().toLowerCase().replace(/[\s-_]/g, '');
+    
+    // Filtra hidrantes com coordenadas válidas
+    const validHidrantes = hidrantes.filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude));
+
+    if (!term) {
+      if (selectedRA) {
+        return validHidrantes
+          .filter(h => normalizeRAName(h.dscLocalidade) === normalizeRAName(selectedRA))
+          .slice(0, 15);
+      }
+      return validHidrantes.slice(0, 10);
+    }
+
+    return validHidrantes.filter(h => {
+      const code = (h.nomHidrante || h.codHidrante || '').toLowerCase().replace(/[\s-_]/g, '');
+      const addr = (h.dscEndereco || '').toLowerCase();
+      const ra = (h.dscLocalidade || '').toLowerCase();
+      return code.includes(term) || addr.includes(term) || ra.includes(term);
+    }).slice(0, 20);
+  }, [targetCode, hidrantes, selectedRA]);
+
+  // Hidrante selecionado atual
+  const selectedHydrantObj = useMemo(() => {
+    if (!targetCode) return null;
+    const term = targetCode.trim().toLowerCase();
+    return hidrantes.find(h => 
+      (h.nomHidrante && h.nomHidrante.trim().toLowerCase() === term) ||
+      (h.codHidrante && h.codHidrante.trim().toLowerCase() === term)
+    );
+  }, [targetCode, hidrantes]);
 
   if (!isOpen) return null;
 
@@ -102,10 +150,12 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 900;
+        const MAX_WIDTH = 800;
         const scaleSize = MAX_WIDTH / img.width;
+        
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scaleSize;
+        
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
@@ -114,6 +164,15 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
       img.src = event.target.result;
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleSelectSuggestion = (h) => {
+    const code = h.nomHidrante || h.codHidrante || '';
+    setTargetCode(code);
+    if (h.dscLocalidade) {
+      setSelectedRA(normalizeRAName(h.dscLocalidade));
+    }
+    setIsDropdownOpen(false);
   };
 
   const handleProcess = () => {
@@ -129,7 +188,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
         (h.nomHidrante && h.nomHidrante.trim().toLowerCase() === targetCode.trim().toLowerCase())
       );
       if (!evalHydrant) {
-        alert("Hidrante não encontrado na base de dados. Verifique o código digitado.");
+        alert("Hidrante não encontrado na base de dados. Utilize a lista suspensa para selecionar o código correto.");
         return;
       }
       targetPos = { lat: parseFloat(evalHydrant.numLatitude), lng: parseFloat(evalHydrant.numLongitude) };
@@ -138,18 +197,18 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
     let suggestedPos = null;
     let maxDist = 0;
     let isApproved = false;
-    let analysisPolyCoords = polyCoords;
 
     const centroid = getCentroid(polyCoords);
     const refPos = targetPos || centroid;
 
     let adjacentHydrants = [];
     if (refPos) {
-      // Regra de Adjacência (Opção 1):
-      // Todo e qualquer hidrante cuja distância até o alvo seja d <= 2R (interseção entre círculos de cobertura)
+      // Regra de Adjacência:
+      // Todo hidrante cuja distância até o alvo seja d <= 2R (interseção entre círculos de cobertura)
       const maxAdjacencyDistance = radius * 2;
       adjacentHydrants = hidrantes
         .filter(h => {
+          if (!isValidDFCoordinate(h.numLatitude, h.numLongitude)) return false;
           if (evalHydrant && (h.codHidrante === evalHydrant.codHidrante || h._internalId === evalHydrant._internalId)) return false;
           const d = calculateDistance(refPos.lat, refPos.lng, h.numLatitude, h.numLongitude);
           return d <= maxAdjacencyDistance;
@@ -161,39 +220,32 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
         .sort((a, b) => a.distanceToTarget - b.distanceToTarget);
     }
 
-    // Identificar a cidade (RA) do estudo
-    const city = evalHydrant ? normalizeRAName(evalHydrant.dscLocalidade) : (selectedRA || (adjacentHydrants[0] ? normalizeRAName(adjacentHydrants[0].dscLocalidade) : ''));
-
-    // Demais hidrantes da cidade que NÃO são adjacentes (d > 2R)
+    const city = normalizeRAName(evalHydrant ? evalHydrant.dscLocalidade : selectedRA);
     const otherCityHydrants = hidrantes.filter(h => {
-      if (evalHydrant && (h.codHidrante === evalHydrant.codHidrante || h._internalId === evalHydrant._internalId)) return false;
-      const isAlreadyAdjacent = adjacentHydrants.some(adj => adj.codHidrante === h.codHidrante || adj._internalId === h._internalId);
-      if (isAlreadyAdjacent) return false;
-      const hRA = normalizeRAName(h.dscLocalidade);
-      return city && hRA && hRA.toLowerCase() === city.toLowerCase();
+      if (!isValidDFCoordinate(h.numLatitude, h.numLongitude)) return false;
+      const sameCity = normalizeRAName(h.dscLocalidade) === city;
+      const isTarget = evalHydrant && (h.codHidrante === evalHydrant.codHidrante || h._internalId === evalHydrant._internalId);
+      const isAdjacent = adjacentHydrants.some(adj => adj.codHidrante === h.codHidrante || adj._internalId === h._internalId);
+      return sameCity && !isTarget && !isAdjacent;
     });
 
-    if (studyType === 'relocation') {
-      // Regra de Cobertura Interna (Opção A - Amostragem Polar em Anéis Concêntricos: Centro + Anéis Internos + Perímetro)
-      const samplePoints = [
-        // 1. Centro do hidrante alvo
-        { lat: targetPos.lat, lng: targetPos.lng }
-      ];
+    if (studyType === 'relocation' && targetPos) {
+      const samplePoints = [];
+      samplePoints.push({ lat: targetPos.lat, lng: targetPos.lng });
 
-      // 2. Anéis concêntricos cobrindo todo o interior e a borda
       const rings = [
-        { ratio: 0.33, count: 12 },
-        { ratio: 0.66, count: 18 },
-        { ratio: 0.85, count: 24 },
-        { ratio: 1.00, count: 30 }
+        { rFraction: 0.33, count: 12 },
+        { rFraction: 0.66, count: 24 },
+        { rFraction: 0.85, count: 24 },
+        { rFraction: 1.00, count: 24 }
       ];
 
       rings.forEach(ring => {
-        const ringRadius = radius * ring.ratio;
+        const ringRadius = radius * ring.rFraction;
         for (let i = 0; i < ring.count; i++) {
-          const angle = (i * 360 / ring.count) * Math.PI / 180;
-          const dLat = (ringRadius / 111320) * Math.cos(angle);
-          const dLng = (ringRadius / (111320 * Math.cos(targetPos.lat * Math.PI / 180))) * Math.sin(angle);
+          const angle = (i / ring.count) * 2 * Math.PI;
+          const dLat = (ringRadius * Math.cos(angle)) / 111320;
+          const dLng = (ringRadius * Math.sin(angle)) / (111320 * Math.cos(targetPos.lat * Math.PI / 180));
           samplePoints.push({
             lat: targetPos.lat + dLat,
             lng: targetPos.lng + dLng
@@ -262,7 +314,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
     try {
       let html = `<div style="font-family: Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #000; text-align: justify;">`;
       
-      // Item I - REFERÊNCIA (sem cabeçalho de título nem assinatura, pronto para o SEI)
+      // Item I - REFERÊNCIA
       html += `<p><strong>I - REFERÊNCIA</strong></p>`;
       html += `<p>De acordo com a solicitação contida no <strong>${docRef || '[Inserir Documento SEI]'}</strong>, a qual versa sobre o estudo técnico de <strong>${studyType === 'relocation' ? 'Remanejamento/remoção de hidrante instalado' : 'Projeção de novo hidrante'}</strong> na localidade especificada.</p>`;
       if (infoGerais && infoGerais.trim()) {
@@ -287,15 +339,41 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
       
       html += `<p><strong>Equipamentos Próximos e Adjacentes:</strong></p>`;
       html += `<p>O levantamento da base de dados identificou os seguintes hidrantes adjacentes com áreas de cobertura coincidentes nas imediações do objeto estudado:</p>`;
-      html += `<ul>`;
+      
+      // TABELA SEI DE EQUIPAMENTOS ADJACENTES
+      html += `<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 12px; margin: 12px 0; border: 1px solid #666;">`;
+      html += `<thead>`;
+      html += `<tr style="background-color: #f2f2f2; font-weight: bold; text-align: left;">`;
+      html += `<th style="border: 1px solid #666; padding: 6px;">Código</th>`;
+      html += `<th style="border: 1px solid #666; padding: 6px;">Distância ao Alvo</th>`;
+      html += `<th style="border: 1px solid #666; padding: 6px;">Coordenadas Geográficas</th>`;
+      html += `<th style="border: 1px solid #666; padding: 6px;">Endereço / Localidade</th>`;
+      html += `<th style="border: 1px solid #666; padding: 6px; text-align: center;">Status</th>`;
+      html += `</tr>`;
+      html += `</thead>`;
+      html += `<tbody>`;
+
       if (results.adjacentHydrants && results.adjacentHydrants.length > 0) {
         results.adjacentHydrants.forEach(h => {
-          html += `<li><strong>Código:</strong> ${h.nomHidrante || h.codHidrante} | <strong>Distância:</strong> ${Math.round(h.distanceToTarget)} metros do hidrante avaliado | <strong>Coordenadas:</strong> (${Number(h.numLatitude).toFixed(6)}, ${Number(h.numLongitude).toFixed(6)}) | <strong>Endereço:</strong> ${h.dscEndereco || '-'}</li>`;
+          const lat = Number(h.numLatitude).toFixed(6);
+          const lng = Number(h.numLongitude).toFixed(6);
+          const dist = Math.round(h.distanceToTarget);
+          const statusText = h.flgAtivo ? 'OPERANTE' : 'INOPERANTE';
+          const statusColor = h.flgAtivo ? '#166534' : '#991b1b';
+          
+          html += `<tr>`;
+          html += `<td style="border: 1px solid #666; padding: 6px; font-weight: bold;">${h.nomHidrante || h.codHidrante}</td>`;
+          html += `<td style="border: 1px solid #666; padding: 6px;">${dist} metros</td>`;
+          html += `<td style="border: 1px solid #666; padding: 6px; font-family: monospace;">(${lat}, ${lng})</td>`;
+          html += `<td style="border: 1px solid #666; padding: 6px;">${h.dscEndereco || h.dscLocalidade || '-'}</td>`;
+          html += `<td style="border: 1px solid #666; padding: 6px; text-align: center; color: ${statusColor}; font-weight: bold;">${statusText}</td>`;
+          html += `</tr>`;
         });
       } else {
-        html += `<li>Nenhum hidrante adjacente com raio coincidente encontrado.</li>`;
+        html += `<tr><td colspan="5" style="border: 1px solid #666; padding: 8px; text-align: center; font-style: italic;">Nenhum hidrante adjacente com raio coincidente encontrado.</td></tr>`;
       }
-      html += `</ul>`;
+      html += `</tbody>`;
+      html += `</table>`;
 
       html += `<p><strong>Processamento Espacial e Geodésico:</strong></p>`;
       if (studyType === 'relocation') {
@@ -349,31 +427,51 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
           <Calculator className="text-emerald-400" size={24} />
           <h2 className="text-xl font-bold text-white">Módulo de Estudo Técnico</h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {results && (
-            <button 
-              type="button"
-              onClick={handleCopySEI}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 ${copiedSEI ? 'bg-emerald-600 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
-            >
-              {copiedSEI ? <Check size={16} /> : <Copy size={16} />}
-              {copiedSEI ? 'Copiado para SEI!' : 'Copiar Texto (Padrão SEI)'}
-            </button>
+            <>
+              <button 
+                type="button"
+                onClick={handleCopySEI} 
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+                title="Copiar texto e tabela formatada para o SEI"
+              >
+                {copiedSEI ? <Check size={16} className="text-white" /> : <Copy size={16} />}
+                {copiedSEI ? 'Copiado para SEI!' : 'Copiar Parecer (SEI)'}
+              </button>
+              <button 
+                type="button"
+                onClick={() => window.print()} 
+                className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm font-semibold flex items-center gap-1.5 transition-colors border border-slate-600 shadow-sm"
+              >
+                <FileText size={16} /> Imprimir / PDF
+              </button>
+            </>
           )}
-          <button onClick={onClose} className="p-2 bg-slate-700 hover:bg-red-600 rounded-full transition-colors text-white">
-            <X size={20} />
+          <button onClick={onClose} className="text-slate-400 hover:text-red-400 p-1">
+            <X size={24} />
           </button>
         </div>
       </div>
 
-      <div className="p-4 md:p-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 print:block print:p-0">
+      <div className="max-w-7xl mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Parâmetros do Estudo */}
         <div className="lg:col-span-4 space-y-4 print:hidden">
-          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-200 mb-3 border-b border-slate-700 pb-2">Parâmetros do Estudo</h3>
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl">
+            <h3 className="font-bold text-white text-base mb-3 border-b border-slate-700 pb-2 flex items-center gap-2">
+              <MapPin size={18} className="text-emerald-400" /> Parâmetros de Entrada
+            </h3>
+            
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-semibold text-slate-400 mb-1">Documento de Solicitação (Ref)</label>
-                <input type="text" value={docRef} onChange={e => setDocRef(e.target.value)} placeholder="Ex: Memorando 123/2026 - SEI" className="w-full bg-slate-700 border border-slate-600 text-white p-2 rounded focus:ring-2 focus:ring-emerald-500 outline-none text-sm" />
+                <label className="block text-sm font-semibold text-slate-400 mb-1">Documento de Solicitação (SEI/Ofício)</label>
+                <input 
+                  type="text" 
+                  value={docRef} 
+                  onChange={e => setDocRef(e.target.value)} 
+                  placeholder="Ex: Memorando 123/2026 - CBMDF" 
+                  className="w-full bg-slate-700 border border-slate-600 text-white p-2 rounded focus:ring-2 focus:ring-emerald-500 outline-none text-sm" 
+                />
               </div>
 
               <div>
@@ -420,9 +518,81 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
               </div>
 
               {studyType === 'relocation' && (
-                <div>
-                  <label className="block text-sm font-semibold text-slate-400 mb-1">Código do Hidrante Alvo</label>
-                  <input type="text" value={targetCode} onChange={e => setTargetCode(e.target.value)} placeholder="Ex: GUA00101" className="w-full bg-slate-700 border border-slate-600 text-white p-2 rounded focus:ring-2 focus:ring-emerald-500 outline-none text-sm" />
+                <div className="relative" ref={dropdownRef}>
+                  <label className="block text-sm font-semibold text-slate-400 mb-1">
+                    Código do Hidrante Alvo
+                    <span className="text-xs text-emerald-400 font-normal ml-1.5">(Busca rápida)</span>
+                  </label>
+                  
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      value={targetCode} 
+                      onChange={e => {
+                        setTargetCode(e.target.value);
+                        setIsDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsDropdownOpen(true)}
+                      placeholder="Digite o código (ex: GUA00101, 00101...)" 
+                      className="w-full bg-slate-700 border border-slate-600 text-white p-2 pr-8 rounded focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-mono" 
+                    />
+                    <div 
+                      className="absolute right-2 top-2.5 text-slate-400 cursor-pointer"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    >
+                      <ChevronDown size={18} className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180 text-emerald-400' : ''}`} />
+                    </div>
+                  </div>
+
+                  {/* Lista Suspensa (Dropdown Autocomplete) */}
+                  {isDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl z-[100] max-h-56 overflow-y-auto divide-y divide-slate-700">
+                      {targetCodeSuggestions.length > 0 ? (
+                        targetCodeSuggestions.map((h, idx) => {
+                          const code = h.nomHidrante || h.codHidrante;
+                          const isSelected = selectedHydrantObj && (selectedHydrantObj.nomHidrante === code || selectedHydrantObj.codHidrante === code);
+                          return (
+                            <button
+                              key={h._internalId || code || idx}
+                              type="button"
+                              onClick={() => handleSelectSuggestion(h)}
+                              className={`w-full text-left p-2.5 hover:bg-slate-700/80 transition-colors flex items-center justify-between gap-2 ${isSelected ? 'bg-emerald-950/40 border-l-4 border-emerald-500' : ''}`}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-bold text-emerald-400 text-xs">{code}</span>
+                                  <span className="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded font-medium">
+                                    {h.dscLocalidade || 'Sem RA'}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                                  {h.dscEndereco || 'Endereço não informado'}
+                                </p>
+                              </div>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 ${h.flgAtivo ? 'text-emerald-300 bg-emerald-950/60' : 'text-red-300 bg-red-950/60'}`}>
+                                {h.flgAtivo ? 'Operante' : 'Inoperante'}
+                              </span>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="p-3 text-center text-xs text-slate-400 italic">
+                          Nenhum hidrante encontrado com este termo.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Resumo do Hidrante Selecionado */}
+                  {selectedHydrantObj && (
+                    <div className="mt-2 p-2 bg-emerald-950/30 border border-emerald-800/40 rounded text-xs text-emerald-300 flex items-start gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 truncate">
+                        <strong>{selectedHydrantObj.nomHidrante || selectedHydrantObj.codHidrante}</strong> - {selectedHydrantObj.dscLocalidade}
+                        <div className="text-[11px] text-slate-400 truncate">{selectedHydrantObj.dscEndereco}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -480,71 +650,103 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
         <div className="lg:col-span-8 space-y-4">
           {results ? (
             <>
-              <div className="bg-white text-black p-8 sm:p-12 rounded-xl shadow-lg font-serif text-[15px] print:shadow-none print:p-0 print:m-0 print:w-full print:page-break-before-always text-justify leading-relaxed">
-                <div className="text-center mb-8">
-                  <h1 className="font-bold text-lg uppercase">Governo do Distrito Federal</h1>
-                  <h2 className="font-bold text-base uppercase">Corpo de Bombeiros Militar do Distrito Federal</h2>
-                  <h3 className="font-bold text-sm uppercase">Subseção de Operações e Manutenção</h3>
-                  <br />
-                  <h4 className="font-bold text-base underline">Parecer Técnico n.º {Math.floor(Math.random()*9000)+1000}/{new Date().getFullYear()} - CBMDF/DIVIS/SEHUR/SUOMA</h4>
+              {/* Card de Status do Parecer */}
+              <div className={`p-4 rounded-xl border flex items-center justify-between shadow-lg print:hidden ${results.isApproved ? 'bg-emerald-950/80 border-emerald-700 text-emerald-100' : 'bg-red-950/80 border-red-700 text-red-100'}`}>
+                <div className="flex items-center gap-3">
+                  {results.isApproved ? <CheckCircle size={32} className="text-emerald-400" /> : <XCircle size={32} className="text-red-400" />}
+                  <div>
+                    <h4 className="text-lg font-bold">
+                      {results.isApproved ? 'PARECER FAVORÁVEL' : 'PARECER DESFAVORÁVEL'}
+                    </h4>
+                    <p className="text-xs opacity-90">
+                      {results.isApproved 
+                        ? (studyType === 'relocation' ? 'A área de cobertura do hidrante está 100% sobreposta por hidrantes adjacentes.' : 'A área atende integralmente ao raio de cobertura normativo.') 
+                        : (studyType === 'relocation' ? 'A remoção deixará áreas descobertas fora do raio dos hidrantes adjacentes.' : 'Parte do polígono ultrapassa o raio normativo de cobertura.')}
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-6">
+                <div className="text-right">
+                  <div className="text-xs uppercase font-bold tracking-wider">Raio Normativo</div>
+                  <div className="text-xl font-black">{results.radius} metros</div>
+                </div>
+              </div>
+
+              {/* Relatório SEI */}
+              <div className="bg-white text-black p-8 rounded-xl shadow-2xl border border-slate-200 print:p-0 print:border-none print:shadow-none font-serif select-text">
+                <div className="text-center border-b-2 border-black pb-4 mb-6">
+                  <h3 className="font-bold text-sm tracking-wide uppercase">Corpo de Bombeiros Militar do Distrito Federal</h3>
+                  <h4 className="font-bold text-xs uppercase text-slate-700">Comando Operacional - Diretoria de Serviços Técnicos</h4>
+                  <h2 className="font-bold text-base mt-2 underline">PARECER TÉCNICO DE COBERTURA DE HIDRANTES URBANOS</h2>
+                </div>
+
+                <div className="space-y-4 text-justify text-sm leading-relaxed">
                   <section>
                     <h5 className="font-bold">I - REFERÊNCIA</h5>
-                    <p>De acordo com a solicitação contida no <strong>{docRef || '[Inserir Documento]'}</strong>, a qual versa sobre o estudo técnico de <strong>{studyType === 'relocation' ? 'Remanejamento/remoção de hidrante instalado' : 'Projeção de novo hidrante'}</strong> na localidade especificada.</p>
+                    <p>De acordo com a solicitação contida no <strong>{docRef || '[Inserir Documento SEI]'}</strong>, a qual versa sobre o estudo técnico de <strong>{studyType === 'relocation' ? 'Remanejamento/remoção de hidrante instalado' : 'Projeção de novo hidrante'}</strong> na localidade especificada.</p>
                     {infoGerais && infoGerais.trim() && (
                       <p className="mt-2">{infoGerais.trim()}</p>
                     )}
                   </section>
+
                   <section>
                     <h5 className="font-bold">II - FINALIDADE</h5>
                     <p>Emitir parecer técnico sobre a cobertura e viabilidade espacial do sistema de hidrantes urbanos de incêndio para a área em questão, em conformidade com a normatização vigente.</p>
                     {fotoHidrante && (
                       <div className="my-4 text-center">
-                        <img src={fotoHidrante} alt="Hidrante Atual" className="max-w-md mx-auto h-auto rounded border border-slate-300 shadow-sm" />
-                        <p className="text-xs text-slate-500 italic mt-1">Figura 1: Registro fotográfico da situação motivadora do pleito.</p>
+                        <img src={fotoHidrante} alt="Registro Fotográfico" className="max-w-md max-h-64 object-contain mx-auto rounded border border-slate-300 shadow-sm" />
+                        <span className="text-xs text-slate-500 block mt-1">Figura 1: Registro fotográfico da situação motivadora do pleito.</span>
                       </div>
                     )}
                   </section>
+
                   <section>
                     <h5 className="font-bold">III - FUNDAMENTAÇÃO LEGAL</h5>
                     <p>O presente Parecer possui amparo legal no Decreto Nº 7.163, de 29 de abril de 2010, que regulamenta o inciso I do art. 10-B da Lei nº 8.255, de 20 de novembro de 1991. Regulamento de Segurança Contra Incêndio e Pânico do Distrito Federal - RSIP, aprovado pelo Dec. 21.361, de 20 jul. 2000, publicado no DODF nº 1.398/00.</p>
                   </section>
+
                   <section>
                     <h5 className="font-bold">IV - METODOLOGIA E FATOS OBSERVADOS</h5>
                     <p><strong>Classificação da Ocupação:</strong> A área em estudo classifica-se como {getOccupationName()}.</p>
                     <p><strong>Exigência Normativa:</strong> Conforme a norma ABNT NBR 12.218/2017, a ocupação predominante exige um raio de cobertura de até <strong>{results.radius} metros</strong> a partir do hidrante para garantir a proteção de todas as edificações contidas no perímetro.</p>
                     
-                    <div className="my-6 border border-slate-300 rounded overflow-hidden shadow-sm page-break-inside-avoid">
-                      <div className="h-[420px] w-full relative z-0">
+                    <div className="my-4 border border-slate-300 rounded overflow-hidden">
+                      <div className="h-96 w-full relative">
                         <MapContainer 
                           center={mapCenter} 
                           zoom={15} 
-                          style={{ height: '100%', width: '100%' }} 
-                          zoomControl={true} 
-                          scrollWheelZoom={true}
-                          dragging={true}
-                          doubleClickZoom={true}
+                          scrollWheelZoom={true} 
+                          className="h-full w-full"
                         >
-                          <TileLayer url="http://mt0.google.com/vt/lyrs=y&hl=pt-BR&x={x}&y={y}&z={z}" maxZoom={20} />
-                          {results.polyCoords.length > 0 && <Polygon positions={results.polyCoords} pathOptions={{ color: '#eab308', fillColor: '#eab308', fillOpacity: 0.2 }} />}
-                          {results.waterCoords.length > 0 && <Polyline positions={results.waterCoords} pathOptions={{ color: '#06b6d4', weight: 4 }} />}
+                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                           
-                          {/* Hidrante Alvo - Marcador Laranja com borda grossa */}
+                          {results.polyCoords.length > 0 && (
+                            <Polygon positions={results.polyCoords} pathOptions={{ color: '#eab308', fillOpacity: 0.2 }} />
+                          )}
+
+                          {results.waterCoords.length > 0 && (
+                            <Polyline positions={results.waterCoords} pathOptions={{ color: '#3b82f6', weight: 4 }} />
+                          )}
+
                           {results.targetPos && (
                             <>
                               <Marker position={results.targetPos} icon={customDivIcon('#f97316', '#ffffff', '3.5px')}>
                                 <Popup>
-                                  <strong>Hidrante Avaliado:</strong> {results.evalHydrant?.nomHidrante || results.evalHydrant?.codHidrante}
+                                  <strong>Hidrante em Avaliação</strong>
                                   <br />
-                                  <strong>RA:</strong> {results.evalHydrant?.dscLocalidade || '-'}
-                                  <br />
-                                  <strong>Endereço:</strong> {results.evalHydrant?.dscEndereco || '-'}
+                                  <span>{results.evalHydrant?.nomHidrante || results.evalHydrant?.codHidrante || 'Alvo'}</span>
                                 </Popup>
                               </Marker>
-                              {studyType === 'relocation' && (
-                                <Circle center={results.targetPos} radius={results.radius} pathOptions={{ color: '#ea580c', weight: 3, fillColor: '#f97316', fillOpacity: 0.12, dashArray: '6, 8' }} />
-                              )}
+                              <Circle 
+                                center={results.targetPos} 
+                                radius={results.radius} 
+                                pathOptions={{ 
+                                  color: '#f97316', 
+                                  weight: 3, 
+                                  fillColor: '#f97316', 
+                                  fillOpacity: 0.1, 
+                                  dashArray: '6, 6' 
+                                }} 
+                              />
                             </>
                           )}
 
@@ -569,8 +771,8 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                                   color: '#000000', 
                                   weight: 2.5, 
                                   fillColor: '#000000', 
-                                  fillOpacity: 0.05,
-                                  dashArray: '6, 6'
+                                  fillOpacity: 0.05, 
+                                  dashArray: '6, 6' 
                                 }} 
                               />
                             </React.Fragment>
@@ -631,13 +833,53 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
 
                     <p className="mt-4 font-bold">Equipamentos Próximos e Adjacentes:</p>
                     <p>O levantamento da base de dados identificou os seguintes hidrantes adjacentes com áreas de cobertura coincidentes nas imediações do objeto estudado:</p>
-                    <ul className="list-disc pl-5 mt-1 text-sm">
-                      {results.adjacentHydrants && results.adjacentHydrants.length > 0 ? results.adjacentHydrants.map(h => (
-                        <li key={h.codHidrante || h._internalId}>
-                          <strong>Código:</strong> {h.nomHidrante || h.codHidrante} | <strong>Distância:</strong> {Math.round(h.distanceToTarget)} metros do hidrante avaliado | <strong>Coordenadas:</strong> ({Number(h.numLatitude).toFixed(6)}, {Number(h.numLongitude).toFixed(6)}) | <strong>Endereço:</strong> {h.dscEndereco || '-'}
-                        </li>
-                      )) : <li>Nenhum hidrante adjacente com raio coincidente encontrado.</li>}
-                    </ul>
+                    
+                    {/* TABELA DE EQUIPAMENTOS ADJACENTES EM TELA */}
+                    <div className="overflow-x-auto border border-slate-300 rounded mt-2 mb-3 shadow-xs">
+                      <table className="w-full text-left text-xs border-collapse bg-white">
+                        <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
+                          <tr>
+                            <th className="p-2 border-r border-slate-300">Código</th>
+                            <th className="p-2 border-r border-slate-300">Distância ao Alvo</th>
+                            <th className="p-2 border-r border-slate-300">Coordenadas (Lat, Lng)</th>
+                            <th className="p-2 border-r border-slate-300">Endereço / Localidade</th>
+                            <th className="p-2 text-center">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {results.adjacentHydrants && results.adjacentHydrants.length > 0 ? (
+                            results.adjacentHydrants.map(h => (
+                              <tr key={h.codHidrante || h._internalId} className="hover:bg-slate-50">
+                                <td className="p-2 font-mono font-bold text-slate-900 border-r border-slate-200">
+                                  {h.nomHidrante || h.codHidrante}
+                                </td>
+                                <td className="p-2 font-semibold text-emerald-800 border-r border-slate-200">
+                                  {Math.round(h.distanceToTarget)} m
+                                </td>
+                                <td className="p-2 font-mono text-slate-600 border-r border-slate-200">
+                                  {Number(h.numLatitude).toFixed(6)}, {Number(h.numLongitude).toFixed(6)}
+                                </td>
+                                <td className="p-2 text-slate-700 border-r border-slate-200">
+                                  {h.dscEndereco || h.dscLocalidade || '-'}
+                                </td>
+                                <td className="p-2 text-center">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${h.flgAtivo ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'}`}>
+                                    {h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="5" className="p-3 text-center text-slate-500 italic">
+                                Nenhum hidrante adjacente com raio coincidente encontrado.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
                     <p className="mt-4 font-bold">Processamento Espacial e Geodésico:</p>
                     {studyType === 'relocation' ? (
                       <p>
@@ -647,6 +889,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                       <p>O sistema calculou as distâncias entre a coordenada alvo e os vértices do polígono. Maior distância identificada: <strong>{results.maxDist.toFixed(2)} metros.</strong></p>
                     )}
                   </section>
+
                   <section>
                     <h5 className="font-bold">V - PARECER TÉCNICO</h5>
                     <p>Com base no processamento das coordenadas e na normatização técnica aplicável, o analista signatário possui o seguinte parecer:</p>
@@ -664,6 +907,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                     </div>
                     <p className="mt-4">Este é o Parecer.</p>
                   </section>
+
                   <div className="pt-16 pb-8 text-center space-y-12 print:pt-32">
                     <div>
                       <div className="w-64 border-t border-black mx-auto mb-1"></div>

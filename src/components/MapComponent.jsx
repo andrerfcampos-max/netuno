@@ -4,6 +4,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2, Maximize2, Plus, Share2 } from 'lucide-react';
+import { isValidDFCoordinate } from '../utils/geoUtils';
 
 const fixEncoding = (str) => {
   if (!str) return str;
@@ -81,7 +82,7 @@ const AutoFitFilteredBounds = ({ hidrantes, centerPosition }) => {
         prevFirstIdRef.current = firstId;
 
         const validCoords = hidrantes
-          .filter(h => h.numLatitude && h.numLongitude && !isNaN(h.numLatitude) && !isNaN(h.numLongitude))
+          .filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude))
           .map(h => [h.numLatitude, h.numLongitude]);
 
         if (validCoords.length > 0) {
@@ -169,8 +170,12 @@ const UserLocationTracker = ({ userLocation }) => {
 };
 
 const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, isMapFullscreen, activeView }) => {
-  const useClustering = hidrantes.length > 500;
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
+  const validHidrantes = useMemo(() => {
+    return hidrantes.filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude));
+  }, [hidrantes]);
+
+  const useClustering = validHidrantes.length > 500;
 
   const [userLocation, setUserLocation] = useState(null);
 
@@ -191,8 +196,8 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
   // Centro padrão (Brasília)
   const defaultCenter = [-15.793, -47.882];
   
-  let initialCenter = hidrantes.length > 0 
-    ? [hidrantes[0].numLatitude, hidrantes[0].numLongitude] 
+  let initialCenter = validHidrantes.length > 0 
+    ? [validHidrantes[0].numLatitude, validHidrantes[0].numLongitude] 
     : defaultCenter;
   let initialZoom = 12;
 
@@ -208,7 +213,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
   } catch(e) {}
 
   const renderMarkers = () => {
-    return hidrantes.map((h, i) => {
+    return validHidrantes.map((h, i) => {
       const id = h.codHidrante || h._internalId || h.nomHidrante;
       const isSelected = selectedMissionIds.includes(id);
       const isCentered = centerPosition && (centerPosition.codHidrante === h.codHidrante || centerPosition.nomHidrante === h.nomHidrante);

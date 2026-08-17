@@ -118,3 +118,18 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - **Regra de Adjacência (Opção 1):** Considera como adjacente todo hidrante a uma distância $d \le 2R$ do hidrante alvo (interseção geométrica entre as áreas de cobertura normativas).
   - **Regra de Cobertura Interna (Opção A - Amostragem Polar em Anéis Concêntricos):** Avalia ~85 pontos cobrindo o centro ($r=0$), anéis internos ($r=0.33R, 0.66R, 0.85R$) e perímetro ($r=1.0R$) do hidrante alvo. Se 100% dos pontos forem cobertos por hidrantes adjacentes, o pleito é aprovado; caso contrário, é reprovado por déficit de proteção.
   - **Equipamentos no Parecer:** A lista de equipamentos e a comparação no parecer consideram todos os hidrantes adjacentes e incluem explicitamente a **Distância (em metros) até o hidrante avaliado**, código, coordenadas com 6 casas decimais e endereço.
+
+### [17/08/2026] Etapa 35 Concluída: Autocomplete de Hidrante no Estudo Técnico, Validação/Gestão de Coordenadas Inconsistentes e Tabela de Adjacentes no Parecer
+- **1. Autocomplete e Busca Inteligente do Código do Hidrante Alvo (`TechnicalStudyModal.jsx`):**
+  - Implementado dropdown suspenso com filtro em tempo real conforme o usuário digita no campo "Código do Hidrante Alvo".
+  - A busca tolera partes do código, nome, variações de zeros e endereço (ex: `00101`, `GUA`, `GUA00101`).
+  - Ao selecionar um hidrante na lista, o código é preenchido com precisão e a RA (Região Administrativa) correspondente é sincronizada automaticamente, exibindo um card de confirmação com resumo dos dados do hidrante alvo.
+- **2. Pré-Tratamento Geográfico e Gestão de Coordenadas Inconsistentes (`geoUtils.js`, `MapComponent.jsx`, `InconsistentHydrantsModal.jsx`, `App.jsx`):**
+  - Criada a função `isValidDFCoordinate` para validação matemática de coordenadas dentro dos limites operacionais do Distrito Federal e Entorno Integrado (RIDE), descartando coordenadas nulas `(0,0)`, invertidas ou no oceano.
+  - O `MapComponent` agora filtra e omite a plotagem de hidrantes com coordenadas anômalas, protegendo a visualização tática e o cálculo de `fitBounds`/zoom no mapa principal e no estudo técnico.
+  - Criado o modal exclusivo para Gestores e Administradores **"Hidrantes com Coordenadas Inconsistentes"** (acessível pelo Menu com badge de alerta em tempo real com contador de registros inconsistentes).
+  - O painel permite ao Gestor/Adm: 1) **Editar Coordenadas / Dados** (abrindo o `EditHydrantModal` para reposicionar no mapa ou corrigir latitude/longitude) e 2) **Excluir Hidrante** permanentemente da base de dados com diálogo de confirmação.
+- **3. Tabela Estruturada de Equipamentos Próximos e Adjacentes no Parecer Técnico (`TechnicalStudyModal.jsx`):**
+  - A lista simples com marcadores (bullets) foi substituída por uma **TABELA** formal e elegante tanto na visualização em tela quanto no modo de impressão PDF e no HTML copiado para o SEI (`handleCopySEI`).
+  - Colunas da tabela: **Código**, **Distância ao Alvo (metros)**, **Coordenadas Geográficas (Lat, Lng em 6 decimais)**, **Endereço / Localidade** e **Status Operacional (OPERANTE / INOPERANTE)** com estilização e destaque visual.
+
