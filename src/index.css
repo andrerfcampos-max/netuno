@@ -20,6 +20,21 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #10b981; /* emerald-500 */
   }
+
+  /* Habilitar seleção e cópia de textos */
+  .leaflet-popup,
+  .leaflet-popup-content,
+  .argos-popup,
+  .select-text,
+  table,
+  td,
+  th,
+  p,
+  span,
+  li {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+  }
 }
 
 @media print {

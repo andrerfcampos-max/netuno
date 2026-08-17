@@ -33,7 +33,7 @@ export const parseHydrantsCSV = (csvFile, onComplete) => {
 
             return {
               ...row,
-              _internalId: index,
+              _internalId: `hid_${index}`,
               nomHidrante: nomHidrante,
               codHidrante: row.codHidrante || nomHidrante,
               dscLocalidade: cleanRA,

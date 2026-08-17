@@ -143,54 +143,71 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
     const centroid = getCentroid(polyCoords);
     const refPos = targetPos || centroid;
 
-    let nearest = [];
+    let adjacentHydrants = [];
     if (refPos) {
-      // Nova regra de cálculo espacial:
-      // Considerar na análise hidrantes adjacentes cujos raios de cobertura alcancem/cubram os pontos do perímetro da área de cobertura do hidrante alvo.
-      const searchRadius = studyType === 'relocation' ? (radius * 2.1) : (radius * 3);
-      nearest = hidrantes.filter(h => {
-        if (evalHydrant && (h.codHidrante === evalHydrant.codHidrante || h._internalId === evalHydrant._internalId)) return false;
-        const d = calculateDistance(refPos.lat, refPos.lng, h.numLatitude, h.numLongitude);
-        return d <= searchRadius;
-      }).sort((a, b) => {
-        const da = calculateDistance(refPos.lat, refPos.lng, a.numLatitude, a.numLongitude);
-        const db = calculateDistance(refPos.lat, refPos.lng, b.numLatitude, b.numLongitude);
-        return da - db;
-      }).slice(0, 8);
+      // Regra de Adjacência (Opção 1):
+      // Todo e qualquer hidrante cuja distância até o alvo seja d <= 2R (interseção entre círculos de cobertura)
+      const maxAdjacencyDistance = radius * 2;
+      adjacentHydrants = hidrantes
+        .filter(h => {
+          if (evalHydrant && (h.codHidrante === evalHydrant.codHidrante || h._internalId === evalHydrant._internalId)) return false;
+          const d = calculateDistance(refPos.lat, refPos.lng, h.numLatitude, h.numLongitude);
+          return d <= maxAdjacencyDistance;
+        })
+        .map(h => ({
+          ...h,
+          distanceToTarget: calculateDistance(refPos.lat, refPos.lng, h.numLatitude, h.numLongitude)
+        }))
+        .sort((a, b) => a.distanceToTarget - b.distanceToTarget);
     }
 
     // Identificar a cidade (RA) do estudo
-    const city = evalHydrant ? normalizeRAName(evalHydrant.dscLocalidade) : (selectedRA || (nearest[0] ? normalizeRAName(nearest[0].dscLocalidade) : ''));
+    const city = evalHydrant ? normalizeRAName(evalHydrant.dscLocalidade) : (selectedRA || (adjacentHydrants[0] ? normalizeRAName(adjacentHydrants[0].dscLocalidade) : ''));
 
-    // Plotar todos os hidrantes da cidade referida no estudo
-    const cityHydrants = hidrantes.filter(h => {
+    // Demais hidrantes da cidade que NÃO são adjacentes (d > 2R)
+    const otherCityHydrants = hidrantes.filter(h => {
       if (evalHydrant && (h.codHidrante === evalHydrant.codHidrante || h._internalId === evalHydrant._internalId)) return false;
+      const isAlreadyAdjacent = adjacentHydrants.some(adj => adj.codHidrante === h.codHidrante || adj._internalId === h._internalId);
+      if (isAlreadyAdjacent) return false;
       const hRA = normalizeRAName(h.dscLocalidade);
       return city && hRA && hRA.toLowerCase() === city.toLowerCase();
     });
 
-    // Unir hidrantes da cidade com adjacentes próximos (sem duplicar)
-    const mapHydrantsMap = new Map();
-    cityHydrants.forEach(h => mapHydrantsMap.set(h.codHidrante || h._internalId || h.nomHidrante, h));
-    nearest.forEach(h => mapHydrantsMap.set(h.codHidrante || h._internalId || h.nomHidrante, h));
-    const allMapAdjacentHydrants = Array.from(mapHydrantsMap.values());
-
     if (studyType === 'relocation') {
-      analysisPolyCoords = [];
-      for (let i = 0; i < 30; i++) {
-        const angle = (i * 360 / 30) * Math.PI / 180;
-        const dLat = (radius / 111320) * Math.cos(angle);
-        const dLng = (radius / (111320 * Math.cos(targetPos.lat * Math.PI / 180))) * Math.sin(angle);
-        analysisPolyCoords.push({ lat: targetPos.lat + dLat, lng: targetPos.lng + dLng });
-      }
+      // Regra de Cobertura Interna (Opção A - Amostragem Polar em Anéis Concêntricos: Centro + Anéis Internos + Perímetro)
+      const samplePoints = [
+        // 1. Centro do hidrante alvo
+        { lat: targetPos.lat, lng: targetPos.lng }
+      ];
+
+      // 2. Anéis concêntricos cobrindo todo o interior e a borda
+      const rings = [
+        { ratio: 0.33, count: 12 },
+        { ratio: 0.66, count: 18 },
+        { ratio: 0.85, count: 24 },
+        { ratio: 1.00, count: 30 }
+      ];
+
+      rings.forEach(ring => {
+        const ringRadius = radius * ring.ratio;
+        for (let i = 0; i < ring.count; i++) {
+          const angle = (i * 360 / ring.count) * Math.PI / 180;
+          const dLat = (ringRadius / 111320) * Math.cos(angle);
+          const dLng = (ringRadius / (111320 * Math.cos(targetPos.lat * Math.PI / 180))) * Math.sin(angle);
+          samplePoints.push({
+            lat: targetPos.lat + dLat,
+            lng: targetPos.lng + dLng
+          });
+        }
+      });
 
       let allCovered = true;
       let maxDistToCover = 0;
 
-      analysisPolyCoords.forEach(point => {
+      samplePoints.forEach(point => {
         let pointCovered = false;
         let closestDist = Infinity;
-        nearest.forEach(h => {
+        adjacentHydrants.forEach(h => {
           const d = calculateDistance(point.lat, point.lng, h.numLatitude, h.numLongitude);
           if (d < closestDist) closestDist = d;
           if (d <= radius) pointCovered = true;
@@ -200,7 +217,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
       });
 
       maxDist = maxDistToCover;
-      isApproved = allCovered;
+      isApproved = allCovered && adjacentHydrants.length > 0;
     } else {
       if (centroid && polyCoords.length > 0) {
         suggestedPos = centroid;
@@ -226,9 +243,9 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
       suggestedPos,
       maxDist,
       isApproved,
-      nearest,
-      city,
-      allMapAdjacentHydrants
+      adjacentHydrants,
+      otherCityHydrants,
+      city
     });
   };
 
@@ -268,21 +285,21 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
       html += `<p><strong>Classificação da Ocupação:</strong> A área em estudo classifica-se como ${getOccupationName()}.</p>`;
       html += `<p><strong>Exigência Normativa:</strong> Conforme a norma ABNT NBR 12.218/2017, a ocupação predominante exige um raio de cobertura de até <strong>${results.radius} metros</strong> a partir do hidrante para garantir a proteção de todas as edificações contidas no perímetro.</p>`;
       
-      html += `<p><strong>Equipamentos Próximos:</strong></p>`;
-      html += `<p>O levantamento da base de dados identificou os seguintes hidrantes nas imediações do objeto estudado:</p>`;
+      html += `<p><strong>Equipamentos Próximos e Adjacentes:</strong></p>`;
+      html += `<p>O levantamento da base de dados identificou os seguintes hidrantes adjacentes com áreas de cobertura coincidentes nas imediações do objeto estudado:</p>`;
       html += `<ul>`;
-      if (results.nearest && results.nearest.length > 0) {
-        results.nearest.forEach(h => {
-          html += `<li><strong>Código:</strong> ${h.nomHidrante || h.codHidrante} | <strong>Coordenadas:</strong> (${h.numLatitude}, ${h.numLongitude}) | <strong>Endereço:</strong> ${h.dscEndereco || '-'}</li>`;
+      if (results.adjacentHydrants && results.adjacentHydrants.length > 0) {
+        results.adjacentHydrants.forEach(h => {
+          html += `<li><strong>Código:</strong> ${h.nomHidrante || h.codHidrante} | <strong>Distância:</strong> ${Math.round(h.distanceToTarget)} metros do hidrante avaliado | <strong>Coordenadas:</strong> (${Number(h.numLatitude).toFixed(6)}, ${Number(h.numLongitude).toFixed(6)}) | <strong>Endereço:</strong> ${h.dscEndereco || '-'}</li>`;
         });
       } else {
-        html += `<li>Nenhum hidrante próximo encontrado.</li>`;
+        html += `<li>Nenhum hidrante adjacente com raio coincidente encontrado.</li>`;
       }
       html += `</ul>`;
 
       html += `<p><strong>Processamento Espacial e Geodésico:</strong></p>`;
       if (studyType === 'relocation') {
-        html += `<p>A análise computacional avaliou espacialmente a área de cobertura atual do hidrante em questão. Verificou-se que ${results.isApproved ? "toda a área de cobertura do referido hidrante já pertence à área de cobertura de outros hidrantes adjacentes consolidados supracitados." : "a área de cobertura do referido hidrante NÃO está integralmente coberta pelos hidrantes adjacentes, havendo portanto déficit de proteção caso seja removido."}</p>`;
+        html += `<p>A análise computacional avaliou espacialmente a totalidade da área de cobertura do hidrante em questão. Verificou-se que ${results.isApproved ? "toda a área de cobertura do referido hidrante já pertence e encontra-se integralmente sobreposta pelas áreas de cobertura dos hidrantes adjacentes consolidados supracitados." : "a área de cobertura do referido hidrante NÃO está integralmente coberta pelos hidrantes adjacentes, havendo portanto déficit de proteção caso seja removido."}</p>`;
       } else {
         html += `<p>O sistema calculou as distâncias entre a coordenada alvo e os vértices do polígono. Maior distância identificada: <strong>${results.maxDist.toFixed(2)} metros.</strong></p>`;
       }
@@ -531,8 +548,8 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                             </>
                           )}
 
-                          {/* Hidrantes da Cidade e Adjacentes - Marcadores Pretos com Circunferência Tracejada Preta */}
-                          {(results.allMapAdjacentHydrants || results.nearest).map(h => (
+                          {/* Hidrantes Adjacentes - Marcadores Pretos com Circunferência Tracejada Preta */}
+                          {(results.adjacentHydrants || []).map(h => (
                             <React.Fragment key={h.codHidrante || h._internalId || h.nomHidrante}>
                               <Marker position={[h.numLatitude, h.numLongitude]} icon={customDivIcon('#000000', '#ffffff', '3.5px')}>
                                 <Popup>
@@ -541,6 +558,8 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                                   <span>{h.dscLocalidade || '-'}</span>
                                   <br />
                                   <span className="text-xs">{h.dscEndereco || '-'}</span>
+                                  <br />
+                                  <span className="text-xs font-semibold text-emerald-700">Distância: {Math.round(h.distanceToTarget)}m</span>
                                 </Popup>
                               </Marker>
                               <Circle 
@@ -557,6 +576,19 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                             </React.Fragment>
                           ))}
 
+                          {/* Demais Hidrantes da Cidade (Não Adjacentes) - Pino Verde SEM Circunferência */}
+                          {(results.otherCityHydrants || []).map(h => (
+                            <Marker key={h.codHidrante || h._internalId || h.nomHidrante} position={[h.numLatitude, h.numLongitude]} icon={customDivIcon('#10b981', '#ffffff', '2px')}>
+                              <Popup>
+                                <strong>{h.nomHidrante || h.codHidrante}</strong>
+                                <br />
+                                <span>{h.dscLocalidade || '-'}</span>
+                                <br />
+                                <span className="text-xs">{h.dscEndereco || '-'}</span>
+                              </Popup>
+                            </Marker>
+                          ))}
+
                           {results.suggestedPos && (
                             <>
                               <Marker position={results.suggestedPos} icon={customDivIcon('#10b981', '#ffffff', '3px')}>
@@ -571,12 +603,16 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                         {studyType === 'relocation' && (
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-4 rounded-full border-2 border-orange-500 bg-orange-100"></div>
-                            <span className="font-semibold text-orange-950">Hidrante Alvo em Análise (Raio {results.radius}m)</span>
+                            <span className="font-semibold text-orange-950">Hidrante Alvo em Análise (Raio {results.radius}m - Tracejado Laranja)</span>
                           </div>
                         )}
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded-full border-2 border-black bg-slate-300" style={{ borderStyle: 'dashed' }}></div>
-                          <span className="font-semibold text-slate-900">Hidrantes da Cidade / Adjacentes (Raio {results.radius}m - Tracejado Preto)</span>
+                          <span className="font-semibold text-slate-900">Hidrantes Adjacentes com Cobertura Concorrente (Raio {results.radius}m - Tracejado Preto)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3.5 h-3.5 rounded-full border-2 border-white bg-emerald-500 shadow-sm"></div>
+                          <span className="font-semibold text-slate-700">Demais Hidrantes da Cidade (Pino Verde - Sem Sobreposição)</span>
                         </div>
                         {studyType === 'new_hydrant' && (
                           <div className="flex items-center gap-2">
@@ -593,19 +629,19 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes, currentUser }) => {
                       </div>
                     </div>
 
-                    <p className="mt-4 font-bold">Equipamentos Próximos:</p>
-                    <p>O levantamento da base de dados identificou os seguintes hidrantes nas imediações do objeto estudado:</p>
+                    <p className="mt-4 font-bold">Equipamentos Próximos e Adjacentes:</p>
+                    <p>O levantamento da base de dados identificou os seguintes hidrantes adjacentes com áreas de cobertura coincidentes nas imediações do objeto estudado:</p>
                     <ul className="list-disc pl-5 mt-1 text-sm">
-                      {results.nearest.length > 0 ? results.nearest.map(h => (
+                      {results.adjacentHydrants && results.adjacentHydrants.length > 0 ? results.adjacentHydrants.map(h => (
                         <li key={h.codHidrante || h._internalId}>
-                          <strong>Código:</strong> {h.nomHidrante || h.codHidrante} | <strong>Coordenadas:</strong> ({h.numLatitude}, {h.numLongitude}) | <strong>Endereço:</strong> {h.dscEndereco || '-'}
+                          <strong>Código:</strong> {h.nomHidrante || h.codHidrante} | <strong>Distância:</strong> {Math.round(h.distanceToTarget)} metros do hidrante avaliado | <strong>Coordenadas:</strong> ({Number(h.numLatitude).toFixed(6)}, {Number(h.numLongitude).toFixed(6)}) | <strong>Endereço:</strong> {h.dscEndereco || '-'}
                         </li>
-                      )) : <li>Nenhum hidrante próximo encontrado.</li>}
+                      )) : <li>Nenhum hidrante adjacente com raio coincidente encontrado.</li>}
                     </ul>
                     <p className="mt-4 font-bold">Processamento Espacial e Geodésico:</p>
                     {studyType === 'relocation' ? (
                       <p>
-                        A análise computacional avaliou espacialmente a área de cobertura atual do hidrante em questão. Verificou-se que {results.isApproved ? "toda a área de cobertura do referido hidrante já pertence à área de cobertura de outros hidrantes adjacentes consolidados supracitados." : "a área de cobertura do referido hidrante NÃO está integralmente coberta pelos hidrantes adjacentes, havendo portanto déficit de proteção caso seja removido."}
+                        A análise computacional avaliou espacialmente a totalidade da área de cobertura do hidrante em questão. Verificou-se que {results.isApproved ? "toda a área de cobertura do referido hidrante já pertence e encontra-se integralmente sobreposta pelas áreas de cobertura dos hidrantes adjacentes consolidados supracitados." : "a área de cobertura do referido hidrante NÃO está integralmente coberta pelos hidrantes adjacentes, havendo portanto déficit de proteção caso seja removido."}
                       </p>
                     ) : (
                       <p>O sistema calculou as distâncias entre a coordenada alvo e os vértices do polígono. Maior distância identificada: <strong>{results.maxDist.toFixed(2)} metros.</strong></p>

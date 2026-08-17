@@ -98,3 +98,23 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Circunferência dos hidrantes adjacentes/cidade renderizada em linha tracejada preta (`dashArray: '6, 6'`).
   - Habilitados controles suaves de mapa (`scrollWheelZoom={true}`, `zoomControl={true}`, `dragging={true}`, `doubleClickZoom={true}`) para permitir o enquadramento perfeito para prints e relatórios técnicos.
   - Plotagem de todos os hidrantes da cidade (RA) do estudo com suas respectivas circunferências de área de cobertura.
+
+### [17/08/2026] Etapa 34 Concluída: Integridade de Hidrantes, Padronização de Coordenadas, Badge de Status, Seleção de Texto e Nova Regra de Cálculo no Estudo Técnico
+- **1. Integridade da Base de Dados e Ações de Cadastro/Edição (`src/App.jsx`, `xlsxParser.js`, `csvParser.js`):**
+  - Todo hidrante carregado do banco de dados agora recebe um `_internalId` exclusivo e imutável como string (`hid_0`, `hid_1`, etc.).
+  - A ação de salvar edição (`handleSaveEdit`) foi blindada para correspondência estrita por `_internalId`, impedindo que edições sobrescrevam hidrantes com códigos ou nomes coincidentes (como em Samambaia).
+  - O cadastro de novo hidrante gera um `_internalId` novo e único, adicionando a entidade à base sem conflito com os registros existentes.
+- **2. Padronização Global de Coordenadas Geográficas:**
+  - Padronizada a exibição e manipulação de latitude e longitude para 6 casas decimais (`.toFixed(6)`) na Dialog do Hidrante, Tabela de Dados (CSV e tela), Estudo Técnico e Cadastro/Edição.
+- **3. Badge de Status Destacado no Cabeçalho (`MapComponent.jsx`):**
+  - O Badge de status (**● OPERANTE** / **● INOPERANTE**) foi reposicionado na mesma linha do código do hidrante alinhado à extrema direita no cabeçalho do popup/dialog (`flex justify-between items-center`), economizando espaço vertical na tela.
+- **4. Habilitação de Seleção e Cópia de Texto em Todo o Sistema (`index.css`, `MapComponent.jsx`):**
+  - Adicionadas regras globais com `user-select: text !important;` e `-webkit-user-select: text !important;` para popups Leaflet (`.leaflet-popup`, `.argos-popup`), blocos de listas, tabelas e dialogs, permitindo seleção nativa com o mouse para copiar e colar textos.
+- **5. Estudo Técnico - Cores e Pinos no Mapa (`TechnicalStudyModal.jsx`):**
+  - Hidrante Alvo: Marcador laranja com circunferência tracejada laranja (`dashArray: '6, 8'`).
+  - Hidrantes Adjacentes: Marcador preto com circunferência tracejada preta (`dashArray: '6, 6'`).
+  - Demais Hidrantes da Cidade (Não Adjacentes): Marcadores verdes tradicionais SEM circunferência tracejada, garantindo foco visual exclusivo nos equipamentos relevantes para a análise.
+- **6. Estudo Técnico - Novas Regras de Cálculo Espacial e Parecer:**
+  - **Regra de Adjacência (Opção 1):** Considera como adjacente todo hidrante a uma distância $d \le 2R$ do hidrante alvo (interseção geométrica entre as áreas de cobertura normativas).
+  - **Regra de Cobertura Interna (Opção A - Amostragem Polar em Anéis Concêntricos):** Avalia ~85 pontos cobrindo o centro ($r=0$), anéis internos ($r=0.33R, 0.66R, 0.85R$) e perímetro ($r=1.0R$) do hidrante alvo. Se 100% dos pontos forem cobertos por hidrantes adjacentes, o pleito é aprovado; caso contrário, é reprovado por déficit de proteção.
+  - **Equipamentos no Parecer:** A lista de equipamentos e a comparação no parecer consideram todos os hidrantes adjacentes e incluem explicitamente a **Distância (em metros) até o hidrante avaliado**, código, coordenadas com 6 casas decimais e endereço.

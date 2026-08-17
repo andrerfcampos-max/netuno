@@ -83,9 +83,9 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
         } else if (header === 'Status') {
           val = row.flgAtivo ? 'OPERANTE' : 'INOPERANTE';
         } else if (header === 'Coordenadas Geográficas') {
-          val = `${row.numLatitude}, ${row.numLongitude}`;
+          val = `${Number(row.numLatitude).toFixed(6)}, ${Number(row.numLongitude).toFixed(6)}`;
         } else if (header === 'Link Maps') {
-          val = `https://maps.google.com/maps?q=${row.numLatitude},${row.numLongitude}`;
+          val = `https://maps.google.com/maps?q=${Number(row.numLatitude).toFixed(6)},${Number(row.numLongitude).toFixed(6)}`;
         } else {
           const key = headersMap[header];
           val = row[key];

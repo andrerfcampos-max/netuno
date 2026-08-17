@@ -247,7 +247,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         }}
       >
         <Popup minWidth={310} className="argos-popup">
-          <div className="flex flex-col gap-2 p-1.5 text-slate-800 text-sm w-full leading-normal">
+          <div className="flex flex-col gap-2 p-1.5 text-slate-800 text-sm w-full leading-normal select-text">
             {/* Cabeçalho do Hidrante com Foto e Status */}
             <div className="flex gap-3 items-center border-b border-slate-200 pb-2 mb-1">
               {h.fotoPerfil && (
@@ -277,19 +277,17 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                   }}
                 />
               )}
-              <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
                 <span className="font-extrabold text-base tracking-tight text-slate-900 truncate">
                   {fixEncoding(h.nomHidrante) || h.codHidrante}
                 </span>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-black tracking-wide ${
-                    h.flgAtivo 
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                      : 'bg-red-100 text-red-800 border border-red-300'
-                  }`}>
-                    {h.flgAtivo ? '● OPERANTE' : '● INOPERANTE'}
-                  </span>
-                </div>
+                <span className={`inline-flex items-center shrink-0 px-2 py-0.5 rounded-full text-xs font-black tracking-wide ${
+                  h.flgAtivo 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                    : 'bg-red-100 text-red-800 border border-red-300'
+                }`}>
+                  {h.flgAtivo ? '● OPERANTE' : '● INOPERANTE'}
+                </span>
               </div>
             </div>
             

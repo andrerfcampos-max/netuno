@@ -102,8 +102,8 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
       nomHidrante: formData.codHidrante || hidrante.nomHidrante,
       codHidrante: formData.codHidrante || hidrante.codHidrante,
       dscLocalidade: normalizeRAName(formData.dscLocalidade),
-      numLatitude: parseFloat(formData.numLatitude),
-      numLongitude: parseFloat(formData.numLongitude)
+      numLatitude: parseFloat(Number(formData.numLatitude).toFixed(6)),
+      numLongitude: parseFloat(Number(formData.numLongitude).toFixed(6))
     });
   };
 
@@ -112,8 +112,8 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
       click(e) {
         setFormData(prev => ({
           ...prev,
-          numLatitude: e.latlng.lat,
-          numLongitude: e.latlng.lng
+          numLatitude: parseFloat(e.latlng.lat.toFixed(6)),
+          numLongitude: parseFloat(e.latlng.lng.toFixed(6))
         }));
       },
     });

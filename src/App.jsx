@@ -466,21 +466,25 @@ function App() {
       dscLocalidade: normalizeRAName(updatedHidrante.dscLocalidade)
     };
     let exists = false;
-    const newHidrantes = hidrantes.map(h => {
-      if ((h._internalId && h._internalId === sanitized._internalId) || 
-         (h.codHidrante && h.codHidrante === sanitized.codHidrante) ||
-         (h.nomHidrante && h.nomHidrante === sanitized.nomHidrante)) {
-        exists = true;
-        return sanitized;
-      }
-      return h;
-    });
+    const isExisting = Boolean(sanitized._internalId);
     
+    let newHidrantes = [];
+    if (isExisting) {
+      newHidrantes = hidrantes.map(h => {
+        if (h._internalId === sanitized._internalId) {
+          exists = true;
+          return sanitized;
+        }
+        return h;
+      });
+    }
+
     if (!exists) {
-      if (!sanitized._internalId) {
-         sanitized._internalId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
-      }
-      newHidrantes.push(sanitized);
+      const newEntity = {
+        ...sanitized,
+        _internalId: `hid_new_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+      };
+      newHidrantes = isExisting ? [...newHidrantes, newEntity] : [...hidrantes, newEntity];
     }
     
     setHidrantes(newHidrantes);
