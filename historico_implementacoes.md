@@ -188,3 +188,13 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Substituída a antiga caixa de confirmação por uma trava estritamente impeditiva: é terminantemente proibido salvar uma vistoria com status INOPERANTE sem indicar a causa técnica.
   - Caso o vistoriador tente salvar como inoperante sem defeito assinalado nas perguntas objetivas ou no menu suspenso, o sistema bloqueia e emite o alerta obrigatório orientando a selecionar o problema na lista ou descrevê-lo nas observações.
 
+### [18/08/2026] Etapa 41 Concluída: Otimização Seletiva do Mapa para Visão Global do DF e Preservação de Filtros Cruzados
+- **1. Plotagem Condicional e Seletiva no Mapa (`App.jsx`, `MapComponent.jsx`):**
+  - Quando o filtro de Cidade/RA estiver selecionado como "Todas as Cidades" (`ra === '__TODAS__'`) e nenhum outro filtro secundário estiver ativo (`buscaGeral`, `periodo`, `status`, `problema` limpos), o mapa **não plota** os 3.200 pinos simultâneos, eliminando qualquer risco de travamento de CPU ou saturação de memória no navegador.
+  - O mapa exibe uma mensagem orientativa e amigável: *"🗺️ Visão do DF Completo ativa: A Lista e os Relatórios contêm todos os hidrantes. Selecione uma Cidade/RA específica no filtro acima para visualizar os hidrantes no mapa."*
+  - Caso qualquer outro filtro secundário seja ativado (ex: filtrar por data/ano, status Operante/Inoperante, problema técnico específico ou busca textual), os pinos filtrados correspondentes são **plotados normalmente no mapa**, pois formam um subconjunto focado e leve.
+  - Se uma cidade específica for selecionada (ex: Guará, Ceilândia, Plano Piloto), apenas os hidrantes daquela localidade são plotados com auto-fitBounds suave.
+- **2. Preservação Total dos Relatórios, Dashboard e Lista (`DataTable.jsx`, `MissionReportPanel.jsx`):**
+  - Os módulos de Lista/Tabela (`DataTable`), Relatório Geral, Relatório CAESB e Dashboard de Comando continuam recebendo integralmente os 3.200 hidrantes do DF quando "Todas as Cidades" estiver selecionado, preservando 100% das métricas, estatísticas e exportações para SEI/PDF/CSV.
+
+

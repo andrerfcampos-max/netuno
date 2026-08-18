@@ -185,7 +185,7 @@ const UserLocationTracker = ({ userLocation }) => {
   return null;
 };
 
-const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, isMapFullscreen, activeView }) => {
+const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, isMapFullscreen, activeView, isAllCitiesOnly = false }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const validHidrantes = useMemo(() => {
     return hidrantes.filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude));
@@ -406,9 +406,13 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
     <div className={isMapFullscreen ? "fixed inset-0 z-[100] bg-slate-900" : "h-[60vh] min-h-[400px] w-full relative rounded-xl overflow-hidden border border-slate-700 shadow-inner z-0"}>
       
       {validHidrantes.length === 0 && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/90 text-cyan-300 px-4 py-2 rounded-full border border-cyan-500/40 shadow-xl text-xs font-semibold backdrop-blur-md flex items-center gap-2 pointer-events-none">
-          <MapPin size={14} className="text-emerald-400 animate-pulse" />
-          Selecione uma Cidade no filtro acima para visualizar os hidrantes
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-cyan-300 px-5 py-2.5 rounded-full border border-cyan-500/50 shadow-2xl text-xs font-semibold backdrop-blur-md flex items-center gap-2 pointer-events-none text-center max-w-[92vw]">
+          <MapPin size={15} className="text-emerald-400 shrink-0 animate-pulse" />
+          <span>
+            {isAllCitiesOnly 
+              ? '🗺️ Visão do DF Completo ativa: A Lista e os Relatórios contêm todos os hidrantes. Selecione uma Cidade/RA específica no filtro acima para visualizar os hidrantes no mapa.'
+              : 'Selecione uma Cidade no filtro acima para visualizar os hidrantes'}
+          </span>
         </div>
       )}
 

@@ -104,6 +104,29 @@ function App() {
     return hidrantes.filter(h => !isValidDFCoordinate(h.numLatitude, h.numLongitude)).length;
   }, [hidrantes]);
 
+  const hasSecondaryFilter = useMemo(() => {
+    return Boolean(
+      (activeFilters.buscaGeral && activeFilters.buscaGeral.trim() !== '') ||
+      (activeFilters.periodo && activeFilters.periodo !== '') ||
+      (activeFilters.status && activeFilters.status !== 'Todos') ||
+      (activeFilters.problema && activeFilters.problema !== '')
+    );
+  }, [activeFilters]);
+
+  const isAllCitiesOnly = useMemo(() => {
+    return activeFilters.ra === '__TODAS__' && !hasSecondaryFilter;
+  }, [activeFilters.ra, hasSecondaryFilter]);
+
+  const mapHidrantes = useMemo(() => {
+    if (isAllCitiesOnly) {
+      if (mapCenterPosition) {
+        return [mapCenterPosition];
+      }
+      return [];
+    }
+    return filteredList;
+  }, [isAllCitiesOnly, mapCenterPosition, filteredList]);
+
   // Suporte a abertura direta de modais via link/URL parameter
   useEffect(() => {
     if (!currentUser) return;
@@ -980,7 +1003,7 @@ function App() {
         {/* MÓDULO 2: MAPA TÁTICO INTEGRADO */}
         <div className={`w-full relative z-0 flex-1 flex-shrink-0 min-h-[400px] ${activeView === 'map' ? 'block' : 'hidden'}`}>
           <MapComponent 
-            hidrantes={filteredList} 
+            hidrantes={mapHidrantes} 
             onInspect={handleInspect}
             onEdit={(h) => setEditingHydrante(h)}
             centerPosition={mapCenterPosition}
@@ -990,6 +1013,7 @@ function App() {
             isMapFullscreen={isMapFullscreen}
             onMapClick={() => setIsMapFullscreen(prev => !prev)}
             activeView={activeView}
+            isAllCitiesOnly={isAllCitiesOnly}
           />
         </div>
 
