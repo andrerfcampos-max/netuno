@@ -73,7 +73,15 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const [activeFilters, setActiveFilters] = useState({});
+  const [activeFilters, setActiveFilters] = useState(() => {
+    try {
+      const saved = localStorage.getItem('netuno_saved_filters');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Erro ao carregar netuno_saved_filters', e);
+    }
+    return {};
+  });
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [inspectingHidrante, setInspectingHidrante] = useState(null);
   const [editingHydrante, setEditingHydrante] = useState(null);
@@ -452,6 +460,9 @@ function App() {
 
   const handleFilterChange = (filters) => {
     setActiveFilters(filters);
+    try {
+      localStorage.setItem('netuno_saved_filters', JSON.stringify(filters));
+    } catch (e) {}
     applyFilters(filters, hidrantes);
   };
 

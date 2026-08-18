@@ -68,14 +68,34 @@ const RecenterMap = ({ centerPosition }) => {
 
 const AutoFitFilteredBounds = ({ hidrantes, centerPosition }) => {
   const map = useMap();
-  const prevCountRef = React.useRef(hidrantes.length);
-  const prevFirstIdRef = React.useRef(hidrantes[0]?.codHidrante || hidrantes[0]?.nomHidrante);
+  const prevCountRef = React.useRef(null);
+  const prevFirstIdRef = React.useRef(null);
+  const isInitialLoadRef = React.useRef(true);
 
   useEffect(() => {
     if (centerPosition) return;
 
     if (hidrantes && hidrantes.length > 0) {
       const firstId = hidrantes[0]?.codHidrante || hidrantes[0]?.nomHidrante;
+
+      // Na primeira carga dos hidrantes após abrir/recarregar a página:
+      if (isInitialLoadRef.current) {
+        isInitialLoadRef.current = false;
+        prevCountRef.current = hidrantes.length;
+        prevFirstIdRef.current = firstId;
+
+        // Se o usuário possui posição e zoom persistidos, preserva a visão sem forçar fitBounds
+        const savedState = localStorage.getItem('netuno_map_state');
+        if (savedState) {
+          try {
+            const parsed = JSON.parse(savedState);
+            if (parsed.lat && parsed.lng && parsed.zoom) {
+              return;
+            }
+          } catch(e) {}
+        }
+      }
+
       if (prevCountRef.current !== hidrantes.length || prevFirstIdRef.current !== firstId) {
         prevCountRef.current = hidrantes.length;
         prevFirstIdRef.current = firstId;
@@ -100,14 +120,18 @@ const AutoFitFilteredBounds = ({ hidrantes, centerPosition }) => {
 const MapMemory = () => {
   const map = useMapEvents({
     moveend: () => {
-      const center = map.getCenter();
-      const zoom = map.getZoom();
-      localStorage.setItem('netuno_map_state', JSON.stringify({ lat: center.lat, lng: center.lng, zoom }));
+      try {
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        localStorage.setItem('netuno_map_state', JSON.stringify({ lat: center.lat, lng: center.lng, zoom }));
+      } catch(e) {}
     },
     zoomend: () => {
-      const center = map.getCenter();
-      const zoom = map.getZoom();
-      localStorage.setItem('netuno_map_state', JSON.stringify({ lat: center.lat, lng: center.lng, zoom }));
+      try {
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        localStorage.setItem('netuno_map_state', JSON.stringify({ lat: center.lat, lng: center.lng, zoom }));
+      } catch(e) {}
     }
   });
   return null;

@@ -38,19 +38,41 @@ const DEFEITOS_OFICIAIS = [
 ];
 
 const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], isVisible, currentUser, onLogout }) => {
-  const [filters, setFilters] = useState({
-    buscaGeral: '',
-    ra: '',
-    periodo: '',
-    dataInicio: '',
-    dataFim: '',
-    status: 'Todos',
-    problema: ''
+  const [filters, setFilters] = useState(() => {
+    try {
+      const saved = localStorage.getItem('netuno_saved_filters');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          buscaGeral: parsed.buscaGeral || '',
+          ra: parsed.ra || '',
+          periodo: parsed.periodo || '',
+          dataInicio: parsed.dataInicio || '',
+          dataFim: parsed.dataFim || '',
+          status: parsed.status || 'Todos',
+          problema: parsed.problema || ''
+        };
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar filtros persistidos', e);
+    }
+    return {
+      buscaGeral: '',
+      ra: '',
+      periodo: '',
+      dataInicio: '',
+      dataFim: '',
+      status: 'Todos',
+      problema: ''
+    };
   });
 
   const handleChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+    try {
+      localStorage.setItem('netuno_saved_filters', JSON.stringify(newFilters));
+    } catch (e) {}
     onFilterChange(newFilters);
   };
 
@@ -65,6 +87,9 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
       problema: ''
     };
     setFilters(defaultFilters);
+    try {
+      localStorage.removeItem('netuno_saved_filters');
+    } catch (e) {}
     onFilterChange(defaultFilters);
   };
 
@@ -75,6 +100,9 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
        newFilters.dataFim = '';
     }
     setFilters(newFilters);
+    try {
+      localStorage.setItem('netuno_saved_filters', JSON.stringify(newFilters));
+    } catch (e) {}
     onFilterChange(newFilters);
   };
 

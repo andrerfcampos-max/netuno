@@ -169,6 +169,12 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **2. Renderização em CircleMarker Canvas Acelerado por GPU (`MapComponent.jsx`):**
   - Substituída a criação de DOM Markers por `CircleMarker` nativo acelerado via Canvas/GPU (`preferCanvas={true}`).
   - Cores e estilização tática de alto contraste (Verde Neon #00FF00 para Operante, Vermelho Neon #FF0000 para Inoperante, Ciano #00FFFF pulsante para selecionados na missão).
-  - Todas as interações foram preservadas com 60 FPS lisos: clique para abrir popup completo, atalhos de Ctrl+Clique e duplo clique para missões.
-
-
+  - Todas as interações foram preservadas com 60 FPS lisos: clique para abrir popup completo, atalhos de Ctrl+Clique e duplo clique para missões.### [18/08/2026] Etapa 39 Concluída: Persistência de Memória dos Filtros Globais e Posicionamento do Mapa
+- **1. Persistência dos Filtros Globais (`App.jsx`, `FilterBar.jsx`):**
+  - Sincronização automática no `localStorage` (`netuno_saved_filters`) de todos os parâmetros de filtro: Cidade/RA (`ra`), Filtro de Ano/Período (`periodo`, `dataInicio`, `dataFim`), Status (`status`), Busca Textual (`buscaGeral`) e Problema (`problema`).
+  - Ao reiniciar ou recarregar a página (F5 ou nova sessão), os filtros são automaticamente restaurados e aplicados à base de hidrantes, voltando para a mesma seleção de cidade e ano anterior.
+  - Ao clicar no botão "LIMPAR FILTROS", o estado persistido é limpo no `localStorage` e retorna ao padrão.
+- **2. Persistência de Centro e Zoom do Mapa (`MapComponent.jsx`):**
+  - O centro geográfico (`lat`, `lng`) e o nível de `zoom` do mapa são salvos continuamente no `localStorage` (`netuno_map_state`) ao navegar e movimentar.
+  - No carregamento inicial, o mapa restaura a posição e o nível de zoom exatamente onde o usuário havia deixado, sem ser sobrescrito pelo autoFitBounds padrão.
+  - Alterações posteriores de Cidade/RA pelo FilterBar acionam o autoFitBounds suavemente para a nova região.
