@@ -19,6 +19,7 @@ import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders } from './utils/storage';
 import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
+import { extractProblemsList } from './utils/problemUtils';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Raio da Terra em km
@@ -366,7 +367,12 @@ function App() {
       result = result.filter(h => h.flgAtivo === isOperante);
     }
     if (filters.problema) {
-      result = result.filter(h => h.problemasHidrante && h.problemasHidrante.includes(filters.problema));
+      const targetProb = filters.problema.toUpperCase().trim();
+      result = result.filter(h => {
+        if (!h.problemasHidrante) return false;
+        const list = extractProblemsList(h.problemasHidrante);
+        return list.some(p => p.toUpperCase().includes(targetProb));
+      });
     }
     return result;
   };
@@ -420,7 +426,7 @@ function App() {
     return RA_LIST;
   }, [hidrantes]);
 
-  // Extrair Anos únicos dinamicamente
+  // Extrair Anos dinamicamente
   const anosVistoria = useMemo(() => {
     const anos = new Set();
     hidrantes.forEach(h => {
@@ -436,8 +442,8 @@ function App() {
   const problemasVistoria = useMemo(() => {
     const problemas = new Set();
     hidrantes.forEach(h => {
-      if (h.problemasHidrante && h.problemasHidrante.trim() !== '') {
-        const list = h.problemasHidrante.split(',').map(p => p.trim()).filter(Boolean);
+      if (h.problemasHidrante) {
+        const list = extractProblemsList(h.problemasHidrante);
         list.forEach(p => problemas.add(p));
       }
     });

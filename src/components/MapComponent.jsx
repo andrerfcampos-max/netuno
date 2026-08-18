@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2, Maximize2, Plus, Share2 } from 'lucide-react';
 import { isValidDFCoordinate } from '../utils/geoUtils';
+import { sanitizeProblem } from '../utils/problemUtils';
 
 const fixEncoding = (str) => {
   if (!str) return str;
@@ -350,7 +351,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                 <div className="flex flex-col py-0.5">
                   <span className="font-bold text-red-600 uppercase tracking-wider text-[11px]">Problemas Registrados</span>
                   <span className="font-bold text-red-700 mt-0.5 break-words bg-red-50 p-1.5 rounded border border-red-200 max-h-24 overflow-y-auto">
-                    {fixEncoding(h.problemasHidrante)}
+                    {fixEncoding(sanitizeProblem(h.problemasHidrante))}
                   </span>
                 </div>
               )}

@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import { normalizeRAName } from './raList';
+import { sanitizeProblem } from './problemUtils';
 
 export const parseHydrantsCSV = (csvFile, onComplete) => {
   const reader = new FileReader();
@@ -13,35 +14,49 @@ export const parseHydrantsCSV = (csvFile, onComplete) => {
          const sanitizedData = results.data
           .filter(row => Object.keys(row).length > 1) // ignora linhas vazias
           .map((row, index) => {
-            const rawLatVal = row.numLatitude !== undefined ? row.numLatitude : (row.Latitude || row.latitude || row.num_latitude || row.LATITUDE);
-            const rawLngVal = row.numLongitude !== undefined ? row.numLongitude : (row.Longitude || row.longitude || row.num_longitude || row.LONGITUDE);
+            let rawLatVal = row.numLatitude !== undefined ? row.numLatitude : (row.Latitude || row.latitude || row.num_latitude || row.LATITUDE);
+            let rawLngVal = row.numLongitude !== undefined ? row.numLongitude : (row.Longitude || row.longitude || row.num_longitude || row.LONGITUDE);
             
+            if (!rawLatVal && row['Coordenadas Geográficas']) {
+              const coords = String(row['Coordenadas Geográficas']).split(',');
+              if (coords.length >= 2) {
+                rawLatVal = coords[0].trim();
+                rawLngVal = coords[1].trim();
+              }
+            }
+
             const rawLat = rawLatVal ? String(rawLatVal).replace(/,/g, '.') : '';
             const rawLng = rawLngVal ? String(rawLngVal).replace(/,/g, '.') : '';
 
             const lat = parseFloat(rawLat);
             const lng = parseFloat(rawLng);
 
-            const flgAtivoRaw = row.flgAtivo !== undefined ? row.flgAtivo : row.Status;
+            const flgAtivoRaw = row.flgAtivo !== undefined ? row.flgAtivo : (row.Status || row['Status']);
             const ativoStr = flgAtivoRaw ? String(flgAtivoRaw).trim().toLowerCase() : '';
             const isAtivo = ['true', '1', 'v', 'verdadeiro', 'sim', 's', 'operante', 'ativo'].includes(ativoStr) || flgAtivoRaw === true;
 
-            const rawRA = row.dscLocalidade || row.Localidade || row.RA || row.Cidade || '';
+            const rawRA = row.dscLocalidade || row.Localidade || row.RA || row['RA'] || row.Cidade || '';
             const cleanRA = normalizeRAName(rawRA);
 
-            const nomHidrante = row.nomHidrante || row.codHidrante || `HID${index + 1}`;
+            const rawNom = row.nomHidrante || row.codHidrante || row['Código'] || '';
+            const rawCod = row.codHidrante || row.nomHidrante || row['Código'] || '';
+            const nomHidrante = rawNom || rawCod || `HID${index + 1}`;
+
+            const rawProb = row.problemasHidrante || row['Problemas do Hidrante'] || row.Problema || '';
 
             return {
               ...row,
               _internalId: `hid_${index}`,
               nomHidrante: nomHidrante,
-              codHidrante: row.codHidrante || nomHidrante,
+              codHidrante: rawCod || nomHidrante,
               dscLocalidade: cleanRA,
+              dscEndereco: row.dscEndereco || row['Endereço'] || '',
+              dscPontoReferencia: row.dscPontoReferencia || row['Ponto de referência'] || '',
               numLatitude: lat,
               numLongitude: lng,
               flgAtivo: isAtivo,
-              problemasHidrante: row.problemasHidrante || row.Problema || '',
-              datHoraUltimaVistoria: row.datHoraUltimaVistoria || row.datHoraVistoria || row.DataVistoria || row.data_vistoria || row['Última Vistoria'] || row['Ultima Vistoria'] || row.dataHoraUltimaVistoria || '',
+              problemasHidrante: sanitizeProblem(rawProb),
+              datHoraUltimaVistoria: row.datHoraUltimaVistoria || row.datHoraVistoria || row.DataVistoria || row['Data Vistoria'] || row.data_vistoria || row['Última Vistoria'] || row['Ultima Vistoria'] || row.dataHoraUltimaVistoria || '',
             };
           })
           .filter(h => !isNaN(h.numLatitude) && !isNaN(h.numLongitude));

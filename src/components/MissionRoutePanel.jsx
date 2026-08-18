@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Navigation, LocateFixed, GitMerge, Share2, MapPin, Map as MapIcon, RotateCcw, Plus, Save, Edit, CheckCircle, FolderOpen } from 'lucide-react';
+import { sanitizeProblem } from '../utils/problemUtils';
 
 // Fórmula de Haversine para cálculo de distância (retorna km)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -284,7 +285,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
             
             <div className="flex flex-col">
               <span className="text-slate-400 text-[10px] uppercase tracking-wider">Problema</span>
-              <span className="text-red-400 truncate" title={h.problemasHidrante}>{h.problemasHidrante || '-'}</span>
+              <span className="text-red-400 truncate" title={sanitizeProblem(h.problemasHidrante)}>{h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : '-'}</span>
             </div>
           </div>
         </div>

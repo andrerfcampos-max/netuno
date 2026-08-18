@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { LocateFixed, Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, MessageSquareText } from 'lucide-react';
+import { sanitizeProblem } from '../utils/problemUtils';
 
 const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -209,8 +210,8 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                     {h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' ? h.datHoraUltimaVistoria.split(' ')[0] : '-'}
                   </td>
                   <td className="p-2 max-w-[150px]">
-                    <div className="truncate text-red-400 font-bold" title={h.problemasHidrante || ''}>
-                      {h.problemasHidrante || '-'}
+                    <div className="truncate text-red-400 font-bold" title={sanitizeProblem(h.problemasHidrante) || ''}>
+                      {h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : '-'}
                     </div>
                   </td>
                   <td className="p-2 truncate max-w-[150px]" title={h.dscEndereco}>{h.dscEndereco || '-'}</td>
