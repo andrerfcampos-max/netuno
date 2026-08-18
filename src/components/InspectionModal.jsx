@@ -158,9 +158,8 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
     }
 
     if (!statusFinal && problemas.length === 0) {
-      if (!window.confirm("Atenção: Você está marcando como INOPERANTE sem defeitos listados. Tem certeza?")) {
-        return;
-      }
+      alert("⚠️ MOTIVO OBRIGATÓRIO: Para cadastrar o hidrante como INOPERANTE, é obrigatório indicar o motivo. Por favor, selecione um problema na lista suspensa ('Algum outro problema?') ou digite o motivo no campo 'Observações'.");
+      return;
     }
 
     const agora = new Date();

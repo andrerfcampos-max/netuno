@@ -44,7 +44,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   const sortedHidrantesCaesb = useMemo(() => {
     return sortedHidrantesGeral.filter(h => 
-      !h.flgAtivo && 
+      (!h.flgAtivo || (h.problemasHidrante && extractProblemsList(h.problemasHidrante).length > 0)) && 
       (!h.problemasHidrante || !h.problemasHidrante.toLowerCase().includes("removido ou não encontrado"))
     );
   }, [sortedHidrantesGeral]);
@@ -66,12 +66,15 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     const defeitosCount = {};
     let totalDefeitos = 0;
     currentData.forEach(h => {
-      if (!h.flgAtivo && h.problemasHidrante) {
+      if (h.problemasHidrante) {
         const problemas = extractProblemsList(h.problemasHidrante);
         problemas.forEach(p => {
           defeitosCount[p] = (defeitosCount[p] || 0) + 1;
           totalDefeitos++;
         });
+      } else if (!h.flgAtivo) {
+        defeitosCount['Inoperante (sem detalhe)'] = (defeitosCount['Inoperante (sem detalhe)'] || 0) + 1;
+        totalDefeitos++;
       }
     });
     return Object.entries(defeitosCount)
@@ -152,10 +155,10 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           html += `<td style="padding: 8px;">${formatDateOnly(h.datHoraUltimaVistoria)}</td>`;
           html += `<td style="padding: 8px;">${h.vistoriadorNome || '-'}</td>`;
           html += `<td style="padding: 8px; text-align: center; color: ${h.flgAtivo ? '#166534' : '#991b1b'}; font-weight: bold;">${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}</td>`;
-          html += `<td style="padding: 8px; color: #991b1b;">${!h.flgAtivo && h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : '-'}</td>`;
+          html += `<td style="padding: 8px; color: #991b1b;">${h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}</td>`;
           html += `<td style="padding: 8px;">${h.dscObservacao || h.observacoes || h.obsVistoria || '-'}</td>`;
         } else {
-          html += `<td style="padding: 8px; color: #991b1b;">${h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : '-'}</td>`;
+          html += `<td style="padding: 8px; color: #991b1b;">${h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}</td>`;
         }
         html += `<td style="padding: 8px;"><a href="${wazeLink}">Waze</a></td>`;
         html += `</tr>`;
@@ -189,21 +192,30 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       text += `• Total Vistoriado: ${total}\n`;
       text += `• 🟢 Operantes: ${operantes} (${operantesPercent}%)\n`;
       text += `• 🔴 Inoperantes: ${inoperantes} (${inoperantesPercent}%)\n\n`;
+      if (inoperantes > 0) {
+        text += `⚠️ *Prioridade de Manutenção:*\n`;
+        const priority = currentData.filter(h => !h.flgAtivo).slice(0, 10);
+        priority.forEach(h => {
+          const probs = extractProblemsList(h.problemasHidrante);
+          const probText = probs.length > 0 ? probs.join(', ') : 'Inoperante';
+          text += `- ${h.nomHidrante || h.codHidrante}: ${probText}\n`;
+        });
+        if (inoperantes > 10) text += `- ...e mais ${inoperantes - 10}\n`;
+      }
     } else {
       text += `📊 *Resumo de Manutenção*\n`;
       text += `• Regiões Afetadas: ${rasPresentes || 'Nenhuma informada'}\n`;
       text += `• Total para Reparo: ${total}\n\n`;
-    }
-    
-    if (inoperantes > 0) {
-      text += `⚠️ *Prioridade de Manutenção:*\n`;
-      const priority = currentData.filter(h => !h.flgAtivo).slice(0, 10);
-      priority.forEach(h => {
-        const probs = extractProblemsList(h.problemasHidrante);
-        const probText = probs.length > 0 ? probs.join(', ') : 'Inoperante';
-        text += `- ${h.nomHidrante || h.codHidrante}: ${probText}\n`;
-      });
-      if (inoperantes > 10) text += `- ...e mais ${inoperantes - 10}\n`;
+      if (total > 0) {
+        text += `⚠️ *Prioridade de Manutenção:*\n`;
+        const priority = currentData.slice(0, 10);
+        priority.forEach(h => {
+          const probs = extractProblemsList(h.problemasHidrante);
+          const probText = probs.length > 0 ? probs.join(', ') : (!h.flgAtivo ? 'Inoperante' : 'Necessita Reparo');
+          text += `- ${h.nomHidrante || h.codHidrante}: ${probText}\n`;
+        });
+        if (total > 10) text += `- ...e mais ${total - 10}\n`;
+      }
     }
     
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -596,7 +608,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                           {h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}
                         </td>
                         <td className="px-4 py-3 text-red-300 print-text-black print-border whitespace-normal text-xs" title={sanitizeProblem(h.problemasHidrante)}>
-                          {!h.flgAtivo && h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : '-'}
+                          {h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}
                         </td>
                         <td className="px-4 py-3 text-slate-400 print-text-black print-border whitespace-normal text-xs" title={h.dscObservacao || h.observacoes || h.obsVistoria}>
                           {h.dscObservacao || h.observacoes || h.obsVistoria || '-'}
@@ -605,7 +617,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                     ) : (
                       <>
                         <td className="px-4 py-3 font-bold text-red-400 print-text-black print-border whitespace-normal text-xs" title={sanitizeProblem(h.problemasHidrante)}>
-                          {h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : '-'}
+                          {h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}
                         </td>
                       </>
                     )}

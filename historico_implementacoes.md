@@ -178,3 +178,13 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - O centro geográfico (`lat`, `lng`) e o nível de `zoom` do mapa são salvos continuamente no `localStorage` (`netuno_map_state`) ao navegar e movimentar.
   - No carregamento inicial, o mapa restaura a posição e o nível de zoom exatamente onde o usuário havia deixado, sem ser sobrescrito pelo autoFitBounds padrão.
   - Alterações posteriores de Cidade/RA pelo FilterBar acionam o autoFitBounds suavemente para a nova região.
+
+### [18/08/2026] Etapa 40 Concluída: Correção no Relatório de Manutenção CAESB e Trava Obrigatória de Motivo para Hidrantes Inoperantes
+- **1. Correção no Relatório de Manutenção CAESB (`MissionReportPanel.jsx`):**
+  - O filtro `sortedHidrantesCaesb` e a contagem de `topDefeitos` foram corrigidos para incluir todos os hidrantes com defeitos registrados (`problemasHidrante`), mesmo quando classificados com status operante (ex: Falta luva/cabeçote, vazamento no flange, problemas de tampa/tampão, etc.).
+  - A contagem de registros agora reflete com 100% de fidelidade os filtros globais e a listagem (ex: os 218 hidrantes com falta de luva aparecem integralmente no relatório e na exportação da CAESB).
+  - Cópia para o SEI, exportação em CSV e mensagens de WhatsApp foram alinhadas para apresentar com clareza o defeito registrado ou status inoperante.
+- **2. Trava Obrigatória de Motivo para Hidrantes Inoperantes (`InspectionModal.jsx`):**
+  - Substituída a antiga caixa de confirmação por uma trava estritamente impeditiva: é terminantemente proibido salvar uma vistoria com status INOPERANTE sem indicar a causa técnica.
+  - Caso o vistoriador tente salvar como inoperante sem defeito assinalado nas perguntas objetivas ou no menu suspenso, o sistema bloqueia e emite o alerta obrigatório orientando a selecionar o problema na lista ou descrevê-lo nas observações.
+
