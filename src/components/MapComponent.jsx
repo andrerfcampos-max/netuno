@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, CircleMarker, Popup, useMap, useMapEvents } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2, Maximize2, Plus, Share2 } from 'lucide-react';
@@ -15,13 +14,47 @@ const fixEncoding = (str) => {
   }
 };
 
-// Fix para ícones padrão do Leaflet não quebrarem (embora vamos usar divIcon)
+// Fix para ícones padrão do Leaflet não quebrarem
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
+
+// Estilização Original dos Marcadores (CSS com Alto Contraste, Borda e Sombra)
+const createDivIcon = (isOperante, isSelected) => {
+  const statusColor = isOperante ? '#00FF00' : '#FF0000'; // Neon Verde ou Vermelho
+  
+  // Se selecionado, o pino fica "vazio" (fundo transparente) com borda ciano muito destacada
+  const bgColor = isSelected ? 'rgba(0,0,0,0.5)' : statusColor; 
+  const bgImage = `background-color: ${bgColor};`;
+  
+  const borderColor = isSelected ? '#00FFFF' : 'white';
+  const borderWidth = isSelected ? '4px' : '2px';
+  const shadow = isSelected ? '0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9)' : `0 0 5px ${statusColor}`;
+  const size = isSelected ? 32 : 20;
+  
+  return L.divIcon({
+    className: 'custom-div-icon',
+    html: `<div style="
+      ${bgImage}
+      width: ${size}px;
+      height: ${size}px;
+      border-radius: 50%;
+      border: ${borderWidth} solid ${borderColor};
+      box-shadow: ${shadow};
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    ">
+      ${isSelected ? `<div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></div>` : ''}
+    </div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
+};
 
 const RecenterMap = ({ centerPosition }) => {
   const map = useMap();
@@ -181,21 +214,12 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
       const id = h.codHidrante || h._internalId || h.nomHidrante;
       const isSelected = selectedMissionIds.includes(id);
       const isCentered = centerPosition && (centerPosition.codHidrante === h.codHidrante || centerPosition.nomHidrante === h.nomHidrante);
-      const statusColor = h.flgAtivo ? '#00FF00' : '#FF0000';
-      const markerColor = isSelected ? '#00FFFF' : statusColor;
-      const markerRadius = isSelected ? 8 : 6;
       
       return (
-      <CircleMarker 
+      <Marker 
         key={isCentered ? `${id}-center` : (id || i)} 
-        center={[h.numLatitude, h.numLongitude]}
-        radius={markerRadius}
-        pathOptions={{
-          color: isSelected ? '#00FFFF' : (isCentered ? '#FFFFFF' : statusColor),
-          fillColor: markerColor,
-          fillOpacity: isSelected ? 0.95 : 0.85,
-          weight: isSelected ? 3 : (isCentered ? 3 : 2),
-        }}
+        position={[h.numLatitude, h.numLongitude]}
+        icon={createDivIcon(h.flgAtivo, isSelected)}
         eventHandlers={{
           click: (e) => {
             if (e.originalEvent && (e.originalEvent.ctrlKey || e.originalEvent.metaKey)) {
@@ -356,7 +380,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
             </div>
           </div>
         </Popup>
-      </CircleMarker>
+      </Marker>
       );
     });
   };
