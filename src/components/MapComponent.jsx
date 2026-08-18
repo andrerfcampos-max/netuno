@@ -5,15 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2, Maximize2, Plus, Share2 } from 'lucide-react';
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { sanitizeProblem } from '../utils/problemUtils';
-
-const fixEncoding = (str) => {
-  if (!str) return str;
-  try {
-    return decodeURIComponent(escape(str));
-  } catch(e) {
-    return str;
-  }
-};
+import { fixEncoding } from '../utils/textUtils';
 
 // Fix para ícones padrão do Leaflet não quebrarem
 delete L.Icon.Default.prototype._getIconUrl;

@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { RA_LIST, normalizeRAName, generateNextHydrantCode } from '../utils/raList';
 import { isValidDFCoordinate } from '../utils/geoUtils';
+import { fixEncoding } from '../utils/textUtils';
 
 const customIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -17,7 +18,7 @@ const customIcon = new L.Icon({
 
 const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes = [] }) => {
   const isNew = !hidrante._internalId && !hidrante.codHidrante && !hidrante.nomHidrante;
-  const initialCode = hidrante.nomHidrante || hidrante.codHidrante || '';
+  const initialCode = fixEncoding(hidrante.nomHidrante || hidrante.codHidrante || '');
   const initialRA = normalizeRAName(hidrante.dscLocalidade) || '';
   
   const defaultRAObj = RA_LIST.find(r => r.name === initialRA) || RA_LIST[0];
@@ -40,8 +41,8 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
   const [formData, setFormData] = useState({
     codHidrante: isNew ? '' : initialCode,
     dscLocalidade: initialRA,
-    dscEndereco: hidrante.dscEndereco || '',
-    dscPontoReferencia: hidrante.dscPontoReferencia || '',
+    dscEndereco: fixEncoding(hidrante.dscEndereco || ''),
+    dscPontoReferencia: fixEncoding(hidrante.dscPontoReferencia || ''),
     numLatitude: parsedLat.toFixed(6),
     numLongitude: parsedLng.toFixed(6),
     fotoPerfil: hidrante.fotoPerfil || ''

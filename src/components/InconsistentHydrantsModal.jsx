@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, AlertTriangle, Edit, Trash2, CheckCircle2, MapPin, RefreshCw, ShieldAlert } from 'lucide-react';
 import { isValidDFCoordinate } from '../utils/geoUtils';
+import { fixEncoding } from '../utils/textUtils';
 
 const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydrant, onDeleteHydrant, currentUser }) => {
   const [searchFilter, setSearchFilter] = useState('');
@@ -111,10 +112,10 @@ const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydr
                   {filteredInconsistent.map((h, idx) => (
                     <tr key={h._internalId || h.codHidrante || idx} className="hover:bg-slate-700/40 transition-colors">
                       <td className="p-2.5 font-bold text-amber-300 font-mono">
-                        {h.nomHidrante || h.codHidrante || '-'}
+                        {fixEncoding(h.nomHidrante || h.codHidrante || '-')}
                       </td>
                       <td className="p-2.5 text-slate-300">
-                        {h.dscLocalidade || 'Não informada'}
+                        {fixEncoding(h.dscLocalidade || 'Não informada')}
                       </td>
                       <td className="p-2.5 font-mono text-red-300">
                         {h.numLatitude !== undefined && h.numLatitude !== null && !isNaN(h.numLatitude) ? Number(h.numLatitude).toFixed(6) : 'Inválida'}

@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { normalizeRAName } from './raList';
 import { sanitizeProblem } from './problemUtils';
+import { fixEncoding } from './textUtils';
 
 export const loadPreloadedDatabase = async (onComplete) => {
   try {
@@ -82,20 +83,24 @@ export const loadPreloadedDatabase = async (onComplete) => {
       const rawRA = row.dscLocalidade || row.Localidade || row.RA || row['RA'] || row.Cidade || '';
       const cleanRA = normalizeRAName(rawRA);
 
-      const nomHidrante = rawNom || rawCod || `HID${i + 1}`;
+      const cleanNom = fixEncoding(rawNom || rawCod || `HID${i + 1}`);
+      const cleanCod = fixEncoding(rawCod || rawNom || `HID${i + 1}`);
+      const cleanEnd = fixEncoding(row.dscEndereco || row['Endereço'] || '');
+      const cleanRef = fixEncoding(row.dscPontoReferencia || row['Ponto de referência'] || '');
+      const cleanProb = sanitizeProblem(fixEncoding(row.problemasHidrante || row['Problemas do Hidrante'] || row.Problema || ''));
 
       parsedData.push({
         ...row,
         _internalId: `hid_${i}`,
-        nomHidrante: nomHidrante,
-        codHidrante: rawCod || nomHidrante,
+        nomHidrante: cleanNom,
+        codHidrante: cleanCod,
         dscLocalidade: cleanRA,
-        dscEndereco: row.dscEndereco || row['Endereço'] || '',
-        dscPontoReferencia: row.dscPontoReferencia || row['Ponto de referência'] || '',
+        dscEndereco: cleanEnd,
+        dscPontoReferencia: cleanRef,
         numLatitude: isNaN(lat) ? 0 : lat,
         numLongitude: isNaN(lng) ? 0 : lng,
         flgAtivo: isAtivo,
-        problemasHidrante: sanitizeProblem(row.problemasHidrante || row['Problemas do Hidrante'] || row.Problema || ''),
+        problemasHidrante: cleanProb,
         datHoraUltimaVistoria: row.datHoraUltimaVistoria || row.datHoraVistoria || row.DataVistoria || row['Data Vistoria'] || row.data_vistoria || row['Última Vistoria'] || row['Ultima Vistoria'] || row.dataHoraUltimaVistoria || '',
       });
     }

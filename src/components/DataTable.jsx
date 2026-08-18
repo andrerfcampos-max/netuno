@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { LocateFixed, Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, MessageSquareText } from 'lucide-react';
 import { sanitizeProblem } from '../utils/problemUtils';
+import { fixEncoding } from '../utils/textUtils';
 
 const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -199,8 +200,8 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                       />
                     </td>
                   )}
-                  <td className="p-2 font-medium text-slate-200">{h.nomHidrante || h.codHidrante}</td>
-                  <td className="p-2">{h.dscLocalidade}</td>
+                  <td className="p-2 font-medium text-slate-200">{fixEncoding(h.nomHidrante || h.codHidrante)}</td>
+                  <td className="p-2">{fixEncoding(h.dscLocalidade)}</td>
                   <td className="p-2">
                     <span className={`px-2 py-1 rounded text-xs font-bold shadow-sm ${h.flgAtivo ? 'bg-green-900/50 text-green-400 border border-green-800' : 'bg-red-900/50 text-red-400 border border-red-800'}`}>
                       {h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}
@@ -210,12 +211,12 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                     {h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' ? h.datHoraUltimaVistoria.split(' ')[0] : '-'}
                   </td>
                   <td className="p-2 max-w-[150px]">
-                    <div className="truncate text-red-400 font-bold" title={sanitizeProblem(h.problemasHidrante) || ''}>
-                      {h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : '-'}
+                    <div className="truncate text-red-400 font-bold" title={fixEncoding(sanitizeProblem(h.problemasHidrante)) || ''}>
+                      {h.problemasHidrante ? fixEncoding(sanitizeProblem(h.problemasHidrante)) : '-'}
                     </div>
                   </td>
-                  <td className="p-2 truncate max-w-[150px]" title={h.dscEndereco}>{h.dscEndereco || '-'}</td>
-                  <td className="p-2 truncate max-w-[120px]" title={h.dscPontoReferencia}>{h.dscPontoReferencia || '-'}</td>
+                  <td className="p-2 truncate max-w-[150px]" title={fixEncoding(h.dscEndereco)}>{fixEncoding(h.dscEndereco) || '-'}</td>
+                  <td className="p-2 truncate max-w-[120px]" title={fixEncoding(h.dscPontoReferencia)}>{fixEncoding(h.dscPontoReferencia) || '-'}</td>
                   <td className="p-2">
                     <div className="flex flex-nowrap items-center justify-center gap-1.5">
                       <button

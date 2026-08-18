@@ -1,13 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
-
-const fixEncoding = (str) => {
-  if (!str) return str;
-  try {
-    return decodeURIComponent(escape(str));
-  } catch(e) {
-    return str;
-  }
-};
+import { fixEncoding } from '../utils/textUtils';
 
 // Lista configurável e modular de problemas que tornam o hidrante automaticamente inativo
 export const PROBLEMAS_INATIVADORES = [

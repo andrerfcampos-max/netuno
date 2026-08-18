@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import { normalizeRAName } from './raList';
 import { sanitizeProblem } from './problemUtils';
+import { fixEncoding } from './textUtils';
 
 export const parseHydrantsCSV = (csvFile, onComplete) => {
   const reader = new FileReader();
@@ -40,7 +41,8 @@ export const parseHydrantsCSV = (csvFile, onComplete) => {
 
             const rawNom = row.nomHidrante || row.codHidrante || row['Código'] || '';
             const rawCod = row.codHidrante || row.nomHidrante || row['Código'] || '';
-            const nomHidrante = rawNom || rawCod || `HID${index + 1}`;
+            const nomHidrante = fixEncoding(rawNom || rawCod || `HID${index + 1}`);
+            const codHidrante = fixEncoding(rawCod || rawNom || `HID${index + 1}`);
 
             const rawProb = row.problemasHidrante || row['Problemas do Hidrante'] || row.Problema || '';
 
@@ -48,14 +50,14 @@ export const parseHydrantsCSV = (csvFile, onComplete) => {
               ...row,
               _internalId: `hid_${index}`,
               nomHidrante: nomHidrante,
-              codHidrante: rawCod || nomHidrante,
+              codHidrante: codHidrante,
               dscLocalidade: cleanRA,
-              dscEndereco: row.dscEndereco || row['Endereço'] || '',
-              dscPontoReferencia: row.dscPontoReferencia || row['Ponto de referência'] || '',
+              dscEndereco: fixEncoding(row.dscEndereco || row['Endereço'] || ''),
+              dscPontoReferencia: fixEncoding(row.dscPontoReferencia || row['Ponto de referência'] || ''),
               numLatitude: lat,
               numLongitude: lng,
               flgAtivo: isAtivo,
-              problemasHidrante: sanitizeProblem(rawProb),
+              problemasHidrante: sanitizeProblem(fixEncoding(rawProb)),
               datHoraUltimaVistoria: row.datHoraUltimaVistoria || row.datHoraVistoria || row.DataVistoria || row['Data Vistoria'] || row.data_vistoria || row['Última Vistoria'] || row['Ultima Vistoria'] || row.dataHoraUltimaVistoria || '',
             };
           })
