@@ -116,14 +116,15 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
             </div>
             <select 
               className={`p-2 rounded text-sm text-white focus:outline-none transition-all duration-300 font-medium ${
-                filters.ra 
+                filters.ra && filters.ra !== ''
                   ? 'bg-slate-800 border-2 border-emerald-500 ring-2 ring-emerald-500/30 text-emerald-300' 
                   : 'bg-gradient-to-r from-slate-800 via-slate-800 to-cyan-950/40 border-2 border-cyan-500/60 ring-2 ring-cyan-500/20 hover:border-cyan-400'
               }`}
               value={filters.ra}
               onChange={(e) => handleChange('ra', e.target.value)}
             >
-              <option value="" className="bg-slate-900 text-slate-300">🎯 Todas as Cidades (Visão DF Completo)</option>
+              <option value="" className="bg-slate-900 text-slate-300">🎯 Selecione uma Cidade / RA...</option>
+              <option value="__TODAS__" className="bg-slate-900 text-cyan-300 font-semibold">🗺️ Todas as Cidades (Visão DF Completo)</option>
               {regions.map(r => <option key={r} value={r} className="bg-slate-900 text-white">{r}</option>)}
             </select>
           </div>
@@ -201,7 +202,7 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
               onChange={(e) => handleChange('problema', e.target.value)}
             >
               <option value="">Qualquer problema / Nenhum</option>
-              {problemasAtivos.map(d => <option key={d} value={d}>{d}</option>)}
+              {problemasAtivos.map((d, idx) => <option key={`${d}-${idx}`} value={d}>{d}</option>)}
             </select>
           </div>
 

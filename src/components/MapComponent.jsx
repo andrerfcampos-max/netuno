@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, CircleMarker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -22,40 +22,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
-
-// Estilização dos Marcadores (CSS Puro com Alto Contraste)
-const createDivIcon = (isOperante, isSelected) => {
-  const statusColor = isOperante ? '#00FF00' : '#FF0000'; // Neon Verde ou Vermelho
-  
-  // Se selecionado, o pino fica "vazio" (fundo transparente) com borda ciano muito destacada
-  const bgColor = isSelected ? 'rgba(0,0,0,0.5)' : statusColor; 
-  const bgImage = `background-color: ${bgColor};`;
-  
-  const borderColor = isSelected ? '#00FFFF' : 'white';
-  const borderWidth = isSelected ? '4px' : '2px';
-  const shadow = isSelected ? '0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9)' : `0 0 5px ${statusColor}`;
-  const size = isSelected ? 32 : 20;
-  
-  return L.divIcon({
-    className: 'custom-div-icon',
-    html: `<div style="
-      ${bgImage}
-      width: ${size}px;
-      height: ${size}px;
-      border-radius: 50%;
-      border: ${borderWidth} solid ${borderColor};
-      box-shadow: ${shadow};
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    ">
-      ${isSelected ? `<div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></div>` : ''}
-    </div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14]
-  });
-};
 
 const RecenterMap = ({ centerPosition }) => {
   const map = useMap();
@@ -215,12 +181,21 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
       const id = h.codHidrante || h._internalId || h.nomHidrante;
       const isSelected = selectedMissionIds.includes(id);
       const isCentered = centerPosition && (centerPosition.codHidrante === h.codHidrante || centerPosition.nomHidrante === h.nomHidrante);
+      const statusColor = h.flgAtivo ? '#00FF00' : '#FF0000';
+      const markerColor = isSelected ? '#00FFFF' : statusColor;
+      const markerRadius = isSelected ? 8 : 6;
       
       return (
-      <Marker 
+      <CircleMarker 
         key={isCentered ? `${id}-center` : (id || i)} 
-        position={[h.numLatitude, h.numLongitude]}
-        icon={createDivIcon(h.flgAtivo, isSelected)}
+        center={[h.numLatitude, h.numLongitude]}
+        radius={markerRadius}
+        pathOptions={{
+          color: isSelected ? '#00FFFF' : (isCentered ? '#FFFFFF' : statusColor),
+          fillColor: markerColor,
+          fillOpacity: isSelected ? 0.95 : 0.85,
+          weight: isSelected ? 3 : (isCentered ? 3 : 2),
+        }}
         eventHandlers={{
           click: (e) => {
             if (e.originalEvent && (e.originalEvent.ctrlKey || e.originalEvent.metaKey)) {
@@ -381,7 +356,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
             </div>
           </div>
         </Popup>
-      </Marker>
+      </CircleMarker>
       );
     });
   };
@@ -389,6 +364,13 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
   return (
     <div className={isMapFullscreen ? "fixed inset-0 z-[100] bg-slate-900" : "h-[60vh] min-h-[400px] w-full relative rounded-xl overflow-hidden border border-slate-700 shadow-inner z-0"}>
       
+      {validHidrantes.length === 0 && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/90 text-cyan-300 px-4 py-2 rounded-full border border-cyan-500/40 shadow-xl text-xs font-semibold backdrop-blur-md flex items-center gap-2 pointer-events-none">
+          <MapPin size={14} className="text-emerald-400 animate-pulse" />
+          Selecione uma Cidade no filtro acima para visualizar os hidrantes
+        </div>
+      )}
+
       {isMapFullscreen && (
         <button 
           onClick={(e) => {

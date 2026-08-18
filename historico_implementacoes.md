@@ -160,4 +160,15 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **6. Resiliência Offline Completa:**
   - Persistência no LocalStorage e IndexedDB garantindo que a base de hidrantes, vistorias e rotas permaneçam disponíveis mesmo com oscilações e queda completa de internet em viaturas.
 
+### [18/08/2026] Etapa 38 Concluída: Plotagem de Pinos por Demanda de Cidade e Renderização em CircleMarker Canvas
+- **1. Carga Inicial Condicional por Cidade/Filtro (`App.jsx`, `MapComponent.jsx`, `FilterBar.jsx`):**
+  - No carregamento inicial do sistema / login, o mapa não plota os 3.200 pinos por padrão enquanto nenhuma cidade (RA) ou filtro tiver sido selecionado, mantendo a tela inicial limpa, instantânea e sem lag.
+  - O seletor de RA no `FilterBar` exibe como opção padrão "🎯 Selecione uma Cidade / RA..." e inclui a opção explícita "🗺️ Todas as Cidades (Visão DF Completo)".
+  - Ao escolher uma cidade (ex: Guará, Taguatinga, etc.), apenas os hidrantes daquela localidade são carregados (~50 a 150 pinos) e o mapa centraliza automaticamente na região com AutoFitBounds.
+  - No mapa, quando nenhum filtro estiver ativo, é exibido um badge tático elegante orientando a seleção da cidade no filtro superior.
+- **2. Renderização em CircleMarker Canvas Acelerado por GPU (`MapComponent.jsx`):**
+  - Substituída a criação de DOM Markers por `CircleMarker` nativo acelerado via Canvas/GPU (`preferCanvas={true}`).
+  - Cores e estilização tática de alto contraste (Verde Neon #00FF00 para Operante, Vermelho Neon #FF0000 para Inoperante, Ciano #00FFFF pulsante para selecionados na missão).
+  - Todas as interações foram preservadas com 60 FPS lisos: clique para abrir popup completo, atalhos de Ctrl+Clique e duplo clique para missões.
+
 

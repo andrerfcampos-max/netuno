@@ -195,7 +195,7 @@ function App() {
       loadPreloadedDatabase((data) => {
         if (data.length > 0) {
           setHidrantes(data);
-          setFilteredList(data);
+          setFilteredList(getFilteredData(activeFilters, data));
         }
       });
     }
@@ -292,7 +292,19 @@ function App() {
     return null;
   };
 
-  const getFilteredData = (filters, dataList = hidrantes) => {
+  const getFilteredData = (filters = {}, dataList = hidrantes) => {
+    const hasActiveFilter = 
+      (filters.ra && filters.ra !== '') ||
+      (filters.buscaGeral && filters.buscaGeral.trim() !== '') ||
+      (filters.periodo && filters.periodo !== '') ||
+      (filters.status && filters.status !== 'Todos') ||
+      (filters.problema && filters.problema !== '');
+
+    // Se nenhum filtro foi selecionado (estado inicial/padrão), retorna vazio para carga sob demanda
+    if (!hasActiveFilter) {
+      return [];
+    }
+
     let result = [...dataList];
     if (filters.buscaGeral) {
       const termo = filters.buscaGeral.toLowerCase();
@@ -302,7 +314,7 @@ function App() {
         (h.dscPontoReferencia && h.dscPontoReferencia.toLowerCase().includes(termo))
       );
     }
-    if (filters.ra) {
+    if (filters.ra && filters.ra !== '__TODAS__') {
       result = result.filter(h => h.dscLocalidade === filters.ra);
     }
     if (filters.periodo) {
@@ -387,44 +399,42 @@ function App() {
 
   // Extrair Regiões (RAs) únicas dinamicamente
   const regions = useMemo(() => {
-    const filtersWithoutRA = { ...activeFilters, ra: '' };
-    const dataForRA = getFilteredData(filtersWithoutRA, hidrantes);
-    const r = new Set();
-    dataForRA.forEach(h => {
-      const norm = normalizeRAName(h.dscLocalidade);
-      if (norm) r.add(norm);
-    });
-    return Array.from(r).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  }, [hidrantes, activeFilters]);
+    if (hidrantes.length > 0) {
+      const r = new Set();
+      hidrantes.forEach(h => {
+        const norm = normalizeRAName(h.dscLocalidade);
+        if (norm) r.add(norm);
+      });
+      if (r.size > 0) {
+        return Array.from(r).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      }
+    }
+    return RA_LIST;
+  }, [hidrantes]);
 
   // Extrair Anos únicos dinamicamente
   const anosVistoria = useMemo(() => {
-    const filtersWithoutAno = { ...activeFilters, periodo: '', dataInicio: '', dataFim: '' };
-    const dataForAno = getFilteredData(filtersWithoutAno, hidrantes);
-    
     const anos = new Set();
-    dataForAno.forEach(h => {
+    hidrantes.forEach(h => {
       if (h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') {
         const match = h.datHoraUltimaVistoria.match(/\b(20\d{2})\b/);
         if (match) anos.add(match[1]);
       }
     });
     return Array.from(anos).sort((a, b) => b - a); // decrescente
-  }, [hidrantes, activeFilters]);
+  }, [hidrantes]);
 
   // Extrair Problemas dinamicamente
   const problemasVistoria = useMemo(() => {
-    const filtersWithoutProblema = { ...activeFilters, problema: '' };
-    const dataForProblema = getFilteredData(filtersWithoutProblema, hidrantes);
     const problemas = new Set();
-    dataForProblema.forEach(h => {
+    hidrantes.forEach(h => {
       if (h.problemasHidrante && h.problemasHidrante.trim() !== '') {
         const list = h.problemasHidrante.split(',').map(p => p.trim()).filter(Boolean);
         list.forEach(p => problemas.add(p));
       }
     });
     return Array.from(problemas).sort();
-  }, [hidrantes, activeFilters]);
+  }, [hidrantes]);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
