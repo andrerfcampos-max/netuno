@@ -216,7 +216,15 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Os botões disponíveis agora são exclusivamente: **Mapa**, **Lista**, **Rota (X)** e **Relatório** (para gestores e administradores), organizados em grade simétrica (`grid-cols-4` ou `grid-cols-3`).
 - **3. Eliminação Total de Sobreposições e Conflitos de Layout:**
   - Corrigido o fluxo vertical do DOM, eliminando sobreposições entre os seletores suspensos dos filtros, a barra de botões e o mapa/lista.
-  - Preservada a persistência em `LocalStorage` e a navegação fluida em campo.
 
-
-
+### [19/08/2026] Etapa 43 Concluída: Fixação Definitiva do Topo: Filtros Compactos no Topo, Botões Imediatamente Abaixo e Ajuste de Viewport Mobile sem Sobreposição
+- **1. Estrutura Fixa no Topo fora do Scroll (`App.jsx`):**
+  - O `Header`, `MissionTabs`, `FilterBar` e a barra de botões de navegação (`Mapa`, `Lista`, `Rota`, `Relatório`) foram consolidados em um container fixo/estático superior (`flex-shrink-0`), posicionado fora da área rolável de conteúdo.
+  - O container de conteúdo ativo (`main`) utiliza `flex-1 min-h-0 h-full w-full`, permitindo que o mapa e os demais blocos ocupem 100% da área visível restante sem gerar rolagem na página inteira e garantindo que os filtros e botões nunca sumam ao interagir com o mapa no mobile.
+- **2. Refinamento e Compactação dos Filtros no Mobile (`FilterBar.jsx`):**
+  - Reestruturado o `FilterBar` para ergonomia ultra-compacta no mobile e desktop: altura vertical contida (< 140px no mobile), tipografia limpa, labels concisos e controles responsivos (Seletor de RA com destaque tático, busca livre rápida, botões compactos de status, período e problemas com dropdowns livres de corte por overflow).
+- **3. Barra de Navegação Exclusiva com 4 Botões Logo Abaixo dos Filtros (`App.jsx`):**
+  - Mantidos exclusivamente os 4 botões: **Mapa**, **Lista**, **Rota (X)** e **Relatório** (para gestor/admin), em grade simétrica com touch targets ergonômicos e realce da aba ativa em verde esmeralda.
+- **4. Eliminação Definitiva de Sobreposições e Ajuste do Mapa (`MapComponent.jsx`, `App.jsx`):**
+  - Ajustado `MapComponent` para `h-full min-h-[300px] w-full`, adaptando-se perfeitamente à tela de qualquer smartphone sem rolagem vertical desnecessária.
+  - Alinhada hierarquia de z-index: Header (z-30), MissionTabs (z-25), FilterBar (z-20), Botões (z-10), Modais (z-50) e Mapa (z-0).

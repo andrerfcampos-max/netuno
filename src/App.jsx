@@ -976,25 +976,22 @@ function App() {
 
       {/* TABS DE MISSÃO GLOBAL */}
       {!isMapFullscreen && (
-        <MissionTabs 
-          missions={missions}
-          activeMissionId={activeMissionId}
-          openMissionIds={openMissionIds}
-          onTabClick={setActiveMissionId}
-          onCloseTab={handleCloseTab}
-          onNewMission={currentUser.role === 'gestor' || currentUser.role === 'admin' ? handleNewMission : undefined}
-          currentUser={currentUser}
-        />
+        <div className="flex-shrink-0 z-25">
+          <MissionTabs 
+            missions={missions}
+            activeMissionId={activeMissionId}
+            openMissionIds={openMissionIds}
+            onTabClick={setActiveMissionId}
+            onCloseTab={handleCloseTab}
+            onNewMission={currentUser.role === 'gestor' || currentUser.role === 'admin' ? handleNewMission : undefined}
+            currentUser={currentUser}
+          />
+        </div>
       )}
 
-      <main 
-        onTouchStart={handleMainTouchStart}
-        onTouchEnd={handleMainTouchEnd}
-        className={isMapFullscreen ? "h-full w-full p-0 m-0 relative" : "flex-1 overflow-y-auto w-full flex flex-col relative p-2 gap-2 select-none touch-pan-y"}
-      >
-        
-        {/* MÓDULO 1: BARRA DE FILTROS FIXA NO TOPO (SEMPRE DISPONÍVEL) */}
-        {!isMapFullscreen && (
+      {/* MÓDULO 1: BARRA DE FILTROS FIXA NO TOPO (SEMPRE VISÍVEL) */}
+      {!isMapFullscreen && (
+        <div className="flex-shrink-0 px-2 pt-1.5 z-20 w-full">
           <FilterBar 
             onFilterChange={handleFilterChange} 
             regions={regions} 
@@ -1004,57 +1001,64 @@ function App() {
             currentUser={currentUser} 
             onLogout={handleLogout} 
           />
-        )}
+        </div>
+      )}
 
-        {/* CONTROLES DE VISUALIZAÇÃO LOGO ABAIXO DOS FILTROS */}
-        {!isMapFullscreen && (
-          <div className="w-full z-10 py-1">
-            <div className={`grid ${currentUser?.role === 'gestor' || currentUser?.role === 'admin' ? 'grid-cols-4' : 'grid-cols-3'} gap-1.5 sm:gap-2 px-1 max-w-4xl mx-auto`}>
+      {/* CONTROLES DE VISUALIZAÇÃO LOGO ABAIXO DOS FILTROS */}
+      {!isMapFullscreen && (
+        <div className="flex-shrink-0 px-2 py-1 z-10 w-full">
+          <div className={`grid ${currentUser?.role === 'gestor' || currentUser?.role === 'admin' ? 'grid-cols-4' : 'grid-cols-3'} gap-1.5 sm:gap-2 px-0.5 max-w-4xl mx-auto`}>
+            <button 
+              onClick={() => setActiveView('map')}
+              className={`min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
+                activeView === 'map' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+              }`}
+            >
+              Mapa
+            </button>
+            <button 
+              onClick={() => setActiveView('table')}
+              className={`min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
+                activeView === 'table' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+              }`}
+            >
+              Lista
+            </button>
+            <button 
+              onClick={() => setActiveView('route')}
+              className={`min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
+                activeView === 'route' 
+                  ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' 
+                  : (!activeMissionId || selectedMissionIds.length === 0 
+                     ? 'bg-slate-800/60 border-slate-700 text-slate-500 opacity-60' 
+                     : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-slate-200')
+              }`}
+              disabled={!activeMissionId}
+            >
+              Rota ({selectedMissionIds.length})
+            </button>
+            {(currentUser?.role === 'gestor' || currentUser?.role === 'admin') && (
               <button 
-                onClick={() => setActiveView('map')}
-                className={`min-h-[42px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
-                  activeView === 'map' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                onClick={() => setActiveView('report')}
+                className={`min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
+                  activeView === 'report' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
                 }`}
               >
-                Mapa
+                Relatório
               </button>
-              <button 
-                onClick={() => setActiveView('table')}
-                className={`min-h-[42px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
-                  activeView === 'table' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-                }`}
-              >
-                Lista
-              </button>
-              <button 
-                onClick={() => setActiveView('route')}
-                className={`min-h-[42px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
-                  activeView === 'route' 
-                    ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' 
-                    : (!activeMissionId || selectedMissionIds.length === 0 
-                       ? 'bg-slate-800/60 border-slate-700 text-slate-500 opacity-60' 
-                       : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-slate-200')
-                }`}
-                disabled={!activeMissionId}
-              >
-                Rota ({selectedMissionIds.length})
-              </button>
-              {(currentUser?.role === 'gestor' || currentUser?.role === 'admin') && (
-                <button 
-                  onClick={() => setActiveView('report')}
-                  className={`min-h-[42px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
-                    activeView === 'report' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-                  }`}
-                >
-                  Relatório
-                </button>
-              )}
-            </div>
+            )}
           </div>
-        )}
+        </div>
+      )}
 
+      {/* ÁREA PRINCIPAL DE CONTEÚDO */}
+      <main 
+        onTouchStart={handleMainTouchStart}
+        onTouchEnd={handleMainTouchEnd}
+        className={isMapFullscreen ? "h-full w-full p-0 m-0 relative" : "flex-1 min-h-0 w-full relative p-2 pt-0 flex flex-col select-none touch-pan-y overflow-hidden"}
+      >
         {/* MÓDULO 2: MAPA TÁTICO INTEGRADO */}
-        <div className={`w-full relative z-0 flex-1 flex-shrink-0 min-h-[420px] ${activeView === 'map' ? 'block' : 'hidden'}`}>
+        <div className={`w-full h-full relative z-0 flex-1 min-h-0 ${activeView === 'map' ? 'block' : 'hidden'}`}>
           <ErrorBoundary>
             <MapComponent 
               hidrantes={mapHidrantes} 
@@ -1077,7 +1081,7 @@ function App() {
 
         {/* MÓDULO 4: TABELA */}
         {activeView === 'table' && (
-          <div className="w-full flex-1 flex-shrink-0 min-h-[400px] bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
+          <div className="w-full h-full flex-1 min-h-0 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 flex flex-col">
             <DataTable 
               data={filteredList} 
               onInspect={handleInspect}
@@ -1096,7 +1100,7 @@ function App() {
 
         {/* MÓDULO ROTA DE MISSÃO */}
         {activeView === 'route' && activeMissionId && (
-          <div id="modulo-rota" className="w-full relative flex-shrink-0 h-[65vh] min-h-[400px] max-h-[800px] border border-slate-700 rounded-xl overflow-hidden flex flex-col">
+          <div id="modulo-rota" className="w-full h-full flex-1 min-h-0 border border-slate-700 rounded-xl overflow-hidden flex flex-col">
             <MissionRoutePanel 
               hidrantes={hidrantes}
               selectedMissionIds={selectedMissionIds}
@@ -1140,7 +1144,7 @@ function App() {
 
         {/* MÓDULO RELATÓRIO TÁTICO */}
         {activeView === 'report' && (
-          <div id="modulo-relatorio" className="w-full relative flex-shrink-0 min-h-[400px] h-auto flex-1 border border-slate-700 rounded-xl flex flex-col">
+          <div id="modulo-relatorio" className="w-full h-full flex-1 min-h-0 border border-slate-700 rounded-xl overflow-y-auto bg-slate-800/90 flex flex-col">
             <MissionReportPanel 
               hidrantes={reportMode === 'mission' ? hidrantes.filter(h => selectedMissionIds.includes(h.codHidrante || h.nomHidrante)) : filteredList}
               currentMission={reportMode === 'mission' ? currentMission : null}

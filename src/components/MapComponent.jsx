@@ -467,7 +467,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
   };
 
   return (
-    <div className={isMapFullscreen ? "fixed inset-0 z-[100] bg-slate-900" : "h-[60vh] min-h-[400px] w-full relative rounded-xl overflow-hidden border border-slate-700 shadow-inner z-0"}>
+    <div className={isMapFullscreen ? "fixed inset-0 z-[100] bg-slate-900" : "h-full min-h-[300px] w-full relative rounded-xl overflow-hidden border border-slate-700 shadow-inner z-0"}>
       
       {validHidrantes.length === 0 && (
         <div 
