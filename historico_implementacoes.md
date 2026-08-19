@@ -195,6 +195,15 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Caso qualquer outro filtro secundário seja ativado (ex: filtrar por data/ano, status Operante/Inoperante, problema técnico específico ou busca textual), os pinos filtrados correspondentes são **plotados normalmente no mapa**, pois formam um subconjunto focado e leve.
   - Se uma cidade específica for selecionada (ex: Guará, Ceilândia, Plano Piloto), apenas os hidrantes daquela localidade são plotados com auto-fitBounds suave.
 - **2. Preservação Total dos Relatórios, Dashboard e Lista (`DataTable.jsx`, `MissionReportPanel.jsx`):**
-  - Os módulos de Lista/Tabela (`DataTable`), Relatório Geral, Relatório CAESB e Dashboard de Comando continuam recebendo integralmente os 3.200 hidrantes do DF quando "Todas as Cidades" estiver selecionado, preservando 100% das métricas, estatísticas e exportações para SEI/PDF/CSV.
+### [19/08/2026] Infraestrutura & CI/CD: Publicação na Vercel e Setup de Testes Mobile
+- **1. Repositório Remoto e Versionamento GitHub:**
+  - Repositório oficial conectado: `https://github.com/andrerfcampos-max/netuno.git`.
+  - Branch de produção configurada: `main`.
+  - `.gitignore` aprimorado com exclusão de backups compactados e arquivos sensíveis.
+- **2. Pipeline de Deploy Contínuo (Vercel):**
+  - Aplicação publicada com sucesso em ambiente de produção HTTPS: `https://netuno-eight.vercel.app/`.
+  - Sincronização automática ativa: cada `git push` na branch `main` dispara o build e deploy imediato na nuvem em menos de 30 segundos.
+- **3. Guia de QA para Testes Mobile em Campo (`QA_TESTING_GUIDE.md`):**
+  - Inclusão da **ETAPA 6** dedicada à homologação de usabilidade em smartphones e tablets, validação de GPS, PWA/instalação offline e responsividade de toque.
 
 

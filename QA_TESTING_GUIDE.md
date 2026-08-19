@@ -40,6 +40,15 @@ A validação deve ser focada em identificar falhas técnicas, gargalos de desem
    - **Tempo de renderização (UI Thread):** Identificar se a troca para telas pesadas trava a thread principal por mais de 2 segundos.
    - **Vazamentos de Memória (Memory Leaks):** Verificar se o consumo de memória (Heap) cresce continuamente sem ser liberado após abrir, fechar ou alternar entre componentes repetidas vezes (ex: falha ao destruir instâncias de mapas/canvas).
 
+### ETAPA 6: Validação de Responsividade Mobile e PWA em Campo
+1. **Ambiente de Testes:** Acessar a URL de Produção Vercel: `https://netuno-eight.vercel.app/`.
+2. **Critérios Mobile / Smartphone:**
+   - **GPS e Geolocalização:** Testar precisão, permissão do navegador e centralização da posição atual no mapa.
+   - **Touch Targets e Gestos:** Garantir tamanho mínimo de toque de 44x44px para botões, pinos de hidrante e controles de mapa.
+   - **Teclado Virtual:** Validar se a abertura do teclado no celular não oculta campos de entrada ou quebra o layout de modais/diálogos.
+   - **Manifest PWA e Cache Offline:** Verificar instalação na tela de início, ícones de splash e carregamento da aplicação sem conexão de internet ativa.
+   - **Orientação:** Verificar consistência em modo Retrato (Portrait) e Paisagem (Landscape).
+
 ---
 
 ## Formato de Saída Exigido
