@@ -141,7 +141,10 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
             >
               <option value="" className="bg-slate-900 text-slate-300">🎯 Selecione uma Cidade / RA...</option>
               <option value="__TODAS__" className="bg-slate-900 text-cyan-300 font-semibold">🗺️ Todas as Cidades (Visão DF Completo)</option>
-              {regions.map(r => <option key={r} value={r} className="bg-slate-900 text-white">{r}</option>)}
+              {regions.map(r => {
+                const name = typeof r === 'object' && r ? r.name : r;
+                return <option key={name} value={name} className="bg-slate-900 text-white">{name}</option>;
+              })}
             </select>
           </div>
 
