@@ -77,7 +77,10 @@ function App() {
   const [activeFilters, setActiveFilters] = useState(() => {
     try {
       const saved = localStorage.getItem('netuno_saved_filters');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
     } catch (e) {
       console.warn('Erro ao carregar netuno_saved_filters', e);
     }
@@ -105,6 +108,7 @@ function App() {
   }, [hidrantes]);
 
   const hasSecondaryFilter = useMemo(() => {
+    if (!activeFilters || typeof activeFilters !== 'object') return false;
     return Boolean(
       (activeFilters.buscaGeral && activeFilters.buscaGeral.trim() !== '') ||
       (activeFilters.periodo && activeFilters.periodo !== '') ||
@@ -114,8 +118,8 @@ function App() {
   }, [activeFilters]);
 
   const isAllCitiesOnly = useMemo(() => {
-    return activeFilters.ra === '__TODAS__' && !hasSecondaryFilter;
-  }, [activeFilters.ra, hasSecondaryFilter]);
+    return (activeFilters?.ra === '__TODAS__') && !hasSecondaryFilter;
+  }, [activeFilters?.ra, hasSecondaryFilter]);
 
   const mapHidrantes = useMemo(() => {
     if (isAllCitiesOnly) {

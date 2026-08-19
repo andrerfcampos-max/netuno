@@ -211,7 +211,7 @@ const GpsControl = ({ userLocation }) => {
   };
 
   return (
-    <div className="absolute bottom-6 right-4 z-[1000] flex flex-col gap-2">
+    <div className="leaflet-bottom leaflet-right !bottom-6 !right-4 !pointer-events-auto z-[1000]">
       <button
         onClick={handleCenterUser}
         title="Centralizar na Minha Posição (GPS)"
@@ -499,6 +499,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         {/* Plotagem direta de todos os hidrantes (Sem agrupamento/cluster) */}
         {renderMarkers()}
 
+        {/* Marcador do Usuário */}
         {userLocation && (
           <Marker 
             position={[userLocation.lat, userLocation.lng]}
@@ -512,10 +513,10 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
             zIndexOffset={1000}
           />
         )}
-      </MapContainer>
 
-      {/* Botão Flutuante de GPS (Centralizar Posição Atual) */}
-      <GpsControl userLocation={userLocation} />
+        {/* Botão Flutuante de GPS (Centralizar Posição Atual) */}
+        <GpsControl userLocation={userLocation} />
+      </MapContainer>
 
       {!isMapFullscreen && (
         <button 
