@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut, ShieldAlert } from 'lucide-react';
+import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut, ShieldAlert, RefreshCw } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
@@ -938,6 +938,32 @@ function App() {
                   <FolderOpen size={18} />
                   Central de Missões
                 </a>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    toast.info('Atualizando aplicação e limpando cache...');
+                    try {
+                      if ('serviceWorker' in navigator) {
+                        const regs = await navigator.serviceWorker.getRegistrations();
+                        for (const r of regs) await r.unregister();
+                      }
+                      if ('caches' in window) {
+                        const keys = await caches.keys();
+                        for (const k of keys) await caches.delete(k);
+                      }
+                    } catch (e) {
+                      console.warn(e);
+                    }
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 400);
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-800 border border-slate-600 text-cyan-300 font-semibold rounded hover:bg-slate-700 active:scale-95 transition-all text-xs"
+                >
+                  <RefreshCw size={16} className="text-cyan-400" />
+                  Atualizar Sistema (Limpar Cache)
+                </button>
               </div>
             </details>
           )}
