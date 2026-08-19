@@ -170,16 +170,20 @@ const UserLocationTracker = ({ userLocation }) => {
   const hasCenteredRef = React.useRef(false);
 
   useEffect(() => {
-    map.setMinZoom(0);
-    map.setMaxZoom(20);
-    
-    // Centraliza apenas uma única vez na inicialização se o usuário não tiver posição salva
-    if (userLocation && !hasCenteredRef.current) {
-      hasCenteredRef.current = true;
-      const savedState = localStorage.getItem('netuno_map_state');
-      if (!savedState) {
-        map.setView([userLocation.lat, userLocation.lng], 16, { animate: true });
+    try {
+      map.setMinZoom(0);
+      map.setMaxZoom(20);
+      
+      // Centraliza apenas uma única vez na inicialização se o usuário não tiver posição salva
+      if (userLocation && !hasCenteredRef.current) {
+        hasCenteredRef.current = true;
+        const savedState = localStorage.getItem('netuno_map_state');
+        if (!savedState && typeof userLocation.lat === 'number' && !isNaN(userLocation.lat) && typeof userLocation.lng === 'number' && !isNaN(userLocation.lng)) {
+          map.setView([userLocation.lat, userLocation.lng], 16, { animate: true });
+        }
       }
+    } catch (e) {
+      console.warn('Erro ao atualizar visualização do usuário', e);
     }
   }, [userLocation, map]);
   return null;
@@ -192,21 +196,31 @@ const GpsControl = ({ userLocation }) => {
   const handleCenterUser = (e) => {
     e.stopPropagation();
     setIsLocating(true);
-    if (userLocation) {
-      map.setView([userLocation.lat, userLocation.lng], 17, { animate: true });
+    try {
+      if (userLocation && typeof userLocation.lat === 'number' && !isNaN(userLocation.lat) && typeof userLocation.lng === 'number' && !isNaN(userLocation.lng)) {
+        map.setView([userLocation.lat, userLocation.lng], 17, { animate: true });
+        setIsLocating(false);
+      } else if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (pos && pos.coords && typeof pos.coords.latitude === 'number' && typeof pos.coords.longitude === 'number') {
+              map.setView([pos.coords.latitude, pos.coords.longitude], 17, { animate: true });
+            }
+            setIsLocating(false);
+          },
+          (err) => {
+            console.warn('Erro GPS', err);
+            setIsLocating(false);
+            alert('GPS: Não foi possível obter sua posição atual. Verifique se o GPS está ativo.');
+          },
+          { enableHighAccuracy: true, timeout: 6000 }
+        );
+      } else {
+        setIsLocating(false);
+      }
+    } catch (e) {
+      console.warn('Erro ao centralizar no GPS', e);
       setIsLocating(false);
-    } else if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          map.setView([pos.coords.latitude, pos.coords.longitude], 17, { animate: true });
-          setIsLocating(false);
-        },
-        () => {
-          setIsLocating(false);
-          alert('GPS: Não foi possível obter sua posição atual.');
-        },
-        { enableHighAccuracy: true, timeout: 6000 }
-      );
     }
   };
 
@@ -234,14 +248,26 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
   useEffect(() => {
     let watchId;
     if ('geolocation' in navigator) {
-      watchId = navigator.geolocation.watchPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => console.warn('Erro GPS no MapComponent', err),
-        { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
-      );
+      try {
+        watchId = navigator.geolocation.watchPosition(
+          (pos) => {
+            if (pos && pos.coords && typeof pos.coords.latitude === 'number' && typeof pos.coords.longitude === 'number') {
+              setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            }
+          },
+          (err) => console.warn('Erro GPS no MapComponent', err),
+          { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
+        );
+      } catch (e) {
+        console.warn('Falha ao iniciar watchPosition GPS', e);
+      }
     }
     return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (watchId && 'geolocation' in navigator) {
+        try {
+          navigator.geolocation.clearWatch(watchId);
+        } catch (e) {}
+      }
     };
   }, []);
 
@@ -484,7 +510,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         {/* Camada OBRIGATÓRIA Google Satélite Híbrido */}
         <TileLayer
           attribution='&copy; Google Maps'
-          url="http://mt0.google.com/vt/lyrs=y&hl=pt-BR&x={x}&y={y}&z={z}"
+          url="https://mt0.google.com/vt/lyrs=y&hl=pt-BR&x={x}&y={y}&z={z}"
           maxZoom={20}
         />
         

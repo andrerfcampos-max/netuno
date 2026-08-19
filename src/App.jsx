@@ -15,6 +15,7 @@ import MissionTabs from './components/MissionTabs';
 import MissionManagerModal from './components/MissionManagerModal';
 import TechnicalStudyModal from './components/TechnicalStudyModal';
 import InconsistentHydrantsModal from './components/InconsistentHydrantsModal';
+import ErrorBoundary from './components/ErrorBoundary';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders } from './utils/storage';
 import { normalizeRAName, RA_LIST } from './utils/raList';
@@ -1062,20 +1063,22 @@ function App() {
 
         {/* MÓDULO 2: MAPA TÁTICO INTEGRADO */}
         <div className={`w-full relative z-0 flex-1 flex-shrink-0 min-h-[420px] ${activeView === 'map' ? 'block' : 'hidden'}`}>
-          <MapComponent 
-            hidrantes={mapHidrantes} 
-            onInspect={handleInspect}
-            onEdit={(h) => setEditingHydrante(h)}
-            centerPosition={mapCenterPosition}
-            selectedMissionIds={selectedMissionIds}
-            onToggleMission={toggleMissionSelection}
-            currentUser={currentUser}
-            isMapFullscreen={isMapFullscreen}
-            onMapClick={() => setIsMapFullscreen(prev => !prev)}
-            onOpenFilters={() => setIsFilterVisible(true)}
-            activeView={activeView}
-            isAllCitiesOnly={isAllCitiesOnly}
-          />
+          <ErrorBoundary>
+            <MapComponent 
+              hidrantes={mapHidrantes} 
+              onInspect={handleInspect}
+              onEdit={(h) => setEditingHydrante(h)}
+              centerPosition={mapCenterPosition}
+              selectedMissionIds={selectedMissionIds}
+              onToggleMission={toggleMissionSelection}
+              currentUser={currentUser}
+              isMapFullscreen={isMapFullscreen}
+              onMapClick={() => setIsMapFullscreen(prev => !prev)}
+              onOpenFilters={() => setIsFilterVisible(true)}
+              activeView={activeView}
+              isAllCitiesOnly={isAllCitiesOnly}
+            />
+          </ErrorBoundary>
         </div>
 
         {/* MÓDULO 4: TABELA */}
