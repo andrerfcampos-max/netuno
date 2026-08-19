@@ -42,7 +42,6 @@ function App() {
 
   const [hidrantes, setHidrantes] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
-  const [isFilterVisible, setIsFilterVisible] = useState(true);
   const [activeView, _setActiveView] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const view = params.get('view');
@@ -994,72 +993,65 @@ function App() {
         className={isMapFullscreen ? "h-full w-full p-0 m-0 relative" : "flex-1 overflow-y-auto w-full flex flex-col relative p-2 gap-2 select-none touch-pan-y"}
       >
         
-        {/* CONTROLES RETRÁTEIS DE VISUALIZAÇÃO */}
-        <div className={isMapFullscreen ? "hidden" : "sticky top-0 z-30 bg-slate-900/95 backdrop-blur py-2 w-full border-b border-slate-700/50 mb-1"}>
-          <div className={`grid ${currentUser?.role === 'gestor' || currentUser?.role === 'admin' ? 'grid-cols-5' : 'grid-cols-4'} gap-1 sm:gap-2 px-1 max-w-4xl mx-auto`}>
-            <button 
-              onClick={() => setIsFilterVisible(!isFilterVisible)}
-              className={`min-h-[42px] py-1.5 px-0.5 sm:px-2 border rounded-lg text-[11px] sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1 truncate ${
-                isFilterVisible ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'
-              }`}
-            >
-              <span>Filtros</span>
-              {Boolean(activeFilters?.ra || activeFilters?.buscaGeral || activeFilters?.problema || (activeFilters?.status && activeFilters?.status !== 'Todos')) && (
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0 inline-block"></span>
-              )}
-            </button>
-            <button 
-              onClick={() => setActiveView('map')}
-              className={`min-h-[42px] py-1.5 px-0.5 sm:px-2 border rounded-lg text-[11px] sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
-                activeView === 'map' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-750'
-              }`}
-            >
-              Mapa
-            </button>
-            <button 
-              onClick={() => setActiveView('table')}
-              className={`min-h-[42px] py-1.5 px-0.5 sm:px-2 border rounded-lg text-[11px] sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
-                activeView === 'table' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-750'
-              }`}
-            >
-              Lista
-            </button>
-            <button 
-              onClick={() => setActiveView('route')}
-              className={`min-h-[42px] py-1.5 px-0.5 sm:px-2 border rounded-lg text-[11px] sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
-                activeView === 'route' 
-                  ? 'bg-emerald-600 border-emerald-500 text-white' 
-                  : (!activeMissionId || selectedMissionIds.length === 0 
-                     ? 'bg-slate-800/60 border-slate-700 text-slate-500 opacity-60' 
-                     : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750')
-              }`}
-              disabled={!activeMissionId}
-            >
-              Rota ({selectedMissionIds.length})
-            </button>
-            {(currentUser?.role === 'gestor' || currentUser?.role === 'admin') && (
+        {/* MÓDULO 1: BARRA DE FILTROS FIXA NO TOPO (SEMPRE DISPONÍVEL) */}
+        {!isMapFullscreen && (
+          <FilterBar 
+            onFilterChange={handleFilterChange} 
+            regions={regions} 
+            anos={anosVistoria} 
+            problemasAtivos={problemasVistoria} 
+            isVisible={!isMapFullscreen} 
+            currentUser={currentUser} 
+            onLogout={handleLogout} 
+          />
+        )}
+
+        {/* CONTROLES DE VISUALIZAÇÃO LOGO ABAIXO DOS FILTROS */}
+        {!isMapFullscreen && (
+          <div className="w-full z-10 py-1">
+            <div className={`grid ${currentUser?.role === 'gestor' || currentUser?.role === 'admin' ? 'grid-cols-4' : 'grid-cols-3'} gap-1.5 sm:gap-2 px-1 max-w-4xl mx-auto`}>
               <button 
-                onClick={() => setActiveView('report')}
-                className={`min-h-[42px] py-1.5 px-0.5 sm:px-2 border rounded-lg text-[11px] sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
-                  activeView === 'report' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-750'
+                onClick={() => setActiveView('map')}
+                className={`min-h-[42px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
+                  activeView === 'map' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
                 }`}
               >
-                Relatório
+                Mapa
               </button>
-            )}
+              <button 
+                onClick={() => setActiveView('table')}
+                className={`min-h-[42px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
+                  activeView === 'table' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                }`}
+              >
+                Lista
+              </button>
+              <button 
+                onClick={() => setActiveView('route')}
+                className={`min-h-[42px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
+                  activeView === 'route' 
+                    ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' 
+                    : (!activeMissionId || selectedMissionIds.length === 0 
+                       ? 'bg-slate-800/60 border-slate-700 text-slate-500 opacity-60' 
+                       : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-slate-200')
+                }`}
+                disabled={!activeMissionId}
+              >
+                Rota ({selectedMissionIds.length})
+              </button>
+              {(currentUser?.role === 'gestor' || currentUser?.role === 'admin') && (
+                <button 
+                  onClick={() => setActiveView('report')}
+                  className={`min-h-[42px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
+                    activeView === 'report' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                  }`}
+                >
+                  Relatório
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* MÓDULO 1: BARRA DE FILTROS (RETRÁTIL ABAIXO DOS CONTROLES - SEMPRE DISPONÍVEL) */}
-        <FilterBar 
-          onFilterChange={handleFilterChange} 
-          regions={regions} 
-          anos={anosVistoria} 
-          problemasAtivos={problemasVistoria} 
-          isVisible={isFilterVisible && !isMapFullscreen} 
-          currentUser={currentUser} 
-          onLogout={handleLogout} 
-        />
+        )}
 
         {/* MÓDULO 2: MAPA TÁTICO INTEGRADO */}
         <div className={`w-full relative z-0 flex-1 flex-shrink-0 min-h-[420px] ${activeView === 'map' ? 'block' : 'hidden'}`}>
@@ -1074,7 +1066,9 @@ function App() {
               currentUser={currentUser}
               isMapFullscreen={isMapFullscreen}
               onMapClick={() => setIsMapFullscreen(prev => !prev)}
-              onOpenFilters={() => setIsFilterVisible(true)}
+              onOpenFilters={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               activeView={activeView}
               isAllCitiesOnly={isAllCitiesOnly}
             />

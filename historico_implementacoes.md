@@ -206,4 +206,17 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **3. Guia de QA para Testes Mobile em Campo (`QA_TESTING_GUIDE.md`):**
   - Inclusão da **ETAPA 6** dedicada à homologação de usabilidade em smartphones e tablets, validação de GPS, PWA/instalação offline e responsividade de toque.
 
+### [19/08/2026] Etapa 42 Concluída: Reestruturação do Topo: Fixação dos Filtros Globais, Remoção do Botão 'Filtros' e Posicionamento dos Botões de Navegação Logo Abaixo
+- **1. Filtros Fixos no Topo e Sempre Visíveis (`App.jsx`, `FilterBar.jsx`):**
+  - O painel de filtros globais (`FilterBar`) agora fica posicionado permanentemente no topo da tela, logo abaixo do cabeçalho e abas de missões.
+  - A barra de filtros está sempre visível tanto no Desktop quanto em telas móveis/smartphones (ocultando-se apenas quando o mapa estiver em modo tela cheia), permitindo ao usuário filtrar imediatamente por Cidade/RA, busca livre, status, período ou defeito sem precisar acionar botões intermediários.
+- **2. Remoção do Botão 'Filtros' e Reorganização dos Controles de Navegação (`App.jsx`):**
+  - O botão retrátil "Filtros" foi totalmente removido do conjunto de abas de visualização.
+  - A barra de navegação foi reposicionada **logo abaixo da barra de filtros**.
+  - Os botões disponíveis agora são exclusivamente: **Mapa**, **Lista**, **Rota (X)** e **Relatório** (para gestores e administradores), organizados em grade simétrica (`grid-cols-4` ou `grid-cols-3`).
+- **3. Eliminação Total de Sobreposições e Conflitos de Layout:**
+  - Corrigido o fluxo vertical do DOM, eliminando sobreposições entre os seletores suspensos dos filtros, a barra de botões e o mapa/lista.
+  - Preservada a persistência em `LocalStorage` e a navegação fluida em campo.
+
+
 
