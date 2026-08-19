@@ -167,25 +167,63 @@ const MapResizer = ({ isMapFullscreen, activeView }) => {
 
 const UserLocationTracker = ({ userLocation }) => {
   const map = useMap();
+  const hasCenteredRef = React.useRef(false);
+
   useEffect(() => {
-    if (userLocation && window.innerWidth < 768) {
-      map.setView([userLocation.lat, userLocation.lng], 18, { animate: true });
-      map.setMinZoom(18);
-      map.setMaxZoom(18);
-      
-      return () => {
-        map.setMinZoom(0);
-        map.setMaxZoom(20);
-      };
-    } else {
-      map.setMinZoom(0);
-      map.setMaxZoom(20);
+    map.setMinZoom(0);
+    map.setMaxZoom(20);
+    
+    // Centraliza apenas uma única vez na inicialização se o usuário não tiver posição salva
+    if (userLocation && !hasCenteredRef.current) {
+      hasCenteredRef.current = true;
+      const savedState = localStorage.getItem('netuno_map_state');
+      if (!savedState) {
+        map.setView([userLocation.lat, userLocation.lng], 16, { animate: true });
+      }
     }
   }, [userLocation, map]);
   return null;
 };
 
-const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, isMapFullscreen, activeView, isAllCitiesOnly = false }) => {
+const GpsControl = ({ userLocation }) => {
+  const map = useMap();
+  const [isLocating, setIsLocating] = useState(false);
+
+  const handleCenterUser = (e) => {
+    e.stopPropagation();
+    setIsLocating(true);
+    if (userLocation) {
+      map.setView([userLocation.lat, userLocation.lng], 17, { animate: true });
+      setIsLocating(false);
+    } else if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          map.setView([pos.coords.latitude, pos.coords.longitude], 17, { animate: true });
+          setIsLocating(false);
+        },
+        () => {
+          setIsLocating(false);
+          alert('GPS: Não foi possível obter sua posição atual.');
+        },
+        { enableHighAccuracy: true, timeout: 6000 }
+      );
+    }
+  };
+
+  return (
+    <div className="absolute bottom-6 right-4 z-[1000] flex flex-col gap-2">
+      <button
+        onClick={handleCenterUser}
+        title="Centralizar na Minha Posição (GPS)"
+        className={`p-3 bg-slate-900/90 hover:bg-slate-800 text-cyan-400 border border-cyan-500/50 hover:border-cyan-400 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer backdrop-blur-md ${isLocating ? 'animate-pulse' : ''}`}
+      >
+        <Navigation size={22} className="text-cyan-400" />
+      </button>
+    </div>
+  );
+};
+
+const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isAllCitiesOnly = false }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const validHidrantes = useMemo(() => {
     return hidrantes.filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude));
@@ -199,7 +237,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
       watchId = navigator.geolocation.watchPosition(
         (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         (err) => console.warn('Erro GPS no MapComponent', err),
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+        { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
       );
     }
     return () => {
@@ -406,12 +444,18 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
     <div className={isMapFullscreen ? "fixed inset-0 z-[100] bg-slate-900" : "h-[60vh] min-h-[400px] w-full relative rounded-xl overflow-hidden border border-slate-700 shadow-inner z-0"}>
       
       {validHidrantes.length === 0 && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-cyan-300 px-5 py-2.5 rounded-full border border-cyan-500/50 shadow-2xl text-xs font-semibold backdrop-blur-md flex items-center gap-2 pointer-events-none text-center max-w-[92vw]">
+        <div 
+          onClick={() => {
+            if (onOpenFilters) onOpenFilters();
+          }}
+          className={`absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-cyan-300 px-5 py-2.5 rounded-full border border-cyan-500/50 shadow-2xl text-xs font-semibold backdrop-blur-md flex items-center gap-2 text-center max-w-[92vw] transition-all active:scale-95 ${onOpenFilters ? 'cursor-pointer hover:border-emerald-400 hover:text-emerald-300' : 'pointer-events-none'}`}
+          title="Clique para abrir os filtros e selecionar uma Cidade"
+        >
           <MapPin size={15} className="text-emerald-400 shrink-0 animate-pulse" />
           <span>
             {isAllCitiesOnly 
-              ? '🗺️ Visão do DF Completo ativa: A Lista e os Relatórios contêm todos os hidrantes. Selecione uma Cidade/RA específica no filtro acima para visualizar os hidrantes no mapa.'
-              : 'Selecione uma Cidade no filtro acima para visualizar os hidrantes'}
+              ? '🗺️ Visão do DF Completo ativa: A Lista e os Relatórios contêm todos os hidrantes. Clique aqui para selecionar uma Cidade/RA no mapa.'
+              : 'Selecione uma Cidade no filtro acima para visualizar os hidrantes (Toque aqui)'}
           </span>
         </div>
       )}
@@ -470,16 +514,19 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         )}
       </MapContainer>
 
+      {/* Botão Flutuante de GPS (Centralizar Posição Atual) */}
+      <GpsControl userLocation={userLocation} />
+
       {!isMapFullscreen && (
         <button 
           onClick={(e) => {
             e.stopPropagation();
             if (onMapClick) onMapClick();
           }}
-          className="absolute top-4 right-4 z-[9999] p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full transition-colors border border-slate-600 shadow-md active:scale-95"
+          className="absolute top-4 right-4 z-[9999] p-2.5 bg-slate-900/90 hover:bg-slate-800 text-slate-200 rounded-full transition-all border border-slate-600 shadow-xl active:scale-95 backdrop-blur-md"
           title="Modo Tela Cheia"
         >
-          <Maximize2 size={24} />
+          <Maximize2 size={22} />
         </button>
       )}
     </div>

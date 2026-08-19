@@ -111,39 +111,27 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
       
 
 
-      <div className="p-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 bg-slate-900/50">
+      <div className="p-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 bg-slate-900/90 border-b border-slate-700/60">
           
-          {/* Busca Textual (Geral) */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Busca Livre (Nome/Ref)</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Mercado, Guará 57..." 
-              className="p-2 rounded bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
-              value={filters.buscaGeral}
-              onChange={(e) => handleChange('buscaGeral', e.target.value)}
-            />
-          </div>
-
-          {/* Filtro por RA - Destaque Colorido Tático */}
-          <div className="flex flex-col gap-1 relative">
+          {/* 1. Filtro por RA - Destaque Colorido Tático Principal */}
+          <div className="flex flex-col gap-1 relative sm:col-span-2 xl:col-span-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1 text-emerald-400">
-                <MapPin size={13} className="text-emerald-400 animate-pulse" />
-                Escolha a Cidade / RA
+                <MapPin size={14} className="text-emerald-400 animate-pulse" />
+                Cidade / Região (RA)
               </label>
               {filters.ra ? (
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded border border-emerald-500/40 animate-pulse">
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded border border-emerald-500/40 animate-pulse">
                   Filtro Ativo
                 </span>
               ) : (
-                <span className="text-[10px] bg-cyan-900/40 text-cyan-300 font-semibold px-1.5 py-0.5 rounded border border-cyan-700/50">
+                <span className="text-[10px] bg-cyan-900/40 text-cyan-300 font-semibold px-2 py-0.5 rounded border border-cyan-700/50">
                   Todas
                 </span>
               )}
             </div>
             <select 
-              className={`p-2 rounded text-sm text-white focus:outline-none transition-all duration-300 font-medium ${
+              className={`min-h-[44px] p-2.5 rounded-lg text-sm text-white focus:outline-none transition-all duration-300 font-medium ${
                 filters.ra && filters.ra !== ''
                   ? 'bg-slate-800 border-2 border-emerald-500 ring-2 ring-emerald-500/30 text-emerald-300' 
                   : 'bg-gradient-to-r from-slate-800 via-slate-800 to-cyan-950/40 border-2 border-cyan-500/60 ring-2 ring-cyan-500/20 hover:border-cyan-400'
@@ -157,11 +145,48 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
             </select>
           </div>
 
-          {/* Filtro por Período */}
+          {/* 2. Busca Textual (Geral) */}
+          <div className="flex flex-col gap-1 sm:col-span-2 xl:col-span-2">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Busca Livre (Nome/Ref/Rua)</label>
+            <input 
+              type="text" 
+              placeholder="Ex: Mercado, Guará 57, BSB001..." 
+              className="min-h-[44px] p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+              value={filters.buscaGeral}
+              onChange={(e) => handleChange('buscaGeral', e.target.value)}
+            />
+          </div>
+
+          {/* 3. Filtro de Status */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status Operacional</label>
+            <div className="min-h-[44px] flex rounded-lg overflow-hidden border border-slate-700 bg-slate-800 text-xs sm:text-sm">
+              <button 
+                onClick={() => handleChange('status', 'Todos')}
+                className={`flex-1 py-2 ${filters.status === 'Todos' ? 'bg-slate-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                Todos
+              </button>
+              <button 
+                onClick={() => handleChange('status', 'Operante')}
+                className={`flex-1 py-2 ${filters.status === 'Operante' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                Operantes
+              </button>
+              <button 
+                onClick={() => handleChange('status', 'Inoperante')}
+                className={`flex-1 py-2 ${filters.status === 'Inoperante' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                Inoperantes
+              </button>
+            </div>
+          </div>
+
+          {/* 4. Filtro por Período */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Data da Vistoria</label>
             <select 
-              className="p-2 rounded bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="min-h-[44px] p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
               value={filters.periodo}
               onChange={(e) => handlePeriodoChange(e.target.value)}
             >
@@ -181,51 +206,26 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
                   type="date" 
                   value={filters.dataInicio} 
                   onChange={(e) => handleChange('dataInicio', e.target.value)}
-                  className="w-1/2 p-1 rounded bg-slate-700 border border-slate-600 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-1/2 p-2 rounded bg-slate-700 border border-slate-600 text-xs text-white focus:outline-none focus:border-emerald-500"
                 />
                 <input 
                   type="date" 
                   value={filters.dataFim} 
                   onChange={(e) => handleChange('dataFim', e.target.value)}
-                  className="w-1/2 p-1 rounded bg-slate-700 border border-slate-600 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-1/2 p-2 rounded bg-slate-700 border border-slate-600 text-xs text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
             )}
           </div>
 
-          {/* Filtro de Status */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status Operacional</label>
-            <div className="flex rounded overflow-hidden border border-slate-700 bg-slate-800 text-sm">
-              <button 
-                onClick={() => handleChange('status', 'Todos')}
-                className={`flex-1 py-1.5 ${filters.status === 'Todos' ? 'bg-slate-600 text-white font-bold' : 'text-slate-400'}`}
-              >
-                Todos
-              </button>
-              <button 
-                onClick={() => handleChange('status', 'Operante')}
-                className={`flex-1 py-1.5 ${filters.status === 'Operante' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400'}`}
-              >
-                Operantes
-              </button>
-              <button 
-                onClick={() => handleChange('status', 'Inoperante')}
-                className={`flex-1 py-1.5 ${filters.status === 'Inoperante' ? 'bg-red-600 text-white font-bold' : 'text-slate-400'}`}
-              >
-                Inoperantes
-              </button>
-            </div>
-          </div>
-
-          {/* Novo Filtro de Problemas */}
-          <div className="flex flex-col gap-1">
+          {/* 5. Filtro de Problemas */}
+          <div className="flex flex-col gap-1 sm:col-span-2 xl:col-span-4">
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
               <AlertCircle size={14} className="text-orange-400" /> 
               Filtro por Problema
             </label>
             <select 
-              className="p-2 rounded bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="min-h-[44px] p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
               value={filters.problema}
               onChange={(e) => handleChange('problema', e.target.value)}
             >
@@ -234,11 +234,11 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
             </select>
           </div>
 
-          {/* Botão Limpar Filtros */}
-          <div className="flex flex-col justify-end gap-1">
+          {/* 6. Botão Limpar Filtros */}
+          <div className="flex flex-col justify-end gap-1 sm:col-span-2 xl:col-span-2">
             <button 
               onClick={handleClearFilters}
-              className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-slate-300 hover:text-white transition-colors text-sm font-bold w-full"
+              className="min-h-[44px] p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-slate-300 hover:text-white transition-colors text-sm font-bold w-full active:scale-95 shadow-sm"
             >
               LIMPAR FILTROS
             </button>

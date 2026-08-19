@@ -400,21 +400,40 @@ function App() {
     return result;
   };
 
-  // Touch Swipe na tela principal para alternar abas
+  // Touch Swipe na tela principal para alternar abas (desativado no Mapa para permitir arrasto livre)
   const mainTouchStartX = useRef(null);
   const mainTouchStartY = useRef(null);
 
   const handleMainTouchStart = (e) => {
+    // Nunca capturar gesto de swipe na visualização do mapa nem em elementos interativos
+    if (
+      activeView === 'map' || 
+      e.target.closest('.leaflet-container') || 
+      e.target.closest('table') || 
+      e.target.closest('input') || 
+      e.target.closest('select') ||
+      e.target.closest('textarea') ||
+      e.target.closest('button')
+    ) {
+      mainTouchStartX.current = null;
+      mainTouchStartY.current = null;
+      return;
+    }
     mainTouchStartX.current = e.touches[0].clientX;
     mainTouchStartY.current = e.touches[0].clientY;
   };
 
   const handleMainTouchEnd = (e) => {
-    if (mainTouchStartX.current === null || mainTouchStartY.current === null) return;
+    if (activeView === 'map' || mainTouchStartX.current === null || mainTouchStartY.current === null) {
+      mainTouchStartX.current = null;
+      mainTouchStartY.current = null;
+      return;
+    }
     const diffX = mainTouchStartX.current - e.changedTouches[0].clientX;
     const diffY = mainTouchStartY.current - e.changedTouches[0].clientY;
 
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 60) {
+    // Apenas se for um gesto horizontal claro e expressivo fora do mapa
+    if (Math.abs(diffX) > Math.abs(diffY) * 1.5 && Math.abs(diffX) > 80) {
       const views = ['map', 'table'];
       if (activeMissionId && selectedMissionIds.length > 0) views.push('route');
       if (currentUser?.role === 'gestor' || currentUser?.role === 'admin') views.push('report');
@@ -944,55 +963,53 @@ function App() {
         className={isMapFullscreen ? "h-full w-full p-0 m-0 relative" : "flex-1 overflow-y-auto w-full flex flex-col relative p-2 gap-2 select-none touch-pan-y"}
       >
         
-        {/* MÓDULO 1: BARRA DE FILTROS */}
-        {hidrantes.length > 0 && (
-          <FilterBar onFilterChange={handleFilterChange} regions={regions} anos={anosVistoria} problemasAtivos={problemasVistoria} isVisible={isFilterVisible && !isMapFullscreen} currentUser={currentUser} onLogout={handleLogout} />
-        )}
-
-        {/* CONTROLES RETRÁTEIS */}
-        <div className={isMapFullscreen ? "hidden" : "sticky top-0 z-30 bg-slate-900/95 backdrop-blur py-2 flex gap-2 w-full justify-center flex-wrap px-1 border-b border-slate-700/50 mb-2"}>
+        {/* CONTROLES RETRÁTEIS DE VISUALIZAÇÃO */}
+        <div className={isMapFullscreen ? "hidden" : "sticky top-0 z-30 bg-slate-900/95 backdrop-blur py-2 flex gap-1.5 sm:gap-2 w-full justify-center flex-wrap px-1 border-b border-slate-700/50 mb-1"}>
           <button 
             onClick={() => setIsFilterVisible(!isFilterVisible)}
-            className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
-              isFilterVisible ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+            className={`flex-1 min-h-[44px] min-w-[70px] sm:min-w-[90px] py-2 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1 ${
+              isFilterVisible ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'
             }`}
           >
-            Filtros
+            <span>Filtros</span>
+            {Boolean(activeFilters.ra || activeFilters.buscaGeral || activeFilters.problema || (activeFilters.status && activeFilters.status !== 'Todos')) && (
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block"></span>
+            )}
           </button>
           <button 
             onClick={() => setActiveView('map')}
-            className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
-              activeView === 'map' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+            className={`flex-1 min-h-[44px] min-w-[70px] sm:min-w-[90px] py-2 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm ${
+              activeView === 'map' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-750'
             }`}
           >
             Mapa
           </button>
           <button 
             onClick={() => setActiveView('table')}
-            className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
-              activeView === 'table' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+            className={`flex-1 min-h-[44px] min-w-[70px] sm:min-w-[90px] py-2 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm ${
+              activeView === 'table' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-750'
             }`}
           >
             Lista
           </button>
           <button 
             onClick={() => setActiveView('route')}
-            className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
+            className={`flex-1 min-h-[44px] min-w-[85px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm ${
               activeView === 'route' 
                 ? 'bg-emerald-600 border-emerald-500 text-white' 
                 : (!activeMissionId || selectedMissionIds.length === 0 
-                   ? 'bg-slate-800 border-slate-700 text-slate-500 opacity-50' 
-                   : 'bg-slate-800 border-slate-700 text-slate-300')
+                   ? 'bg-slate-800/60 border-slate-700 text-slate-500 opacity-60' 
+                   : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750')
             }`}
             disabled={!activeMissionId}
           >
-            Rota de Missão ({selectedMissionIds.length})
+            Rota ({selectedMissionIds.length})
           </button>
           {(currentUser?.role === 'gestor' || currentUser?.role === 'admin') && (
             <button 
               onClick={() => setActiveView('report')}
-              className={`flex-1 min-w-[80px] sm:min-w-[100px] py-2 px-2 border rounded-lg text-sm font-bold active:scale-95 transition-all shadow-sm ${
-                activeView === 'report' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
+              className={`flex-1 min-h-[44px] min-w-[75px] sm:min-w-[90px] py-2 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm ${
+                activeView === 'report' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-750'
               }`}
             >
               Relatório
@@ -1000,8 +1017,13 @@ function App() {
           )}
         </div>
 
+        {/* MÓDULO 1: BARRA DE FILTROS (RETRÁTIL ABAIXO DOS CONTROLES) */}
+        {hidrantes.length > 0 && (
+          <FilterBar onFilterChange={handleFilterChange} regions={regions} anos={anosVistoria} problemasAtivos={problemasVistoria} isVisible={isFilterVisible && !isMapFullscreen} currentUser={currentUser} onLogout={handleLogout} />
+        )}
+
         {/* MÓDULO 2: MAPA TÁTICO INTEGRADO */}
-        <div className={`w-full relative z-0 flex-1 flex-shrink-0 min-h-[400px] ${activeView === 'map' ? 'block' : 'hidden'}`}>
+        <div className={`w-full relative z-0 flex-1 flex-shrink-0 min-h-[420px] ${activeView === 'map' ? 'block' : 'hidden'}`}>
           <MapComponent 
             hidrantes={mapHidrantes} 
             onInspect={handleInspect}
@@ -1012,6 +1034,7 @@ function App() {
             currentUser={currentUser}
             isMapFullscreen={isMapFullscreen}
             onMapClick={() => setIsMapFullscreen(prev => !prev)}
+            onOpenFilters={() => setIsFilterVisible(true)}
             activeView={activeView}
             isAllCitiesOnly={isAllCitiesOnly}
           />
