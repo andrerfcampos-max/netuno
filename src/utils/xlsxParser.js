@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { normalizeRAName } from './raList';
+import { normalizeRAName, PREFIX_TO_RA_MAP, RA_LOCALIDADE_MAP } from './raList';
 import { sanitizeProblem } from './problemUtils';
 import { fixEncoding } from './textUtils';
 
@@ -21,7 +21,6 @@ export const loadPreloadedDatabase = async (onComplete) => {
       let row = rawData[i];
       
       const rowCode = row.nomHidrante || row.codHidrante || row['Código'] || row['\uFEFFCódigo'] || '';
-      const rowRA = row.dscLocalidade || row.Localidade || row.RA || row['RA'] || row.Cidade || '';
       const rowAddress = row.dscEndereco || row['Endereço'] || '';
 
       // Pula linhas fantasmas de coordenadas soltas ou cabeçalhos intermediários corrompidos
@@ -30,7 +29,7 @@ export const loadPreloadedDatabase = async (onComplete) => {
       }
       
       // Pula linha vazia
-      if (!rowCode && !rowRA && !rowAddress) {
+      if (!rowCode && !rowAddress && !row.dscLocalidade && !row.codLocalidade) {
         continue;
       }
 
@@ -76,11 +75,21 @@ export const loadPreloadedDatabase = async (onComplete) => {
       const lat = parseFloat(rawLat);
       const lng = parseFloat(rawLng);
 
-      const flgAtivoRaw = row.flgAtivo !== undefined ? row.flgAtivo : (row.Status || row['Status']);
-      const ativoStr = flgAtivoRaw ? String(flgAtivoRaw).trim().toLowerCase() : '';
+      const flgAtivoRaw = row.flgAtivo !== undefined ? row.flgAtivo : (row.Status || row['Status'] || row.status);
+      const ativoStr = flgAtivoRaw !== undefined && flgAtivoRaw !== null ? String(flgAtivoRaw).trim().toLowerCase() : '';
       const isAtivo = ['true', '1', 'v', 'verdadeiro', 'sim', 's', 'operante', 'ativo'].includes(ativoStr) || flgAtivoRaw === true;
 
-      const rawRA = row.dscLocalidade || row.Localidade || row.RA || row['RA'] || row.Cidade || '';
+      // Resolução da Região Administrativa (RA)
+      let rawRA = row.dscLocalidade || row.Localidade || row.RA || row['RA'] || row.Cidade || '';
+      if (!rawRA) {
+        const nomStr = String(rawNom || rawCod || '').trim();
+        const pfx = nomStr.substring(0, 3).toUpperCase();
+        if (PREFIX_TO_RA_MAP[pfx]) {
+          rawRA = PREFIX_TO_RA_MAP[pfx];
+        } else if (row.codLocalidade && RA_LOCALIDADE_MAP[row.codLocalidade]) {
+          rawRA = RA_LOCALIDADE_MAP[row.codLocalidade];
+        }
+      }
       const cleanRA = normalizeRAName(rawRA);
 
       const cleanNom = fixEncoding(rawNom || rawCod || `HID${i + 1}`);
