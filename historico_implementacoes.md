@@ -260,3 +260,16 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - No mobile, a exibição de hidrantes foi transformada em **Cards Táticos Verticais** com badge de status, dados de endereço e botões de ação rápida (*Dialog*, *Waze*, *+ Vistoria*, *Editar*), eliminando problemas de rolagem horizontal e tabelas cortadas.
   - No Desktop, mantida a tabela tradicional completa com suporte à ordenação e exportação de relatórios CSV.
 
+### [20/08/2026] Etapa 47 Concluída: Refinamento Ergonômico Mobile: Compactação da Dialog do Mapa, Inclusão de Cidade nos Filtros Avançados e Otimização de Densidade nas Listas e Rotas
+- **1. Dialog / Popup do Hidrante Compacta no Mapa (`MapComponent.jsx`, `index.css`):**
+  - Reduzida a altura e o padding da dialog no Leaflet para `max-h-[50vh]` com scroll interno suave, evitando sobreposição com os botões de zoom `[+]` e `[-]` do mapa.
+  - Reorganizada a hierarquia visual em 2 linhas de ações táteis: linha principal com destaque para `[+ VISTORIA]`, `[Waze]` e `[WhatsApp]`; linha secundária compacta para `[Maps]`, `[360°]`, `[Rota +/-]` e `[Editar]`.
+- **2. Inclusão de Cidade/RA e Busca nos Filtros Avançados (`FilterBar.jsx`):**
+  - O *Bottom Sheet / Drawer* de Filtros Avançados no mobile agora inclui o seletor completo de Cidade/RA e a Busca Livre logo no topo, permitindo trocar e aplicar todos os filtros em um único local centralizado.
+- **3. Otimização de Densidade no Painel de Rota (`MissionRoutePanel.jsx`):**
+  - Corrigido o cabeçalho para evitar sobreposição e corte do nome da missão e badges.
+  - Compactado o botão de navegação Waze do topo e ajustado o layout dos cards de hidrantes para separar claramente os dados de endereço/problemas dos botões de ação.
+  - Reorganizados os 4 botões inferiores em grade harmônica 2x2 com altura padrão de 36-38px.
+- **4. Cards Mais Compactos na Lista de Vistorias (`DataTable.jsx`):**
+  - Reduzida a altura vertical dos cards em ~30% com barra horizontal de botões de ação, permitindo visualizar mais hidrantes simultaneamente por tela.
+

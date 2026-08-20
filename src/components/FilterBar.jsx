@@ -208,7 +208,67 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
             {/* Conteúdo do Drawer */}
             <div className="flex flex-col gap-4">
               
-              {/* Status */}
+              {/* 1. Cidade / RA no Drawer */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                    <MapPin size={14} className="text-emerald-400" />
+                    Cidade / Região Administrativa
+                  </label>
+                  {filters.ra && (
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded border border-emerald-500/40">
+                      {filters.ra === '__TODAS__' ? 'DF Completo' : filters.ra}
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <select 
+                    className={`w-full p-2.5 pl-8 rounded-lg text-sm font-semibold focus:outline-none transition-all ${
+                      filters.ra && filters.ra !== ''
+                        ? 'bg-slate-800 border-2 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500/30' 
+                        : 'bg-slate-800 border border-slate-700 text-white'
+                    }`}
+                    value={filters.ra}
+                    onChange={(e) => handleChange('ra', e.target.value)}
+                  >
+                    <option value="" className="bg-slate-900 text-slate-400">🎯 Selecione uma Cidade / RA...</option>
+                    <option value="__TODAS__" className="bg-slate-900 text-cyan-300 font-semibold">🗺️ Todas as Cidades (Visão DF Completo)</option>
+                    {regions.map(r => {
+                      const name = typeof r === 'object' && r ? r.name : r;
+                      return <option key={name} value={name} className="bg-slate-900 text-white">{name}</option>;
+                    })}
+                  </select>
+                  <MapPin size={15} className={`absolute left-2.5 top-3 pointer-events-none ${filters.ra ? 'text-emerald-400' : 'text-slate-400'}`} />
+                </div>
+              </div>
+
+              {/* 2. Busca Livre no Drawer */}
+              <div>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                  <Search size={14} className="text-cyan-400" />
+                  Busca Livre (Nome / Rua / Código)
+                </label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder="Ex: Sobradinho, Q.02, SOB00019..." 
+                    className="w-full p-2.5 pl-8 pr-8 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                    value={filters.buscaGeral}
+                    onChange={(e) => handleChange('buscaGeral', e.target.value)}
+                  />
+                  <Search size={15} className="absolute left-2.5 top-3 text-slate-400 pointer-events-none" />
+                  {filters.buscaGeral && (
+                    <button 
+                      onClick={() => handleChange('buscaGeral', '')}
+                      className="absolute right-2.5 top-2.5 text-slate-400 hover:text-white text-sm p-0.5"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 3. Status Operacional */}
               <div>
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 block">
                   Status Operacional

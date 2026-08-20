@@ -165,7 +165,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
       ) : (
         <>
           {/* ======================================================== */}
-          {/* 1. VISUALIZAÇÃO MOBILE EM CARDS TÁTICOS (< md) */}
+          {/* 1. VISUALIZAÇÃO MOBILE EM CARDS TÁTICOS COMPACTOS (< md) */}
           {/* ======================================================== */}
           <div className="md:hidden flex-1 overflow-y-auto space-y-2 pr-0.5">
             {sortedData.slice(0, displayCount).map((h, i) => {
@@ -179,27 +179,27 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
               return (
                 <div 
                   key={id || i}
-                  className={`bg-slate-850 border rounded-xl p-3 shadow-md transition-all flex flex-col gap-2 ${
+                  className={`bg-slate-850 border rounded-xl p-2.5 shadow-md transition-all flex flex-col gap-1.5 ${
                     isSelected ? 'border-emerald-500/80 ring-1 ring-emerald-500/40 bg-slate-800' : 'border-slate-700/80'
                   }`}
                 >
                   {/* Topo do Card: Checkbox + Código + Badge de Status */}
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-750 pb-2">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-1.5 border-b border-slate-750 pb-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       {isGestor && (
                         <input 
                           type="checkbox"
-                          className="w-4 h-4 cursor-pointer accent-emerald-500 rounded"
+                          className="w-4 h-4 cursor-pointer accent-emerald-500 rounded shrink-0"
                           checked={isSelected}
                           onChange={() => onToggleMission && onToggleMission(id)}
                         />
                       )}
-                      <span className="font-mono font-black text-sm text-emerald-400">
+                      <span className="font-mono font-black text-xs sm:text-sm text-emerald-400 truncate">
                         {fixEncoding(h.nomHidrante || h.codHidrante)}
                       </span>
                     </div>
 
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase shadow-sm border ${
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase shadow-sm border shrink-0 ${
                       h.flgAtivo 
                         ? 'bg-emerald-950/70 text-emerald-400 border-emerald-500/50' 
                         : 'bg-red-950/70 text-red-400 border-red-500/50'
@@ -209,78 +209,76 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                   </div>
 
                   {/* Informações: RA, Data, Endereço */}
-                  <div className="text-xs text-slate-300 space-y-1">
+                  <div className="text-xs text-slate-300 space-y-0.5">
                     <div className="flex items-center justify-between text-slate-400 text-[11px]">
-                      <span className="font-semibold text-slate-200">📍 {fixEncoding(h.dscLocalidade)}</span>
-                      <span>📅 {dataFormatada}</span>
+                      <span className="font-bold text-slate-200">📍 {fixEncoding(h.dscLocalidade)}</span>
+                      <span className="text-[10px]">📅 {dataFormatada}</span>
                     </div>
 
                     {sanitizedProb && (
-                      <div className="flex items-start gap-1 p-1.5 rounded bg-rose-950/40 border border-rose-800/60 text-rose-300 text-[11px] font-semibold mt-1">
-                        <AlertTriangle size={13} className="text-rose-400 flex-shrink-0 mt-0.5" />
-                        <span className="line-clamp-2">{sanitizedProb}</span>
+                      <div className="flex items-start gap-1 p-1 rounded bg-rose-950/40 border border-rose-800/60 text-rose-300 text-[10px] font-semibold my-0.5">
+                        <AlertTriangle size={12} className="text-rose-400 flex-shrink-0 mt-0.5" />
+                        <span className="line-clamp-1">{sanitizedProb}</span>
                       </div>
                     )}
 
-                    <p className="text-slate-300 text-xs mt-1 leading-snug">
+                    <p className="text-slate-300 text-[11px] leading-tight truncate">
                       <span className="text-slate-400 font-semibold">Endereço: </span>
                       {fixEncoding(h.dscEndereco) || 'Não informado'}
                     </p>
 
                     {h.dscPontoReferencia && (
-                      <p className="text-slate-400 text-[11px] italic">
+                      <p className="text-slate-400 text-[10px] italic leading-tight truncate">
                         <span className="font-semibold not-italic">Ref: </span>
                         {fixEncoding(h.dscPontoReferencia)}
                       </p>
                     )}
                   </div>
 
-                  {/* Botões de Ação Tátil no Mobile */}
-                  <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-slate-750 mt-0.5">
+                  {/* Botões de Ação Horizontais no Mobile */}
+                  <div className="flex items-center gap-1 pt-1.5 border-t border-slate-750">
                     <button
                       onClick={() => onCenterMap(h)}
-                      className="flex flex-col items-center justify-center py-1.5 bg-slate-750 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-slate-650"
-                      title="Ver no Mapa"
+                      className="flex items-center justify-center gap-1 py-1.5 px-2 bg-slate-750 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-slate-650"
+                      title="Ver Dialog no Mapa"
                     >
-                      <MessageSquareText size={15} className="text-cyan-400 mb-0.5" />
+                      <MessageSquareText size={13} className="text-cyan-400" />
                       <span>Dialog</span>
                     </button>
 
                     <button
                       onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')}
-                      className="flex flex-col items-center justify-center py-1.5 bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-blue-700/50"
+                      className="flex items-center justify-center gap-1 py-1.5 px-2 bg-blue-900/50 hover:bg-blue-800 text-blue-300 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-blue-700/50"
                       title="Navegar com Waze"
                     >
-                      <Navigation size={15} className="text-blue-400 mb-0.5" />
+                      <Navigation size={13} className="text-blue-400" />
                       <span>Waze</span>
                     </button>
 
                     <button
                       onClick={() => onInspect(h)}
-                      className="flex flex-col items-center justify-center py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-black active:scale-95 transition-all shadow-sm"
+                      className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-black active:scale-95 transition-all shadow-sm"
                       title="Cadastrar Vistoria"
                     >
-                      <Plus size={16} strokeWidth={3} className="text-emerald-200 mb-0.5" />
-                      <span>Vistoria</span>
+                      <Plus size={14} strokeWidth={3} className="text-emerald-200" />
+                      <span>VISTORIA</span>
                     </button>
 
                     {isGestor ? (
                       <button
                         onClick={() => onEdit && onEdit(h)}
-                        className="flex flex-col items-center justify-center py-1.5 bg-amber-900/40 hover:bg-amber-800/60 text-amber-300 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-amber-700/50"
+                        className="flex items-center justify-center p-1.5 px-2 bg-amber-900/50 hover:bg-amber-800 text-amber-300 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-amber-700/50"
                         title="Editar Hidrante"
                       >
-                        <Edit size={15} className="text-amber-400 mb-0.5" />
-                        <span>Editar</span>
+                        <Edit size={13} className="text-amber-400" />
                       </button>
                     ) : (
                       <button
                         onClick={() => window.open(`https://maps.google.com/maps?q=${h.numLatitude},${h.numLongitude}`, '_blank')}
-                        className="flex flex-col items-center justify-center py-1.5 bg-slate-750 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-slate-650"
+                        className="flex items-center justify-center p-1.5 px-2 bg-slate-750 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-slate-650"
                         title="Google Maps"
                       >
-                        <MapIcon size={15} className="text-emerald-400 mb-0.5" />
-                        <span>Maps</span>
+                        <MapIcon size={13} className="text-emerald-400" />
                       </button>
                     )}
                   </div>
