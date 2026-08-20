@@ -758,7 +758,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           </div>
         ) : (
           /* CAESB KPIs e GRÁFICOS (MODO MULTI-CIDADE E CIDADE ÚNICA) */
-          <div className="space-y-6 page-break-inside-avoid">
+          <div className="space-y-6 mb-6 page-break-inside-avoid">
             
             {/* Bloco de Totais de Reparo CAESB */}
             <div className="bg-red-950/30 p-5 rounded-xl border border-red-800/60 print-border-gray print-bg-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
