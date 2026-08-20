@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut, ShieldAlert, RefreshCw } from 'lucide-react';
+import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut, ShieldAlert, RefreshCw, Map as MapIcon, List, Navigation, BarChart3 } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
@@ -1068,9 +1068,9 @@ function App() {
         </div>
       )}
 
-      {/* CONTROLES DE VISUALIZAÇÃO LOGO ABAIXO DOS FILTROS */}
+      {/* CONTROLES DE VISUALIZAÇÃO NO DESKTOP (LOGO ABAIXO DOS FILTROS) */}
       {!isMapFullscreen && (
-        <div className="flex-shrink-0 px-2 py-1 z-10 w-full">
+        <div className="hidden md:block flex-shrink-0 px-2 py-1 z-10 w-full">
           <div className={`grid ${currentUser?.role === 'gestor' || currentUser?.role === 'admin' ? 'grid-cols-4' : 'grid-cols-3'} gap-1.5 sm:gap-2 px-0.5 max-w-4xl mx-auto`}>
             <button 
               onClick={() => setActiveView('map')}
@@ -1220,8 +1220,63 @@ function App() {
         )}
       </main>
 
-      {/* Barramento de Seleção Inferior */}
-      <footer className={isMapFullscreen ? "hidden" : "bg-slate-900 border-t border-slate-700 p-3 flex justify-between items-center z-50"}>
+      {/* BARRA DE NAVEGAÇÃO INFERIOR ERGONÔMICA NO MOBILE (BOTTOM NAV) */}
+      {!isMapFullscreen && (
+        <nav className="md:hidden flex-shrink-0 bg-slate-900/95 border-t border-slate-700/80 backdrop-blur-md px-2 py-1.5 z-30 flex items-center justify-around shadow-lg">
+          <button
+            onClick={() => setActiveView('map')}
+            className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all ${
+              activeView === 'map' ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <MapIcon size={20} className={activeView === 'map' ? 'text-emerald-400' : ''} />
+            <span className="text-[10px] font-semibold mt-0.5">Mapa</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('table')}
+            className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all ${
+              activeView === 'table' ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <List size={20} className={activeView === 'table' ? 'text-emerald-400' : ''} />
+            <span className="text-[10px] font-semibold mt-0.5">Lista</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('route')}
+            disabled={!activeMissionId}
+            className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all relative ${
+              activeView === 'route' 
+                ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-400 font-bold' 
+                : (!activeMissionId ? 'text-slate-600 opacity-50' : 'text-slate-400 hover:text-slate-200')
+            }`}
+          >
+            <Navigation size={20} className={activeView === 'route' ? 'text-emerald-400' : ''} />
+            <span className="text-[10px] font-semibold mt-0.5">Rota</span>
+            {selectedMissionIds.length > 0 && (
+              <span className="absolute top-0.5 right-3 bg-emerald-500 text-slate-950 font-black text-[9px] px-1.5 py-0.2 rounded-full min-w-[16px] text-center shadow">
+                {selectedMissionIds.length}
+              </span>
+            )}
+          </button>
+
+          {(currentUser?.role === 'gestor' || currentUser?.role === 'admin') && (
+            <button
+              onClick={() => setActiveView('report')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all ${
+                activeView === 'report' ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <BarChart3 size={20} className={activeView === 'report' ? 'text-emerald-400' : ''} />
+              <span className="text-[10px] font-semibold mt-0.5">Relatório</span>
+            </button>
+          )}
+        </nav>
+      )}
+
+      {/* Barramento de Seleção Inferior (Desktop apenas) */}
+      <footer className={isMapFullscreen ? "hidden" : "hidden md:flex bg-slate-900 border-t border-slate-700 p-3 justify-between items-center z-20"}>
         <div className="flex flex-col">
           <div className="text-sm font-semibold text-slate-400">
             {activeMissionId ? (

@@ -247,3 +247,16 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **2. Mecanismo de Fusão Inteligente e Persistência Resiliente (`storage.js`):**
   - Implementada a fusão automática entre o catálogo de missões e o `localStorage`. Garante que em qualquer novo deploy, abertura em novos aparelhos ou limpeza de cache, todas as pastas e cards permaneçam preenchidos com dados completos para homologação.
   - Preserva integralmente qualquer vistoria cadastrada ou alteração feita pelo usuário nas missões mock, bem como novas missões criadas manualmente.
+
+### [20/08/2026] Etapa 46 Concluída: Refatoração Ergonômica Mobile: Filtros Compactos com Bottom Sheet, Bottom Navigation Bar e Otimização de Espaço Vertical
+- **1. Barra de Filtros Inteligente & Bottom Sheet no Mobile (`FilterBar.jsx`):**
+  - **No Mobile (< md)**: Substituída a antiga pilha vertical de 5 filtros por uma barra compacta e elegante de 1 linha no topo (Seletor de RA com destaque esmeralda, Campo de Busca rápida e Botão de Filtros com badge numérico de filtros ativos). Ao tocar no botão "Filtros", abre uma gaveta deslizante inferior (*Bottom Sheet / Drawer*) com controles táteis amplos (Status, Período, Problemas e botões "Limpar" e "Aplicar Filtros").
+  - **No Desktop (>= md)**: Preservada 100% a grade horizontal completa atual de filtros com todas as suas funcionalidades.
+- **2. Barra de Navegação Inferior (Bottom Navigation Bar) no Mobile (`App.jsx`):**
+  - No celular, os botões principais de alternância de visão (**Mapa**, **Lista**, **Rota**, **Relatório**) foram movidos para uma barra inferior fixa (*Bottom Nav*) acessível diretamente pela zona de alcance do polegar (*Thumb Zone*), com ícones limpos e badge de hidrantes na missão.
+  - No Desktop, a barra intermediária logo abaixo dos filtros permanece inalterada.
+  - O rodapé estático pesado foi ocultado no mobile e integrado de forma fluida aos indicadores das abas, liberando mais de 80% de área útil vertical da tela para o Mapa, Rota (Waze) e Relatórios.
+- **3. Cards Táticos Responsivos na Aba "Lista" (`DataTable.jsx`):**
+  - No mobile, a exibição de hidrantes foi transformada em **Cards Táticos Verticais** com badge de status, dados de endereço e botões de ação rápida (*Dialog*, *Waze*, *+ Vistoria*, *Editar*), eliminando problemas de rolagem horizontal e tabelas cortadas.
+  - No Desktop, mantida a tabela tradicional completa com suporte à ordenação e exportação de relatórios CSV.
+
