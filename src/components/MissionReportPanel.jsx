@@ -770,7 +770,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                 </div>
               </div>
               {isMultiCity && (
-                <div className="text-xs font-bold text-orange-400 bg-orange-950/40 px-3.5 py-2 rounded-lg border border-orange-800/50">
+                <div className="text-xs font-bold text-amber-400 bg-amber-950/40 px-3.5 py-2 rounded-lg border border-amber-800/50">
                   📍 {cityOperabilityStats.filter(c => c.total > 0).length} cidades com demanda de reparo
                 </div>
               )}
@@ -789,7 +789,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                     </p>
                   </div>
                   <div className="text-xs font-bold text-slate-400 self-start sm:self-auto">
-                    Total CAESB: <span className="text-orange-400 font-black">{total} reparos</span>
+                    Total CAESB: <span className="text-amber-400 font-black">{total} reparos</span>
                   </div>
                 </div>
 
@@ -803,7 +803,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                             {c.nome} <span className="text-slate-400 font-normal text-xs">({c.total} hidrantes para reparo)</span>
                           </span>
                           <div className="flex items-center gap-2 text-xs">
-                            <span className="text-orange-400 print-text-black font-black">
+                            <span className="text-amber-400 print-text-black font-black">
                               🛠️ {c.total} reparos ({percentDF}% do DF)
                             </span>
                           </div>
@@ -815,7 +815,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                             style={{ width: `${Math.max(6, (c.total / maxCityTotal) * 100)}%` }}
                           >
                             <div 
-                              className="bg-orange-500 h-full transition-all duration-700 hover:brightness-110 w-full rounded-full" 
+                              className="bg-amber-500 h-full transition-all duration-700 hover:brightness-110 w-full rounded-full" 
                               title={`${c.nome}: ${c.total} reparos (${percentDF}% do DF)`}
                             ></div>
                           </div>
@@ -840,14 +840,14 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                         <span className="font-bold text-slate-200 print-text-black text-sm truncate max-w-[70%]" title={defeito.nome}>
                           {defeito.nome}
                         </span>
-                        <span className="font-black text-orange-400 print-text-black text-xs">
+                        <span className="font-black text-rose-400 print-text-black text-xs">
                           {defeito.total} ocorrências ({defeito.percent.toFixed(1)}%)
                         </span>
                       </div>
                       
                       <div className="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden print-bg-gray">
                         <div 
-                          className="bg-orange-500 h-full print-bg-black transition-all duration-700" 
+                          className="bg-rose-500 h-full print-bg-black transition-all duration-700" 
                           style={{ width: `${Math.max(4, defeito.barPercent)}%` }}
                         ></div>
                       </div>
