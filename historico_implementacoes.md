@@ -270,6 +270,18 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Corrigido o cabeçalho para evitar sobreposição e corte do nome da missão e badges.
   - Compactado o botão de navegação Waze do topo e ajustado o layout dos cards de hidrantes para separar claramente os dados de endereço/problemas dos botões de ação.
   - Reorganizados os 4 botões inferiores em grade harmônica 2x2 com altura padrão de 36-38px.
-- **4. Cards Mais Compactos na Lista de Vistorias (`DataTable.jsx`):**
-  - Reduzida a altura vertical dos cards em ~30% com barra horizontal de botões de ação, permitindo visualizar mais hidrantes simultaneamente por tela.
+### [20/08/2026] Etapa 48 Concluída: Fixação Permanente da Barra Inferior, Eliminação do Termo Dialog, Otimização de Rolagem e Ações da Rota e Quebra de Linha nos Relatórios
+- **1. Fixação Permanente da Bottom Navigation Bar (`App.jsx`, `MapComponent.jsx`):**
+  - A barra inferior (`Mapa`, `Lista`, `Rota`, `Relatório`) no mobile foi fixada com `z-index: 40`, `backdrop-blur`, sombra e altura mínima garantida (`min-h-[52px]`), assegurando que permaneça permanentemente visível e acessível em todas as telas e abas, impedindo a sensação de erro ou travamento no sistema.
+- **2. Substituição do Termo Técnico "Dialog" por "Detalhes" (`DataTable.jsx`):**
+  - Nos cards mobile e na tabela desktop, o botão e tooltip foram renomeados de "Dialog" para **"Detalhes"** / **"Ver Detalhes e Ficha no Mapa"**, adequando o sistema ao vocabulário militar e operacional em campo.
+- **3. Otimização de Rolagem, Ações da Rota e Modal de Salvar Rota (`MissionRoutePanel.jsx`):**
+  - Reorganizadas as 4 ações do rodapé da rota (`WhatsApp`, `Salvar`, `Limpar`, `Relatório`) em uma grade horizontal tátil ultra-compacta em linha única (altura 34-36px), liberando altura vertical para a listagem dos hidrantes.
+  - Adicionado `scroll-pt-2` e espaçamento de respiro no container de hidrantes da rota para evitar cortes do primeiro card ao rolar até o topo.
+  - O mini-modal de "Salvar Rota" foi aprimorado com layout de diálogo centralizado, botão "X" de fechar, backdrop e foco responsivo compatível com abertura de teclado virtual.
+- **4. Quebra de Linha e Padding nos Relatórios (`MissionReportPanel.jsx`):**
+  - No ranking de "Principais Tipos de Defeitos para Intervenção CAESB" e nos Top Defeitos do CBMDF, os nomes técnicos dos defeitos agora quebram linha de forma limpa (`break-words leading-tight`), eliminando reticências no meio do texto.
+  - Adicionado padding inferior estendido (`pb-36`) para que nenhum card de defeito ou tabela fique encoberto pelos botões de exportação ou pela barra de navegação inferior.
+- **5. Destaque Visual e Conforto no Popup do Mapa (`MapComponent.jsx`):**
+  - Botão de adicionar/remover da missão (`+ Rota` / `✕ Rota`) estilizado com cores nítidas e alto contraste (`bg-cyan-600` / `bg-rose-600`).
 

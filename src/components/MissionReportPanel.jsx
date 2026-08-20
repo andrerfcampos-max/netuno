@@ -486,7 +486,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       </div>
 
       {/* ÁREA IMPRIMÍVEL (Relatório) */}
-      <div className="w-full h-auto bg-slate-800/50 lg:bg-slate-800 rounded-xl p-4 lg:p-6 border border-slate-700 report-content print-bg-white print-text-black pb-24">
+      <div className="w-full h-auto bg-slate-800/50 lg:bg-slate-800 rounded-xl p-4 lg:p-6 border border-slate-700 report-content print-bg-white print-text-black pb-36">
         
         {/* CABEÇALHO DA PÁGINA IMPRESSA */}
         <div className="text-center mb-8 border-b-2 border-slate-700 print-border-black pb-4">
@@ -640,11 +640,11 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                       <div className="space-y-4">
                         {topDefeitosComCidades.map((defeito, idx) => (
                           <div key={idx} className="flex flex-col gap-1.5">
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="font-bold text-slate-200 print-text-black text-sm truncate max-w-[70%]" title={defeito.nome}>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1">
+                              <span className="font-bold text-slate-200 print-text-black text-xs sm:text-sm break-words leading-tight" title={defeito.nome}>
                                 {defeito.nome}
                               </span>
-                              <span className="font-black text-red-400 print-text-black text-xs">
+                              <span className="font-bold text-red-400 print-text-black text-[11px] sm:text-xs shrink-0">
                                 {defeito.total} ocorr. ({defeito.percent.toFixed(1)}%)
                               </span>
                             </div>
@@ -836,11 +836,11 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                 <div className="space-y-4">
                   {topDefeitosComCidades.map((defeito, idx) => (
                     <div key={idx} className="flex flex-col gap-1.5">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-slate-200 print-text-black text-sm truncate max-w-[70%]" title={defeito.nome}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1">
+                        <span className="font-bold text-slate-200 print-text-black text-xs sm:text-sm break-words leading-tight" title={defeito.nome}>
                           {defeito.nome}
                         </span>
-                        <span className="font-black text-rose-400 print-text-black text-xs">
+                        <span className="font-bold text-rose-400 print-text-black text-[11px] sm:text-xs shrink-0">
                           {defeito.total} ocorrências ({defeito.percent.toFixed(1)}%)
                         </span>
                       </div>

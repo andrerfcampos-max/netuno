@@ -476,8 +476,8 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
               {isGestor && (
                 <button 
                   onClick={() => onToggleMission && onToggleMission(id)}
-                  className={`flex-1 flex items-center justify-center gap-0.5 py-1 rounded font-bold text-[10px] transition-all ${
-                    isSelected ? 'bg-red-700 text-white' : 'bg-cyan-700 text-white hover:bg-cyan-600'
+                  className={`flex-1 flex items-center justify-center gap-0.5 py-1.5 rounded font-black text-[10px] transition-all active:scale-95 ${
+                    isSelected ? 'bg-rose-600 text-white shadow-sm ring-1 ring-rose-400' : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm ring-1 ring-cyan-400/40'
                   }`}
                   title={isSelected ? 'Remover da Missão' : 'Adicionar à Missão'}
                 >

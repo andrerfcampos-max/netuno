@@ -240,10 +240,10 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                     <button
                       onClick={() => onCenterMap(h)}
                       className="flex items-center justify-center gap-1 py-1.5 px-2 bg-slate-750 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-slate-650"
-                      title="Ver Dialog no Mapa"
+                      title="Ver Detalhes e Ficha no Mapa"
                     >
                       <MessageSquareText size={13} className="text-cyan-400" />
-                      <span>Dialog</span>
+                      <span>Detalhes</span>
                     </button>
 
                     <button
@@ -377,7 +377,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                       <div className="flex flex-nowrap items-center justify-center gap-1.5">
                         <button
                           onClick={() => onCenterMap(h)}
-                          title="Abrir Dialog no Mapa"
+                          title="Abrir Detalhes e Ficha no Mapa"
                           className="flex items-center justify-center gap-1 p-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors active:scale-95 flex-shrink-0 font-bold text-xs"
                         >
                           <MessageSquareText size={16} />

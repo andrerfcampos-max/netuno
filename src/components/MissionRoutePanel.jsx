@@ -437,14 +437,14 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto mb-2 bg-slate-800/50 rounded-xl p-2 border border-slate-700">
+      <div className="flex-1 overflow-y-auto mb-1.5 bg-slate-800/50 rounded-xl p-2 border border-slate-700 scroll-pt-2">
         {missionHydrants.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-4">
             <MapPin size={48} className="opacity-20" />
             <p className="text-base">Nenhum hidrante na missão.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2.5">
             {pendingRoute.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <h3 className="text-slate-300 font-bold uppercase tracking-wider text-xs flex items-center gap-1.5 border-b border-slate-700 pb-1">
@@ -474,74 +474,33 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
         )}
       </div>
 
-      {/* Ações do Rodapé da Rota (Grid 2x2 no Mobile / Flex no Desktop) */}
-      <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-1.5 pb-1 pt-1.5 border-t border-slate-700 relative flex-shrink-0">
+      {/* Ações do Rodapé da Rota (Grade Compacta de 1 Linha com 4 Ações) */}
+      <div className={`grid ${((currentUser?.role === 'gestor' || currentUser?.role === 'admin') && onGenerateReport) ? 'grid-cols-4' : 'grid-cols-3'} gap-1 pb-1 pt-1.5 border-t border-slate-700 relative flex-shrink-0`}>
 
         <button 
           onClick={handleShareWhatsApp}
           disabled={pendingRoute.length === 0}
-          className="h-9 flex items-center justify-center gap-1 bg-[#25D366] hover:bg-[#20bd5a] disabled:opacity-50 text-white font-bold px-2 rounded-lg shadow active:scale-95 transition-all text-xs"
+          className="h-8 sm:h-9 flex items-center justify-center gap-1 bg-[#25D366] hover:bg-[#20bd5a] disabled:opacity-50 text-white font-bold px-1 rounded-lg shadow active:scale-95 transition-all text-[11px] truncate"
+          title="Compartilhar Rota no WhatsApp"
         >
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a5.8 5.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-          COMPARTILHAR
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" className="shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a5.8 5.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+          <span className="truncate">WhatsApp</span>
         </button>
 
         {/* Botão de Salvar Rota */}
         {(onSaveRouteToFolder && folders) && (
-          <div className="relative">
-            <button 
-              onClick={() => {
-                setSaveRouteName(currentMission?.name || 'Rascunho de Hoje');
-                setSaveFolderId(currentMission?.parentFolderId || '');
-                setShowSaveMenu(!showSaveMenu);
-              }}
-              className="w-full h-9 flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2 rounded-lg shadow active:scale-95 transition-all text-xs"
-              title="Salvar Rota na Central"
-            >
-              <Save size={15} />
-              SALVAR ROTA
-            </button>
-            
-            {showSaveMenu && (
-              <div className="absolute bottom-full mb-2 right-0 w-64 bg-slate-800 border border-slate-600 rounded-lg shadow-[0_0_20px_rgba(0,0,0,0.8)] p-3 z-[9999] flex flex-col gap-3">
-                <h4 className="text-sm font-bold text-white mb-1">Salvar Rota</h4>
-                <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Nome da Missão</label>
-                  <input 
-                    type="text" 
-                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white" 
-                    value={saveRouteName} 
-                    onChange={e => setSaveRouteName(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Pasta de Destino</label>
-                  <select 
-                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
-                    value={saveFolderId}
-                    onChange={e => setSaveFolderId(e.target.value)}
-                  >
-                    <option value="">Raiz (Sem pasta)</option>
-                    {folders.map(f => (
-                      <option key={f.id} value={f.id}>{f.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex gap-2 justify-end mt-1">
-                  <button onClick={() => setShowSaveMenu(false)} className="text-xs px-3 py-1.5 text-slate-400 hover:text-white">Cancelar</button>
-                  <button 
-                    onClick={() => {
-                      onSaveRouteToFolder(saveFolderId ? String(saveFolderId) : null, saveRouteName);
-                      setShowSaveMenu(false);
-                    }} 
-                    className="text-xs px-3 py-1.5 bg-emerald-600 text-white font-bold rounded hover:bg-emerald-500"
-                  >
-                    Salvar
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <button 
+            onClick={() => {
+              setSaveRouteName(currentMission?.name || 'Rascunho de Hoje');
+              setSaveFolderId(currentMission?.parentFolderId || '');
+              setShowSaveMenu(true);
+            }}
+            className="h-8 sm:h-9 flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-1 rounded-lg shadow active:scale-95 transition-all text-[11px] truncate"
+            title="Salvar Rota na Central"
+          >
+            <Save size={13} className="shrink-0" />
+            <span className="truncate">Salvar</span>
+          </button>
         )}
         
         {(!currentMission || !currentMission.createdBy || currentMission.createdBy === currentUser?.matricula) && (
@@ -552,11 +511,11 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
               }
             }}
             disabled={missionHydrants.length === 0}
-            className="h-9 flex items-center justify-center gap-1 bg-slate-700 hover:bg-red-600 disabled:opacity-50 text-white font-bold px-2 rounded-lg shadow active:scale-95 transition-all text-xs"
+            className="h-8 sm:h-9 flex items-center justify-center gap-1 bg-slate-750 hover:bg-red-700 disabled:opacity-50 text-slate-200 hover:text-white font-bold px-1 rounded-lg shadow active:scale-95 transition-all text-[11px] border border-slate-650 truncate"
             title="Limpar Seleção de Rota"
           >
-            <X size={15} />
-            LIMPAR ROTA
+            <RotateCcw size={13} className="shrink-0 text-slate-400" />
+            <span className="truncate">Limpar</span>
           </button>
         )}
         
@@ -564,14 +523,83 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
           <button 
             onClick={onGenerateReport}
             disabled={missionHydrants.length === 0}
-            className="h-9 flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold px-2 rounded-lg shadow active:scale-95 transition-all text-xs truncate"
+            className="h-8 sm:h-9 flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold px-1 rounded-lg shadow active:scale-95 transition-all text-[11px] truncate"
             title="Gerar Relatório da Missão"
           >
-            <FolderOpen size={15} className="shrink-0" />
-            <span className="truncate">RELATÓRIO</span>
+            <FolderOpen size={13} className="shrink-0" />
+            <span className="truncate">Relatório</span>
           </button>
         )}
       </div>
+
+      {/* Modal Seguro e Responsivo de Salvar Rota */}
+      {showSaveMenu && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn"
+          onClick={() => setShowSaveMenu(false)}
+        >
+          <div 
+            className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-4 shadow-2xl flex flex-col gap-3.5 animate-scaleUp"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
+                <Save size={16} /> Salvar Rota de Missão
+              </h4>
+              <button 
+                onClick={() => setShowSaveMenu(false)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div>
+              <label className="text-xs font-semibold text-slate-300 mb-1 block">Nome da Missão</label>
+              <input 
+                type="text" 
+                className="w-full bg-slate-800 border border-slate-700 focus:border-emerald-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" 
+                value={saveRouteName} 
+                onChange={e => setSaveRouteName(e.target.value)}
+                placeholder="Ex: Ronda Preventiva Gama"
+                autoFocus
+              />
+            </div>
+            
+            <div>
+              <label className="text-xs font-semibold text-slate-300 mb-1 block">Pasta de Destino (Quartel)</label>
+              <select 
+                className="w-full bg-slate-800 border border-slate-700 focus:border-emerald-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                value={saveFolderId}
+                onChange={e => setSaveFolderId(e.target.value)}
+              >
+                <option value="">Raiz (Sem pasta)</option>
+                {folders?.map(f => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2 border-t border-slate-800">
+              <button 
+                onClick={() => setShowSaveMenu(false)} 
+                className="text-xs px-3.5 py-2 text-slate-400 hover:text-white font-semibold rounded-lg bg-slate-800"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  onSaveRouteToFolder(saveFolderId ? String(saveFolderId) : null, saveRouteName);
+                  setShowSaveMenu(false);
+                }} 
+                className="text-xs px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-md active:scale-95 transition-all"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

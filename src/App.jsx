@@ -1220,9 +1220,9 @@ function App() {
         )}
       </main>
 
-      {/* BARRA DE NAVEGAÇÃO INFERIOR ERGONÔMICA NO MOBILE (BOTTOM NAV) */}
+      {/* BARRA DE NAVEGAÇÃO INFERIOR ERGONÔMICA NO MOBILE (BOTTOM NAV FIXA) */}
       {!isMapFullscreen && (
-        <nav className="md:hidden flex-shrink-0 bg-slate-900/95 border-t border-slate-700/80 backdrop-blur-md px-2 py-1.5 z-30 flex items-center justify-around shadow-lg">
+        <nav className="md:hidden flex-shrink-0 bg-slate-900/98 border-t border-slate-700/90 backdrop-blur-md px-2 py-1 z-40 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.5)] min-h-[52px]">
           <button
             onClick={() => setActiveView('map')}
             className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all ${
