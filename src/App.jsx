@@ -472,29 +472,74 @@ function App() {
     return RA_LIST.map(r => r.name).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }, [hidrantes]);
 
-  // Extrair Anos dinamicamente
+  // Extrair Anos dinamicamente baseado na Cidade/RA selecionada
   const anosVistoria = useMemo(() => {
+    let baseList = hidrantes;
+    if (activeFilters.ra && activeFilters.ra !== '__TODAS__') {
+      baseList = baseList.filter(h => h.dscLocalidade === activeFilters.ra);
+    }
     const anos = new Set();
-    hidrantes.forEach(h => {
+    baseList.forEach(h => {
       if (h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') {
         const match = h.datHoraUltimaVistoria.match(/\b(20\d{2})\b/);
         if (match) anos.add(match[1]);
       }
     });
     return Array.from(anos).sort((a, b) => b - a); // decrescente
-  }, [hidrantes]);
+  }, [hidrantes, activeFilters.ra]);
 
-  // Extrair Problemas dinamicamente
+  // Extrair Problemas dinamicamente baseado na Cidade/RA e Período selecionados
   const problemasVistoria = useMemo(() => {
+    let baseList = hidrantes;
+    if (activeFilters.ra && activeFilters.ra !== '__TODAS__') {
+      baseList = baseList.filter(h => h.dscLocalidade === activeFilters.ra);
+    }
+    if (activeFilters.periodo) {
+      baseList = baseList.filter(h => {
+        const d = parseDate(h.datHoraUltimaVistoria);
+        if (!d) return false;
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        if (activeFilters.periodo === 'hoje') {
+          return d.getTime() === hoje.getTime();
+        } else if (activeFilters.periodo === 'semana') {
+          const start = new Date(hoje);
+          start.setDate(start.getDate() - start.getDay());
+          return d >= start;
+        } else if (activeFilters.periodo === 'mes') {
+          return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
+        } else if (activeFilters.periodo === 'ano_atual') {
+          return d.getFullYear() === hoje.getFullYear();
+        } else if (activeFilters.periodo.startsWith('ano-')) {
+          const targetYear = parseInt(activeFilters.periodo.split('-')[1]);
+          return d.getFullYear() === targetYear;
+        } else if (activeFilters.periodo === 'personalizado') {
+          if (activeFilters.dataInicio) {
+            const start = new Date(activeFilters.dataInicio + 'T00:00:00');
+            if (d < start) return false;
+          }
+          if (activeFilters.dataFim) {
+            const end = new Date(activeFilters.dataFim + 'T23:59:59');
+            if (d > end) return false;
+          }
+          return true;
+        }
+        return true;
+      });
+    }
+    if (activeFilters.status && activeFilters.status !== 'Todos') {
+      const isOperante = activeFilters.status === 'Operante';
+      baseList = baseList.filter(h => h.flgAtivo === isOperante);
+    }
     const problemas = new Set();
-    hidrantes.forEach(h => {
+    baseList.forEach(h => {
       if (h.problemasHidrante) {
         const list = extractProblemsList(h.problemasHidrante);
         list.forEach(p => problemas.add(p));
       }
     });
-    return Array.from(problemas).sort();
-  }, [hidrantes]);
+    return Array.from(problemas).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [hidrantes, activeFilters.ra, activeFilters.periodo, activeFilters.dataInicio, activeFilters.dataFim, activeFilters.status]);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];

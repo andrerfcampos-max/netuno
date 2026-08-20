@@ -304,11 +304,24 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         eventHandlers={{
           click: (e) => {
             if (e.originalEvent && (e.originalEvent.ctrlKey || e.originalEvent.metaKey)) {
+              if (e.target && typeof e.target.closePopup === 'function') {
+                e.target.closePopup();
+              }
               if (onToggleMission) {
                 onToggleMission(id);
-                e.originalEvent.preventDefault();
-                e.originalEvent.stopPropagation();
               }
+              if (e.originalEvent.preventDefault) e.originalEvent.preventDefault();
+              if (e.originalEvent.stopPropagation) e.originalEvent.stopPropagation();
+              setTimeout(() => {
+                if (e.target && typeof e.target.closePopup === 'function') {
+                  e.target.closePopup();
+                }
+              }, 0);
+              setTimeout(() => {
+                if (e.target && typeof e.target.closePopup === 'function') {
+                  e.target.closePopup();
+                }
+              }, 50);
             }
           },
           dblclick: (e) => {

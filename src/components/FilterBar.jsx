@@ -67,6 +67,32 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
     };
   });
 
+  useEffect(() => {
+    let needsUpdate = false;
+    let updated = { ...filters };
+
+    if (filters.periodo && filters.periodo.startsWith('ano-')) {
+      const year = filters.periodo.replace('ano-', '');
+      if (anos.length > 0 && !anos.includes(year)) {
+        updated.periodo = '';
+        needsUpdate = true;
+      }
+    }
+
+    if (filters.problema && problemasAtivos.length > 0 && !problemasAtivos.includes(filters.problema)) {
+      updated.problema = '';
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      setFilters(updated);
+      try {
+        localStorage.setItem('netuno_saved_filters', JSON.stringify(updated));
+      } catch (e) {}
+      onFilterChange(updated);
+    }
+  }, [anos, problemasAtivos]);
+
   const handleChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);

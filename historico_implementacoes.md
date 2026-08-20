@@ -228,3 +228,15 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **4. Eliminação Definitiva de Sobreposições e Ajuste do Mapa (`MapComponent.jsx`, `App.jsx`):**
   - Ajustado `MapComponent` para `h-full min-h-[300px] w-full`, adaptando-se perfeitamente à tela de qualquer smartphone sem rolagem vertical desnecessária.
   - Alinhada hierarquia de z-index: Header (z-30), MissionTabs (z-25), FilterBar (z-20), Botões (z-10), Modais (z-50) e Mapa (z-0).
+
+### [20/08/2026] Etapa 44 Concluída: Gráficos Comparativos Multicidades no Relatório Geral e CAESB, Ctrl+Clique sem Dialog e Filtros em Cascata Dinâmica
+- **1. Gráficos Comparativos Multicidades no Relatório Geral e CAESB (`MissionReportPanel.jsx`):**
+  - Quando "Todas as Cidades" ou múltiplas RAs estão selecionadas:
+    - **Relatório Geral (CBMDF)**: Exibe painel comparativo de barras empilhadas horizontais (*Stacked Bar Chart*) com todas as cidades do DF divididas em **🟢 Operantes (Verde)** e **🔴 Inoperantes (Vermelho)**, ordenadas por inoperância e criticidade com contagem e percentuais individuais. Adicionado painel de **Top Defeitos do DF** com indicação das top 4 cidades com maior incidência daquele problema específico.
+    - **Relatório CAESB (Manutenção)**: Exibe o ranking de demandas de reparos por cidade e matriz detalhada dos principais defeitos com identificação das regiões onde a CAESB deve priorizar equipes e peças de reposição.
+  - Quando apenas uma cidade está selecionada, o relatório mantém a visão simplificada e focada exclusivamente naquela localidade.
+- **2. Seleção de Rota com Ctrl + Clique sem Abrir Dialog (`MapComponent.jsx`):**
+  - Corrigido o evento de clique no mapa: ao clicar em um marcador segurando a tecla Ctrl (ou Cmd no Mac), o hidrante é adicionado/removido da Rota de Missão ativa e o popup/dialog é suprimido imediatamente (`closePopup`), sem abrir a dialog na tela.
+- **3. Filtros em Cascata Dinâmica e Auto-Saneamento (`FilterBar.jsx`, `App.jsx`):**
+  - O seletor de Anos e de Problemas agora calcula suas opções disponíveis dinamicamente com base na Cidade/RA e filtros antecedentes selecionados.
+  - Implementado auto-reset inteligente: ao alterar a cidade ou o período, se a seleção anterior não existir no novo subconjunto, o campo é limpo automaticamente, eliminando qualquer retorno de tela com resultados vazios.

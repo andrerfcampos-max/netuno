@@ -85,6 +85,76 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       }));
   }, [currentData]);
 
+  // Estatísticas Detalhadas por Cidade (para visão multi-cidade)
+  const cityOperabilityStats = useMemo(() => {
+    const statsByCity = {};
+    currentData.forEach(h => {
+      const city = h.dscLocalidade || 'Não informada';
+      if (!statsByCity[city]) {
+        statsByCity[city] = { nome: city, total: 0, operantes: 0, inoperantes: 0 };
+      }
+      statsByCity[city].total += 1;
+      if (h.flgAtivo) {
+        statsByCity[city].operantes += 1;
+      } else {
+        statsByCity[city].inoperantes += 1;
+      }
+    });
+
+    return Object.values(statsByCity)
+      .map(c => ({
+        ...c,
+        operantesPercent: c.total > 0 ? ((c.operantes / c.total) * 100).toFixed(1) : '0.0',
+        inoperantesPercent: c.total > 0 ? ((c.inoperantes / c.total) * 100).toFixed(1) : '0.0',
+      }))
+      .sort((a, b) => {
+        if (b.inoperantes !== a.inoperantes) return b.inoperantes - a.inoperantes;
+        return b.total - a.total;
+      });
+  }, [currentData]);
+
+  const isMultiCity = cityOperabilityStats.length > 1;
+
+  // Top Defeitos com distribuição pelas Cidades com maior incidência
+  const topDefeitosComCidades = useMemo(() => {
+    const defeitosMap = {};
+    let totalDefeitos = 0;
+    currentData.forEach(h => {
+      const city = h.dscLocalidade || 'Não informada';
+      const countDefect = (p) => {
+        if (!defeitosMap[p]) {
+          defeitosMap[p] = { nome: p, total: 0, cidades: {} };
+        }
+        defeitosMap[p].total += 1;
+        defeitosMap[p].cidades[city] = (defeitosMap[p].cidades[city] || 0) + 1;
+        totalDefeitos += 1;
+      };
+
+      if (h.problemasHidrante) {
+        const problemas = extractProblemsList(h.problemasHidrante);
+        problemas.forEach(p => countDefect(p));
+      } else if (!h.flgAtivo) {
+        countDefect('Inoperante (sem detalhe)');
+      }
+    });
+
+    return Object.values(defeitosMap)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 6)
+      .map(d => {
+        const topCidades = Object.entries(d.cidades)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 4)
+          .map(([cidade, qtd]) => ({ cidade, qtd }));
+        return {
+          nome: d.nome,
+          total: d.total,
+          percent: totalDefeitos > 0 ? (d.total / totalDefeitos) * 100 : 0,
+          topCidades
+        };
+      });
+  }, [currentData]);
+
   const raStats = useMemo(() => {
     const counts = {};
     currentData.forEach(h => {
@@ -94,7 +164,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     const max = Math.max(...Object.values(counts), 1);
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
+      .slice(0, 8)
       .map(([nome, count]) => ({ nome, count, percent: (count / max) * 100 }));
   }, [currentData]);
 
@@ -421,54 +491,200 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
         {/* KPIs e GRÁFICOS */}
         {reportType === 'interno' ? (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8 print-flex print-flex-row">
+          <div className="flex flex-col gap-6 mb-8">
             
-            {/* Bloco de Totais */}
-            <div className="md:col-span-4 flex flex-col justify-between gap-4 print-w-1/3">
-              <div className="bg-slate-700 p-4 rounded-lg border border-slate-600 print-border-gray print-bg-white flex-1 flex flex-col justify-center">
-                <div className="text-slate-400 text-sm font-bold uppercase mb-1">Total Vistoriado</div>
-                <div className="text-3xl font-black text-white print-text-black">{total}</div>
-              </div>
-              <div className="bg-emerald-900/40 p-4 rounded-lg border border-emerald-800 print-border-gray print-bg-white flex-1 flex justify-between items-end">
-                <div>
-                  <div className="text-emerald-400 text-sm font-bold uppercase mb-1">Operantes</div>
-                  <div className="text-3xl font-black text-emerald-400 print-text-black">{operantes}</div>
+            {/* Bloco de Totais e Indicador Geral */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 print-flex print-flex-row">
+              {/* Bloco de Totais Numéricos */}
+              <div className="md:col-span-8 grid grid-cols-3 gap-3">
+                <div className="bg-slate-750 bg-slate-800 p-4 rounded-xl border border-slate-700 print-border-gray print-bg-white flex flex-col justify-center shadow-sm">
+                  <div className="text-slate-400 text-xs sm:text-sm font-bold uppercase mb-1 truncate">Total Vistoriado</div>
+                  <div className="text-2xl sm:text-3xl font-black text-white print-text-black">{total}</div>
                 </div>
-                <div className="text-emerald-500 font-bold mb-1 text-lg">{operantesPercent}%</div>
-              </div>
-              <div className="bg-red-900/40 p-4 rounded-lg border border-red-800 print-border-gray print-bg-white flex-1 flex justify-between items-end">
-                <div>
-                  <div className="text-red-400 text-sm font-bold uppercase mb-1">Inoperantes</div>
-                  <div className="text-3xl font-black text-red-500 print-text-black">{inoperantes}</div>
+                <div className="bg-emerald-950/40 p-4 rounded-xl border border-emerald-800/60 print-border-gray print-bg-white flex flex-col justify-between shadow-sm">
+                  <div className="text-emerald-400 text-xs sm:text-sm font-bold uppercase mb-1 truncate">Operantes</div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl sm:text-3xl font-black text-emerald-400 print-text-black">{operantes}</span>
+                    <span className="text-emerald-400 font-bold text-sm sm:text-base">{operantesPercent}%</span>
+                  </div>
                 </div>
-                <div className="text-red-500 font-bold mb-1 text-lg">{inoperantesPercent}%</div>
+                <div className="bg-red-950/40 p-4 rounded-xl border border-red-800/60 print-border-gray print-bg-white flex flex-col justify-between shadow-sm">
+                  <div className="text-red-400 text-xs sm:text-sm font-bold uppercase mb-1 truncate">Inoperantes</div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl sm:text-3xl font-black text-red-500 print-text-black">{inoperantes}</span>
+                    <span className="text-red-400 font-bold text-sm sm:text-base">{inoperantesPercent}%</span>
+                  </div>
+                </div>
               </div>
-            </div>
-            
-            {/* Bloco de Gráficos Principais */}
-            <div className="md:col-span-8 flex flex-col gap-4">
-              <div className="flex flex-col md:flex-row gap-6 bg-slate-800 p-4 rounded-lg border border-slate-700 print-border-gray print-bg-white items-center justify-around page-break-inside-avoid print-w-full">
-                <div className="flex flex-col items-center gap-4">
-                  <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider text-center">Índice de Operacionalidade</h3>
-                  <div className="relative w-32 h-32 rounded-full print-donut shadow-inner border-4 border-slate-900 print-border-white" style={{ background: `conic-gradient(#34d399 ${operantesPercent}%, #ef4444 ${operantesPercent}% 100%)` }}>
+
+              {/* Donut Geral de Operacionalidade */}
+              <div className="md:col-span-4 bg-slate-800 p-4 rounded-xl border border-slate-700 print-border-gray print-bg-white flex items-center justify-around shadow-sm page-break-inside-avoid">
+                <div className="flex flex-col items-center">
+                  <h3 className="text-xs font-bold text-slate-300 print-text-black uppercase tracking-wider text-center mb-2">Operacionalidade Geral</h3>
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full print-donut shadow-inner border-4 border-slate-900 print-border-white" style={{ background: `conic-gradient(#10b981 ${operantesPercent}%, #ef4444 ${operantesPercent}% 100%)` }}>
                     <div className="absolute inset-2 bg-slate-800 print-bg-white rounded-full flex flex-col items-center justify-center shadow-md">
-                      <span className="text-xl font-black text-white print-text-black">{operantesPercent}%</span>
-                      <span className="text-[10px] text-slate-400 print-text-black font-bold uppercase">OK</span>
+                      <span className="text-lg sm:text-xl font-black text-white print-text-black">{operantesPercent}%</span>
+                      <span className="text-[9px] text-slate-400 print-text-black font-bold uppercase">OK</span>
                     </div>
                   </div>
                 </div>
+                <div className="flex flex-col gap-2 text-xs font-semibold">
+                  <div className="flex items-center gap-1.5 text-emerald-400 print-text-black">
+                    <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                    <span>{operantes} Operantes</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-red-400 print-text-black">
+                    <span className="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+                    <span>{inoperantes} Inoperantes</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SEÇÃO MULTI-CIDADES: Comparativo de Operacionalidade por Cidade e Quebra de Problemas */}
+            {isMultiCity ? (
+              <div className="space-y-6">
                 
-                <div className="flex-1 w-full flex flex-col justify-center max-w-sm">
-                  <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Top Defeitos Registrados</h3>
+                {/* 1. Gráfico de Barras Empilhadas por Cidade */}
+                <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 print-border-gray print-bg-white shadow-sm page-break-inside-avoid">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-slate-700 print-border-gray gap-2">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-100 print-text-black uppercase tracking-wide">
+                        📊 Comparativo de Operacionalidade por Cidade (RAs)
+                      </h3>
+                      <p className="text-xs text-slate-400 print-text-gray">
+                        Cidades ordenadas por volume de hidrantes inoperantes e necessidade de atenção operacional.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs font-bold self-start sm:self-auto">
+                      <span className="flex items-center gap-1 text-emerald-400 print-text-black">
+                        <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500"></span> Operante
+                      </span>
+                      <span className="flex items-center gap-1 text-red-400 print-text-black">
+                        <span className="w-2.5 h-2.5 rounded-sm bg-red-500"></span> Inoperante
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3.5">
+                    {cityOperabilityStats.map((c, idx) => (
+                      <div key={idx} className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center text-xs font-medium">
+                          <span className="text-slate-200 print-text-black font-bold text-sm">
+                            {c.nome} <span className="text-slate-400 font-normal text-xs">({c.total} hidrantes)</span>
+                          </span>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-emerald-400 print-text-black font-bold">🟢 {c.operantes} ({c.operantesPercent}%)</span>
+                            <span className="text-slate-500">|</span>
+                            <span className={`font-bold ${c.inoperantes > 0 ? 'text-red-400 print-text-black' : 'text-slate-400'}`}>
+                              🔴 {c.inoperantes} ({c.inoperantesPercent}%)
+                            </span>
+                          </div>
+                        </div>
+                        {/* Barra Empilhada (Stacked Bar) */}
+                        <div className="w-full h-3 bg-slate-700/80 rounded-full overflow-hidden flex shadow-inner print-bg-gray">
+                          <div 
+                            className="bg-emerald-500 h-full transition-all duration-700" 
+                            style={{ width: `${c.operantesPercent}%` }}
+                            title={`${c.nome}: ${c.operantes} operantes (${c.operantesPercent}%)`}
+                          ></div>
+                          <div 
+                            className="bg-red-500 h-full transition-all duration-700" 
+                            style={{ width: `${c.inoperantesPercent}%` }}
+                            title={`${c.nome}: ${c.inoperantes} inoperantes (${c.inoperantesPercent}%)`}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 2. Top Defeitos com Distribuição pelas Cidades com Maior Incidência */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 page-break-inside-avoid">
+                  
+                  <div className="lg:col-span-7 bg-slate-800 p-5 rounded-xl border border-slate-700 print-border-gray print-bg-white shadow-sm">
+                    <h3 className="text-sm font-bold text-slate-100 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">
+                      ⚠️ Top Defeitos do DF e Cidades Mais Afetadas
+                    </h3>
+                    {topDefeitosComCidades.length > 0 ? (
+                      <div className="space-y-4">
+                        {topDefeitosComCidades.map((defeito, idx) => (
+                          <div key={idx} className="flex flex-col gap-1.5">
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="font-bold text-slate-200 print-text-black text-sm truncate max-w-[70%]" title={defeito.nome}>
+                                {defeito.nome}
+                              </span>
+                              <span className="font-black text-red-400 print-text-black text-xs">
+                                {defeito.total} ocorr. ({defeito.percent.toFixed(1)}%)
+                              </span>
+                            </div>
+                            
+                            {/* Barra de Progresso Geral */}
+                            <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden print-bg-gray">
+                              <div className="bg-gradient-to-r from-red-600 to-red-400 h-full print-bg-black transition-all duration-1000" style={{ width: `${defeito.percent}%` }}></div>
+                            </div>
+
+                            {/* Cidades Líderes desse Defeito */}
+                            {defeito.topCidades && defeito.topCidades.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                <span className="text-[10px] text-slate-400 uppercase font-semibold">Cidades c/ maior foco:</span>
+                                {defeito.topCidades.map((tc, tcIdx) => (
+                                  <span key={tcIdx} className="text-[11px] bg-slate-700/80 print-bg-gray text-slate-200 print-text-black px-2 py-0.5 rounded font-medium border border-slate-600">
+                                    📍 <strong>{tc.cidade}</strong>: {tc.qtd}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500 text-center italic mt-4">Nenhum defeito registrado no período.</p>
+                    )}
+                  </div>
+
+                  {/* Vistorias por Ano */}
+                  <div className="lg:col-span-5 bg-slate-800 p-5 rounded-xl border border-slate-700 print-border-gray print-bg-white shadow-sm flex flex-col justify-start">
+                    <h3 className="text-sm font-bold text-slate-100 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">
+                      📅 Distribuição Temporal (Vistorias por Ano)
+                    </h3>
+                    {yearStats.length > 0 ? (
+                      <div className="space-y-3">
+                        {yearStats.map((y, idx) => (
+                          <div key={idx} className="flex flex-col gap-1">
+                            <div className="flex justify-between text-xs text-slate-300 print-text-black">
+                              <span className="font-bold text-sm">{y.nome}</span>
+                              <span className="font-black text-emerald-400 print-text-black">{y.count} vistorias</span>
+                            </div>
+                            <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden print-bg-gray">
+                              <div className="bg-emerald-500 h-full print-bg-black transition-all duration-1000" style={{ width: `${y.percent}%` }}></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500 text-center italic mt-4">Sem histórico temporal.</p>
+                    )}
+                  </div>
+
+                </div>
+
+              </div>
+            ) : (
+              /* MODO CIDADE ÚNICA */
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 page-break-inside-avoid">
+                {/* Top Defeitos */}
+                <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 print-border-gray print-bg-white shadow-sm">
+                  <h3 className="text-sm font-bold text-slate-200 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Top Defeitos Registrados</h3>
                   {topDefeitos.length > 0 ? (
-                    <div className="space-y-3">
-                      {topDefeitos.slice(0, 4).map((defeito, idx) => (
+                    <div className="space-y-3.5">
+                      {topDefeitos.map((defeito, idx) => (
                         <div key={idx} className="flex flex-col gap-1">
                           <div className="flex justify-between text-xs text-slate-300 print-text-black">
                             <span className="truncate pr-2 font-medium" title={defeito.nome}>{defeito.nome}</span>
                             <span className="font-bold">{defeito.count}</span>
                           </div>
-                          <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden print-bg-gray">
+                          <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden print-bg-gray">
                             <div className="bg-red-500 h-full print-bg-black transition-all duration-1000" style={{ width: `${defeito.percent}%` }}></div>
                           </div>
                         </div>
@@ -478,42 +694,19 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                     <p className="text-sm text-slate-500 text-center italic mt-4">Nenhum defeito registrado.</p>
                   )}
                 </div>
-              </div>
 
-              {/* Gráficos de RA e Anos */}
-              <div className="flex flex-col md:flex-row gap-4 page-break-inside-avoid">
-                <div className="flex-1 bg-slate-800 p-4 rounded-lg border border-slate-700 print-border-gray print-bg-white flex flex-col justify-center">
-                  <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Distribuição por Região (RAs)</h3>
-                  {raStats.length > 0 ? (
-                    <div className="space-y-3">
-                      {raStats.map((ra, idx) => (
-                        <div key={idx} className="flex flex-col gap-1">
-                          <div className="flex justify-between text-xs text-slate-300 print-text-black">
-                            <span className="font-medium">{ra.nome}</span>
-                            <span className="font-bold">{ra.count} vist.</span>
-                          </div>
-                          <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden print-bg-gray">
-                            <div className="bg-blue-500 h-full print-bg-black transition-all duration-1000" style={{ width: `${ra.percent}%` }}></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-500 text-center italic mt-4">Sem dados regionais.</p>
-                  )}
-                </div>
-                
-                <div className="flex-1 bg-slate-800 p-4 rounded-lg border border-slate-700 print-border-gray print-bg-white flex flex-col justify-center">
-                  <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Vistorias por Ano</h3>
+                {/* Vistorias por Ano */}
+                <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 print-border-gray print-bg-white shadow-sm">
+                  <h3 className="text-sm font-bold text-slate-200 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Vistorias por Ano</h3>
                   {yearStats.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-3.5">
                       {yearStats.map((y, idx) => (
                         <div key={idx} className="flex flex-col gap-1">
                           <div className="flex justify-between text-xs text-slate-300 print-text-black">
                             <span className="font-medium">{y.nome}</span>
                             <span className="font-bold">{y.count} vist.</span>
                           </div>
-                          <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden print-bg-gray">
+                          <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden print-bg-gray">
                             <div className="bg-emerald-500 h-full print-bg-black transition-all duration-1000" style={{ width: `${y.percent}%` }}></div>
                           </div>
                         </div>
@@ -524,29 +717,81 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                   )}
                 </div>
               </div>
-            </div>
+            )}
+
           </div>
         ) : (
-          /* CAESB KPIs e Gráficos */
-          <div className="flex flex-col md:flex-row gap-6 mb-8 page-break-inside-avoid">
-            <div className="bg-red-900/20 p-6 rounded-lg border border-red-800/50 print-border-gray print-bg-white flex-shrink-0 flex flex-col items-center justify-center min-w-[200px] shadow-sm">
-              <div className="text-slate-400 text-sm font-bold uppercase mb-2">Total de Reparos</div>
-              <div className="text-6xl font-black text-red-500 print-text-black drop-shadow-md">{total}</div>
+          /* CAESB KPIs e GRÁFICOS (MODO MULTI-CIDADE E CIDADE ÚNICA) */
+          <div className="flex flex-col gap-6 mb-8 page-break-inside-avoid">
+            
+            {/* Bloco de Totais de Reparo CAESB */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="bg-red-950/30 p-5 rounded-xl border border-red-800/60 print-border-gray print-bg-white flex-shrink-0 flex flex-col items-center justify-center min-w-[220px] shadow-sm">
+                <div className="text-slate-400 text-xs sm:text-sm font-bold uppercase mb-1">Total de Hidrantes para Reparo</div>
+                <div className="text-5xl font-black text-red-500 print-text-black drop-shadow-md">{total}</div>
+                <div className="text-xs text-slate-400 mt-2 text-center">Encaminhamento para manutenção CAESB</div>
+              </div>
+
+              {/* Se for multi-cidade, exibe o ranking regional de reparos */}
+              {isMultiCity && (
+                <div className="flex-1 bg-slate-800 p-5 rounded-xl border border-slate-700 print-border-gray print-bg-white shadow-sm">
+                  <h3 className="text-sm font-bold text-slate-100 print-text-black uppercase tracking-wider mb-3 border-b border-slate-700 print-border-gray pb-2 flex items-center justify-between">
+                    <span>🏢 Demanda de Manutenção por Cidade (Ranking CAESB)</span>
+                    <span className="text-xs font-normal text-slate-400">{cityOperabilityStats.filter(c => c.inoperantes > 0).length} cidades com alterações</span>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-1">
+                    {cityOperabilityStats.filter(c => c.inoperantes > 0 || c.total > 0).map((c, idx) => (
+                      <div key={idx} className="flex flex-col gap-1 p-2 bg-slate-750 bg-slate-900/60 rounded-lg border border-slate-700/50">
+                        <div className="flex justify-between text-xs">
+                          <span className="font-bold text-slate-200 print-text-black">{c.nome}</span>
+                          <span className="font-black text-orange-400 print-text-black">{c.total} reparos</span>
+                        </div>
+                        <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden print-bg-gray">
+                          <div 
+                            className="bg-orange-500 h-full print-bg-black" 
+                            style={{ width: `${total > 0 ? (c.total / total) * 100 : 0}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             
-            <div className="flex-1 bg-slate-800/50 p-6 rounded-lg border border-slate-700 print-border-gray print-bg-white shadow-sm">
-              <h3 className="text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">Principais Tipos de Problemas (CAESB)</h3>
-              {topDefeitos.length > 0 ? (
+            {/* Principais Defeitos CAESB com Foco Regional */}
+            <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 print-border-gray print-bg-white shadow-sm">
+              <h3 className="text-sm font-bold text-slate-100 print-text-black uppercase tracking-wider mb-4 border-b border-slate-700 print-border-gray pb-2">
+                🛠️ Principais Tipos de Defeitos para Intervenção CAESB {isMultiCity && 'e Cidades com Maior Volume'}
+              </h3>
+              {topDefeitosComCidades.length > 0 ? (
                 <div className="space-y-4">
-                  {topDefeitos.map((defeito, idx) => (
-                    <div key={idx} className="flex flex-col gap-1">
-                      <div className="flex justify-between text-sm text-slate-300 print-text-black">
-                        <span className="truncate pr-4" title={defeito.nome}>{defeito.nome}</span>
-                        <span className="font-bold flex-shrink-0 text-orange-400 print-text-black">{defeito.count} ocorr.</span>
+                  {topDefeitosComCidades.map((defeito, idx) => (
+                    <div key={idx} className="flex flex-col gap-1.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-slate-200 print-text-black text-sm truncate max-w-[70%]" title={defeito.nome}>
+                          {defeito.nome}
+                        </span>
+                        <span className="font-black text-orange-400 print-text-black text-xs">
+                          {defeito.total} ocorrências ({defeito.percent.toFixed(1)}%)
+                        </span>
                       </div>
-                      <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden print-bg-gray">
+                      
+                      <div className="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden print-bg-gray">
                         <div className="bg-gradient-to-r from-orange-600 to-orange-400 h-full print-bg-black transition-all duration-1000" style={{ width: `${defeito.percent}%` }}></div>
                       </div>
+
+                      {/* Cidades onde a CAESB deve priorizar peças e equipes */}
+                      {isMultiCity && defeito.topCidades && defeito.topCidades.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                          <span className="text-[10px] text-slate-400 uppercase font-semibold">Priorizar em:</span>
+                          {defeito.topCidades.map((tc, tcIdx) => (
+                            <span key={tcIdx} className="text-[11px] bg-slate-700/80 print-bg-gray text-slate-200 print-text-black px-2 py-0.5 rounded font-medium border border-slate-600">
+                              📍 <strong>{tc.cidade}</strong>: {tc.qtd}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -554,6 +799,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                 <p className="text-sm text-slate-500 italic mt-4">Nenhum defeito de manutenção registrado.</p>
               )}
             </div>
+
           </div>
         )}
 
