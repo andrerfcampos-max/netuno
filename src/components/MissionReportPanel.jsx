@@ -125,8 +125,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         inoperantesPercent: c.total > 0 ? ((c.inoperantes / c.total) * 100).toFixed(1) : '0.0',
       }))
       .sort((a, b) => {
-        if (b.inoperantes !== a.inoperantes) return b.inoperantes - a.inoperantes;
-        return b.total - a.total;
+        if (b.total !== a.total) return b.total - a.total;
+        return b.inoperantes - a.inoperantes;
       });
   }, [currentData]);
 
@@ -578,7 +578,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                         📊 Comparativo de Operacionalidade por Cidade (RAs)
                       </h3>
                       <p className="text-xs text-slate-400 print-text-gray">
-                        Cidades ordenadas por volume de hidrantes inoperantes e necessidade de atenção operacional.
+                        Cidades ordenadas por volume total de hidrantes cadastrados / vistoriados (ordem decrescente).
                       </p>
                     </div>
                     <div className="flex items-center gap-3 text-xs font-bold self-start sm:self-auto">
@@ -758,42 +758,74 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           </div>
         ) : (
           /* CAESB KPIs e GRÁFICOS (MODO MULTI-CIDADE E CIDADE ÚNICA) */
-          <div className="flex flex-col gap-6 mb-8 page-break-inside-avoid">
+          <div className="space-y-6 page-break-inside-avoid">
             
             {/* Bloco de Totais de Reparo CAESB */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="bg-red-950/30 p-5 rounded-xl border border-red-800/60 print-border-gray print-bg-white flex-shrink-0 flex flex-col items-center justify-center min-w-[220px] shadow-sm">
-                <div className="text-slate-400 text-xs sm:text-sm font-bold uppercase mb-1">Total de Hidrantes para Reparo</div>
+            <div className="bg-red-950/30 p-5 rounded-xl border border-red-800/60 print-border-gray print-bg-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-center gap-4">
                 <div className="text-5xl font-black text-red-500 print-text-black drop-shadow-md">{total}</div>
-                <div className="text-xs text-slate-400 mt-2 text-center">Encaminhamento para manutenção CAESB</div>
+                <div>
+                  <div className="text-slate-100 text-sm sm:text-base font-extrabold uppercase">Total de Hidrantes para Reparo</div>
+                  <div className="text-xs text-slate-400">Encaminhamento para manutenção preventiva e corretiva CAESB</div>
+                </div>
               </div>
-
-              {/* Se for multi-cidade, exibe o ranking regional de reparos */}
               {isMultiCity && (
-                <div className="flex-1 bg-slate-800 p-5 rounded-xl border border-slate-700 print-border-gray print-bg-white shadow-sm">
-                  <h3 className="text-sm font-bold text-slate-100 print-text-black uppercase tracking-wider mb-3 border-b border-slate-700 print-border-gray pb-2 flex items-center justify-between">
-                    <span>🏢 Demanda de Manutenção por Cidade (Ranking CAESB)</span>
-                    <span className="text-xs font-normal text-slate-400">{cityOperabilityStats.filter(c => c.inoperantes > 0).length} cidades com alterações</span>
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-1">
-                    {cityOperabilityStats.filter(c => c.inoperantes > 0 || c.total > 0).map((c, idx) => (
-                      <div key={idx} className="flex flex-col gap-1 p-2 bg-slate-750 bg-slate-900/60 rounded-lg border border-slate-700/50">
-                        <div className="flex justify-between text-xs">
-                          <span className="font-bold text-slate-200 print-text-black">{c.nome}</span>
-                          <span className="font-black text-orange-400 print-text-black">{c.total} reparos</span>
-                        </div>
-                        <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden print-bg-gray">
-                          <div 
-                            className="bg-orange-500 h-full print-bg-black" 
-                            style={{ width: `${total > 0 ? (c.total / total) * 100 : 0}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                <div className="text-xs font-bold text-orange-400 bg-orange-950/40 px-3.5 py-2 rounded-lg border border-orange-800/50">
+                  📍 {cityOperabilityStats.filter(c => c.total > 0).length} cidades com demanda de reparo
                 </div>
               )}
             </div>
+
+            {/* Se for multi-cidade, exibe a Demanda de Manutenção por Cidade em Barras Horizontais Idêntico ao Relatório Geral */}
+            {isMultiCity && (
+              <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 print-border-gray print-bg-white shadow-sm page-break-inside-avoid">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-slate-700 print-border-gray gap-2">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-100 print-text-black uppercase tracking-wide">
+                      🏢 Demanda de Manutenção por Cidade (Ranking CAESB)
+                    </h3>
+                    <p className="text-xs text-slate-400 print-text-gray">
+                      Cidades ordenadas por volume de hidrantes que necessitam de intervenção ou reparo (ordem decrescente).
+                    </p>
+                  </div>
+                  <div className="text-xs font-bold text-slate-400 self-start sm:self-auto">
+                    Total CAESB: <span className="text-orange-400 font-black">{total} reparos</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3.5">
+                  {cityOperabilityStats.filter(c => c.total > 0).map((c, idx) => {
+                    const percentDF = total > 0 ? ((c.total / total) * 100).toFixed(1) : '0.0';
+                    return (
+                      <div key={idx} className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center text-xs font-medium">
+                          <span className="text-slate-200 print-text-black font-bold text-sm">
+                            {c.nome} <span className="text-slate-400 font-normal text-xs">({c.total} hidrantes para reparo)</span>
+                          </span>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-orange-400 print-text-black font-black">
+                              🛠️ {c.total} reparos ({percentDF}% do DF)
+                            </span>
+                          </div>
+                        </div>
+                        {/* Barra Proporcional ao Volume de Reparos da Cidade */}
+                        <div className="w-full h-3 bg-slate-900/60 rounded-full overflow-hidden flex shadow-inner print-bg-gray border border-slate-700/50">
+                          <div 
+                            className="h-full rounded-full overflow-hidden flex transition-all duration-700"
+                            style={{ width: `${Math.max(6, (c.total / maxCityTotal) * 100)}%` }}
+                          >
+                            <div 
+                              className="bg-orange-500 h-full transition-all duration-700 hover:brightness-110 w-full rounded-full" 
+                              title={`${c.nome}: ${c.total} reparos (${percentDF}% do DF)`}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             
             {/* Principais Defeitos CAESB com Foco Regional */}
             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 print-border-gray print-bg-white shadow-sm">
