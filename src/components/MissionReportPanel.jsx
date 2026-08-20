@@ -90,11 +90,15 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         totalDefeitos++;
       }
     });
+    const max = Math.max(...Object.values(defeitosCount), 1);
     return Object.entries(defeitosCount)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([nome, count]) => ({
-        nome, count, percent: totalDefeitos > 0 ? (count / totalDefeitos) * 100 : 0
+        nome,
+        count,
+        percent: totalDefeitos > 0 ? (count / totalDefeitos) * 100 : 0,
+        barPercent: (count / max) * 100
       }));
   }, [currentData]);
 
@@ -156,6 +160,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       }
     });
 
+    const maxDefeito = Math.max(...Object.values(defeitosMap).map(d => d.total), 1);
+
     return Object.values(defeitosMap)
       .sort((a, b) => b.total - a.total)
       .slice(0, 6)
@@ -168,6 +174,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           nome: d.nome,
           total: d.total,
           percent: totalDefeitos > 0 ? (d.total / totalDefeitos) * 100 : 0,
+          barPercent: (d.total / maxDefeito) * 100,
           topCidades
         };
       });
@@ -643,8 +650,11 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                             </div>
                             
                             {/* Barra de Progresso Geral */}
-                            <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden print-bg-gray">
-                              <div className="bg-gradient-to-r from-red-600 to-red-400 h-full print-bg-black transition-all duration-1000" style={{ width: `${defeito.percent}%` }}></div>
+                            <div className="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden print-bg-gray">
+                              <div 
+                                className="bg-red-500 h-full print-bg-black transition-all duration-700" 
+                                style={{ width: `${Math.max(4, defeito.barPercent)}%` }}
+                              ></div>
                             </div>
 
                             {/* Cidades Líderes desse Defeito */}
@@ -707,8 +717,11 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                             <span className="truncate pr-2 font-medium" title={defeito.nome}>{defeito.nome}</span>
                             <span className="font-bold">{defeito.count}</span>
                           </div>
-                          <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden print-bg-gray">
-                            <div className="bg-red-500 h-full print-bg-black transition-all duration-1000" style={{ width: `${defeito.percent}%` }}></div>
+                          <div className="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden print-bg-gray">
+                            <div 
+                              className="bg-red-500 h-full print-bg-black transition-all duration-700" 
+                              style={{ width: `${Math.max(4, defeito.barPercent)}%` }}
+                            ></div>
                           </div>
                         </div>
                       ))}
@@ -801,7 +814,10 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                       </div>
                       
                       <div className="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden print-bg-gray">
-                        <div className="bg-gradient-to-r from-orange-600 to-orange-400 h-full print-bg-black transition-all duration-1000" style={{ width: `${defeito.percent}%` }}></div>
+                        <div 
+                          className="bg-orange-500 h-full print-bg-black transition-all duration-700" 
+                          style={{ width: `${Math.max(4, defeito.barPercent)}%` }}
+                        ></div>
                       </div>
 
                       {/* Cidades onde a CAESB deve priorizar peças e equipes */}
