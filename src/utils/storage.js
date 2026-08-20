@@ -22,14 +22,19 @@ export const loadMissions = () => {
       }
     }
 
-    // Merge: MOCK_TEST_MISSIONS são sempre garantidas na fase de testes
+    // Merge: MOCK_TEST_MISSIONS são sempre garantidas com hidrantes reais da base
     const mockIds = new Set(MOCK_TEST_MISSIONS.map(m => m.id));
-    const userCustomMissions = savedMissions.filter(m => !mockIds.has(m.id));
+    // Remove mocks obsoletos e preserva apenas missões criadas pelo usuário
+    const userCustomMissions = savedMissions.filter(m => !m.id?.startsWith('mock-') && !mockIds.has(m.id));
 
-    // Se o usuário interagiu e atualizou alguma missão mock, preserva seu progresso local
+    // Se o usuário interagiu e atualizou alguma missão mock atual, preserva vistorias concluídas válidas
     const mergedMocks = MOCK_TEST_MISSIONS.map(mock => {
       const existing = savedMissions.find(m => m.id === mock.id);
-      return existing ? { ...mock, ...existing } : mock;
+      if (existing && Array.isArray(existing.completedIds)) {
+        const validCompleted = existing.completedIds.filter(id => mock.selectedIds.includes(id));
+        return { ...mock, completedIds: validCompleted, updatedAt: existing.updatedAt || mock.updatedAt };
+      }
+      return mock;
     });
 
     return [...mergedMocks, ...userCustomMissions];
