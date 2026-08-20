@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, MapPin, AlertCircle, RefreshCw } from 'lucide-react';
 
 const DEFEITOS_OFICIAIS = [
