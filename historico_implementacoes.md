@@ -282,6 +282,18 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **4. Quebra de Linha e Padding nos Relatórios (`MissionReportPanel.jsx`):**
   - No ranking de "Principais Tipos de Defeitos para Intervenção CAESB" e nos Top Defeitos do CBMDF, os nomes técnicos dos defeitos agora quebram linha de forma limpa (`break-words leading-tight`), eliminando reticências no meio do texto.
   - Adicionado padding inferior estendido (`pb-36`) para que nenhum card de defeito ou tabela fique encoberto pelos botões de exportação ou pela barra de navegação inferior.
-- **5. Destaque Visual e Conforto no Popup do Mapa (`MapComponent.jsx`):**
-  - Botão de adicionar/remover da missão (`+ Rota` / `✕ Rota`) estilizado com cores nítidas e alto contraste (`bg-cyan-600` / `bg-rose-600`).
+### [20/08/2026] Etapa 49 Concluída: Unificação de Ações de Rota, Menu Suspenso de Exportação no Relatório, Ajustes de KPIs e Correção da Barra de Progresso nas Missões
+- **1. Despoluição do Topo e Unificação de Ações de Rota (`App.jsx`, `MissionRoutePanel.jsx`):**
+  - Removida a renderização da barra de abas superiores (`MissionTabs`) do layout principal no `App.jsx`, liberando altura útil no topo e eliminando a duplicidade da aba "Rascunho de Hoje".
+  - No `MissionRoutePanel.jsx`, o cabeçalho foi simplificado (mantendo o nome e badges de progresso/pasta) e a função de renomeação/salvamento foi unificada exclusivamente no botão principal "Salvar" do rodapé (com seleção de pasta de quartel).
+- **2. Título Oficial e Identificação de RA no Cabeçalho do Relatório (`MissionReportPanel.jsx`):**
+  - Título padronizado para **"Relatório de Vistoria"** (em substituição a "Relatório Tático").
+  - Incluído no cabeçalho do Relatório Geral (CBMDF) o badge com as Regiões Administrativas filtradas (`Regiões Administrativas (RAs): {rasPresentes}`), garantindo paridade visual com o Relatório CAESB.
+- **3. Ajuste Visual em KPIs e Gráficos de Defeitos (`MissionReportPanel.jsx`):**
+  - Cards de Métricas (`Total`, `Operantes`, `Inoperantes`): Tipografia compacta nos títulos sem cortes por reticências, com números principais em destaque e percentuais posicionados de forma harmônica em badges coloridos.
+  - Gráficos de Top Defeitos e Defeitos CAESB: Layout fluido com badges estilizados (`12 ocorr. (32.4%)`), evitando quebras verticais encavaladas no mobile.
+- **4. Menu Suspenso de Exportação/Compartilhamento (`MissionReportPanel.jsx`):**
+  - A barra flutuante horizontal fixa antiga que cobria o rodapé e sobrepunha modais foi substituída por um **Menu Suspenso / Botão de Ação Único** (`[📤 Exportar / Compartilhar ▾]`) com as 4 opções (*PDF*, *Copiar p/ SEI*, *WhatsApp*, *CSV*), acessível na toolbar superior e em botão flutuante discreto.
+- **5. Correção do Overflow da Barra de Progresso na Central de Missões (`MissionManagerModal.jsx`):**
+  - Aplicado `w-full min-w-0` e `overflow-hidden` no container da barra de progresso nos cards de missões, com limitador de percentual (`Math.min(100, Math.max(0, progress))`), impedindo que a barra extrapole a box do card no mobile.
 

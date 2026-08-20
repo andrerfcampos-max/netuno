@@ -1038,20 +1038,7 @@ function App() {
         </div>
       </header>
 
-      {/* TABS DE MISSÃO GLOBAL */}
-      {!isMapFullscreen && (
-        <div className="flex-shrink-0 z-25">
-          <MissionTabs 
-            missions={missions}
-            activeMissionId={activeMissionId}
-            openMissionIds={openMissionIds}
-            onTabClick={setActiveMissionId}
-            onCloseTab={handleCloseTab}
-            onNewMission={currentUser.role === 'gestor' || currentUser.role === 'admin' ? handleNewMission : undefined}
-            currentUser={currentUser}
-          />
-        </div>
-      )}
+
 
       {/* MÓDULO 1: BARRA DE FILTROS FIXA NO TOPO (SEMPRE VISÍVEL) */}
       {!isMapFullscreen && (

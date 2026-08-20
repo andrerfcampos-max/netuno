@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown } from 'lucide-react';
+import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown, Share2, ChevronDown, Check } from 'lucide-react';
 import { extractProblemsList, sanitizeProblem } from '../utils/problemUtils';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser }) => {
   const [isMaximized, setIsMaximized] = useState(false);
   const panelRef = useRef(null);
   const [copied, setCopied] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [reportType, setReportType] = useState(() => {
     return localStorage.getItem('lastReportType') || 'interno';
   });
@@ -13,6 +14,24 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   useEffect(() => {
     localStorage.setItem('lastReportType', reportType);
   }, [reportType]);
+
+  // Fecha dropdown ao clicar fora
+  const exportDropdownRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target)) {
+        setIsExportMenuOpen(false);
+      }
+    };
+    if (isExportMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isExportMenuOpen]);
 
   const parseDate = (dateStr) => {
     if (!dateStr || dateStr === '-') return 0;
@@ -430,8 +449,52 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         }
       `}</style>
       
-      {/* BOTÕES FLUTUANTES (ELEVADOR) */}
-      <div className="fixed right-4 bottom-24 z-50 flex flex-col gap-2 no-print">
+      {/* BOTÕES FLUTUANTES (ELEVADOR + EXPORTAÇÃO RÁPIDA) */}
+      <div className="fixed right-3 sm:right-4 bottom-20 sm:bottom-24 z-50 flex flex-col gap-2 no-print">
+        {/* Botão Flutuante de Compartilhar/Exportar */}
+        <div className="relative">
+          <button 
+            onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} 
+            className="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all active:scale-95 flex items-center justify-center"
+            title="Exportar / Compartilhar Relatório"
+          >
+            <Share2 size={20} />
+          </button>
+
+          {isExportMenuOpen && (
+            <div className="absolute right-0 bottom-full mb-2 w-56 sm:w-60 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-[120] py-1.5 text-xs sm:text-sm text-slate-200 animate-scaleUp">
+              <button 
+                onClick={() => { handlePrint(); setIsExportMenuOpen(false); }}
+                className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+              >
+                <Printer size={16} className="text-cyan-400 shrink-0" />
+                <span>Imprimir / Gerar PDF</span>
+              </button>
+              <button 
+                onClick={() => { handleCopySEI(); setIsExportMenuOpen(false); }}
+                className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+              >
+                <Copy size={16} className="text-amber-400 shrink-0" />
+                <span>{copied ? 'Copiado para o SEI!' : 'Copiar p/ SEI'}</span>
+              </button>
+              <button 
+                onClick={() => { handleWhatsApp(); setIsExportMenuOpen(false); }}
+                className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+              >
+                <MessageCircle size={16} className="text-emerald-400 shrink-0" />
+                <span>Compartilhar WhatsApp</span>
+              </button>
+              <button 
+                onClick={() => { handleExportCSV(); setIsExportMenuOpen(false); }}
+                className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+              >
+                <Download size={16} className="text-blue-400 shrink-0" />
+                <span>Exportar Planilha (CSV)</span>
+              </button>
+            </div>
+          )}
+        </div>
+
         <button 
           onClick={scrollToTop} 
           className="p-3 bg-slate-700/80 backdrop-blur hover:bg-slate-600 text-white rounded-full shadow-[0_0_15px_rgba(0,0,0,0.3)] transition-all active:scale-95"
@@ -450,63 +513,176 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
 
       {/* TOOLBAR SUPERIOR NO PRINT */}
-      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 pb-2 border-b border-slate-700 no-print px-2 lg:px-0 gap-4 ${isMaximized ? 'sticky top-0 z-[110] bg-slate-900/95 backdrop-blur-sm pt-4 shadow-sm' : ''}`}>
-        <h2 className="text-xl font-bold text-blue-400 flex items-center gap-2 drop-shadow-sm">
-          <FileSpreadsheet size={24} /> 
-          Módulo Relatório
-        </h2>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 pb-2 border-b border-slate-700 no-print px-2 lg:px-0 gap-3 ${isMaximized ? 'sticky top-0 z-[110] bg-slate-900/95 backdrop-blur-sm pt-4 shadow-sm' : ''}`}>
+        <div className="flex items-center justify-between w-full lg:w-auto gap-2">
+          <h2 className="text-lg sm:text-xl font-bold text-blue-400 flex items-center gap-2 drop-shadow-sm truncate">
+            <FileSpreadsheet size={22} className="shrink-0" /> 
+            <span>Relatório de Vistoria</span>
+          </h2>
+
+          <div className="flex items-center gap-1.5 lg:hidden">
+            {/* Menu Suspenso de Exportação no Mobile */}
+            <div className="relative" ref={exportDropdownRef}>
+              <button 
+                onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-md active:scale-95 transition-all"
+              >
+                <Share2 size={14} />
+                <span>Exportar</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${isExportMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isExportMenuOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-56 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-[120] py-1.5 text-xs text-slate-200 animate-scaleUp">
+                  <button 
+                    onClick={() => { handlePrint(); setIsExportMenuOpen(false); }}
+                    className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                  >
+                    <Printer size={16} className="text-cyan-400 shrink-0" />
+                    <span>Imprimir / Gerar PDF</span>
+                  </button>
+                  <button 
+                    onClick={() => { handleCopySEI(); setIsExportMenuOpen(false); }}
+                    className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                  >
+                    <Copy size={16} className="text-amber-400 shrink-0" />
+                    <span>{copied ? 'Copiado para o SEI!' : 'Copiar p/ SEI'}</span>
+                  </button>
+                  <button 
+                    onClick={() => { handleWhatsApp(); setIsExportMenuOpen(false); }}
+                    className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                  >
+                    <MessageCircle size={16} className="text-emerald-400 shrink-0" />
+                    <span>Compartilhar WhatsApp</span>
+                  </button>
+                  <button 
+                    onClick={() => { handleExportCSV(); setIsExportMenuOpen(false); }}
+                    className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                  >
+                    <Download size={16} className="text-blue-400 shrink-0" />
+                    <span>Exportar Planilha (CSV)</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button 
+              onClick={() => setIsMaximized(!isMaximized)} 
+              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition-colors border border-slate-600"
+              title={isMaximized ? "Minimizar" : "Maximizar"}
+            >
+              {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            </button>
+            <button onClick={onClose} className="p-1.5 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 rounded-lg transition-colors border border-slate-600">
+              <X size={18} />
+            </button>
+          </div>
+        </div>
         
         <div className="flex bg-slate-800 rounded-lg p-1 w-full lg:w-auto shadow-inner border border-slate-700">
           <button 
             onClick={() => setReportType('interno')}
-            className={`flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-md font-bold text-sm transition-all ${reportType === 'interno' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-1.5 sm:py-2 rounded-md font-bold text-xs sm:text-sm transition-all ${reportType === 'interno' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
           >
-            <ShieldHalf size={16} /> Relatório Geral (CBMDF)
+            <ShieldHalf size={15} /> Relatório Geral (CBMDF)
           </button>
           <button 
             onClick={() => setReportType('caesb')}
-            className={`flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-md font-bold text-sm transition-all ${reportType === 'caesb' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-1.5 sm:py-2 rounded-md font-bold text-xs sm:text-sm transition-all ${reportType === 'caesb' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
           >
-            <Building2 size={16} /> Relatório de Alterações (CAESB)
+            <Building2 size={15} /> Relatório de Alterações (CAESB)
           </button>
         </div>
 
-        <div className="flex gap-2 self-end lg:self-auto">
+        {/* Controles Desktop */}
+        <div className="hidden lg:flex items-center gap-2">
+          {/* Dropdown Desktop */}
+          <div className="relative" ref={exportDropdownRef}>
+            <button 
+              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-md active:scale-95 transition-all"
+            >
+              <Share2 size={16} />
+              <span>Exportar / Compartilhar</span>
+              <ChevronDown size={16} className={`transition-transform duration-200 ${isExportMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isExportMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-60 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-[120] py-1.5 text-sm text-slate-200 animate-scaleUp">
+                <button 
+                  onClick={() => { handlePrint(); setIsExportMenuOpen(false); }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                >
+                  <Printer size={16} className="text-cyan-400 shrink-0" />
+                  <span>Imprimir / Gerar PDF</span>
+                </button>
+                <button 
+                  onClick={() => { handleCopySEI(); setIsExportMenuOpen(false); }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                >
+                  <Copy size={16} className="text-amber-400 shrink-0" />
+                  <span>{copied ? 'Copiado para o SEI!' : 'Copiar p/ SEI'}</span>
+                </button>
+                <button 
+                  onClick={() => { handleWhatsApp(); setIsExportMenuOpen(false); }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                >
+                  <MessageCircle size={16} className="text-emerald-400 shrink-0" />
+                  <span>Compartilhar WhatsApp</span>
+                </button>
+                <button 
+                  onClick={() => { handleExportCSV(); setIsExportMenuOpen(false); }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                >
+                  <Download size={16} className="text-blue-400 shrink-0" />
+                  <span>Exportar Planilha (CSV)</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           <button 
             onClick={() => setIsMaximized(!isMaximized)} 
             className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full transition-colors border border-slate-600"
             title={isMaximized ? "Minimizar" : "Maximizar"}
           >
-            {isMaximized ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
+            {isMaximized ? <Minimize2 size={22} /> : <Maximize2 size={22} />}
           </button>
           <button onClick={onClose} className="p-2 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 rounded-full transition-colors border border-slate-600">
-            <X size={24} />
+            <X size={22} />
           </button>
         </div>
       </div>
 
       {/* ÁREA IMPRIMÍVEL (Relatório) */}
-      <div className="w-full h-auto bg-slate-800/50 lg:bg-slate-800 rounded-xl p-4 lg:p-6 border border-slate-700 report-content print-bg-white print-text-black pb-36">
+      <div className="w-full h-auto bg-slate-800/50 lg:bg-slate-800 rounded-xl p-3 sm:p-6 border border-slate-700 report-content print-bg-white print-text-black pb-24">
         
         {/* CABEÇALHO DA PÁGINA IMPRESSA */}
-        <div className="text-center mb-8 border-b-2 border-slate-700 print-border-black pb-4">
+        <div className="text-center mb-6 sm:mb-8 border-b-2 border-slate-700 print-border-black pb-4">
           {reportType === 'interno' ? (
             <>
-              <h1 className="text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
-              <h2 className="text-lg text-slate-300 print-text-black mt-1 uppercase">Sistema Netuno - Relatório Tático de Vistoria</h2>
-              <div className="mt-4 flex flex-col items-center text-sm text-slate-400 print-text-black bg-slate-700/30 print-bg-transparent py-2 rounded">
-                <span><strong>Filtro / Missão:</strong> {currentMission ? currentMission.name : 'Geral (Filtrado)'}</span>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
+              <h2 className="text-base sm:text-lg text-slate-300 print-text-black mt-1 uppercase font-bold">Sistema Netuno - Relatório de Vistoria</h2>
+              <div className="mt-4 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
+                <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
+                  <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Todas as Cidades / DF Completo'}
+                </span>
+                {currentMission && (
+                  <span className="text-[11px] sm:text-xs text-slate-400 print-text-black font-semibold mt-1">
+                    <strong>Missão Ativa:</strong> {currentMission.name}
+                  </span>
+                )}
               </div>
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
-              <h2 className="text-lg text-emerald-400 print-text-black mt-1 uppercase font-black">Solicitação de Manutenção de Hidrantes Urbanos de Incêndio - CBMDF / CAESB</h2>
-              <p className="text-xs text-slate-400 print-text-gray mt-1 uppercase tracking-wider font-bold">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
+              <h2 className="text-base sm:text-lg text-emerald-400 print-text-black mt-1 uppercase font-black">Solicitação de Manutenção de Hidrantes Urbanos de Incêndio - CBMDF / CAESB</h2>
+              <p className="text-[11px] sm:text-xs text-slate-400 print-text-gray mt-1 uppercase tracking-wider font-bold">
                 De acordo com o Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019
               </p>
-              <div className="mt-4 flex flex-col items-center text-sm text-slate-300 print-text-black">
-                <span className="bg-slate-700/50 print-bg-transparent px-4 py-2 rounded-full border border-slate-600 print-border-gray shadow-sm">
+              <div className="mt-4 flex flex-col items-center text-xs sm:text-sm text-slate-300 print-text-black">
+                <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
                   <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Nenhuma região filtrada'}
                 </span>
               </div>
@@ -516,50 +692,50 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
         {/* KPIs e GRÁFICOS */}
         {reportType === 'interno' ? (
-          <div className="flex flex-col gap-6 mb-8">
+          <div className="flex flex-col gap-5 sm:gap-6 mb-8">
             
             {/* Bloco de Totais e Indicador Geral */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 print-flex print-flex-row">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 print-flex print-flex-row">
               {/* Bloco de Totais Numéricos */}
-              <div className="md:col-span-8 grid grid-cols-3 gap-3">
-                <div className="bg-slate-750 bg-slate-800 p-4 rounded-xl border border-slate-700 print-border-gray print-bg-white flex flex-col justify-center shadow-sm">
-                  <div className="text-slate-400 text-xs sm:text-sm font-bold uppercase mb-1 truncate">Total Vistoriado</div>
-                  <div className="text-2xl sm:text-3xl font-black text-white print-text-black">{total}</div>
+              <div className="md:col-span-8 grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="bg-slate-800 p-2.5 sm:p-4 rounded-xl border border-slate-700 print-border-gray print-bg-white flex flex-col justify-between shadow-sm">
+                  <div className="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1 truncate">Total Vistoriado</div>
+                  <div className="text-xl sm:text-3xl font-black text-white print-text-black">{total}</div>
                 </div>
-                <div className="bg-emerald-950/40 p-4 rounded-xl border border-emerald-800/60 print-border-gray print-bg-white flex flex-col justify-between shadow-sm">
-                  <div className="text-emerald-400 text-xs sm:text-sm font-bold uppercase mb-1 truncate">Operantes</div>
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-2xl sm:text-3xl font-black text-emerald-400 print-text-black">{operantes}</span>
-                    <span className="text-emerald-400 font-bold text-sm sm:text-base">{operantesPercent}%</span>
+                <div className="bg-emerald-950/40 p-2.5 sm:p-4 rounded-xl border border-emerald-800/60 print-border-gray print-bg-white flex flex-col justify-between shadow-sm">
+                  <div className="text-emerald-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1 truncate">Operantes</div>
+                  <div className="flex items-baseline justify-between gap-1 flex-wrap">
+                    <span className="text-xl sm:text-3xl font-black text-emerald-400 print-text-black">{operantes}</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-emerald-300 bg-emerald-900/60 px-1.5 py-0.5 rounded border border-emerald-700/60">{operantesPercent}%</span>
                   </div>
                 </div>
-                <div className="bg-red-950/40 p-4 rounded-xl border border-red-800/60 print-border-gray print-bg-white flex flex-col justify-between shadow-sm">
-                  <div className="text-red-400 text-xs sm:text-sm font-bold uppercase mb-1 truncate">Inoperantes</div>
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-2xl sm:text-3xl font-black text-red-500 print-text-black">{inoperantes}</span>
-                    <span className="text-red-400 font-bold text-sm sm:text-base">{inoperantesPercent}%</span>
+                <div className="bg-red-950/40 p-2.5 sm:p-4 rounded-xl border border-red-800/60 print-border-gray print-bg-white flex flex-col justify-between shadow-sm">
+                  <div className="text-red-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1 truncate">Inoperantes</div>
+                  <div className="flex items-baseline justify-between gap-1 flex-wrap">
+                    <span className="text-xl sm:text-3xl font-black text-red-500 print-text-black">{inoperantes}</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-red-300 bg-red-900/60 px-1.5 py-0.5 rounded border border-red-700/60">{inoperantesPercent}%</span>
                   </div>
                 </div>
               </div>
 
               {/* Donut Geral de Operacionalidade */}
-              <div className="md:col-span-4 bg-slate-800 p-4 rounded-xl border border-slate-700 print-border-gray print-bg-white flex items-center justify-around shadow-sm page-break-inside-avoid">
+              <div className="md:col-span-4 bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 print-border-gray print-bg-white flex items-center justify-around shadow-sm page-break-inside-avoid">
                 <div className="flex flex-col items-center">
-                  <h3 className="text-xs font-bold text-slate-300 print-text-black uppercase tracking-wider text-center mb-2">Operacionalidade Geral</h3>
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full print-donut shadow-inner border-4 border-slate-900 print-border-white" style={{ background: `conic-gradient(#10b981 ${operantesPercent}%, #ef4444 ${operantesPercent}% 100%)` }}>
-                    <div className="absolute inset-2 bg-slate-800 print-bg-white rounded-full flex flex-col items-center justify-center shadow-md">
-                      <span className="text-lg sm:text-xl font-black text-white print-text-black">{operantesPercent}%</span>
-                      <span className="text-[9px] text-slate-400 print-text-black font-bold uppercase">OK</span>
+                  <h3 className="text-[10px] sm:text-xs font-bold text-slate-300 print-text-black uppercase tracking-wider text-center mb-1.5">Operacionalidade Geral</h3>
+                  <div className="relative w-20 h-20 sm:w-28 sm:h-28 rounded-full print-donut shadow-inner border-4 border-slate-900 print-border-white" style={{ background: `conic-gradient(#10b981 ${operantesPercent}%, #ef4444 ${operantesPercent}% 100%)` }}>
+                    <div className="absolute inset-1.5 sm:inset-2 bg-slate-800 print-bg-white rounded-full flex flex-col items-center justify-center shadow-md">
+                      <span className="text-base sm:text-xl font-black text-white print-text-black">{operantesPercent}%</span>
+                      <span className="text-[8px] sm:text-[9px] text-slate-400 print-text-black font-bold uppercase">OK</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col gap-2 text-xs font-semibold">
+                <div className="flex flex-col gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold">
                   <div className="flex items-center gap-1.5 text-emerald-400 print-text-black">
-                    <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shrink-0"></span>
                     <span>{operantes} Operantes</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-red-400 print-text-black">
-                    <span className="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block shrink-0"></span>
                     <span>{inoperantes} Inoperantes</span>
                   </div>
                 </div>
@@ -644,7 +820,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                               <span className="font-bold text-slate-200 print-text-black text-xs sm:text-sm break-words leading-tight" title={defeito.nome}>
                                 {defeito.nome}
                               </span>
-                              <span className="font-bold text-red-400 print-text-black text-[11px] sm:text-xs shrink-0">
+                              <span className="font-bold text-rose-400 print-text-black text-[11px] sm:text-xs shrink-0 whitespace-nowrap bg-rose-950/40 border border-rose-800/40 px-2 py-0.5 rounded">
                                 {defeito.total} ocorr. ({defeito.percent.toFixed(1)}%)
                               </span>
                             </div>
@@ -713,9 +889,9 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                     <div className="space-y-3.5">
                       {topDefeitos.map((defeito, idx) => (
                         <div key={idx} className="flex flex-col gap-1">
-                          <div className="flex justify-between text-xs text-slate-300 print-text-black">
-                            <span className="truncate pr-2 font-medium" title={defeito.nome}>{defeito.nome}</span>
-                            <span className="font-bold">{defeito.count}</span>
+                          <div className="flex justify-between items-center text-xs text-slate-300 print-text-black gap-2">
+                            <span className="truncate font-medium" title={defeito.nome}>{defeito.nome}</span>
+                            <span className="font-bold text-rose-400 bg-rose-950/40 border border-rose-800/40 px-2 py-0.5 rounded text-[11px] shrink-0">{defeito.count} ocorr. ({defeito.percent.toFixed(1)}%)</span>
                           </div>
                           <div className="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden print-bg-gray">
                             <div 
@@ -840,8 +1016,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                         <span className="font-bold text-slate-200 print-text-black text-xs sm:text-sm break-words leading-tight" title={defeito.nome}>
                           {defeito.nome}
                         </span>
-                        <span className="font-bold text-rose-400 print-text-black text-[11px] sm:text-xs shrink-0">
-                          {defeito.total} ocorrências ({defeito.percent.toFixed(1)}%)
+                        <span className="font-bold text-rose-400 print-text-black text-[11px] sm:text-xs shrink-0 whitespace-nowrap bg-rose-950/40 border border-rose-800/40 px-2 py-0.5 rounded">
+                          {defeito.total} ocorr. ({defeito.percent.toFixed(1)}%)
                         </span>
                       </div>
                       
@@ -1005,31 +1181,6 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           <p className="mt-2 text-xs opacity-50">Sistema Netuno - CBMDF © {new Date().getFullYear()}</p>
         </div>
 
-      </div>
-
-      {/* BARRA FLUTUANTE DE EXPORTAÇÃO (Agrupada no final para Sticky Scroll) */}
-      <div className="sticky bottom-4 z-[90] flex justify-center w-full pointer-events-none no-print mt-4">
-        <div className="pointer-events-auto bg-slate-800/95 backdrop-blur border border-slate-600 p-2 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.5)] flex flex-wrap md:flex-nowrap gap-2 justify-center w-[95%] md:w-auto">
-          <button onClick={handlePrint} className="flex-1 md:flex-none px-4 flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-bold h-10 rounded-lg transition-all text-xs sm:text-sm">
-            <Printer size={16} />
-            <span className="hidden sm:inline">Imprimir / PDF</span>
-            <span className="sm:hidden">PDF</span>
-          </button>
-          <button onClick={handleCopySEI} className={`flex-1 md:flex-none px-4 flex items-center justify-center gap-2 ${copied ? 'bg-emerald-600' : 'bg-slate-700 hover:bg-slate-600'} text-white font-bold h-10 rounded-lg transition-all text-xs sm:text-sm`}>
-            <Copy size={16} />
-            <span className="hidden sm:inline">{copied ? 'Copiado!' : 'Copiar p/ SEI'}</span>
-            <span className="sm:hidden">{copied ? 'Copiado!' : 'SEI'}</span>
-          </button>
-          <button onClick={handleWhatsApp} className="flex-1 md:flex-none px-4 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold h-10 rounded-lg transition-all text-xs sm:text-sm">
-            <MessageCircle size={16} />
-            WhatsApp
-          </button>
-          <button onClick={handleExportCSV} className="flex-1 md:flex-none px-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold h-10 rounded-lg transition-all text-xs sm:text-sm">
-            <Download size={16} />
-            <span className="hidden sm:inline">Exportar CSV</span>
-            <span className="sm:hidden">CSV</span>
-          </button>
-        </div>
       </div>
     </div>
   );

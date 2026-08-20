@@ -349,61 +349,25 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <GitMerge size={20} className="text-emerald-400 flex-shrink-0" />
-                {isEditingName ? (
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <input 
-                      type="text" 
-                      value={editedName} 
-                      onChange={e => setEditedName(e.target.value)} 
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && editedName.trim()) {
-                          onUpdateMission({ name: editedName.trim(), isDraft: false });
-                          setIsEditingName(false);
-                        }
-                      }}
-                      className="bg-slate-800 border border-slate-600 text-white rounded px-2 py-1 text-xs sm:text-sm focus:outline-none focus:border-emerald-500 w-full sm:w-auto"
-                      placeholder="Nome da operação..."
-                      autoFocus
-                    />
-                    <button 
-                      onClick={() => {
-                        if (editedName.trim()) {
-                          onUpdateMission({ name: editedName.trim(), isDraft: false });
-                        }
-                        setIsEditingName(false);
-                      }}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded font-bold text-xs"
-                    >
-                      Salvar
-                    </button>
-                    <button onClick={() => setIsEditingName(false)} className="text-slate-400 hover:text-white px-2 py-1 text-xs">Cancelar</button>
-                  </div>
-                ) : (
-                    <div className="flex flex-col flex-1 min-w-0 relative">
-                      <div className="flex items-center gap-1.5 text-slate-300 w-full flex-wrap sm:flex-nowrap">
-                        <span className="font-bold text-sm sm:text-lg drop-shadow-sm truncate min-w-0 max-w-[160px] sm:max-w-none">{currentMission.name}</span>
-                        <span className="bg-emerald-900/80 border border-emerald-500 text-emerald-300 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full shadow shrink-0">
-                          Hoje: {vistoriasHoje}
-                        </span>
-                        {currentMission.isDraft && (
-                          <span className="bg-amber-900/50 text-amber-400 text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border border-amber-800 shrink-0">
-                            Não Salvo
-                          </span>
-                        )}
-                        {(!currentMission.createdBy || currentMission.createdBy === currentUser?.matricula) && (
-                          <button onClick={() => { setEditedName(currentMission.name === 'Rascunho de Hoje' ? '' : currentMission.name); setIsEditingName(true); }} className="text-slate-400 hover:text-emerald-400 transition-colors p-1 bg-slate-800 rounded shrink-0">
-                            <Edit size={12} />
-                          </button>
-                        )}
-                      </div>
-                    {/* Exibir Caminho da Pasta */}
-                    {!currentMission.isDraft && currentMission.parentFolderId && (
-                      <div className="text-[11px] font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
-                        <FolderOpen size={11} /> Pasta: {folders?.find(f => f.id === currentMission.parentFolderId)?.name || 'Central'}
-                      </div>
+                <div className="flex flex-col flex-1 min-w-0 relative">
+                  <div className="flex items-center gap-1.5 text-slate-300 w-full flex-wrap sm:flex-nowrap">
+                    <span className="font-bold text-sm sm:text-lg drop-shadow-sm truncate min-w-0 max-w-[200px] sm:max-w-none">{currentMission.name}</span>
+                    <span className="bg-emerald-900/80 border border-emerald-500 text-emerald-300 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full shadow shrink-0">
+                      Hoje: {vistoriasHoje}
+                    </span>
+                    {currentMission.isDraft && (
+                      <span className="bg-amber-900/50 text-amber-400 text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border border-amber-800 shrink-0">
+                        Não Salvo
+                      </span>
                     )}
                   </div>
-                )}
+                  {/* Exibir Caminho da Pasta */}
+                  {!currentMission.isDraft && currentMission.parentFolderId && (
+                    <div className="text-[11px] font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
+                      <FolderOpen size={11} /> Pasta: {folders?.find(f => f.id === currentMission.parentFolderId)?.name || 'Central'}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ) : (

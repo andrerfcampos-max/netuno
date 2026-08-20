@@ -10,10 +10,10 @@ Você atua como Engenheiro de Software e Arquitetos neste projeto. Nosso método
    - Inclua no JSON um `prompt` claro e autossuficiente indicando qual é o objetivo tático para o script `run_automation.js` rodar depois.
    - Quando a etapa pendente estiver perfeitamente formulada no JSON e aprovada pelo usuário, você ou o usuário deve rodar o script no terminal: `node run_automation.js`. O orquestrador cuidará da execução, versionamento e log no `historico_implementacoes.md`.
 4. **Testes de Qualidade:** Qualquer instrução sobre o QA deve seguir as regras de `QA_TESTING_GUIDE.md`, incluindo a seção de Testes Mobile e PWA em campo.
-5. **Deploy Contínuo e Testes Mobile (Produção):**
+5. **Deploy Contínuo e Testes Mobile (Produção Automática):**
    - **Repositório GitHub:** `https://github.com/andrerfcampos-max/netuno`
    - **Ambiente de Testes Mobile (Vercel):** `https://netuno-eight.vercel.app/`
-   - **Ciclo de Atualização:** Toda alteração validada localmente deve ser versionada com `git commit` e enviada via `git push origin main` para que a Vercel atualize o ambiente mobile imediatamente.
+   - **Ciclo Obrigatório de Atualização:** Toda e qualquer alteração (seja via `run_automation.js` ou conserto pontual) DEVE ser imediatamente commitada E enviada via `git push origin main`. Nunca deixe commits retidos apenas localmente, pois a Vercel dispara o deploy de produção automaticamente a cada push, garantindo que os testes mobile em campo reflitam sempre a versão mais recente e evitem retrabalho.
 6. **Procedimento Padrão de Abastecimento da Base de Dados (Exportações Argos):**
    - **Contexto:** Durante o período de testes, os dados do sistema legado Argos são exportados periodicamente em planilhas (`result (X).xlsx` ou `.csv`).
    - **Regra de Leitura e Higienização:**

@@ -442,13 +442,13 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
             const isCompleted = total > 0 && total === completed;
 
             return (
-              <div key={mission.id} className="bg-slate-700/50 border border-slate-600 rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:bg-slate-700 transition-colors">
-                <div className="flex-1 overflow-hidden">
+              <div key={mission.id} className="bg-slate-700/50 border border-slate-600 rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:bg-slate-700 transition-colors w-full">
+                <div className="flex-1 w-full min-w-0 overflow-hidden">
                   <h3 className="font-bold text-lg text-slate-200 truncate flex items-center gap-2">
-                    {isCompleted ? <CheckCircle size={18} className="text-emerald-500" /> : <Target size={18} className="text-amber-500" />}
-                    {mission.name}
+                    {isCompleted ? <CheckCircle size={18} className="text-emerald-500 shrink-0" /> : <Target size={18} className="text-amber-500 shrink-0" />}
+                    <span className="truncate">{mission.name}</span>
                     {mission.isDraft && (
-                       <span className="bg-amber-900/50 text-amber-500 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border border-amber-800">Rascunho</span>
+                       <span className="bg-amber-900/50 text-amber-500 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border border-amber-800 shrink-0">Rascunho</span>
                     )}
                   </h3>
                   
@@ -456,13 +456,13 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
                     <span>Criada em: {formatDate(mission.createdAt)}</span>
                   </div>
 
-                  <div className="mt-3">
+                  <div className="mt-3 w-full">
                     <div className="flex justify-between text-xs text-slate-300 mb-1 font-semibold">
                       <span>Progresso: {completed}/{total} hidrantes</span>
                       <span>{progress}%</span>
                     </div>
-                    <div className="w-full bg-slate-800 rounded-full h-2">
-                      <div className={`h-2 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-emerald-400'}`} style={{ width: `${progress}%` }}></div>
+                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                      <div className={`h-2 rounded-full transition-all duration-500 ${isCompleted ? 'bg-emerald-500' : 'bg-emerald-400'}`} style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}></div>
                     </div>
                   </div>
                 </div>

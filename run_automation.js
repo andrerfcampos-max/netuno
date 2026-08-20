@@ -23,13 +23,16 @@ function logToHistory(stepId, stepName) {
 }
 
 function runGitCommit(stepId, stepName) {
-  console.log(`\n[Git] Salvando estado (commit) para a Etapa ${stepId}...`);
+  console.log(`\n[Git] Salvando estado (commit & push) para a Etapa ${stepId}...`);
   try {
     execSync('git add .');
     execSync(`git commit -m "feat: Concluída Etapa ${stepId} - ${stepName}"`);
     console.log("[Git] Commit realizado com sucesso!");
+    console.log("[Git] Enviando para GitHub/Vercel (git push origin main)...");
+    execSync('git push origin main');
+    console.log("🚀 [Deploy] Push concluído com sucesso! Vercel atualizando automaticamente.");
   } catch (e) {
-    console.log(`[Git] Erro ao realizar commit. Pode não haver arquivos modificados. Detalhes: ${e.message}`);
+    console.log(`[Git] Erro ao realizar commit/push: ${e.message}`);
   }
 }
 
