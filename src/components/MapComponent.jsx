@@ -149,15 +149,6 @@ const MapResizer = ({ isMapFullscreen, activeView }) => {
     if (activeView === 'map' || isMapFullscreen) {
       const timeout = setTimeout(() => {
         map.invalidateSize();
-        try {
-          const savedState = localStorage.getItem('netuno_map_state');
-          if (savedState) {
-            const parsed = JSON.parse(savedState);
-            if (parsed.lat && parsed.lng && parsed.zoom) {
-              map.setView([parsed.lat, parsed.lng], parsed.zoom, { animate: false });
-            }
-          }
-        } catch(e) {}
       }, 50);
       return () => clearTimeout(timeout);
     }
@@ -165,7 +156,7 @@ const MapResizer = ({ isMapFullscreen, activeView }) => {
   return null;
 };
 
-const UserLocationTracker = ({ userLocation }) => {
+const UserLocationTracker = ({ userLocation, centerPosition }) => {
   const map = useMap();
   const hasCenteredRef = React.useRef(false);
 
@@ -174,18 +165,18 @@ const UserLocationTracker = ({ userLocation }) => {
       map.setMinZoom(0);
       map.setMaxZoom(20);
       
-      // Centraliza apenas uma única vez na inicialização se o usuário não tiver posição salva
-      if (userLocation && !hasCenteredRef.current) {
-        hasCenteredRef.current = true;
-        const savedState = localStorage.getItem('netuno_map_state');
-        if (!savedState && typeof userLocation.lat === 'number' && !isNaN(userLocation.lat) && typeof userLocation.lng === 'number' && !isNaN(userLocation.lng)) {
+      // Centraliza automaticamente na primeira detecção da posição do usuário via GPS se não houver um hidrante explicitamente selecionado
+      if (userLocation && !hasCenteredRef.current && !centerPosition) {
+        if (typeof userLocation.lat === 'number' && !isNaN(userLocation.lat) && 
+            typeof userLocation.lng === 'number' && !isNaN(userLocation.lng)) {
+          hasCenteredRef.current = true;
           map.setView([userLocation.lat, userLocation.lng], 16, { animate: true });
         }
       }
     } catch (e) {
       console.warn('Erro ao atualizar visualização do usuário', e);
     }
-  }, [userLocation, map]);
+  }, [userLocation, centerPosition, map]);
   return null;
 };
 
@@ -249,6 +240,18 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
     let watchId;
     if ('geolocation' in navigator) {
       try {
+        // Tenta obter posição imediata
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (pos && pos.coords && typeof pos.coords.latitude === 'number' && typeof pos.coords.longitude === 'number') {
+              setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            }
+          },
+          (err) => console.warn('Erro getCurrentPosition no MapComponent', err),
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 }
+        );
+
+        // Acompanhamento contínuo
         watchId = navigator.geolocation.watchPosition(
           (pos) => {
             if (pos && pos.coords && typeof pos.coords.latitude === 'number' && typeof pos.coords.longitude === 'number') {
@@ -256,7 +259,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
             }
           },
           (err) => console.warn('Erro GPS no MapComponent', err),
-          { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
+          { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
         );
       } catch (e) {
         console.warn('Falha ao iniciar watchPosition GPS', e);
@@ -535,7 +538,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         <ScrollBehavior />
         <MapClickHandler onMapClick={onMapClick} />
         <MapResizer isMapFullscreen={isMapFullscreen} activeView={activeView} />
-        <UserLocationTracker userLocation={userLocation} />
+        <UserLocationTracker userLocation={userLocation} centerPosition={centerPosition} />
 
         {/* Plotagem direta de todos os hidrantes (Sem agrupamento/cluster) */}
         {renderMarkers()}
