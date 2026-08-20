@@ -92,8 +92,10 @@ export const loadPreloadedDatabase = async (onComplete) => {
       }
       const cleanRA = normalizeRAName(rawRA);
 
-      const cleanNom = fixEncoding(rawNom || rawCod || `HID${i + 1}`);
-      const cleanCod = fixEncoding(rawCod || rawNom || `HID${i + 1}`);
+      // Resolução do código alfa-numérico oficial com prefixo da RA (ex: GUA00123, BSB00511, TAG00142)
+      const officialCode = String(rawNom || rawCod || `HID${i + 1}`).trim();
+      const cleanNom = fixEncoding(officialCode);
+      const cleanCod = fixEncoding(officialCode);
       const cleanEnd = fixEncoding(row.dscEndereco || row['Endereço'] || '');
       const cleanRef = fixEncoding(row.dscPontoReferencia || row['Ponto de referência'] || '');
       const cleanProb = sanitizeProblem(fixEncoding(row.problemasHidrante || row['Problemas do Hidrante'] || row.Problema || ''));

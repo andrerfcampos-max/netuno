@@ -293,7 +293,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
   const renderMarkers = () => {
     return validHidrantes.map((h, i) => {
       const id = h.codHidrante || h._internalId || h.nomHidrante;
-      const isSelected = selectedMissionIds.includes(id);
+      const isSelected = selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h._internalId);
       const isCentered = centerPosition && (centerPosition.codHidrante === h.codHidrante || centerPosition.nomHidrante === h.nomHidrante);
       
       return (

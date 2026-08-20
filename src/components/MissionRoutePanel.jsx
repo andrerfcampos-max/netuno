@@ -145,15 +145,28 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
   }, []);
 
   const missionHydrants = useMemo(() => {
-    return hidrantes.filter(h => selectedMissionIds.includes(h.codHidrante || h.nomHidrante));
+    if (!selectedMissionIds || selectedMissionIds.length === 0) return [];
+    return hidrantes.filter(h => 
+      selectedMissionIds.includes(h.codHidrante) || 
+      selectedMissionIds.includes(h.nomHidrante) || 
+      selectedMissionIds.includes(h._internalId)
+    );
   }, [hidrantes, selectedMissionIds]);
 
   const pendingHydrants = useMemo(() => {
-    return missionHydrants.filter(h => !completedMissionIds.includes(h.codHidrante || h.nomHidrante));
+    return missionHydrants.filter(h => 
+      !completedMissionIds.includes(h.codHidrante) && 
+      !completedMissionIds.includes(h.nomHidrante) && 
+      !completedMissionIds.includes(h._internalId)
+    );
   }, [missionHydrants, completedMissionIds]);
 
   const completedHydrants = useMemo(() => {
-    return missionHydrants.filter(h => completedMissionIds.includes(h.codHidrante || h.nomHidrante));
+    return missionHydrants.filter(h => 
+      completedMissionIds.includes(h.codHidrante) || 
+      completedMissionIds.includes(h.nomHidrante) || 
+      completedMissionIds.includes(h._internalId)
+    );
   }, [missionHydrants, completedMissionIds]);
 
   // Atualiza e Reordena automaticamente com o GPS
