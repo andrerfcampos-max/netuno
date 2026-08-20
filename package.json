@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "update-db": "node scripts/update_database.cjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },
