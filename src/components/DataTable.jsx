@@ -208,7 +208,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                     </span>
                   </td>
                   <td className="p-2 font-mono text-xs">
-                    {h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' ? h.datHoraUltimaVistoria.split(' ')[0] : '-'}
+                    {h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' ? String(h.datHoraUltimaVistoria).split(' ')[0] : '-'}
                   </td>
                   <td className="p-2 max-w-[150px]">
                     <div className="truncate text-red-400 font-bold" title={fixEncoding(sanitizeProblem(h.problemasHidrante)) || ''}>

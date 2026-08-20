@@ -413,7 +413,9 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
               
               <div className="flex justify-between items-center py-0.5 border-b border-slate-200/60">
                 <span className="font-bold text-slate-500 uppercase tracking-wider text-[11px]">Coordenadas</span>
-                <span className="font-mono text-slate-700 font-semibold">{h.numLatitude?.toFixed(6) || h.numLatitude}, {h.numLongitude?.toFixed(6) || h.numLongitude}</span>
+                <span className="font-mono text-slate-700 font-semibold">
+                  {typeof h.numLatitude === 'number' ? h.numLatitude.toFixed(6) : (Number(h.numLatitude) ? Number(h.numLatitude).toFixed(6) : (h.numLatitude || '-'))}, {typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (Number(h.numLongitude) ? Number(h.numLongitude).toFixed(6) : (h.numLongitude || '-'))}
+                </span>
               </div>
 
               {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (

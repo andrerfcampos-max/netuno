@@ -312,18 +312,35 @@ function App() {
       const idsToAdd = filteredIds.filter(id => !currentSel.includes(id));
       setMissions(prev => prev.map(m => m.id === currentId ? { ...m, selectedIds: [...currentSel, ...idsToAdd], updatedAt: new Date().toISOString() } : m));
     } else {
-      const newSelected = currentSel.filter(id => !filteredIds.includes(id));
-      const newCompleted = currentComp.filter(id => !filteredIds.includes(id));
       setMissions(prev => prev.map(m => m.id === currentId ? { ...m, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() } : m));
     }
   };
 
   const parseDate = (dateStr) => {
     if (!dateStr || dateStr === '-') return null;
-    const [datePart] = dateStr.split(' ');
+    const str = String(dateStr).trim();
+    if (!str || str === '-') return null;
+    const [datePart] = str.split(' ');
+    if (!datePart) return null;
     const parts = datePart.split('/');
     if (parts.length === 3) {
-      return new Date(parts[2], parts[1] - 1, parts[0]);
+      const d = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const y = parseInt(parts[2], 10);
+      if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+        return new Date(y, m, d);
+      }
+    }
+    if (datePart.includes('-')) {
+      const partsIso = datePart.split('-');
+      if (partsIso.length === 3) {
+        const y = parseInt(partsIso[0], 10);
+        const m = parseInt(partsIso[1], 10) - 1;
+        const d = parseInt(partsIso[2], 10);
+        if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+          return new Date(y, m, d);
+        }
+      }
     }
     return null;
   };
@@ -343,17 +360,18 @@ function App() {
 
     let result = [...dataList];
     if (filters.buscaGeral) {
-      const termo = filters.buscaGeral.toLowerCase();
+      const termo = String(filters.buscaGeral).toLowerCase();
       result = result.filter(h => 
-        (h.dscEndereco && h.dscEndereco.toLowerCase().includes(termo)) ||
-        (h.nomHidrante && h.nomHidrante.toLowerCase().includes(termo)) ||
-        (h.dscPontoReferencia && h.dscPontoReferencia.toLowerCase().includes(termo))
+        (h.dscEndereco && String(h.dscEndereco).toLowerCase().includes(termo)) ||
+        (h.nomHidrante && String(h.nomHidrante).toLowerCase().includes(termo)) ||
+        (h.dscPontoReferencia && String(h.dscPontoReferencia).toLowerCase().includes(termo))
       );
     }
     if (filters.ra && filters.ra !== '__TODAS__') {
       result = result.filter(h => h.dscLocalidade === filters.ra);
     }
     if (filters.periodo) {
+      const periodoStr = String(filters.periodo);
       result = result.filter(h => {
         const d = parseDate(h.datHoraUltimaVistoria);
         if (!d) return false;
@@ -361,20 +379,20 @@ function App() {
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
         
-        if (filters.periodo === 'hoje') {
+        if (periodoStr === 'hoje') {
           return d.getTime() === hoje.getTime();
-        } else if (filters.periodo === 'semana') {
+        } else if (periodoStr === 'semana') {
           const start = new Date(hoje);
           start.setDate(start.getDate() - start.getDay());
           return d >= start;
-        } else if (filters.periodo === 'mes') {
+        } else if (periodoStr === 'mes') {
           return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
-        } else if (filters.periodo === 'ano_atual') {
+        } else if (periodoStr === 'ano_atual') {
           return d.getFullYear() === hoje.getFullYear();
-        } else if (filters.periodo.startsWith('ano-')) {
-          const targetYear = parseInt(filters.periodo.split('-')[1]);
+        } else if (periodoStr.startsWith('ano-')) {
+          const targetYear = parseInt(periodoStr.split('-')[1], 10);
           return d.getFullYear() === targetYear;
-        } else if (filters.periodo === 'personalizado') {
+        } else if (periodoStr === 'personalizado') {
           if (filters.dataInicio) {
             // Usa 'T00:00:00' para evitar shift de timezone no Date constructor
             const start = new Date(filters.dataInicio + 'T00:00:00');
@@ -394,11 +412,11 @@ function App() {
       result = result.filter(h => h.flgAtivo === isOperante);
     }
     if (filters.problema) {
-      const targetProb = filters.problema.toUpperCase().trim();
+      const targetProb = String(filters.problema).toUpperCase().trim();
       result = result.filter(h => {
         if (!h.problemasHidrante) return false;
-        const list = extractProblemsList(h.problemasHidrante);
-        return list.some(p => p.toUpperCase().includes(targetProb));
+        const list = extractProblemsList(String(h.problemasHidrante));
+        return list.some(p => String(p).toUpperCase().includes(targetProb));
       });
     }
     return result;
@@ -415,8 +433,8 @@ function App() {
       e.target.closest('.leaflet-container') || 
       e.target.closest('table') || 
       e.target.closest('input') || 
-      e.target.closest('select') ||
-      e.target.closest('textarea') ||
+      e.target.closest('select') || 
+      e.target.closest('textarea') || 
       e.target.closest('button')
     ) {
       mainTouchStartX.current = null;
@@ -481,7 +499,7 @@ function App() {
     const anos = new Set();
     baseList.forEach(h => {
       if (h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') {
-        const match = h.datHoraUltimaVistoria.match(/\b(20\d{2})\b/);
+        const match = String(h.datHoraUltimaVistoria).match(/\b(20\d{2})\b/);
         if (match) anos.add(match[1]);
       }
     });
@@ -495,25 +513,26 @@ function App() {
       baseList = baseList.filter(h => h.dscLocalidade === activeFilters.ra);
     }
     if (activeFilters.periodo) {
+      const periodoStr = String(activeFilters.periodo);
       baseList = baseList.filter(h => {
         const d = parseDate(h.datHoraUltimaVistoria);
         if (!d) return false;
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
-        if (activeFilters.periodo === 'hoje') {
+        if (periodoStr === 'hoje') {
           return d.getTime() === hoje.getTime();
-        } else if (activeFilters.periodo === 'semana') {
+        } else if (periodoStr === 'semana') {
           const start = new Date(hoje);
           start.setDate(start.getDate() - start.getDay());
           return d >= start;
-        } else if (activeFilters.periodo === 'mes') {
+        } else if (periodoStr === 'mes') {
           return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
-        } else if (activeFilters.periodo === 'ano_atual') {
+        } else if (periodoStr === 'ano_atual') {
           return d.getFullYear() === hoje.getFullYear();
-        } else if (activeFilters.periodo.startsWith('ano-')) {
-          const targetYear = parseInt(activeFilters.periodo.split('-')[1]);
+        } else if (periodoStr.startsWith('ano-')) {
+          const targetYear = parseInt(periodoStr.split('-')[1], 10);
           return d.getFullYear() === targetYear;
-        } else if (activeFilters.periodo === 'personalizado') {
+        } else if (periodoStr === 'personalizado') {
           if (activeFilters.dataInicio) {
             const start = new Date(activeFilters.dataInicio + 'T00:00:00');
             if (d < start) return false;
@@ -534,7 +553,7 @@ function App() {
     const problemas = new Set();
     baseList.forEach(h => {
       if (h.problemasHidrante) {
-        const list = extractProblemsList(h.problemasHidrante);
+        const list = extractProblemsList(String(h.problemasHidrante));
         list.forEach(p => problemas.add(p));
       }
     });

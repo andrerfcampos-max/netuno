@@ -16,22 +16,35 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   const parseDate = (dateStr) => {
     if (!dateStr || dateStr === '-') return 0;
-    const parts = dateStr.split(' ');
-    if (parts.length < 2) return 0;
+    const str = String(dateStr).trim();
+    const parts = str.split(' ');
+    if (parts.length < 2) {
+      if (parts.length === 1 && str.includes('/')) {
+        const [d, m, y] = str.split('/');
+        if (d && m && y) {
+          const t = new Date(`${y}-${m}-${d}T00:00:00`).getTime();
+          return isNaN(t) ? 0 : t;
+        }
+      }
+      return 0;
+    }
     const [date, time] = parts;
     const [d, m, y] = date.split('/');
     if (!d || !m || !y) return 0;
-    return new Date(`${y}-${m}-${d}T${time}`).getTime();
+    const timeVal = time || '00:00:00';
+    const timestamp = new Date(`${y}-${m}-${d}T${timeVal}`).getTime();
+    return isNaN(timestamp) ? 0 : timestamp;
   };
 
   const formatDateOnly = (dateStr) => {
     if (!dateStr || dateStr === '-') return '-';
-    return dateStr.split(' ')[0];
+    return String(dateStr).split(' ')[0];
   };
 
   const getYear = (dateStr) => {
     if (!dateStr || dateStr === '-') return 'N/A';
-    const parts = dateStr.split(' ');
+    const str = String(dateStr).trim();
+    const parts = str.split(' ');
     if (parts.length < 1) return 'N/A';
     const [d, m, y] = parts[0].split('/');
     return y || 'N/A';
