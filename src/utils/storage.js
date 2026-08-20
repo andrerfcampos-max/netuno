@@ -1,26 +1,42 @@
+import { MOCK_TEST_MISSIONS } from './mockMissions';
+
 const MISSIONS_STORAGE_KEY = 'argos_missions';
 const FOLDERS_STORAGE_KEY = 'argos_folders';
 
 export const loadMissions = () => {
   try {
     const data = localStorage.getItem(MISSIONS_STORAGE_KEY);
+    let savedMissions = [];
     if (data) {
-      let parsed = JSON.parse(data);
-      // Limpeza automática de rascunhos antigos (de dias anteriores)
-      const todayString = new Date().toDateString(); // Ex: "Tue Aug 04 2026"
-      parsed = parsed.filter(m => {
-        if (m.isDraft) {
-          const createdString = new Date(m.createdAt).toDateString();
-          return createdString === todayString; // Mantém apenas se for de hoje
-        }
-        return true; // Missões salvas permanentemente não são deletadas
-      });
-      return parsed;
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) {
+        // Limpeza automática de rascunhos antigos (de dias anteriores)
+        const todayString = new Date().toDateString();
+        savedMissions = parsed.filter(m => {
+          if (m.isDraft) {
+            const createdString = new Date(m.createdAt).toDateString();
+            return createdString === todayString;
+          }
+          return true;
+        });
+      }
     }
+
+    // Merge: MOCK_TEST_MISSIONS são sempre garantidas na fase de testes
+    const mockIds = new Set(MOCK_TEST_MISSIONS.map(m => m.id));
+    const userCustomMissions = savedMissions.filter(m => !mockIds.has(m.id));
+
+    // Se o usuário interagiu e atualizou alguma missão mock, preserva seu progresso local
+    const mergedMocks = MOCK_TEST_MISSIONS.map(mock => {
+      const existing = savedMissions.find(m => m.id === mock.id);
+      return existing ? { ...mock, ...existing } : mock;
+    });
+
+    return [...mergedMocks, ...userCustomMissions];
   } catch (error) {
     console.error("Erro ao ler missões do localStorage", error);
+    return MOCK_TEST_MISSIONS;
   }
-  return [];
 };
 
 export const saveMissions = (missions) => {

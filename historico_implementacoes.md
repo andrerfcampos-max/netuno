@@ -240,3 +240,10 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **3. Filtros em Cascata Dinâmica e Auto-Saneamento (`FilterBar.jsx`, `App.jsx`):**
   - O seletor de Anos e de Problemas agora calcula suas opções disponíveis dinamicamente com base na Cidade/RA e filtros antecedentes selecionados.
   - Implementado auto-reset inteligente: ao alterar a cidade ou o período, se a seleção anterior não existir no novo subconjunto, o campo é limpo automaticamente, eliminando qualquer retorno de tela com resultados vazios.
+
+### [20/08/2026] Etapa 45 Concluída: Povoamento de Missões Mock na Central de Missões e Persistência Resiliente na Fase de Testes
+- **1. Criação do Catálogo de Missões Mock (`mockMissions.js`):**
+  - Todas as 34 pastas fixas de quartéis e grupamentos especializados foram povoadas com ordens de missão ricas e realistas. Missões configuradas com atribuições militares formais, códigos reais de hidrantes da respectiva RA e distribuição balanceada entre os 3 estados operacionais: **Planejadas / Não iniciadas**, **Em andamento** e **Concluídas (100%)**.
+- **2. Mecanismo de Fusão Inteligente e Persistência Resiliente (`storage.js`):**
+  - Implementada a fusão automática entre o catálogo de missões e o `localStorage`. Garante que em qualquer novo deploy, abertura em novos aparelhos ou limpeza de cache, todas as pastas e cards permaneçam preenchidos com dados completos para homologação.
+  - Preserva integralmente qualquer vistoria cadastrada ou alteração feita pelo usuário nas missões mock, bem como novas missões criadas manualmente.
