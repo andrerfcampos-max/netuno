@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { fixEncoding } from '../utils/textUtils';
+import { calculateDistanceMeters } from '../utils/geoUtils';
 
 // Lista configurável e modular de problemas que tornam o hidrante automaticamente inativo
 export const PROBLEMAS_INATIVADORES = [
@@ -123,70 +124,103 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
       return;
     }
 
-    let problemas = [];
-    
-    // q1: Chave T
-    if (q1 === 'NÃO, FALTA LUVA') problemas.push("Falta cabeçote da haste do registro (luva)");
-    
-    // q2: Registro
-    if (q2 === 'SOTERRADO') problemas.push("Registro soterrado");
-    else if (q2 === 'COM VAZAMENTO') problemas.push("Registro com vazamento");
-    else if (q2 === 'EMPERRADO') problemas.push("Registro emperrado");
+    const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
+    const bloqueioMsg = "vc está a mais de 100 M de distância do hidrante. Não pode. Se houver problemas técnico, envie o relatório da vistoria através do sei para GPCIU/sehur";
 
-    // q3: Tampa da caixa do registro
-    if (q3 === 'LACRADA') problemas.push("Tampa da caixa lacrada (concretada)");
-    else if (q3 === 'QUEBRADA') problemas.push("Tampa de concreto quebrada ou removida");
-    else if (q3 === 'REMOVIDA') problemas.push("Tampa da caixa de registro removida");
+    const procederSalvamento = () => {
+      let problemas = [];
+      
+      // q1: Chave T
+      if (q1 === 'NÃO, FALTA LUVA') problemas.push("Falta cabeçote da haste do registro (luva)");
+      
+      // q2: Registro
+      if (q2 === 'SOTERRADO') problemas.push("Registro soterrado");
+      else if (q2 === 'COM VAZAMENTO') problemas.push("Registro com vazamento");
+      else if (q2 === 'EMPERRADO') problemas.push("Registro emperrado");
 
-    // q4: Tampões
-    if (q4 === 'FALTA 1 TAMPÃO') problemas.push("Falta tampão de 2.1/2\"");
-    else if (q4 === 'FALTAM 2 TAMPÕES') problemas.push("Faltam dois tampões de 2 1/2");
-    else if (q4 === 'FALTAM TODOS OS TAMPÕES') problemas.push("Faltam todos os tampões");
+      // q3: Tampa da caixa do registro
+      if (q3 === 'LACRADA') problemas.push("Tampa da caixa lacrada (concretada)");
+      else if (q3 === 'QUEBRADA') problemas.push("Tampa de concreto quebrada ou removida");
+      else if (q3 === 'REMOVIDA') problemas.push("Tampa da caixa de registro removida");
 
-    // q6: Outro
-    if (q6) problemas.push(q6);
+      // q4: Tampões
+      if (q4 === 'FALTA 1 TAMPÃO') problemas.push("Falta tampão de 2.1/2\"");
+      else if (q4 === 'FALTAM 2 TAMPÕES') problemas.push("Faltam dois tampões de 2 1/2");
+      else if (q4 === 'FALTAM TODOS OS TAMPÕES') problemas.push("Faltam todos os tampões");
 
-    // q7: Observações
-    if (q7.trim() !== '') problemas.push(`Obs: ${q7.trim()}`);
+      // q6: Outro
+      if (q6) problemas.push(q6);
 
-    const problemaFinal = problemas.join(" | ");
+      // q7: Observações
+      if (q7.trim() !== '') problemas.push(`Obs: ${q7.trim()}`);
 
-    // q5: Operante
-    let statusFinal = q5 === 'SIM';
-    if (motivoInoperante) {
-      statusFinal = false;
-    }
+      const problemaFinal = problemas.join(" | ");
 
-    if (!statusFinal && problemas.length === 0) {
-      alert("⚠️ MOTIVO OBRIGATÓRIO: Para cadastrar o hidrante como INOPERANTE, é obrigatório indicar o motivo. Por favor, selecione um problema na lista suspensa ('Algum outro problema?') ou digite o motivo no campo 'Observações'.");
-      return;
-    }
+      // q5: Operante
+      let statusFinal = q5 === 'SIM';
+      if (motivoInoperante) {
+        statusFinal = false;
+      }
 
-    const agora = new Date();
-    const dataFormatada = agora.toLocaleString('pt-BR');
+      if (!statusFinal && problemas.length === 0) {
+        alert("⚠️ MOTIVO OBRIGATÓRIO: Para cadastrar o hidrante como INOPERANTE, é obrigatório indicar o motivo. Por favor, selecione um problema na lista suspensa ('Algum outro problema?') ou digite o motivo no campo 'Observações'.");
+        return;
+      }
 
-    const vistoriaAtualizada = {
-      ...hidrante,
-      flgAtivo: statusFinal,
-      problemasHidrante: problemaFinal,
-      datHoraUltimaVistoria: dataFormatada,
-      fotoVistoria: fotoBase64,
-      vistoriadorNome: currentUser?.nome,
-      vistoriadorMatricula: currentUser?.matricula,
-      HISTORICO_VISTORIAS: [
-        ...(hidrante.HISTORICO_VISTORIAS || []),
-        {
-          datHoraVistoria: dataFormatada,
-          problemasHidrante: problemaFinal,
-          flgAtivo: statusFinal,
-          fotoVistoria: fotoBase64,
-          vistoriadorNome: currentUser?.nome,
-          vistoriadorMatricula: currentUser?.matricula
-        }
-      ]
+      const agora = new Date();
+      const dataFormatada = agora.toLocaleString('pt-BR');
+
+      const vistoriaAtualizada = {
+        ...hidrante,
+        flgAtivo: statusFinal,
+        problemasHidrante: problemaFinal,
+        datHoraUltimaVistoria: dataFormatada,
+        fotoVistoria: fotoBase64,
+        vistoriadorNome: currentUser?.nome,
+        vistoriadorMatricula: currentUser?.matricula,
+        HISTORICO_VISTORIAS: [
+          ...(hidrante.HISTORICO_VISTORIAS || []),
+          {
+            datHoraVistoria: dataFormatada,
+            problemasHidrante: problemaFinal,
+            flgAtivo: statusFinal,
+            fotoVistoria: fotoBase64,
+            vistoriadorNome: currentUser?.nome,
+            vistoriadorMatricula: currentUser?.matricula
+          }
+        ]
+      };
+
+      onSave(vistoriaAtualizada);
     };
 
-    onSave(vistoriaAtualizada);
+    if (!isGestor) {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (!pos || !pos.coords) {
+              alert(bloqueioMsg);
+              return;
+            }
+            const distMeters = calculateDistanceMeters(pos.coords.latitude, pos.coords.longitude, hidrante.numLatitude, hidrante.numLongitude);
+            if (distMeters > 100) {
+              alert(bloqueioMsg);
+            } else {
+              procederSalvamento();
+            }
+          },
+          (err) => {
+            console.warn('Erro ao obter GPS do vistoriador:', err);
+            alert(bloqueioMsg);
+          },
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 }
+        );
+      } else {
+        alert(bloqueioMsg);
+      }
+    } else {
+      procederSalvamento();
+    }
   };
 
   const renderOption = (value, currentVal, setVal, isPositive, onClickOverride) => {

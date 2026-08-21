@@ -15,9 +15,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Estilização Original dos Marcadores (CSS com Alto Contraste, Borda e Sombra)
+// Estilização dos Marcadores (Design Consistente com Desktop e Mobile)
 const createDivIcon = (isOperante, isSelected) => {
-  const statusColor = isOperante ? '#00FF00' : '#FF0000'; // Neon Verde ou Vermelho
+  const statusColor = isOperante ? '#10b981' : '#ef4444'; // Verde Esmeralda ou Vermelho Sólido de Alta Definição
   
   // Se selecionado, o pino fica "vazio" (fundo transparente) com borda ciano muito destacada
   const bgColor = isSelected ? 'rgba(0,0,0,0.5)' : statusColor; 
@@ -25,8 +25,8 @@ const createDivIcon = (isOperante, isSelected) => {
   
   const borderColor = isSelected ? '#00FFFF' : 'white';
   const borderWidth = isSelected ? '4px' : '2px';
-  const shadow = isSelected ? '0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9)' : `0 0 5px ${statusColor}`;
-  const size = isSelected ? 32 : 20;
+  const shadow = isSelected ? '0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9)' : `0 0 4px rgba(0,0,0,0.6)`;
+  const size = isSelected ? 32 : 18;
   
   return L.divIcon({
     className: 'custom-div-icon',
@@ -44,8 +44,8 @@ const createDivIcon = (isOperante, isSelected) => {
     ">
       ${isSelected ? `<div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></div>` : ''}
     </div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14]
+    iconSize: [26, 26],
+    iconAnchor: [13, 13]
   });
 };
 
@@ -63,31 +63,12 @@ const AutoFitFilteredBounds = ({ hidrantes, centerPosition }) => {
   const map = useMap();
   const prevCountRef = React.useRef(null);
   const prevFirstIdRef = React.useRef(null);
-  const isInitialLoadRef = React.useRef(true);
 
   useEffect(() => {
     if (centerPosition) return;
 
     if (hidrantes && hidrantes.length > 0) {
       const firstId = hidrantes[0]?.codHidrante || hidrantes[0]?.nomHidrante;
-
-      // Na primeira carga dos hidrantes após abrir/recarregar a página:
-      if (isInitialLoadRef.current) {
-        isInitialLoadRef.current = false;
-        prevCountRef.current = hidrantes.length;
-        prevFirstIdRef.current = firstId;
-
-        // Se o usuário possui posição e zoom persistidos, preserva a visão sem forçar fitBounds
-        const savedState = localStorage.getItem('netuno_map_state');
-        if (savedState) {
-          try {
-            const parsed = JSON.parse(savedState);
-            if (parsed.lat && parsed.lng && parsed.zoom) {
-              return;
-            }
-          } catch(e) {}
-        }
-      }
 
       if (prevCountRef.current !== hidrantes.length || prevFirstIdRef.current !== firstId) {
         prevCountRef.current = hidrantes.length;
@@ -560,15 +541,20 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         {/* Plotagem direta de todos os hidrantes (Sem agrupamento/cluster) */}
         {renderMarkers()}
 
-        {/* Marcador do Usuário */}
+        {/* Marcador do Usuário com Azul Destacado e Pulso */}
         {userLocation && (
           <Marker 
             position={[userLocation.lat, userLocation.lng]}
             icon={L.divIcon({
               className: 'custom-div-icon',
-              html: `<div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);"></div>`,
-              iconSize: [16, 16],
-              iconAnchor: [8, 8]
+              html: `
+                <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                  <div style="position: absolute; width: 24px; height: 24px; border-radius: 50%; background-color: rgba(0, 229, 255, 0.45); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                  <div style="background-color: #00E5FF; width: 14px; height: 14px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 0 10px #00E5FF, 0 0 4px rgba(0,0,0,0.8); position: relative; z-index: 2;"></div>
+                </div>
+              `,
+              iconSize: [24, 24],
+              iconAnchor: [12, 12]
             })}
             interactive={false}
             zIndexOffset={1000}
@@ -578,6 +564,18 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         {/* Botão Flutuante de GPS (Centralizar Posição Atual) */}
         <GpsControl userLocation={userLocation} />
       </MapContainer>
+
+      {/* Legenda Tática do Mapa */}
+      <div className="absolute bottom-6 left-3 z-[1000] bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl flex items-center gap-3 text-[11px] font-bold text-slate-200 pointer-events-auto select-none">
+        <div className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-[#10b981] border border-white shadow-sm inline-block shrink-0"></span>
+          <span className="text-emerald-400">Operante</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-[#ef4444] border border-white shadow-sm inline-block shrink-0"></span>
+          <span className="text-red-400">Inoperante</span>
+        </div>
+      </div>
 
       {!isMapFullscreen && (
         <button 

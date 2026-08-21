@@ -186,26 +186,37 @@ function App() {
   };
 
   const handleInspect = (h) => {
+    const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
+    if (isGestor) {
+      setInspectingHidrante(h);
+      return;
+    }
+
+    const bloqueioMsg = "vc está a mais de 100 M de distância do hidrante. Não pode. Se houver problemas técnico, envie o relatório da vistoria através do sei para GPCIU/sehur";
+
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const dist = calculateDistance(pos.coords.latitude, pos.coords.longitude, h.numLatitude, h.numLongitude);
-          if (dist > 0.05) { // 50 metros
-            if (window.confirm(`[TRAVA DE SEGURANÇA]\n\nVocê está a mais de 50 metros deste hidrante (${Math.round(dist * 1000)}m de distância).\n\nTem certeza que deseja registrar a vistoria à distância?`)) {
-              setInspectingHidrante(h);
-            }
+          if (!pos || !pos.coords) {
+            alert(bloqueioMsg);
+            return;
+          }
+          const distKm = calculateDistance(pos.coords.latitude, pos.coords.longitude, h.numLatitude, h.numLongitude);
+          const distMeters = distKm * 1000;
+          if (distMeters > 100) {
+            alert(bloqueioMsg);
           } else {
             setInspectingHidrante(h);
           }
         },
         (err) => {
-          console.warn('Geofencing fallback (Erro de GPS)', err);
-          setInspectingHidrante(h);
+          console.warn('Erro ao obter GPS do vistoriador:', err);
+          alert(bloqueioMsg);
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 }
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 }
       );
     } else {
-      setInspectingHidrante(h);
+      alert(bloqueioMsg);
     }
   };
 
@@ -312,6 +323,8 @@ function App() {
       const idsToAdd = filteredIds.filter(id => !currentSel.includes(id));
       setMissions(prev => prev.map(m => m.id === currentId ? { ...m, selectedIds: [...currentSel, ...idsToAdd], updatedAt: new Date().toISOString() } : m));
     } else {
+      const newSelected = currentSel.filter(id => !filteredIds.includes(id));
+      const newCompleted = currentComp.filter(id => !filteredIds.includes(id));
       setMissions(prev => prev.map(m => m.id === currentId ? { ...m, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() } : m));
     }
   };
