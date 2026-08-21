@@ -215,10 +215,18 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                       <span className="text-[10px]">📅 {dataFormatada}</span>
                     </div>
 
-                    {sanitizedProb && (
-                      <div className="flex items-start gap-1 p-1 rounded bg-rose-950/40 border border-rose-800/60 text-rose-300 text-[10px] font-semibold my-0.5">
-                        <AlertTriangle size={12} className="text-rose-400 flex-shrink-0 mt-0.5" />
-                        <span className="line-clamp-1">{sanitizedProb}</span>
+                    {(sanitizedProb || h.dscObservacao || h.observacoes || (!h.flgAtivo && !h.problemasHidrante)) && (
+                      <div className="flex flex-col gap-0.5 p-1 rounded bg-rose-950/40 border border-rose-800/60 text-rose-300 text-[10px] font-semibold my-0.5">
+                        <div className="flex items-start gap-1">
+                          <AlertTriangle size={12} className="text-rose-400 flex-shrink-0 mt-0.5" />
+                          <span className="line-clamp-1">{sanitizedProb || (!h.flgAtivo ? 'INOPERANTE' : '')}</span>
+                        </div>
+                        {(h.dscObservacao || h.observacoes || h.obsVistoria) && (
+                          <div className="text-[9.5px] font-normal text-slate-300 italic pl-4 line-clamp-2">
+                            <span className="font-semibold text-slate-400 not-italic">Obs: </span>
+                            {fixEncoding(h.dscObservacao || h.observacoes || h.obsVistoria)}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -366,10 +374,16 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                     <td className="p-2 font-mono text-xs">
                       {h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' ? String(h.datHoraUltimaVistoria).split(' ')[0] : '-'}
                     </td>
-                    <td className="p-2 max-w-[150px]">
+                    <td className="p-2 max-w-[200px]">
                       <div className="truncate text-red-400 font-bold" title={fixEncoding(sanitizeProblem(h.problemasHidrante)) || ''}>
-                        {h.problemasHidrante ? fixEncoding(sanitizeProblem(h.problemasHidrante)) : '-'}
+                        {h.problemasHidrante ? fixEncoding(sanitizeProblem(h.problemasHidrante)) : (!h.flgAtivo ? 'INOPERANTE' : '-')}
                       </div>
+                      {(h.dscObservacao || h.observacoes || h.obsVistoria) && (
+                        <div className="truncate text-[10px] text-slate-400 italic" title={fixEncoding(h.dscObservacao || h.observacoes || h.obsVistoria)}>
+                          <span className="font-semibold text-slate-500 not-italic">Obs: </span>
+                          {fixEncoding(h.dscObservacao || h.observacoes || h.obsVistoria)}
+                        </div>
+                      )}
                     </td>
                     <td className="p-2 truncate max-w-[150px]" title={fixEncoding(h.dscEndereco)}>{fixEncoding(h.dscEndereco) || '-'}</td>
                     <td className="p-2 truncate max-w-[120px]" title={fixEncoding(h.dscPontoReferencia)}>{fixEncoding(h.dscPontoReferencia) || '-'}</td>

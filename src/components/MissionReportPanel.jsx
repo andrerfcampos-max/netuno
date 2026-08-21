@@ -76,7 +76,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   const sortedHidrantesCaesb = useMemo(() => {
     return sortedHidrantesGeral.filter(h => 
-      (!h.flgAtivo || (h.problemasHidrante && extractProblemsList(h.problemasHidrante).length > 0)) && 
+      (!h.flgAtivo || (h.problemasHidrante && extractProblemsList(h.problemasHidrante).length > 0) || (h.dscObservacao && h.dscObservacao.trim().length > 0)) && 
       (!h.problemasHidrante || !h.problemasHidrante.toLowerCase().includes("removido ou não encontrado"))
     );
   }, [sortedHidrantesGeral]);
@@ -1110,7 +1110,15 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                     ) : (
                       <>
                         <td className="px-4 py-3 font-bold text-red-400 print-text-black print-border whitespace-normal text-xs" title={sanitizeProblem(h.problemasHidrante)}>
-                          {h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}
+                          <div>
+                            {h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}
+                          </div>
+                          {(h.dscObservacao || h.observacoes || h.obsVistoria) && (
+                            <div className="mt-1 text-[11px] font-normal text-slate-300 print-text-black italic bg-slate-900/40 print-bg-transparent p-1 rounded border border-slate-700/50 print-border-0">
+                              <span className="font-semibold text-slate-400 print-text-black not-italic">Obs: </span>
+                              {h.dscObservacao || h.observacoes || h.obsVistoria}
+                            </div>
+                          )}
                         </td>
                       </>
                     )}
