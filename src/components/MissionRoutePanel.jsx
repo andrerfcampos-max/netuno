@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Navigation, LocateFixed, GitMerge, Share2, MapPin, Map as MapIcon, RotateCcw, Plus, Save, Edit, CheckCircle, FolderOpen } from 'lucide-react';
-import { sanitizeProblem } from '../utils/problemUtils';
+import { sanitizeProblem, extractProblemsList } from '../utils/problemUtils';
 
 // Fórmula de Haversine para cálculo de distância (retorna km)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -204,36 +204,55 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
   };
 
   const handleShareWhatsApp = () => {
-    if (pendingRoute.length === 0) return;
+    const totalCount = (completedHydrants?.length || 0) + (pendingRoute?.length || 0);
+    if (totalCount === 0) return;
+    
     const baseUrl = window.location.origin + window.location.pathname;
-    const idsString = pendingRoute.map(h => h.nomHidrante || h.codHidrante).join(',');
-    const magicLink = `${baseUrl}?ds=${idsString}`;
+    const allIds = [...(pendingRoute || []), ...(completedHydrants || [])].map(h => h.nomHidrante || h.codHidrante).filter(Boolean);
+    const magicLink = `${baseUrl}?ds=${allIds.join(',')}`;
     
-    const folder = folders?.find(f => f.id === currentMission?.parentFolderId);
-    const folderName = folder ? folder.name : "Central";
-    const missionName = currentMission?.name || "Sem Nome";
+    const missionName = currentMission?.name || "Rascunho de Hoje";
     
-    let text = `*🚒 NETUNO - ROTA DE MISSÃO*\n\n`;
-    text += `*Carregar Missão Completa:* \n${magicLink}\n\n`;
+    // Identificar vistoriadores únicos que realizaram as vistorias
+    const vistoriadoresUnicos = Array.from(
+      new Set(completedHydrants.map(h => h.vistoriadorNome || h.nomVistoriador).filter(Boolean))
+    );
+    
+    let vistoriadorText = 'Pendente de início';
+    if (completedHydrants.length > 0) {
+      vistoriadorText = vistoriadoresUnicos.length > 0 
+        ? vistoriadoresUnicos.join(', ') 
+        : (currentUser?.nome || 'Equipe CBMDF');
+    }
+    
+    let text = `🚒 *NETUNO - STATUS DE VISTORIA*\n\n`;
     text += `📋 *Missão:* ${missionName}\n`;
-    text += `🏢 *Pasta:* ${folderName}\n`;
-    text += `📊 *Vistorias:* ${completedHydrants.length} Realizadas / ${pendingRoute.length} Pendentes\n\n`;
-    text += `──────────────────\n`;
-    text += `*📍 HIDRANTES DA ROTA:*\n\n`;
+    text += `👤 *Vistoriador:* ${vistoriadorText}\n`;
+    text += `📊 *Progresso:* ${completedHydrants.length} Concluídos / ${pendingRoute.length} Faltantes (Total: ${totalCount})\n\n`;
     
-    pendingRoute.forEach((h, i) => {
-      const fullCode = h.nomHidrante || h.codHidrante;
-      const statusText = h.flgAtivo ? '🟢 OPERANTE' : '🔴 INOPERANTE';
-      const raText = h.dscLocalidade ? ` (${h.dscLocalidade})` : '';
-      const addressText = h.dscEndereco ? `\n   📍 ${h.dscEndereco}` : '';
-      const refText = h.dscPontoReferencia ? `\n   ℹ️ Ref: ${h.dscPontoReferencia}` : '';
-      const linkNetuno = `${baseUrl}?hid=${encodeURIComponent(fullCode)}`;
-      const linkWaze = `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`;
-      
-      text += `*${i + 1}. ${fullCode}*${raText} - ${statusText}${addressText}${refText}\n`;
-      text += `   🌐 Netuno: ${linkNetuno}\n`;
-      text += `   🚗 Waze: ${linkWaze}\n\n`;
-    });
+    if (completedHydrants.length > 0) {
+      text += `✅ *CONCLUÍDOS (${completedHydrants.length}):*\n`;
+      completedHydrants.forEach(h => {
+        const id = h.nomHidrante || h.codHidrante;
+        const probs = extractProblemsList(h.problemasHidrante);
+        const probText = probs.length > 0 ? ` - ${probs.join(', ')}` : '';
+        const status = h.flgAtivo ? '🟢 Operante' : `🔴 Inoperante${probText}`;
+        text += `• ${id} (${status})\n`;
+      });
+      text += `\n`;
+    }
+    
+    if (pendingRoute.length > 0) {
+      text += `⏳ *FALTANTES (${pendingRoute.length}):*\n`;
+      pendingRoute.forEach(h => {
+        const id = h.nomHidrante || h.codHidrante;
+        const end = h.dscEndereco ? ` - ${h.dscEndereco}` : (h.dscLocalidade ? ` - ${h.dscLocalidade}` : '');
+        text += `• ${id}${end}\n`;
+      });
+      text += `\n`;
+    }
+    
+    text += `🔗 *Link da Missão:* ${magicLink}\n`;
     
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
@@ -452,7 +471,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
 
         <button 
           onClick={handleShareWhatsApp}
-          disabled={pendingRoute.length === 0}
+          disabled={pendingRoute.length === 0 && completedHydrants.length === 0}
           className="h-8 sm:h-9 flex items-center justify-center gap-1 bg-[#25D366] hover:bg-[#20bd5a] disabled:opacity-50 text-white font-bold px-1 rounded-lg shadow active:scale-95 transition-all text-[11px] truncate"
           title="Compartilhar Rota no WhatsApp"
         >

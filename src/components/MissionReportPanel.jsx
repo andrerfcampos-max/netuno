@@ -298,38 +298,70 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   };
 
   const handleWhatsApp = () => {
-    const reportName = currentMission ? currentMission.name : 'Relatório Tático de Hidrantes';
-    let text = `*NETUNO - ${reportName.toUpperCase()} (${reportType === 'interno' ? 'GERAL' : 'MANUTENÇÃO'})*\n\n`;
+    const reportName = currentMission ? currentMission.name : 'Status de Vistoria';
     
-    if (reportType === 'interno') {
-      text += `📊 *Resumo*\n`;
-      text += `• Total Vistoriado: ${total}\n`;
-      text += `• 🟢 Operantes: ${operantes} (${operantesPercent}%)\n`;
-      text += `• 🔴 Inoperantes: ${inoperantes} (${inoperantesPercent}%)\n\n`;
-      if (inoperantes > 0) {
-        text += `⚠️ *Prioridade de Manutenção:*\n`;
-        const priority = currentData.filter(h => !h.flgAtivo).slice(0, 10);
-        priority.forEach(h => {
-          const probs = extractProblemsList(h.problemasHidrante);
-          const probText = probs.length > 0 ? probs.join(', ') : 'Inoperante';
-          text += `- ${h.nomHidrante || h.codHidrante}: ${probText}\n`;
-        });
-        if (inoperantes > 10) text += `- ...e mais ${inoperantes - 10}\n`;
-      }
+    // Identificar hidrantes concluídos e faltantes
+    const completedIds = currentMission?.completedIds || [];
+    let completedList = [];
+    let pendingList = [];
+    
+    if (currentMission) {
+      completedList = currentData.filter(h => completedIds.includes(h.codHidrante || h.nomHidrante) || completedIds.includes(h._internalId));
+      pendingList = currentData.filter(h => !completedIds.includes(h.codHidrante || h.nomHidrante) && !completedIds.includes(h._internalId));
     } else {
-      text += `📊 *Resumo de Manutenção*\n`;
-      text += `• Regiões Afetadas: ${rasPresentes || 'Nenhuma informada'}\n`;
-      text += `• Total para Reparo: ${total}\n\n`;
-      if (total > 0) {
-        text += `⚠️ *Prioridade de Manutenção:*\n`;
-        const priority = currentData.slice(0, 10);
-        priority.forEach(h => {
-          const probs = extractProblemsList(h.problemasHidrante);
-          const probText = probs.length > 0 ? probs.join(', ') : (!h.flgAtivo ? 'Inoperante' : 'Necessita Reparo');
-          text += `- ${h.nomHidrante || h.codHidrante}: ${probText}\n`;
-        });
-        if (total > 10) text += `- ...e mais ${total - 10}\n`;
+      completedList = currentData.filter(h => h.vistoriadorNome);
+      pendingList = currentData.filter(h => !h.vistoriadorNome);
+      if (completedList.length === 0 && pendingList.length === currentData.length) {
+        completedList = currentData;
+        pendingList = [];
       }
+    }
+
+    // Identificar vistoriadores que executaram as vistorias
+    const vistoriadoresUnicos = Array.from(
+      new Set(completedList.map(h => h.vistoriadorNome || h.nomVistoriador).filter(Boolean))
+    );
+    
+    let vistoriadorText = 'Pendente de início';
+    if (completedList.length > 0) {
+      vistoriadorText = vistoriadoresUnicos.length > 0 
+        ? vistoriadoresUnicos.join(', ') 
+        : (currentUser?.nome || 'Equipe CBMDF');
+    }
+
+    let text = `🚒 *NETUNO - STATUS DE VISTORIA*\n\n`;
+    text += `📋 *Missão:* ${reportName}\n`;
+    text += `👤 *Vistoriador:* ${vistoriadorText}\n`;
+    text += `📊 *Progresso:* ${completedList.length} Concluídos / ${pendingList.length} Faltantes (Total: ${currentData.length})\n\n`;
+    
+    if (completedList.length > 0) {
+      text += `✅ *CONCLUÍDOS (${completedList.length}):*\n`;
+      completedList.forEach(h => {
+        const id = h.nomHidrante || h.codHidrante;
+        const probs = extractProblemsList(h.problemasHidrante);
+        const probText = probs.length > 0 ? ` - ${probs.join(', ')}` : '';
+        const status = h.flgAtivo ? '🟢 Operante' : `🔴 Inoperante${probText}`;
+        text += `• ${id} (${status})\n`;
+      });
+      text += `\n`;
+    }
+    
+    if (pendingList.length > 0) {
+      text += `⏳ *FALTANTES (${pendingList.length}):*\n`;
+      pendingList.forEach(h => {
+        const id = h.nomHidrante || h.codHidrante;
+        const end = h.dscEndereco ? ` - ${h.dscEndereco}` : (h.dscLocalidade ? ` - ${h.dscLocalidade}` : '');
+        text += `• ${id}${end}\n`;
+      });
+      text += `\n`;
+    }
+    
+    if (currentMission) {
+      const baseUrl = window.location.origin + window.location.pathname;
+      const idsString = currentData.map(h => h.nomHidrante || h.codHidrante).join(',');
+      text += `🔗 *Link da Missão:* ${baseUrl}?ds=${idsString}\n`;
+    } else {
+      text += `🌐 *Netuno Web:* ${window.location.origin}\n`;
     }
     
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;

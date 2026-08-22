@@ -453,7 +453,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
                   </h3>
                   
                   <div className="text-sm text-slate-400 mt-1 flex gap-4">
-                    <span>Criada em: {formatDate(mission.createdAt)}</span>
+                    <span>Criada em: {formatDate(mission.createdAt)}{(mission.createdByName || mission.createdBy) ? ` por ${mission.createdByName || mission.createdBy}` : ''}</span>
                   </div>
 
                   <div className="mt-3 w-full">

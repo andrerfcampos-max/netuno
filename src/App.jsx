@@ -292,9 +292,10 @@ function App() {
       const ids = ds.split(',').filter(Boolean);
       if (ids.length > 0) {
         // Cria uma nova missão com esses IDs importados
-        const newMission = createNewMission("Missão Importada");
+        const newMission = createNewMission("Missão Importada", null, currentUser);
         newMission.selectedIds = ids;
         newMission.createdBy = currentUser?.matricula;
+        newMission.createdByName = currentUser?.nome;
         setMissions(prev => [...prev, newMission]);
         setOpenMissionIds(prev => [...prev, newMission.id]);
         setActiveMissionId(newMission.id);
@@ -317,8 +318,9 @@ function App() {
 
     // Se tentar adicionar mas não tiver missão ativa, cria uma automaticamente
     if (!currentId) {
-      const newMission = createNewMission();
+      const newMission = createNewMission("Rascunho de Hoje", null, currentUser);
       newMission.createdBy = currentUser?.matricula;
+      newMission.createdByName = currentUser?.nome;
       setMissions(prev => [...prev, newMission]);
       setOpenMissionIds(prev => [...prev, newMission.id]);
       setActiveMissionId(newMission.id);
@@ -345,8 +347,9 @@ function App() {
     let currentComp = completedMissionIds;
 
     if (!currentId) {
-      const newMission = createNewMission();
+      const newMission = createNewMission("Rascunho de Hoje", null, currentUser);
       newMission.createdBy = currentUser?.matricula;
+      newMission.createdByName = currentUser?.nome;
       setMissions(prev => [...prev, newMission]);
       setOpenMissionIds(prev => [...prev, newMission.id]);
       setActiveMissionId(newMission.id);
@@ -705,8 +708,9 @@ function App() {
 
   // ---- Controle de Missões ----
   const handleNewMission = (parentFolderId = null) => {
-    const newMission = createNewMission("Rascunho de Hoje", parentFolderId);
+    const newMission = createNewMission("Rascunho de Hoje", parentFolderId, currentUser);
     newMission.createdBy = currentUser?.matricula;
+    newMission.createdByName = currentUser?.nome;
     setMissions(prev => [...prev, newMission]);
     setOpenMissionIds(prev => [...prev, newMission.id]);
     setActiveMissionId(newMission.id);

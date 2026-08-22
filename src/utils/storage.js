@@ -127,7 +127,7 @@ export const createNewFolder = (name, parentFolderId = null, gbmUnitId = null) =
   };
 };
 
-export const createNewMission = (name = "Rascunho de Hoje", parentFolderId = null) => {
+export const createNewMission = (name = "Rascunho de Hoje", parentFolderId = null, currentUser = null) => {
   return {
     id: generateId(),
     name,
@@ -135,6 +135,8 @@ export const createNewMission = (name = "Rascunho de Hoje", parentFolderId = nul
     parentFolderId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    createdBy: currentUser?.matricula || null,
+    createdByName: currentUser?.nome || null,
     selectedIds: [],
     completedIds: [],
     isDraft: true // Por padrão, toda nova missão é um rascunho volátil
