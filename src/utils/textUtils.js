@@ -19,7 +19,7 @@ export const fixEncoding = (str) => {
     // Ignora erros de decode
   }
 
-  // 2. Correções pontuais de caracteres/símbolos herdados de bancos legados
+  // 2. Correções de caracteres CP1252 e símbolos herdados de bancos legados
   res = res.replace(/·REA/g, 'ÁREA');
   res = res.replace(/·rea/g, 'Área');
   res = res.replace(/·/g, 'À');
@@ -30,22 +30,30 @@ export const fixEncoding = (str) => {
   res = res.replace(/ÿ/g, ' ');
   res = res.replace(/«/g, '1/2"');
   res = res.replace(/ï/g, '');
+  res = res.replace(/\u00A0/g, ' '); // Non-breaking space
+  res = res.replace(/\u00BD/g, '1/2'); // ½
 
-  // 3. Aspas e apóstrofos especiais do Windows (0x91, 0x92, etc.)
-  res = res.replace(/[\u0091\u0092\u2018\u2019]/g, "'");
-  res = res.replace(/''/g, '"');
+  // 3. Aspas e apóstrofos especiais do Windows CP1252 (0x91..0x94, 0x2018..0x201D, etc.)
+  res = res.replace(/[\u0091\u0092\u2018\u2019\u201B\u2032\u00B4]/g, "'");
+  res = res.replace(/[\u0093\u0094\u201C\u201D\u201E\u201F\u2033\u00AB\u00BB]/g, '"');
+  res = res.replace(/[\u0096\u0097\u2013\u2014\u2015]/g, '-');
 
   // 4. Corrupção de 'ô' oriundo de aspas no padrão de Brasília (ex: Bl. ôA” -> Bl. "A", CONJ. ôB” -> CONJ. "B")
-  res = res.replace(/ô([A-Za-z0-9\s\/\.\-]+)[\u0094\u201d]/g, '"$1"');
+  res = res.replace(/ô([A-Za-z0-9\s\/\.\-]+)[\u0094\u201d"]/g, '"$1"');
   res = res.replace(/ô([A-Z0-9])/g, '"$1"');
   res = res.replace(/[\u0094\u201d]/g, '"');
 
   // 5. Qualquer outro 'ô' solto ou grudado em delimitadores/letras maiúsculas que não pertença a palavra legítima
   res = res.replace(/ô(?=[^a-zà-ú]|$)/g, '"');
 
-  // 6. Normalização de aspas duplas consecutivas e espaços redundantes
+  // 6. Eliminar quaisquer outros bytes de controle invisíveis ou corrompidos de 0x80 a 0x9F
+  res = res.replace(/[\u0080-\u009F]/g, '');
+
+  // 7. Normalização de aspas duplas/simples consecutivas e espaços redundantes
   res = res.replace(/""+/g, '"');
+  res = res.replace(/''+/g, "'");
   res = res.replace(/[ \t]+/g, ' ').trim();
 
   return res;
 };
+

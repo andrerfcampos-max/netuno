@@ -471,27 +471,27 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
           {/* 3. Filtro de Status */}
           <div className="flex flex-col gap-0.5 sm:col-span-1 lg:col-span-2">
             <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Status</label>
-            <div className="min-h-[38px] flex rounded-lg overflow-hidden border border-slate-700 bg-slate-900/80 text-[11px] font-semibold">
+            <div className="min-h-[38px] flex rounded-lg overflow-hidden border border-slate-700 bg-slate-900/80 text-[10px] xl:text-[11px] font-semibold">
               <button 
                 type="button"
                 onClick={() => handleChange('status', 'Todos')}
-                className={`flex-1 py-1.5 transition-colors ${filters.status === 'Todos' ? 'bg-slate-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+                className={`flex-1 py-1.5 px-0.5 transition-colors truncate ${filters.status === 'Todos' ? 'bg-slate-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 Todos
               </button>
               <button 
                 type="button"
                 onClick={() => handleChange('status', 'Operante')}
-                className={`flex-1 py-1.5 transition-colors ${filters.status === 'Operante' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+                className={`flex-1 py-1.5 px-0.5 transition-colors truncate ${filters.status === 'Operante' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
               >
-                Oper
+                Operantes
               </button>
               <button 
                 type="button"
                 onClick={() => handleChange('status', 'Inoperante')}
-                className={`flex-1 py-1.5 transition-colors ${filters.status === 'Inoperante' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+                className={`flex-1 py-1.5 px-0.5 transition-colors truncate ${filters.status === 'Inoperante' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
               >
-                Inop
+                Inoperantes
               </button>
             </div>
           </div>

@@ -102,6 +102,25 @@ function App() {
   const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
   const [isTechnicalStudyOpen, setIsTechnicalStudyOpen] = useState(false);
   const [isInconsistentModalOpen, setIsInconsistentModalOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Fecha o menu suspenso ao clicar em qualquer lugar fora da tela
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const inconsistentCount = useMemo(() => {
     return hidrantes.filter(h => !isValidDFCoordinate(h.numLatitude, h.numLongitude)).length;
@@ -122,6 +141,12 @@ function App() {
   }, [activeFilters?.ra, hasSecondaryFilter]);
 
   const mapHidrantes = useMemo(() => {
+    if (mapCenterPosition) {
+      const exists = filteredList.some(h => (h.codHidrante === mapCenterPosition.codHidrante && h.nomHidrante === mapCenterPosition.nomHidrante) || (h._internalId && h._internalId === mapCenterPosition._internalId));
+      if (!exists) {
+        return [...filteredList, mapCenterPosition];
+      }
+    }
     if (isAllCitiesOnly) {
       if (mapCenterPosition) {
         return [mapCenterPosition];
@@ -131,7 +156,7 @@ function App() {
     return filteredList;
   }, [isAllCitiesOnly, mapCenterPosition, filteredList]);
 
-  // Suporte a abertura direta de modais via link/URL parameter
+  // Suporte a abertura direta de modais e deep links de hidrante (?hid=...) via URL parameter
   useEffect(() => {
     if (!currentUser) return;
     const params = new URLSearchParams(window.location.search);
@@ -147,7 +172,20 @@ function App() {
     } else if (modal === 'central-missoes' || modal === 'missoes' || modal === 'missions') {
       setIsMissionManagerOpen(true);
     }
-  }, [currentUser]);
+
+    const hidParam = params.get('hid') || params.get('hidrante') || params.get('id');
+    if (hidParam && hidrantes.length > 0) {
+      const target = hidrantes.find(h => 
+        String(h.nomHidrante || '').trim().toUpperCase() === hidParam.trim().toUpperCase() ||
+        String(h.codHidrante || '').trim().toUpperCase() === hidParam.trim().toUpperCase() ||
+        String(h._internalId || '').trim().toUpperCase() === hidParam.trim().toUpperCase()
+      );
+      if (target) {
+        setMapCenterPosition({ ...target, _ts: Date.now() });
+        setActiveView('map');
+      }
+    }
+  }, [currentUser, hidrantes]);
 
   const handleCloseTechnicalStudy = () => {
     setIsTechnicalStudyOpen(false);
@@ -924,8 +962,12 @@ function App() {
             </a>
           ) : (
             /* Gestores e Admins visualizam o Menu dropdown com todas as opções */
-            <details className="group">
-              <summary className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm cursor-pointer list-none hover:bg-slate-700 transition-all relative">
+            <div className="relative" ref={menuRef}>
+              <button 
+                type="button"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm cursor-pointer hover:bg-slate-700 active:scale-95 transition-all relative select-none"
+              >
                 <span className="hidden sm:inline">Menu</span>
                 {inconsistentCount > 0 && (
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping absolute top-2 right-2"></span>
@@ -933,120 +975,131 @@ function App() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
                 </svg>
-              </summary>
-              <div className="absolute right-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex flex-col gap-1 p-2">
-                {currentUser.role === 'admin' && (
-                  <a 
-                    href="?modal=admin"
-                    onClick={(e) => {
-                      if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                        e.preventDefault();
-                        setIsUserManagerOpen(true);
-                        e.currentTarget.closest('details')?.removeAttribute('open');
-                      }
-                    }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-left bg-red-900/30 text-red-400 font-semibold rounded hover:bg-red-900/50 transition-all"
-                  >
-                    Painel Admin
-                  </a>
-                )}
-                {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-                  <a 
-                    href="?modal=novo-hidrante"
-                    onClick={(e) => {
-                      if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                        e.preventDefault();
-                        setEditingHydrante({});
-                        e.currentTarget.closest('details')?.removeAttribute('open');
-                      }
-                    }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-left bg-blue-900/30 text-blue-400 font-semibold rounded hover:bg-blue-900/50 transition-all"
-                  >
-                    <PlusCircle size={18} />
-                    Novo Hidrante
-                  </a>
-                )}
-                {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-                  <a 
-                    href="?modal=estudo-tecnico"
-                    onClick={(e) => {
-                      if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                        e.preventDefault();
-                        setIsTechnicalStudyOpen(true);
-                        e.currentTarget.closest('details')?.removeAttribute('open');
-                      }
-                    }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-left bg-purple-900/30 text-purple-400 font-semibold rounded hover:bg-purple-900/50 transition-all"
-                  >
-                    <Calculator size={18} />
-                    Estudo Técnico
-                  </a>
-                )}
-                {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-                  <a 
-                    href="?modal=inconsistentes"
-                    onClick={(e) => {
-                      if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                        e.preventDefault();
-                        setIsInconsistentModalOpen(true);
-                        e.currentTarget.closest('details')?.removeAttribute('open');
-                      }
-                    }}
-                    className="flex items-center justify-between w-full px-3 py-2 text-left bg-amber-900/30 text-amber-300 font-semibold rounded hover:bg-amber-900/50 transition-all"
-                  >
-                    <span className="flex items-center gap-2">
-                      <ShieldAlert size={18} className="text-amber-400" />
-                      Hidrantes Inconsistentes
-                    </span>
-                    {inconsistentCount > 0 && (
-                      <span className="bg-amber-500/30 text-amber-300 text-[10px] px-1.5 py-0.5 rounded-full border border-amber-500/50 font-bold">
-                        {inconsistentCount}
-                      </span>
-                    )}
-                  </a>
-                )}
-                <a 
-                  href="?modal=central-missoes"
-                  onClick={(e) => {
-                    if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                      e.preventDefault();
-                      setIsMissionManagerOpen(true);
-                      e.currentTarget.closest('details')?.removeAttribute('open');
-                    }
-                  }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-700 text-emerald-400 font-semibold rounded hover:bg-slate-600 transition-all"
-                >
-                  <FolderOpen size={18} />
-                  Central de Missões
-                </a>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={async () => {
-                    toast.info('Atualizando aplicação e limpando cache...');
-                    try {
-                      if ('serviceWorker' in navigator) {
-                        const regs = await navigator.serviceWorker.getRegistrations();
-                        for (const r of regs) await r.unregister();
-                      }
-                      if ('caches' in window) {
-                        const keys = await caches.keys();
-                        for (const k of keys) await caches.delete(k);
-                      }
-                    } catch (e) {
-                      console.warn(e);
-                    }
-                    setTimeout(() => {
-                      window.location.reload();
-                    }, 400);
-                  }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-800 border border-slate-600 text-cyan-300 font-semibold rounded hover:bg-slate-700 active:scale-95 transition-all text-xs"
-                >
-                  <RefreshCw size={16} className="text-cyan-400" />
-                  Atualizar Sistema (Limpar Cache)
-                </button>
-              </div>
-            </details>
+              {isMenuOpen && (
+                <>
+                  {/* Backdrop para fechar ao clicar em qualquer lugar da tela */}
+                  <div 
+                    className="fixed inset-0 z-[110]" 
+                    onClick={() => setIsMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl flex flex-col gap-1 p-2 z-[120] animate-scaleUp">
+                    {currentUser.role === 'admin' && (
+                      <a 
+                        href="?modal=admin"
+                        onClick={(e) => {
+                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                            e.preventDefault();
+                            setIsUserManagerOpen(true);
+                            setIsMenuOpen(false);
+                          }
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-left bg-red-900/30 text-red-400 font-semibold rounded hover:bg-red-900/50 transition-all"
+                      >
+                        Painel Admin
+                      </a>
+                    )}
+                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                      <a 
+                        href="?modal=novo-hidrante"
+                        onClick={(e) => {
+                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                            e.preventDefault();
+                            setEditingHydrante({});
+                            setIsMenuOpen(false);
+                          }
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-left bg-blue-900/30 text-blue-400 font-semibold rounded hover:bg-blue-900/50 transition-all"
+                      >
+                        <PlusCircle size={18} />
+                        Novo Hidrante
+                      </a>
+                    )}
+                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                      <a 
+                        href="?modal=estudo-tecnico"
+                        onClick={(e) => {
+                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                            e.preventDefault();
+                            setIsTechnicalStudyOpen(true);
+                            setIsMenuOpen(false);
+                          }
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-left bg-purple-900/30 text-purple-400 font-semibold rounded hover:bg-purple-900/50 transition-all"
+                      >
+                        <Calculator size={18} />
+                        Estudo Técnico
+                      </a>
+                    )}
+                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                      <a 
+                        href="?modal=inconsistentes"
+                        onClick={(e) => {
+                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                            e.preventDefault();
+                            setIsInconsistentModalOpen(true);
+                            setIsMenuOpen(false);
+                          }
+                        }}
+                        className="flex items-center justify-between w-full px-3 py-2 text-left bg-amber-900/30 text-amber-300 font-semibold rounded hover:bg-amber-900/50 transition-all"
+                      >
+                        <span className="flex items-center gap-2">
+                          <ShieldAlert size={18} className="text-amber-400" />
+                          Hidrantes Inconsistentes
+                        </span>
+                        {inconsistentCount > 0 && (
+                          <span className="bg-amber-500/30 text-amber-300 text-[10px] px-1.5 py-0.5 rounded-full border border-amber-500/50 font-bold">
+                            {inconsistentCount}
+                          </span>
+                        )}
+                      </a>
+                    )}
+                    <a 
+                      href="?modal=central-missoes"
+                      onClick={(e) => {
+                        if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                          e.preventDefault();
+                          setIsMissionManagerOpen(true);
+                          setIsMenuOpen(false);
+                        }
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-700 text-emerald-400 font-semibold rounded hover:bg-slate-600 transition-all"
+                    >
+                      <FolderOpen size={18} />
+                      Central de Missões
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsMenuOpen(false);
+                        toast.info('Atualizando aplicação e limpando cache...');
+                        try {
+                          if ('serviceWorker' in navigator) {
+                            const regs = await navigator.serviceWorker.getRegistrations();
+                            for (const r of regs) await r.unregister();
+                          }
+                          if ('caches' in window) {
+                            const keys = await caches.keys();
+                            for (const k of keys) await caches.delete(k);
+                          }
+                        } catch (e) {
+                          console.warn(e);
+                        }
+                        setTimeout(() => {
+                          window.location.reload();
+                        }, 400);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-800 border border-slate-600 text-cyan-300 font-semibold rounded hover:bg-slate-700 active:scale-95 transition-all text-xs"
+                    >
+                      <RefreshCw size={16} className="text-cyan-400" />
+                      Atualizar Sistema (Limpar Cache)
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
       </header>
@@ -1099,7 +1152,7 @@ function App() {
               }`}
               disabled={!activeMissionId}
             >
-              Rota ({selectedMissionIds.length})
+              Rota de Missão ({selectedMissionIds.length})
             </button>
             {(currentUser?.role === 'gestor' || currentUser?.role === 'admin') && (
               <button 
@@ -1108,7 +1161,7 @@ function App() {
                   activeView === 'report' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
                 }`}
               >
-                Relatório
+                Relatórios
               </button>
             )}
           </div>
@@ -1253,7 +1306,7 @@ function App() {
             }`}
           >
             <Navigation size={20} className={activeView === 'route' ? 'text-emerald-400' : ''} />
-            <span className="text-[10px] font-semibold mt-0.5">Rota</span>
+            <span className="text-[10px] font-semibold mt-0.5">Rota de Missão</span>
             {selectedMissionIds.length > 0 && (
               <span className="absolute top-0.5 right-3 bg-emerald-500 text-slate-950 font-black text-[9px] px-1.5 py-0.2 rounded-full min-w-[16px] text-center shadow">
                 {selectedMissionIds.length}
@@ -1269,7 +1322,7 @@ function App() {
               }`}
             >
               <BarChart3 size={20} className={activeView === 'report' ? 'text-emerald-400' : ''} />
-              <span className="text-[10px] font-semibold mt-0.5">Relatório</span>
+              <span className="text-[10px] font-semibold mt-0.5">Relatórios</span>
             </button>
           )}
         </nav>

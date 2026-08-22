@@ -517,55 +517,10 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         <div className="flex items-center justify-between w-full lg:w-auto gap-2">
           <h2 className="text-lg sm:text-xl font-bold text-blue-400 flex items-center gap-2 drop-shadow-sm truncate">
             <FileSpreadsheet size={22} className="shrink-0" /> 
-            <span>Relatório de Vistoria</span>
+            <span>Relatórios de Vistoria</span>
           </h2>
 
           <div className="flex items-center gap-1.5 lg:hidden">
-            {/* Menu Suspenso de Exportação no Mobile */}
-            <div className="relative" ref={exportDropdownRef}>
-              <button 
-                onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-md active:scale-95 transition-all"
-              >
-                <Share2 size={14} />
-                <span>Exportar</span>
-                <ChevronDown size={14} className={`transition-transform duration-200 ${isExportMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isExportMenuOpen && (
-                <div className="absolute right-0 top-full mt-1.5 w-56 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-[120] py-1.5 text-xs text-slate-200 animate-scaleUp">
-                  <button 
-                    onClick={() => { handlePrint(); setIsExportMenuOpen(false); }}
-                    className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
-                  >
-                    <Printer size={16} className="text-cyan-400 shrink-0" />
-                    <span>Imprimir / Gerar PDF</span>
-                  </button>
-                  <button 
-                    onClick={() => { handleCopySEI(); setIsExportMenuOpen(false); }}
-                    className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
-                  >
-                    <Copy size={16} className="text-amber-400 shrink-0" />
-                    <span>{copied ? 'Copiado para o SEI!' : 'Copiar p/ SEI'}</span>
-                  </button>
-                  <button 
-                    onClick={() => { handleWhatsApp(); setIsExportMenuOpen(false); }}
-                    className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
-                  >
-                    <MessageCircle size={16} className="text-emerald-400 shrink-0" />
-                    <span>Compartilhar WhatsApp</span>
-                  </button>
-                  <button 
-                    onClick={() => { handleExportCSV(); setIsExportMenuOpen(false); }}
-                    className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
-                  >
-                    <Download size={16} className="text-blue-400 shrink-0" />
-                    <span>Exportar Planilha (CSV)</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
             <button 
               onClick={() => setIsMaximized(!isMaximized)} 
               className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition-colors border border-slate-600"
@@ -596,51 +551,6 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
         {/* Controles Desktop */}
         <div className="hidden lg:flex items-center gap-2">
-          {/* Dropdown Desktop */}
-          <div className="relative" ref={exportDropdownRef}>
-            <button 
-              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-md active:scale-95 transition-all"
-            >
-              <Share2 size={16} />
-              <span>Exportar / Compartilhar</span>
-              <ChevronDown size={16} className={`transition-transform duration-200 ${isExportMenuOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isExportMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-60 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-[120] py-1.5 text-sm text-slate-200 animate-scaleUp">
-                <button 
-                  onClick={() => { handlePrint(); setIsExportMenuOpen(false); }}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
-                >
-                  <Printer size={16} className="text-cyan-400 shrink-0" />
-                  <span>Imprimir / Gerar PDF</span>
-                </button>
-                <button 
-                  onClick={() => { handleCopySEI(); setIsExportMenuOpen(false); }}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
-                >
-                  <Copy size={16} className="text-amber-400 shrink-0" />
-                  <span>{copied ? 'Copiado para o SEI!' : 'Copiar p/ SEI'}</span>
-                </button>
-                <button 
-                  onClick={() => { handleWhatsApp(); setIsExportMenuOpen(false); }}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
-                >
-                  <MessageCircle size={16} className="text-emerald-400 shrink-0" />
-                  <span>Compartilhar WhatsApp</span>
-                </button>
-                <button 
-                  onClick={() => { handleExportCSV(); setIsExportMenuOpen(false); }}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
-                >
-                  <Download size={16} className="text-blue-400 shrink-0" />
-                  <span>Exportar Planilha (CSV)</span>
-                </button>
-              </div>
-            )}
-          </div>
-
           <button 
             onClick={() => setIsMaximized(!isMaximized)} 
             className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full transition-colors border border-slate-600"

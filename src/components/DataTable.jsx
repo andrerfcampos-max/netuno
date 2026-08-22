@@ -132,20 +132,6 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
       {/* Header com Total e Exportação */}
       <div className="flex justify-between items-center mb-2.5 sm:mb-4 border-b border-slate-700 pb-2 flex-shrink-0">
         <div className="flex items-center gap-2">
-          {isGestor && (
-            <div className="flex items-center gap-1.5 bg-slate-750 px-2 py-1 rounded-lg border border-slate-600">
-              <input 
-                type="checkbox" 
-                id="select-all-filtered"
-                className="w-4 h-4 cursor-pointer accent-emerald-500 rounded"
-                checked={isAllSelected}
-                onChange={handleSelectAll}
-              />
-              <label htmlFor="select-all-filtered" className="text-xs text-slate-300 font-bold cursor-pointer select-none">
-                Todos
-              </label>
-            </div>
-          )}
           <h2 className="text-sm sm:text-lg font-bold text-slate-200 truncate">
             Lista de vistorias ({data.length})
           </h2>

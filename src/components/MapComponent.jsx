@@ -282,9 +282,20 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
       
       return (
       <Marker 
-        key={isCentered ? `${id}-center` : (id || i)} 
+        key={isCentered ? `${id}-center-${Date.now()}` : (id || i)} 
         position={[h.numLatitude, h.numLongitude]}
         icon={createDivIcon(h.flgAtivo, isSelected)}
+        ref={(marker) => {
+          if (marker && isCentered) {
+            setTimeout(() => {
+              try {
+                if (marker.openPopup && (!marker.isPopupOpen || !marker.isPopupOpen())) {
+                  marker.openPopup();
+                }
+              } catch (err) {}
+            }, 350);
+          }
+        }}
         eventHandlers={{
           click: (e) => {
             if (e.originalEvent && (e.originalEvent.ctrlKey || e.originalEvent.metaKey)) {

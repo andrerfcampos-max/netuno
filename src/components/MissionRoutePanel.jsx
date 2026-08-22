@@ -206,24 +206,33 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
   const handleShareWhatsApp = () => {
     if (pendingRoute.length === 0) return;
     const baseUrl = window.location.origin + window.location.pathname;
-    const idsString = pendingRoute.map(h => h.codHidrante || h.nomHidrante).join(',');
+    const idsString = pendingRoute.map(h => h.nomHidrante || h.codHidrante).join(',');
     const magicLink = `${baseUrl}?ds=${idsString}`;
     
     const folder = folders?.find(f => f.id === currentMission?.parentFolderId);
     const folderName = folder ? folder.name : "Central";
     const missionName = currentMission?.name || "Sem Nome";
     
-    let text = `*NETUNO - MISSÃO TÁTICA*\n\n`;
-    text += `*Carregar Missão:* \n${magicLink}\n\n`;
-    text += `*Missão:* ${missionName}\n`;
-    text += `*Pasta:* ${folderName}\n`;
-    text += `*Vistorias:* Realizadas: ${completedHydrants.length} / Pendentes: ${pendingRoute.length}\n\n`;
+    let text = `*🚒 NETUNO - ROTA DE MISSÃO*\n\n`;
+    text += `*Carregar Missão Completa:* \n${magicLink}\n\n`;
+    text += `📋 *Missão:* ${missionName}\n`;
+    text += `🏢 *Pasta:* ${folderName}\n`;
+    text += `📊 *Vistorias:* ${completedHydrants.length} Realizadas / ${pendingRoute.length} Pendentes\n\n`;
+    text += `──────────────────\n`;
+    text += `*📍 HIDRANTES DA ROTA:*\n\n`;
     
     pendingRoute.forEach((h, i) => {
-      const id = h.codHidrante || h.nomHidrante;
-      const linkNetuno = `${baseUrl}?hid=${id}`;
-      const linkWaze = `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}`;
-      text += `*${i + 1}. ${id}*\nNetuno: ${linkNetuno}\nWaze: ${linkWaze}\n\n`;
+      const fullCode = h.nomHidrante || h.codHidrante;
+      const statusText = h.flgAtivo ? '🟢 OPERANTE' : '🔴 INOPERANTE';
+      const raText = h.dscLocalidade ? ` (${h.dscLocalidade})` : '';
+      const addressText = h.dscEndereco ? `\n   📍 ${h.dscEndereco}` : '';
+      const refText = h.dscPontoReferencia ? `\n   ℹ️ Ref: ${h.dscPontoReferencia}` : '';
+      const linkNetuno = `${baseUrl}?hid=${encodeURIComponent(fullCode)}`;
+      const linkWaze = `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`;
+      
+      text += `*${i + 1}. ${fullCode}*${raText} - ${statusText}${addressText}${refText}\n`;
+      text += `   🌐 Netuno: ${linkNetuno}\n`;
+      text += `   🚗 Waze: ${linkWaze}\n\n`;
     });
     
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -372,7 +381,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
             </div>
           ) : (
             <h2 className="text-lg font-bold text-emerald-400 flex items-center gap-2 drop-shadow-sm">
-              <GitMerge size={20} /> Módulo Rota
+              <GitMerge size={20} /> Rota de Missão
             </h2>
           )}
         </div>
@@ -487,11 +496,11 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
           <button 
             onClick={onGenerateReport}
             disabled={missionHydrants.length === 0}
-            className="h-8 sm:h-9 flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold px-1 rounded-lg shadow active:scale-95 transition-all text-[11px] truncate"
+            className="h-8 sm:h-9 flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold px-1 rounded-lg shadow active:scale-95 transition-all text-[10px] sm:text-[11px] truncate"
             title="Gerar Relatório da Missão"
           >
             <FolderOpen size={13} className="shrink-0" />
-            <span className="truncate">Relatório</span>
+            <span className="truncate">Relatório da Missão</span>
           </button>
         )}
       </div>

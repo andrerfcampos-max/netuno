@@ -361,20 +361,56 @@ function runPipeline() {
       validCoords++;
     }
 
+    // Sanitização de Texto e Encoding
+    const fixEncoding = (str) => {
+      if (!str || typeof str !== 'string') return str || '';
+      let res = str;
+      try {
+        if (res.includes('Ã') || res.includes('Â') || res.includes('â')) {
+          const decoded = decodeURIComponent(escape(res));
+          if (decoded && !/[\uFFFD]/.test(decoded)) res = decoded;
+        }
+      } catch (e) {}
+      res = res.replace(/·REA/g, 'ÁREA');
+      res = res.replace(/·rea/g, 'Área');
+      res = res.replace(/·/g, 'À');
+      res = res.replace(/¶/g, 'Â');
+      res = res.replace(/§/g, 'º');
+      res = res.replace(/¦/g, 'ª');
+      res = res.replace(/ø/g, 'º');
+      res = res.replace(/ÿ/g, ' ');
+      res = res.replace(/«/g, '1/2"');
+      res = res.replace(/ï/g, '');
+      res = res.replace(/\u00A0/g, ' ');
+      res = res.replace(/\u00BD/g, '1/2');
+      res = res.replace(/[\u0091\u0092\u2018\u2019\u201B\u2032\u00B4]/g, "'");
+      res = res.replace(/[\u0093\u0094\u201C\u201D\u201E\u201F\u2033\u00AB\u00BB]/g, '"');
+      res = res.replace(/[\u0096\u0097\u2013\u2014\u2015]/g, '-');
+      res = res.replace(/ô([A-Za-z0-9\s\/\.\-]+)[\u0094\u201d"]/g, '"$1"');
+      res = res.replace(/ô([A-Z0-9])/g, '"$1"');
+      res = res.replace(/[\u0094\u201d]/g, '"');
+      res = res.replace(/ô(?=[^a-zà-ú]|$)/g, '"');
+      res = res.replace(/[\u0080-\u009F]/g, '');
+      res = res.replace(/""+/g, '"');
+      res = res.replace(/''+/g, "'");
+      res = res.replace(/[ \t]+/g, ' ').trim();
+      return res;
+    };
+
     processedData.push({
       ...row,
-      nomHidrante: rawNom || code,
-      codHidrante: rawCod || code,
-      dscLocalidade: ra,
-      dscEndereco: rowAddress,
-      dscPontoReferencia: String(row.dscPontoReferencia || row['Ponto de referência'] || row['PONTO DE REFERÊNCIA'] || '').trim(),
+      nomHidrante: fixEncoding(rawNom || code),
+      codHidrante: fixEncoding(rawCod || code),
+      dscLocalidade: fixEncoding(ra),
+      dscEndereco: fixEncoding(rowAddress),
+      dscPontoReferencia: fixEncoding(String(row.dscPontoReferencia || row['Ponto de referência'] || row['PONTO DE REFERÊNCIA'] || '').trim()),
       numLatitude: isNaN(lat) ? 0 : lat,
       numLongitude: isNaN(lng) ? 0 : lng,
       flgAtivo: isAtivo,
       status: isAtivo ? 'Operante' : 'Inoperante',
-      problemasHidrante: problema,
-      dscObservacao: observacao,
-      datHoraUltimaVistoria: String(row.datHoraUltimaVistoria || row.datHoraVistoria || row.DataVistoria || row['Data Vistoria'] || row['ÚLTIMA VISTORIA'] || '').trim()
+      problemasHidrante: fixEncoding(problema),
+      dscObservacao: fixEncoding(observacao),
+      datHoraUltimaVistoria: fixEncoding(String(row.datHoraUltimaVistoria || row.datHoraVistoria || row.DataVistoria || row['Data Vistoria'] || row['ÚLTIMA VISTORIA'] || '').trim())
     });
   }
 
