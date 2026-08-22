@@ -299,70 +299,38 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   const handleWhatsApp = () => {
     const reportName = currentMission ? currentMission.name : 'Relatório Tático de Hidrantes';
-    const isInterno = reportType === 'interno';
-    const typeLabel = isInterno ? 'GERAL (CBMDF)' : 'MANUTENÇÃO (CAESB)';
+    let text = `*NETUNO - ${reportName.toUpperCase()} (${reportType === 'interno' ? 'GERAL' : 'MANUTENÇÃO'})*\n\n`;
     
-    // Identificar vistoriadores envolvidos no lote/missão ou fallback para o usuário logado
-    const vistoriadoresList = Array.from(
-      new Set(currentData.map(h => h.vistoriadorNome || h.nomVistoriador).filter(Boolean))
-    );
-    const vistoriadorTexto = vistoriadoresList.length > 0 
-      ? vistoriadoresList.join(', ') 
-      : (currentUser?.nome || 'Equipe CBMDF');
-
-    const dataHoje = new Date().toLocaleDateString('pt-BR');
-
-    let text = `🚒 *NETUNO - ${reportName.toUpperCase()}*\n`;
-    text += `📋 *Tipo:* ${typeLabel}\n`;
-    text += `👤 *Vistoriador:* ${vistoriadorTexto}\n`;
-    text += `📅 *Data:* ${dataHoje}\n`;
-    if (rasPresentes) {
-      text += `📍 *Região:* ${rasPresentes}\n`;
-    }
-    text += `\n════════════════════\n\n`;
-    
-    if (isInterno) {
-      text += `📊 *RESUMO OPERACIONAL*\n`;
-      text += `🔹 *Total Vistoriado:* ${total}\n`;
-      text += `🟢 *Operantes:* ${operantes} (${operantesPercent}%)\n`;
-      text += `🔴 *Inoperantes:* ${inoperantes} (${inoperantesPercent}%)\n\n`;
-      
+    if (reportType === 'interno') {
+      text += `📊 *Resumo*\n`;
+      text += `• Total Vistoriado: ${total}\n`;
+      text += `• 🟢 Operantes: ${operantes} (${operantesPercent}%)\n`;
+      text += `• 🔴 Inoperantes: ${inoperantes} (${inoperantesPercent}%)\n\n`;
       if (inoperantes > 0) {
-        text += `⚠️ *PRIORIDADE DE MANUTENÇÃO (${inoperantes}):*\n`;
+        text += `⚠️ *Prioridade de Manutenção:*\n`;
         const priority = currentData.filter(h => !h.flgAtivo).slice(0, 10);
-        priority.forEach((h, idx) => {
+        priority.forEach(h => {
           const probs = extractProblemsList(h.problemasHidrante);
           const probText = probs.length > 0 ? probs.join(', ') : 'Inoperante';
-          const ra = h.dscLocalidade ? ` [${h.dscLocalidade}]` : '';
-          const vist = h.vistoriadorNome ? ` _(Vist: ${h.vistoriadorNome})_` : '';
-          text += `🚨 *${idx + 1}.* *${h.nomHidrante || h.codHidrante}*${ra}: ${probText}${vist}\n`;
+          text += `- ${h.nomHidrante || h.codHidrante}: ${probText}\n`;
         });
-        if (inoperantes > 10) {
-          text += `\n➕ _... e mais ${inoperantes - 10} hidrantes inoperantes no relatório completo._\n`;
-        }
+        if (inoperantes > 10) text += `- ...e mais ${inoperantes - 10}\n`;
       }
     } else {
-      text += `🛠️ *RESUMO DE MANUTENÇÃO (CAESB)*\n`;
-      text += `📍 *Regiões Afetadas:* ${rasPresentes || 'Todas'}\n`;
-      text += `🔧 *Total para Reparo:* ${total}\n\n`;
-      
+      text += `📊 *Resumo de Manutenção*\n`;
+      text += `• Regiões Afetadas: ${rasPresentes || 'Nenhuma informada'}\n`;
+      text += `• Total para Reparo: ${total}\n\n`;
       if (total > 0) {
-        text += `⚠️ *LISTA DE REPAROS (${total}):*\n`;
+        text += `⚠️ *Prioridade de Manutenção:*\n`;
         const priority = currentData.slice(0, 10);
-        priority.forEach((h, idx) => {
+        priority.forEach(h => {
           const probs = extractProblemsList(h.problemasHidrante);
           const probText = probs.length > 0 ? probs.join(', ') : (!h.flgAtivo ? 'Inoperante' : 'Necessita Reparo');
-          const ra = h.dscLocalidade ? ` [${h.dscLocalidade}]` : '';
-          const endereco = h.dscEndereco ? `\n   📍 ${h.dscEndereco}` : '';
-          text += `🔧 *${idx + 1}.* *${h.nomHidrante || h.codHidrante}*${ra}: ${probText}${endereco}\n`;
+          text += `- ${h.nomHidrante || h.codHidrante}: ${probText}\n`;
         });
-        if (total > 10) {
-          text += `\n➕ _... e mais ${total - 10} hidrantes para reparo no relatório completo._\n`;
-        }
+        if (total > 10) text += `- ...e mais ${total - 10}\n`;
       }
     }
-    
-    text += `\n🌐 *Netuno Web:* ${window.location.origin}\n`;
     
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');

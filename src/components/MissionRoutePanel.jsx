@@ -212,16 +212,14 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     const folder = folders?.find(f => f.id === currentMission?.parentFolderId);
     const folderName = folder ? folder.name : "Central";
     const missionName = currentMission?.name || "Sem Nome";
-    const vistoriadorTexto = currentUser?.nome || "Equipe CBMDF";
     
-    let text = `🚒 *NETUNO - ROTA DE MISSÃO*\n\n`;
-    text += `🔗 *Carregar Missão Completa:*\n${magicLink}\n\n`;
+    let text = `*🚒 NETUNO - ROTA DE MISSÃO*\n\n`;
+    text += `*Carregar Missão Completa:* \n${magicLink}\n\n`;
     text += `📋 *Missão:* ${missionName}\n`;
     text += `🏢 *Pasta:* ${folderName}\n`;
-    text += `👤 *Vistoriador:* ${vistoriadorTexto}\n`;
-    text += `📊 *Progresso:* ${completedHydrants.length} Realizadas / ${pendingRoute.length} Pendentes\n\n`;
-    text += `════════════════════\n`;
-    text += `📍 *HIDRANTES DA ROTA:*\n\n`;
+    text += `📊 *Vistorias:* ${completedHydrants.length} Realizadas / ${pendingRoute.length} Pendentes\n\n`;
+    text += `──────────────────\n`;
+    text += `*📍 HIDRANTES DA ROTA:*\n\n`;
     
     pendingRoute.forEach((h, i) => {
       const fullCode = h.nomHidrante || h.codHidrante;
