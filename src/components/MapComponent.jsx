@@ -435,7 +435,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                 <Navigation size={13} /> Waze
               </a>
               <a 
-                href={`https://wa.me/?text=${encodeURIComponent(`🚒 *Hidrante:* ${h.nomHidrante || h.codHidrante}\n📍 *RA:* ${h.dscLocalidade || '-'}\n${h.flgAtivo ? '🟢 *Status:* OPERANTE' : '🔴 *Status:* INOPERANTE'}\n📅 *Última Vistoria:* ${h.datHoraUltimaVistoria || 'Sem registro'}\n⚠️ *Problemas:* ${h.problemasHidrante || 'Nenhum'}\n🗺️ *Endereço:* ${h.dscEndereco || ''} ${h.dscPontoReferencia ? `(${h.dscPontoReferencia})` : ''}\n\n🌐 *Netuno:* ${window.location.origin}${window.location.pathname}?hid=${id}\n🚗 *Waze:* https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}`)}`} 
+                href={`https://wa.me/?text=${encodeURIComponent(`🚒 *NETUNO - HIDRANTE ${h.nomHidrante || h.codHidrante}*\n📍 *RA:* ${h.dscLocalidade || '-'}\n${h.flgAtivo ? '🟢 *Status:* OPERANTE' : '🔴 *Status:* INOPERANTE'}\n📅 *Última Vistoria:* ${h.datHoraUltimaVistoria || 'Sem registro'}\n👤 *Vistoriador:* ${h.vistoriadorNome || currentUser?.nome || 'Sem registro'}\n⚠️ *Problemas:* ${h.problemasHidrante || 'Nenhum'}\n🗺️ *Endereço:* ${h.dscEndereco || ''}${h.dscPontoReferencia ? ` (${h.dscPontoReferencia})` : ''}\n\n🌐 *Netuno:* ${window.location.origin}${window.location.pathname}?hid=${id}\n🚗 *Waze:* https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}`)}`} 
                 target="_blank" 
                 rel="noreferrer" 
                 className="flex items-center justify-center p-1.5 px-2 !bg-green-600 hover:!bg-green-500 active:scale-95 !text-white !rounded-md font-bold text-xs shadow-sm transition-all" 
