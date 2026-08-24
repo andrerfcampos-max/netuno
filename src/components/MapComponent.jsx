@@ -509,9 +509,9 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         >
           <MapPin size={15} className="text-emerald-400 shrink-0 animate-pulse" />
           <span>
-            {isAllCitiesOnly 
+            {!isCitySelected 
               ? '🗺️ Visão do DF Completo ativa: A Lista e os Relatórios contêm todos os hidrantes. Clique aqui para selecionar uma Cidade/RA no mapa.'
-              : 'Selecione uma Cidade no filtro acima para visualizar os hidrantes (Toque aqui)'}
+              : 'Nenhum hidrante encontrado para os filtros selecionados (Toque aqui)'}
           </span>
         </div>
       )}
@@ -590,13 +590,6 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
           <span className="text-red-400">Hidrante inoperante</span>
         </div>
       </div>
-
-      {/* Aviso ao Usuário quando nenhuma cidade estiver selecionada */}
-      {!isCitySelected && validHidrantes.length === 0 && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-xl border border-cyan-500/50 shadow-2xl flex items-center gap-2 text-xs sm:text-sm font-bold text-cyan-300 pointer-events-auto max-w-[92%] text-center">
-          <span>🗺️ Selecione uma Cidade / RA no filtro acima para visualizar os hidrantes no mapa.</span>
-        </div>
-      )}
 
       {!isMapFullscreen && (
         <button 
