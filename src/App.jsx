@@ -1180,8 +1180,9 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-left bg-red-900/30 text-red-400 font-semibold rounded hover:bg-red-900/50 transition-all"
+                        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-left bg-red-900/30 text-red-400 font-semibold rounded-lg hover:bg-red-900/50 transition-all text-sm"
                       >
+                        <ShieldAlert size={18} className="text-red-400 shrink-0" />
                         Painel Admin
                       </a>
                     )}
@@ -1195,9 +1196,9 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-left bg-blue-900/30 text-blue-400 font-semibold rounded hover:bg-blue-900/50 transition-all"
+                        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-left bg-blue-900/30 text-blue-400 font-semibold rounded-lg hover:bg-blue-900/50 transition-all text-sm"
                       >
-                        <PlusCircle size={18} />
+                        <PlusCircle size={18} className="text-blue-400 shrink-0" />
                         Novo Hidrante
                       </a>
                     )}
@@ -1211,14 +1212,14 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-start gap-2.5 w-full px-3 py-2 text-left bg-gradient-to-r from-emerald-950/60 to-teal-950/50 border border-emerald-500/30 text-emerald-300 font-semibold rounded-lg hover:from-emerald-900/70 hover:to-teal-900/60 transition-all group"
+                        className="flex items-start gap-2.5 w-full px-3 py-2.5 text-left bg-gradient-to-r from-emerald-950/60 to-teal-950/50 border border-emerald-500/30 text-emerald-300 font-semibold rounded-lg hover:from-emerald-900/70 hover:to-teal-900/60 transition-all group"
                       >
                         <Building2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
                         <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-bold text-emerald-300 group-hover:text-white transition-colors">
+                          <span className="text-sm font-semibold text-emerald-300 group-hover:text-white transition-colors">
                             Estudo PREPOP
                           </span>
-                          <span className="text-[11px] text-slate-400 font-normal leading-tight group-hover:text-slate-300 transition-colors">
+                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
                             Informações importantes para operações de incêndio
                           </span>
                         </div>
@@ -1234,9 +1235,9 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-left bg-purple-900/30 text-purple-400 font-semibold rounded hover:bg-purple-900/50 transition-all"
+                        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-left bg-purple-900/30 text-purple-400 font-semibold rounded-lg hover:bg-purple-900/50 transition-all text-sm"
                       >
-                        <Calculator size={18} />
+                        <Calculator size={18} className="text-purple-400 shrink-0" />
                         Estudo Técnico
                       </a>
                     )}
@@ -1250,10 +1251,10 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-center justify-between w-full px-3 py-2 text-left bg-amber-900/30 text-amber-300 font-semibold rounded hover:bg-amber-900/50 transition-all"
+                        className="flex items-center justify-between w-full px-3 py-2.5 text-left bg-amber-900/30 text-amber-300 font-semibold rounded-lg hover:bg-amber-900/50 transition-all text-sm"
                       >
-                        <span className="flex items-center gap-2">
-                          <ShieldAlert size={18} className="text-amber-400" />
+                        <span className="flex items-center gap-2.5">
+                          <ShieldAlert size={18} className="text-amber-400 shrink-0" />
                           Hidrantes Inconsistentes
                         </span>
                         {inconsistentCount > 0 && (
@@ -1272,14 +1273,14 @@ function App() {
                           setIsMenuOpen(false);
                         }
                       }}
-                      className="flex items-start gap-2.5 w-full px-3 py-2 text-left bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 font-semibold rounded-lg hover:bg-emerald-900/60 transition-all group"
+                      className="flex items-start gap-2.5 w-full px-3 py-2.5 text-left bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 font-semibold rounded-lg hover:bg-emerald-900/60 transition-all group"
                     >
                       <FolderOpen size={18} className="text-emerald-400 shrink-0 mt-0.5" />
                       <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-bold text-emerald-300 group-hover:text-white transition-colors">
+                        <span className="text-sm font-semibold text-emerald-300 group-hover:text-white transition-colors">
                           Central de missões
                         </span>
-                        <span className="text-[11px] text-slate-400 font-normal leading-tight group-hover:text-slate-300 transition-colors">
+                        <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
                           Acesse as missões de vistoria de hidrante de cada quartel
                         </span>
                       </div>
@@ -1306,9 +1307,9 @@ function App() {
                           window.location.reload();
                         }, 400);
                       }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-800 border border-slate-600 text-cyan-300 font-semibold rounded hover:bg-slate-700 active:scale-95 transition-all text-xs"
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-left bg-slate-800 border border-slate-600 text-cyan-300 font-semibold rounded-lg hover:bg-slate-700 active:scale-95 transition-all text-sm"
                     >
-                      <RefreshCw size={16} className="text-cyan-400" />
+                      <RefreshCw size={18} className="text-cyan-400 shrink-0" />
                       Atualizar Sistema (Limpar Cache)
                     </button>
 

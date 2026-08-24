@@ -215,38 +215,33 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
               <Building2 size={22} className="animate-pulse" />
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-xl font-bold tracking-tight text-white leading-tight">
-                  Estudo de edificações - PREPOP
-                </h2>
-              </div>
-              <p className="text-xs text-slate-400 leading-tight mt-0.5">
-                Informações táticas essenciais para tomada de decisões em operações de incêndio
-              </p>
+              <h2 className="text-base sm:text-xl font-bold tracking-tight text-white leading-tight">
+                Estudo de edificações - PREPOP
+              </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => {
                 setEditingStudy(null);
                 setIsFormOpen(true);
               }}
-              className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-lg shadow-emerald-950/50 active:scale-95 transition-all"
+              className="h-9 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 active:scale-95 transition-all"
               title="Cadastrar novo estudo de edificação"
             >
-              <PlusCircle size={16} />
+              <PlusCircle size={17} />
               <span className="hidden sm:inline">Novo estudo</span>
             </button>
             
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
+              className="h-9 w-9 flex items-center justify-center text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700/80 active:scale-95 transition-all"
               title="Fechar (Esc)"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
