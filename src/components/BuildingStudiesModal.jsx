@@ -217,11 +217,8 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white truncate">
-                  Estudo de Edificações
+                  ESTUDO DE EDIFICAÇÕES - PREPOP
                 </h2>
-                <span className="hidden sm:inline-block px-2 py-0.5 text-[11px] font-bold bg-red-900/60 border border-red-500/40 text-red-300 rounded-full uppercase tracking-wider">
-                  PPO / SCI CBMDF
-                </span>
               </div>
               <p className="text-xs text-slate-400 truncate">
                 Informações táticas essenciais para tomada de decisões em operações de incêndio
