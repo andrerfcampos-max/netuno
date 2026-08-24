@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Chaves padrão via variáveis de ambiente Vite (ou configuradas na Vercel)
-const ENV_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-const ENV_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Chaves padrão do projeto Supabase Netuno
+const DEFAULT_SUPABASE_URL = 'https://ixxgleaxmiffflsqaapc.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_nfAn0i2h5mK-ku2LMuXTYQ_xmdWjNZm';
+
+const ENV_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+const ENV_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
 let supabaseInstance = null;
 let currentUrl = '';
