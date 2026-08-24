@@ -54,16 +54,16 @@ const RecenterMap = ({ centerPosition, selectedHydrant }) => {
   useEffect(() => {
     const pos = selectedHydrant || centerPosition;
     if (pos && typeof pos.numLatitude === 'number' && typeof pos.numLongitude === 'number') {
-      const zoom = map.getZoom() < 16 ? 17 : map.getZoom();
+      const currentZoom = map.getZoom();
       const isMobile = window.innerWidth < 768;
       if (isMobile) {
-        const point = map.project([pos.numLatitude, pos.numLongitude], zoom);
+        const point = map.project([pos.numLatitude, pos.numLongitude], currentZoom);
         // Deslocamento vertical para baixo em pixels para que o pino suba e fique centralizado na área livre acima do Bottom Sheet
         const targetPoint = new L.Point(point.x, point.y + 115);
-        const targetLatLng = map.unproject(targetPoint, zoom);
-        map.setView(targetLatLng, zoom, { animate: true });
+        const targetLatLng = map.unproject(targetPoint, currentZoom);
+        map.panTo(targetLatLng, { animate: true });
       } else {
-        map.setView([pos.numLatitude, pos.numLongitude], zoom, { animate: true });
+        map.panTo([pos.numLatitude, pos.numLongitude], { animate: true });
       }
     }
   }, [centerPosition, selectedHydrant, map]);
