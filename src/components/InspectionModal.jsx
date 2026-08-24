@@ -275,7 +275,9 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
           
           {/* Pergunta 1 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">1) A CHAVE TIPO T ENCAIXA NO REGISTRO?</label>
+            <label className="font-bold text-slate-300 text-sm">
+              1) A CHAVE TIPO T ENCAIXA NO REGISTRO? <span className="text-red-500 font-bold ml-1">*</span>
+            </label>
             <div className="flex gap-2">
               {renderOption('SIM', q1, setQ1, true)}
               {renderOption('NÃO, FALTA LUVA', q1, setQ1, false)}
@@ -284,7 +286,9 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
           {/* Pergunta 2 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">2) O REGISTRO ESTÁ...</label>
+            <label className="font-bold text-slate-300 text-sm">
+              2) O REGISTRO ESTÁ... <span className="text-red-500 font-bold ml-1">*</span>
+            </label>
             <div className="grid grid-cols-2 gap-2">
               {renderOption('SEM ALTERAÇÃO', q2, setQ2, true)}
               {renderOption('SOTERRADO', q2, setQ2, false)}
@@ -295,7 +299,9 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
           {/* Pergunta 3 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">3) A TAMPA DA CAIXA ESTÁ...</label>
+            <label className="font-bold text-slate-300 text-sm">
+              3) A TAMPA DA CAIXA ESTÁ... <span className="text-red-500 font-bold ml-1">*</span>
+            </label>
             <div className="grid grid-cols-2 gap-2">
               {renderOption('SEM ALTERAÇÃO', q3, setQ3, true)}
               {renderOption('LACRADA', q3, setQ3, false)}
@@ -306,7 +312,9 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
           {/* Pergunta 4 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">4) TODOS OS TAMPÕES ESTÃO PRESENTES?</label>
+            <label className="font-bold text-slate-300 text-sm">
+              4) TODOS OS TAMPÕES ESTÃO PRESENTES? <span className="text-red-500 font-bold ml-1">*</span>
+            </label>
             <div className="grid grid-cols-2 gap-2">
               {renderOption('SIM', q4, setQ4, true)}
               {renderOption('FALTA 1 TAMPÃO', q4, setQ4, true)}
@@ -318,7 +326,9 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
           {/* Pergunta 5 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
             <div className="flex justify-between items-center">
-              <label className="font-bold text-slate-300 text-sm">5) O HIDRANTE ESTÁ OPERANTE?</label>
+              <label className="font-bold text-slate-300 text-sm">
+                5) O HIDRANTE ESTÁ OPERANTE? <span className="text-red-500 font-bold ml-1">*</span>
+              </label>
               {motivoInoperante && (
                 <span className="text-[10px] bg-red-900/80 text-red-300 font-bold px-2 py-0.5 rounded border border-red-700">
                   Bloqueado (Inoperante)

@@ -19,9 +19,6 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
   const [isMoveMode, setIsMoveMode] = useState(false);
   const [missionToMove, setMissionToMove] = useState(null);
   const [missionToDelete, setMissionToDelete] = useState(null);
-  const [touchStartX, setTouchStartX] = useState(null);
-  const [touchStartY, setTouchStartY] = useState(null);
-  const [swipingMissionId, setSwipingMissionId] = useState(null);
 
   // Set default folder
   const handleSetDefaultFolder = () => {
@@ -98,35 +95,6 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
     if (activeTab === 'finalizadas' && isCompleted) return true;
     return true;
   }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  const handleTouchCardStart = (e, missionId) => {
-    setTouchStartX(e.touches[0].clientX);
-    setTouchStartY(e.touches[0].clientY);
-    setSwipingMissionId(missionId);
-  };
-
-  const handleTouchCardEnd = (e, mission) => {
-    if (touchStartX === null || touchStartY === null || swipingMissionId !== mission.id) {
-      setTouchStartX(null);
-      setTouchStartY(null);
-      setSwipingMissionId(null);
-      return;
-    }
-    const diffX = touchStartX - e.changedTouches[0].clientX;
-    const diffY = touchStartY - e.changedTouches[0].clientY;
-
-    // Arrastou para a esquerda de forma clara (> 65px)
-    if (Math.abs(diffX) > Math.abs(diffY) * 1.5 && diffX > 65) {
-      if (mission.createdBy && mission.createdBy !== currentUser?.matricula && currentUser?.role !== 'admin' && currentUser?.role !== 'gestor') {
-        alert(`Somente o autor da rota (${mission.createdBy}), um gestor ou um admin pode excluí-la.`);
-      } else {
-        setMissionToDelete(mission);
-      }
-    }
-    setTouchStartX(null);
-    setTouchStartY(null);
-    setSwipingMissionId(null);
-  };
 
   const confirmDelete = () => {
     if (missionToDelete) {
@@ -278,7 +246,14 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
           <div className="flex items-center gap-3">
             <button 
               type="button"
-              onClick={onClose} 
+              onClick={() => {
+                if (currentFolderId !== null) {
+                  const currentFolder = folders.find(f => f.id === currentFolderId);
+                  setCurrentFolderId(currentFolder?.parentFolderId || null);
+                } else {
+                  onClose();
+                }
+              }} 
               className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded font-semibold transition-colors"
             >
               ← Voltar
@@ -503,8 +478,6 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
             return (
               <div 
                 key={mission.id} 
-                onTouchStart={(e) => handleTouchCardStart(e, mission.id)}
-                onTouchEnd={(e) => handleTouchCardEnd(e, mission)}
                 className="bg-slate-700/50 border border-slate-600 rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:bg-slate-700 transition-all w-full relative select-none"
               >
                 <div className="flex-1 w-full min-w-0 overflow-hidden">

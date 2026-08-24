@@ -141,25 +141,23 @@ function App() {
     );
   }, [activeFilters]);
 
-  const isAllCitiesOnly = useMemo(() => {
-    return (activeFilters?.ra === '__TODAS__') && !hasSecondaryFilter;
-  }, [activeFilters?.ra, hasSecondaryFilter]);
+  const isCitySelected = useMemo(() => {
+    return Boolean(activeFilters?.ra && activeFilters.ra.trim() !== '');
+  }, [activeFilters?.ra]);
 
   const mapHidrantes = useMemo(() => {
     if (mapCenterPosition) {
       const exists = filteredList.some(h => (h.codHidrante === mapCenterPosition.codHidrante && h.nomHidrante === mapCenterPosition.nomHidrante) || (h._internalId && h._internalId === mapCenterPosition._internalId));
-      if (!exists) {
-        return [...filteredList, mapCenterPosition];
+      if (isCitySelected) {
+        return exists ? filteredList : [...filteredList, mapCenterPosition];
       }
+      return [mapCenterPosition];
     }
-    if (isAllCitiesOnly) {
-      if (mapCenterPosition) {
-        return [mapCenterPosition];
-      }
+    if (!isCitySelected) {
       return [];
     }
     return filteredList;
-  }, [isAllCitiesOnly, mapCenterPosition, filteredList]);
+  }, [isCitySelected, mapCenterPosition, filteredList]);
 
   // Suporte a abertura direta de modais e deep links de hidrante (?hid=...) via URL parameter
   useEffect(() => {
@@ -557,11 +555,6 @@ function App() {
       (filters.status && filters.status !== 'Todos') ||
       (filters.problema && filters.problema !== '');
 
-    // Se nenhum filtro foi selecionado (estado inicial/padrão), retorna vazio para carga sob demanda
-    if (!hasActiveFilter) {
-      return [];
-    }
-
     let result = [...dataList];
     if (filters.buscaGeral) {
       const termo = String(filters.buscaGeral).toLowerCase();
@@ -571,7 +564,7 @@ function App() {
         (h.dscPontoReferencia && String(h.dscPontoReferencia).toLowerCase().includes(termo))
       );
     }
-    if (filters.ra && filters.ra !== '__TODAS__') {
+    if (filters.ra && filters.ra.trim() !== '') {
       result = result.filter(h => h.dscLocalidade === filters.ra);
     }
     if (filters.periodo) {
@@ -644,7 +637,7 @@ function App() {
   // Extrair Anos dinamicamente baseado na Cidade/RA selecionada
   const anosVistoria = useMemo(() => {
     let baseList = hidrantes;
-    if (activeFilters.ra && activeFilters.ra !== '__TODAS__') {
+    if (activeFilters.ra && activeFilters.ra.trim() !== '') {
       baseList = baseList.filter(h => h.dscLocalidade === activeFilters.ra);
     }
     const anos = new Set();
@@ -660,7 +653,7 @@ function App() {
   // Extrair Problemas dinamicamente baseado na Cidade/RA e Período selecionados
   const problemasVistoria = useMemo(() => {
     let baseList = hidrantes;
-    if (activeFilters.ra && activeFilters.ra !== '__TODAS__') {
+    if (activeFilters.ra && activeFilters.ra.trim() !== '') {
       baseList = baseList.filter(h => h.dscLocalidade === activeFilters.ra);
     }
     if (activeFilters.periodo) {
@@ -1346,7 +1339,8 @@ function App() {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               activeView={activeView}
-              isAllCitiesOnly={isAllCitiesOnly}
+              isCitySelected={isCitySelected}
+              selectedCity={activeFilters?.ra}
             />
           </ErrorBoundary>
         </div>
@@ -1380,6 +1374,7 @@ function App() {
               currentMission={currentMission}
               onUpdateMission={(updates) => updateCurrentMission(updates)}
               onClose={() => setActiveView('map')}
+              onBackToManager={() => setIsMissionManagerOpen(true)}
               onClearMission={() => updateCurrentMission({ selectedIds: [], completedIds: [] })}
               onRemoveFromMission={toggleMissionSelection}
               lastInspectedCoords={lastInspectedCoords} 
@@ -1486,16 +1481,12 @@ function App() {
       {/* Barramento de Seleção Inferior (Desktop apenas) */}
       <footer className={isMapFullscreen ? "hidden" : "hidden md:flex bg-slate-900 border-t border-slate-700 p-3 justify-between items-center z-20"}>
         <div className="flex flex-col">
-          <div className="text-sm font-semibold text-slate-400">
-            {activeMissionId ? (
-              <>
-                <span className="text-emerald-400 font-bold">{selectedMissionIds.length}</span> hidrantes na {currentMission?.name} 
-                {completedMissionIds.length > 0 && ` (${completedMissionIds.length} concluídos)`}
-              </>
-            ) : (
-              <span>Selecione ou crie uma Missão na Central</span>
-            )}
-          </div>
+          {activeMissionId && (
+            <div className="text-sm font-semibold text-slate-400">
+              <span className="text-emerald-400 font-bold">{selectedMissionIds.length}</span> hidrantes na {currentMission?.name} 
+              {completedMissionIds.length > 0 && ` (${completedMissionIds.length} concluídos)`}
+            </div>
+          )}
           <span className="text-[10px] text-slate-500 opacity-60 mt-0.5 tracking-wide">
             Desenvolvido por Sgt Roméro
           </span>

@@ -98,7 +98,7 @@ const optimizeRouteMultiMode = async (hidrantes, startLat, startLng) => {
   }
 };
 
-const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds = [], currentMission, onUpdateMission, onClose, onClearMission, onRemoveFromMission, lastInspectedCoords, onInspect, onEdit, onCenterMap, currentUser, folders, onSaveRouteToFolder, onGenerateReport }) => {
+const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds = [], currentMission, onUpdateMission, onClose, onBackToManager, onClearMission, onRemoveFromMission, lastInspectedCoords, onInspect, onEdit, onCenterMap, currentUser, folders, onSaveRouteToFolder, onGenerateReport }) => {
   const [pendingRoute, setPendingRoute] = useState([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -359,7 +359,16 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
           )}
           
           {canEditRoute && (
-            <button onClick={() => onRemoveFromMission(id)} title="Remover da Missão" className="p-1 px-1.5 bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white rounded active:scale-95 transition-transform ml-0.5">
+            <button 
+              onClick={() => {
+                const name = h.nomHidrante || h.codHidrante || id;
+                if (window.confirm(`Deseja realmente remover o hidrante "${name}" da rota de missão?`)) {
+                  onRemoveFromMission(id);
+                }
+              }} 
+              title="Remover da Missão" 
+              className="p-1 px-1.5 bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white rounded active:scale-95 transition-transform ml-0.5"
+            >
               <X size={13}/>
             </button>
           )}
@@ -375,40 +384,52 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     <div className="flex flex-col p-2.5 sm:p-4 w-full h-full bg-slate-900 relative">
 
       <div className="flex justify-between items-start mb-2 pb-2 border-b border-slate-700 relative">
-        <div className="flex flex-col gap-1 flex-1 min-w-0 mr-1.5">
-          {currentMission ? (
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <GitMerge size={20} className="text-emerald-400 flex-shrink-0" />
-                <div className="flex flex-col flex-1 min-w-0 relative">
-                  <div className="flex items-center gap-1.5 text-slate-300 w-full flex-wrap sm:flex-nowrap">
-                    <span className="font-bold text-sm sm:text-lg drop-shadow-sm truncate min-w-0 max-w-[200px] sm:max-w-none">{currentMission.name}</span>
-                    <span className="bg-emerald-900/80 border border-emerald-500 text-emerald-300 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full shadow shrink-0">
-                      Hoje: {vistoriasHoje}
-                    </span>
-                    {currentMission.isDraft && (
-                      <span className="bg-amber-900/50 text-amber-400 text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border border-amber-800 shrink-0">
-                        Não Salvo
+        <div className="flex items-center gap-2 flex-1 min-w-0 mr-1.5">
+          {onBackToManager && (
+            <button 
+              type="button" 
+              onClick={onBackToManager}
+              className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded font-semibold transition-colors flex items-center gap-1 shrink-0"
+              title="Voltar para a Central de Missões"
+            >
+              ← Voltar
+            </button>
+          )}
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            {currentMission ? (
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <GitMerge size={20} className="text-emerald-400 flex-shrink-0" />
+                  <div className="flex flex-col flex-1 min-w-0 relative">
+                    <div className="flex items-center gap-1.5 text-slate-300 w-full flex-wrap sm:flex-nowrap">
+                      <span className="font-bold text-sm sm:text-lg drop-shadow-sm truncate min-w-0 max-w-[200px] sm:max-w-none">{currentMission.name}</span>
+                      <span className="bg-emerald-900/80 border border-emerald-500 text-emerald-300 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full shadow shrink-0">
+                        Hoje: {vistoriasHoje}
                       </span>
+                      {currentMission.isDraft && (
+                        <span className="bg-amber-900/50 text-amber-400 text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border border-amber-800 shrink-0">
+                          Não Salvo
+                        </span>
+                      )}
+                    </div>
+                    {/* Exibir Caminho da Pasta */}
+                    {!currentMission.isDraft && currentMission.parentFolderId && (
+                      <div className="text-[11px] font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
+                        <FolderOpen size={11} /> Pasta: {folders?.find(f => f.id === currentMission.parentFolderId)?.name || 'Central'}
+                      </div>
                     )}
                   </div>
-                  {/* Exibir Caminho da Pasta */}
-                  {!currentMission.isDraft && currentMission.parentFolderId && (
-                    <div className="text-[11px] font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
-                      <FolderOpen size={11} /> Pasta: {folders?.find(f => f.id === currentMission.parentFolderId)?.name || 'Central'}
-                    </div>
-                  )}
                 </div>
               </div>
-            </div>
-          ) : (
-            <h2 className="text-lg font-bold text-emerald-400 flex items-center gap-2 drop-shadow-sm">
-              <GitMerge size={20} /> Rota de Missão
-            </h2>
-          )}
+            ) : (
+              <h2 className="text-lg font-bold text-emerald-400 flex items-center gap-2 drop-shadow-sm">
+                <GitMerge size={20} /> Rota de Missão
+              </h2>
+            )}
+          </div>
         </div>
         
-        <button onClick={onClose} className="p-1.5 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 rounded-full transition-colors shrink-0 z-10">
+        <button onClick={onClose} className="p-1.5 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 rounded-full transition-colors shrink-0 z-10" title="Fechar Rota">
           <X size={20} />
         </button>
       </div>

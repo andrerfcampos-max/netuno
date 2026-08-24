@@ -1,8 +1,8 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2, Maximize2, Plus, Share2 } from 'lucide-react';
+import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2, Maximize2, Plus, Share2 } from 'lucide-react';
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
@@ -203,19 +203,36 @@ const GpsControl = ({ userLocation }) => {
         title="Centralizar na Minha Posição (GPS)"
         className={`p-3 bg-slate-900/90 hover:bg-slate-800 text-cyan-400 border border-cyan-500/50 hover:border-cyan-400 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer backdrop-blur-md ${isLocating ? 'animate-pulse' : ''}`}
       >
-        <Navigation size={22} className="text-cyan-400" />
+        <LocateFixed size={22} className="text-cyan-400" />
       </button>
     </div>
   );
 };
 
-const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isAllCitiesOnly = false }) => {
+const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '' }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const validHidrantes = useMemo(() => {
     return hidrantes.filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude));
   }, [hidrantes]);
 
   const [userLocation, setUserLocation] = useState(null);
+  const markerRefs = useRef({});
+
+  // Abrir popup de forma limpa e sem loop quando centerPosition mudar
+  useEffect(() => {
+    if (centerPosition) {
+      const targetId = centerPosition.codHidrante || centerPosition._internalId || centerPosition.nomHidrante;
+      const timer = setTimeout(() => {
+        const marker = markerRefs.current[targetId];
+        if (marker && marker.openPopup) {
+          try {
+            marker.openPopup();
+          } catch (e) {}
+        }
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [centerPosition]);
 
   useEffect(() => {
     let watchId;
@@ -276,24 +293,19 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
 
   const renderMarkers = () => {
     return validHidrantes.map((h, i) => {
-      const id = h.codHidrante || h._internalId || h.nomHidrante;
+      const id = h.codHidrante || h._internalId || h.nomHidrante || `hid-${i}`;
       const isSelected = selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h._internalId);
-      const isCentered = centerPosition && (centerPosition.codHidrante === h.codHidrante || centerPosition.nomHidrante === h.nomHidrante);
       
       return (
       <Marker 
-        key={isCentered ? `${id}-center-${Date.now()}` : (id || i)} 
+        key={id} 
         position={[h.numLatitude, h.numLongitude]}
         icon={createDivIcon(h.flgAtivo, isSelected)}
         ref={(marker) => {
-          if (marker && isCentered) {
-            setTimeout(() => {
-              try {
-                if (marker.openPopup && (!marker.isPopupOpen || !marker.isPopupOpen())) {
-                  marker.openPopup();
-                }
-              } catch (err) {}
-            }, 350);
+          if (marker) {
+            markerRefs.current[id] = marker;
+          } else {
+            delete markerRefs.current[id];
           }
         }}
         eventHandlers={{
@@ -312,11 +324,6 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                   e.target.closePopup();
                 }
               }, 0);
-              setTimeout(() => {
-                if (e.target && typeof e.target.closePopup === 'function') {
-                  e.target.closePopup();
-                }
-              }, 50);
             }
           },
           dblclick: (e) => {
@@ -324,15 +331,6 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
               onToggleMission(id);
               e.originalEvent.preventDefault();
               e.originalEvent.stopPropagation();
-            }
-          },
-          add: (e) => {
-            if (isCentered) {
-              setTimeout(() => {
-                if (e.target.isPopupOpen && !e.target.isPopupOpen()) {
-                  e.target.openPopup();
-                }
-              }, 300);
             }
           }
         }}
@@ -585,13 +583,20 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
       <div className="absolute bottom-6 left-3 z-[1000] bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl flex items-center gap-3 text-[11px] font-bold text-slate-200 pointer-events-auto select-none">
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-[#10b981] border border-white shadow-sm inline-block shrink-0"></span>
-          <span className="text-emerald-400">Operante</span>
+          <span className="text-emerald-400">Hidrante operante</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-[#ef4444] border border-white shadow-sm inline-block shrink-0"></span>
-          <span className="text-red-400">Inoperante</span>
+          <span className="text-red-400">Hidrante inoperante</span>
         </div>
       </div>
+
+      {/* Aviso ao Usuário quando nenhuma cidade estiver selecionada */}
+      {!isCitySelected && validHidrantes.length === 0 && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-xl border border-cyan-500/50 shadow-2xl flex items-center gap-2 text-xs sm:text-sm font-bold text-cyan-300 pointer-events-auto max-w-[92%] text-center">
+          <span>🗺️ Selecione uma Cidade / RA no filtro acima para visualizar os hidrantes no mapa.</span>
+        </div>
+      )}
 
       {!isMapFullscreen && (
         <button 

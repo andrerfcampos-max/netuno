@@ -322,22 +322,31 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Desenvolvido mecanismo estruturado de gravação em `localStorage` (`loadHydrantChanges`/`saveHydrantChanges` e `loadActiveMissionState`/`saveActiveMissionState`).
   - Na recarga de tela (F5), a base de dados funde automaticamente as vistorias realizadas, novos hidrantes cadastrados, edições e exclusões, além de manter ativas as abas de missões abertas.
 
-### [24/08/2026] Etapa 51 Concluída: Integração com Banco de Dados em Nuvem (Supabase Cloud DB) para Sincronização Multi-Dispositivo (Mobile ⇄ Desktop)
-- **1. Arquitetura de Banco de Dados em Nuvem (`supabase/schema.sql`, `supabase.js`, `syncService.js`):**
-  - Integração do cliente oficial `@supabase/supabase-js` com suporte a variáveis de ambiente (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) e configuração dinâmica pelo usuário em runtime.
-  - Script SQL de criação das tabelas `netuno_missions`, `netuno_folders`, `netuno_inspections` e `netuno_hydrant_mutations` com políticas abertas de RLS e publicação Realtime ativa.
-- **2. Sincronização Bidirecional e WebSockets em Tempo Real (`syncService.js`, `App.jsx`):**
-  - Ao cadastrar, editar ou concluir uma missão/rota no smartphone em campo, o Netuno envia os dados imediatamente para o Supabase (`syncMissionToCloud`).
-  - Outros aparelhos conectados (computador desktop ou outros celulares) recebem os novos dados instantaneamente via canal WebSockets Realtime ou polling inteligente (10s) sem necessidade de intervenção manual.
-  - Vistorias realizadas em campo e edições cadastrais de hidrantes são gravadas nas tabelas de nuvem e espelhadas para toda a tropa conectada.
-- **3. Modal de Configuração e Teste de Conexão (`CloudConfigModal.jsx`):**
-  - Adicionada opção no menu principal **"Banco em Nuvem (Cloud DB)"** permitindo aos gestores e operadores verificar o status da conexão em tempo real, configurar URL/Key e acionar sincronização manual sob demanda.
-- **4. Arquitetura Offline-First Resiliente:**
-  - Preserva 100% da operação local no `localStorage` caso a viatura esteja em área sem sinal celular/internet, sincronizando automaticamente os dados com a nuvem no momento em que a conectividade for restabelecida.
-- **5. Correção Crítica de Exclusão de Missões e Sincronização Multi-Dispositivo (`storage.js`, `App.jsx`, `MissionManagerModal.jsx`):**
-  - **Eliminação de Ressurreição de Missões:** Removida a reinjeção forçada de `MOCK_TEST_MISSIONS` no `loadMissions()` que recriava missões excluídas toda vez que o app abria no PC ou celular.
-  - **Recepção de Base Vazia/Excluída da Nuvem:** Corrigida a condição em `App.jsx` (`Array.isArray(cloudMissions)`) para que exclusões completas realizadas em um dispositivo reflitam imediatamente no outro.
-  - **Sincronização em Todas as Mutações:** Adicionada sincronização em nuvem nas ações de seleção/deseleção de hidrantes (`toggleMissionSelection`, `selectAllFiltered`) e movimentação entre pastas (`confirmMove`).
-  - **Permissão de Exclusão por Perfil:** Ajustado o RBAC em `MissionManagerModal.jsx` para que perfis `gestor` e `admin` possam excluir missões criadas por qualquer usuário.
+### [24/08/2026] Etapa 52 Concluída: Ajustes de UI/UX, Navegação Rota ⇄ Missões, Correção de Loop no Mapa, Plotagem por Cidade e Refinamentos Gerais
+- **1. Exclusão da Frase no Rodapé Inferior Desktop (`App.jsx`):**
+  - Removido o texto `"Selecione ou crie uma Missão na Central"` do footer desktop quando nenhuma missão estiver ativa.
+- **2. Atualização da Legenda do Mapa (`MapComponent.jsx`):**
+  - Textos normatizados de `"Operante"` / `"Inoperante"` para **"Hidrante operante"** e **"Hidrante inoperante"**.
+- **3. Confirmação ao Excluir Hidrante da Rota (`MissionRoutePanel.jsx`):**
+  - Ao clicar no botão de exclusão (`X`), adicionado diálogo de confirmação explícito antes de remover o hidrante da rota de missão.
+- **4. Asteriscos Vermelhos em Respostas Obrigatórias de Vistoria (`InspectionModal.jsx`):**
+  - Adicionado asterisco vermelho (`*`) em destaque em todas as perguntas obrigatórias (Perguntas 1 a 5) do formulário de vistoria rápida.
+- **5 & 6. Navegação Fluida Rota ⇄ Central de Missões e Correção do Botão Voltar (`MissionRoutePanel.jsx`, `MissionManagerModal.jsx`, `App.jsx`):**
+  - Adicionado botão **"← Voltar"** no cabeçalho do painel de rota para retornar diretamente à Central de Missões e rever a listagem de missões do quartel.
+  - Corrigido o botão **"← Voltar"** na Central de Missões para navegar hierarquicamente da subpasta atual para a pasta anterior/raiz em vez de fechar o modal. Ao estar na raiz, o botão fecha o modal.
+- **7. Correção Definitiva do Bug de Loop/Piscamento de Dialog no Mapa (`MapComponent.jsx`):**
+  - Eliminada a geração de `key` instável com `Date.now()` no `<Marker>` e removidos os timeouts recursivos em hooks `ref` e `add` que causavam destruição e recriação infinita de marcadores.
+  - Popup de hidrante centralizado controlado via `useEffect` único com mapa de referências (`markerRefs`).
+- **8. Novas Regras de Plotagem por Cidade e Remoção de 'Todas as Cidades' (`FilterBar.jsx`, `App.jsx`, `MapComponent.jsx`):**
+  - Removida a opção `__TODAS__` (*Todas as Cidades / Visão DF Completo*) de todos os dropdowns de seleção de RA.
+  - O mapa plota pinos exclusivamente quando uma Cidade/RA for selecionada (ou hidrante individual aberto), exibindo banner orientativo aos usuários.
+  - A Lista (`DataTable`), Relatórios e Dashboard continuam recebendo e processando a totalidade dos hidrantes do DF quando o seletor estiver na opção padrão *"Escolha a Cidade / RA..."*.
+- **9. Normatização do Ícone de GPS (`MapComponent.jsx`):**
+  - Substituído o ícone de seta (`Navigation`) pelo ícone oficial de mira/localização (`LocateFixed`) no botão flutuante de GPS, idêntico ao padrão Google Maps.
+- **10. Pino Vermelho no Mapa de Cadastro/Edição de Hidrantes (`EditHydrantModal.jsx`):**
+  - Substituído o marcador azul padrão por um pino vetorial vermelho (`redPinIcon`) de alta visibilidade e definição.
+- **11. Cancelamento de Touch Swipe na Central de Missões (`MissionManagerModal.jsx`):**
+  - Removidos os detectores e ouvintes de arraste para o lado (touch swipe) nos cards de missões, evitando exclusões acidentais.
+
 
 

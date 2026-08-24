@@ -115,7 +115,6 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
             onChange={(e) => handleChange('ra', e.target.value)}
           >
             <option value="" className="bg-slate-900 text-slate-400">🎯 Escolha a RA...</option>
-            <option value="__TODAS__" className="bg-slate-900 text-cyan-300 font-semibold">🗺️ DF Completo</option>
             {regions.map(r => {
               const name = typeof r === 'object' && r ? r.name : r;
               return <option key={name} value={name} className="bg-slate-900 text-white">{name}</option>;
@@ -219,7 +218,7 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
                   </label>
                   {filters.ra && (
                     <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded border border-emerald-500/40">
-                      {filters.ra === '__TODAS__' ? 'DF Completo' : filters.ra}
+                      {filters.ra}
                     </span>
                   )}
                 </div>
@@ -234,7 +233,6 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
                     onChange={(e) => handleChange('ra', e.target.value)}
                   >
                     <option value="" className="bg-slate-900 text-slate-400">🎯 Selecione uma Cidade / RA...</option>
-                    <option value="__TODAS__" className="bg-slate-900 text-cyan-300 font-semibold">🗺️ Todas as Cidades (Visão DF Completo)</option>
                     {regions.map(r => {
                       const name = typeof r === 'object' && r ? r.name : r;
                       return <option key={name} value={name} className="bg-slate-900 text-white">{name}</option>;
@@ -448,7 +446,6 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
               onChange={(e) => handleChange('ra', e.target.value)}
             >
               <option value="" className="bg-slate-900 text-slate-300">🎯 Selecione uma Cidade / RA...</option>
-              <option value="__TODAS__" className="bg-slate-900 text-cyan-300 font-semibold">🗺️ Todas as Cidades (Visão DF Completo)</option>
               {regions.map(r => {
                 const name = typeof r === 'object' && r ? r.name : r;
                 return <option key={name} value={name} className="bg-slate-900 text-white">{name}</option>;

@@ -6,14 +6,19 @@ import { RA_LIST, normalizeRAName, generateNextHydrantCode } from '../utils/raLi
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { fixEncoding } from '../utils/textUtils';
 
-const customIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+const redPinIcon = L.divIcon({
+  className: 'custom-red-marker-icon',
+  html: `
+    <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+      <svg viewBox="0 0 24 24" width="36" height="36" fill="#ef4444" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3.2" fill="#ffffff"></circle>
+      </svg>
+    </div>
+  `,
+  iconSize: [36, 36],
+  iconAnchor: [18, 36],
+  popupAnchor: [0, -36]
 });
 
 const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes = [] }) => {
@@ -190,7 +195,7 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
     }, [validLat, validLng, map]);
 
     return !isNaN(validLat) && !isNaN(validLng) ? (
-      <Marker position={[validLat, validLng]} icon={customIcon} />
+      <Marker position={[validLat, validLng]} icon={redPinIcon} />
     ) : null;
   };
 
