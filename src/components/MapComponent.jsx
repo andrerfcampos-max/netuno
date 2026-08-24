@@ -137,7 +137,7 @@ const MapResizer = ({ isMapFullscreen, activeView }) => {
   return null;
 };
 
-const UserLocationTracker = ({ userLocation, centerPosition }) => {
+const UserLocationTracker = ({ userLocation, centerPosition, hasFilter }) => {
   const map = useMap();
   const hasCenteredRef = React.useRef(false);
 
@@ -146,8 +146,9 @@ const UserLocationTracker = ({ userLocation, centerPosition }) => {
       map.setMinZoom(0);
       map.setMaxZoom(20);
       
-      // Centraliza automaticamente na primeira detecção da posição do usuário via GPS se não houver um hidrante explicitamente selecionado
-      if (userLocation && !hasCenteredRef.current && !centerPosition) {
+      // Centraliza automaticamente na primeira detecção da posição do usuário via GPS APENAS se não houver filtro aplicado
+      // Se houver filtros ou pinos plotados, prevalece o AutoFitFilteredBounds
+      if (userLocation && !hasCenteredRef.current && !centerPosition && !hasFilter) {
         if (typeof userLocation.lat === 'number' && !isNaN(userLocation.lat) && 
             typeof userLocation.lng === 'number' && !isNaN(userLocation.lng)) {
           hasCenteredRef.current = true;
@@ -157,7 +158,7 @@ const UserLocationTracker = ({ userLocation, centerPosition }) => {
     } catch (e) {
       console.warn('Erro ao atualizar visualização do usuário', e);
     }
-  }, [userLocation, centerPosition, map]);
+  }, [userLocation, centerPosition, hasFilter, map]);
   return null;
 };
 
@@ -209,7 +210,7 @@ const GpsControl = ({ userLocation }) => {
   );
 };
 
-const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '' }) => {
+const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '', hasFilter = false }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const validHidrantes = useMemo(() => {
     return hidrantes.filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude));
@@ -552,7 +553,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         <ScrollBehavior />
         <MapClickHandler onMapClick={onMapClick} />
         <MapResizer isMapFullscreen={isMapFullscreen} activeView={activeView} />
-        <UserLocationTracker userLocation={userLocation} centerPosition={centerPosition} />
+        <UserLocationTracker userLocation={userLocation} centerPosition={centerPosition} hasFilter={hasFilter || isCitySelected} />
 
         {/* Plotagem direta de todos os hidrantes (Sem agrupamento/cluster) */}
         {renderMarkers()}

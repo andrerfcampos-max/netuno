@@ -455,9 +455,11 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
 
       <div className="flex-1 overflow-y-auto mb-1.5 bg-slate-800/50 rounded-xl p-2 border border-slate-700 scroll-pt-2">
         {missionHydrants.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-4">
-            <MapPin size={48} className="opacity-20" />
-            <p className="text-base">Nenhum hidrante na missão.</p>
+          <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3 p-6 text-center">
+            <MapPin size={48} className="text-emerald-400/40 animate-pulse" />
+            <p className="text-sm font-semibold text-slate-300 max-w-sm">
+              Para criar uma nova rota de missão, selecione os hidrantes no mapa ou no bloco de lista.
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">

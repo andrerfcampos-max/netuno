@@ -428,22 +428,28 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
 
         {/* Search Bar (Visível apenas na pasta raiz) */}
         {activeTab !== 'dashboard_comando' && currentFolderId === null && (
-          <div className="p-3 bg-slate-900/30 border-b border-slate-700 flex gap-2">
-            <input 
-              type="text" 
-              placeholder="Buscar pasta ou missão na raiz (ex: Guará, 13º GBM, Missão)..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-            />
-            {searchTerm && (
-              <button 
-                onClick={() => setSearchTerm('')}
-                className="px-3 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold rounded-lg"
-              >
-                Limpar
-              </button>
-            )}
+          <div className="p-3 bg-slate-900/30 border-b border-slate-700 flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-xs text-slate-300 bg-slate-800/80 px-3 py-2 rounded-lg border border-slate-700">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
+              <span className="font-medium">Selecione o quartel para encontrar as ordens de missão de vistoria.</span>
+            </div>
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                placeholder="Buscar quartel ou missão (ex: Guará, 13º GBM, Missão)..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+              />
+              {searchTerm && (
+                <button 
+                  onClick={() => setSearchTerm('')}
+                  className="px-3 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold rounded-lg"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -744,7 +750,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
                 onClose();
               }} className="flex-[2] flex items-center justify-center gap-2 py-3 border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 text-emerald-400 bg-emerald-900/10 hover:bg-emerald-900/30 rounded-xl font-bold transition-all">
                 <Plus size={18} />
-                CRIAR RASCUNHO
+                CRIAR ROTA DE MISSÃO
               </button>
             </div>
           )}

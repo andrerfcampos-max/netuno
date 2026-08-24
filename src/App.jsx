@@ -1324,11 +1324,10 @@ function App() {
               className={`min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
                 activeView === 'route' 
                   ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' 
-                  : (!activeMissionId || selectedMissionIds.length === 0 
-                     ? 'bg-slate-800/60 border-slate-700 text-slate-500 opacity-60' 
+                  : (selectedMissionIds.length === 0 
+                     ? 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200' 
                      : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-slate-200')
               }`}
-              disabled={!activeMissionId}
             >
               Rota de Missão ({selectedMissionIds.length})
             </button>
@@ -1368,6 +1367,7 @@ function App() {
               }}
               activeView={activeView}
               isCitySelected={isCitySelected}
+              hasFilter={Boolean(isCitySelected || hasSecondaryFilter)}
               selectedCity={activeFilters?.ra}
             />
           </ErrorBoundary>
@@ -1393,7 +1393,7 @@ function App() {
         )}
 
         {/* MÓDULO ROTA DE MISSÃO */}
-        {activeView === 'route' && activeMissionId && (
+        {activeView === 'route' && (
           <div id="modulo-rota" className="w-full h-full flex-1 min-h-0 border border-slate-700 rounded-xl overflow-hidden flex flex-col">
             <MissionRoutePanel 
               hidrantes={hidrantes}
@@ -1512,11 +1512,10 @@ function App() {
 
           <button
             onClick={() => setActiveView('route')}
-            disabled={!activeMissionId}
             className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all relative ${
               activeView === 'route' 
                 ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-400 font-bold' 
-                : (!activeMissionId ? 'text-slate-600 opacity-50' : 'text-slate-400 hover:text-slate-200')
+                : (selectedMissionIds.length === 0 ? 'text-slate-400 hover:text-slate-200' : 'text-slate-300 hover:text-slate-200')
             }`}
           >
             <Navigation size={20} className={activeView === 'route' ? 'text-emerald-400' : ''} />

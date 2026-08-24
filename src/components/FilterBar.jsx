@@ -160,17 +160,38 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
       {/* DRAWER / BOTTOM SHEET MOBILE DE FILTROS AVANÇADOS */}
       {/* ======================================================== */}
       {isMobileDrawerOpen && (
-        <div className="md:hidden fixed inset-0 z-[100] flex flex-col justify-end bg-black/70 backdrop-blur-sm animate-fadeIn">
+        <div 
+          className="md:hidden fixed inset-0 z-[100] flex flex-col justify-end bg-black/70 backdrop-blur-sm animate-fadeIn"
+          onClick={() => setIsMobileDrawerOpen(false)}
+        >
           <div 
-            className="w-full bg-slate-900 border-t border-slate-700 rounded-t-2xl p-4 shadow-2xl flex flex-col max-h-[85vh] overflow-y-auto animate-slideUp"
+            className="w-full bg-slate-900 border-t border-slate-700 rounded-t-2xl p-4 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden animate-slideUp"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Barra de Arrastar (Drag handle para fechar/minimizar ao puxar para baixo) */}
+            <div 
+              className="w-full flex flex-col items-center justify-center pt-1 pb-2 cursor-grab active:cursor-grabbing touch-none select-none"
+              onTouchStart={(e) => {
+                e.currentTarget._startY = e.touches[0].clientY;
+              }}
+              onTouchMove={(e) => {
+                if (e.currentTarget._startY && e.touches[0].clientY - e.currentTarget._startY > 70) {
+                  setIsMobileDrawerOpen(false);
+                }
+              }}
+              onClick={() => setIsMobileDrawerOpen(false)}
+              title="Puxe ou clique para minimizar e voltar ao mapa"
+            >
+              <div className="w-12 h-1.5 bg-slate-600 hover:bg-slate-500 rounded-full opacity-80 transition-colors" />
+              <span className="text-[9px] text-slate-400 mt-1">Toque fora ou arraste para baixo para ver o mapa</span>
+            </div>
+
             {/* Header do Drawer */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal size={18} className="text-emerald-400" />
                 <h3 className="text-base font-bold text-white">
-                  Filtros Avançados {filteredCount !== null && <span className="text-xs text-emerald-400 font-bold font-mono">({filteredCount})</span>}
+                  Filtros Avançados
                 </h3>
                 {activeSecondaryFiltersCount > 0 && (
                   <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs px-2 py-0.5 rounded-full font-bold">
@@ -181,13 +202,14 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
               <button 
                 onClick={() => setIsMobileDrawerOpen(false)}
                 className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white"
+                title="Fechar e ver o mapa"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Conteúdo do Drawer */}
-            <div className="flex flex-col gap-4">
+            {/* Conteúdo rolável do Drawer */}
+            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4">
               
               {/* 1. Cidade / RA no Drawer */}
               <div>
@@ -246,16 +268,6 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
                     </button>
                   )}
                 </div>
-                {filteredCount !== null && (
-                  <div className="mt-1.5 flex items-center justify-between text-xs px-1">
-                    <span className={`font-semibold flex items-center gap-1 ${filteredCount > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {filteredCount > 0 
-                        ? `✓ ${filteredCount} hidrante(s) encontrado(s)${filters.ra ? ` no ${filters.ra}` : ' no DF'}` 
-                        : `⚠️ Nenhum hidrante encontrado${filters.ra ? ` no ${filters.ra}` : ' no DF'}`}
-                    </span>
-                    {filters.buscaGeral && <span className="text-[10px] text-slate-400">Filtrando em tempo real</span>}
-                  </div>
-                )}
               </div>
 
               {/* 3. Status Operacional */}
@@ -365,10 +377,30 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
                 </select>
               </div>
 
+              {/* POSICIONAMENTO DA MENSAGEM DE TOTALIZAÇÃO AO FINAL DE TODOS OS FILTROS */}
+              {filteredCount !== null && (
+                <div className="p-3 rounded-xl bg-slate-800/90 border border-slate-700 flex flex-col gap-1 shadow-sm">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className={`font-bold flex items-center gap-1.5 ${filteredCount > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      <span className={`w-2 h-2 rounded-full ${filteredCount > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                      {filteredCount > 0 
+                        ? `${filteredCount} hidrante(s) encontrado(s)${filters.ra ? ` em ${filters.ra}` : ' no DF'}` 
+                        : `Nenhum hidrante encontrado${filters.ra ? ` em ${filters.ra}` : ' no DF'}`}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">Resultado consolidado</span>
+                  </div>
+                  {hasAnyFilterActive && (
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      Contabilização considerando todos os filtros ativos acima.
+                    </p>
+                  )}
+                </div>
+              )}
+
             </div>
 
-            {/* Ações do Rodapé do Drawer */}
-            <div className="flex items-center gap-2 mt-6 pt-3 border-t border-slate-800">
+            {/* Ações do Rodapé do Drawer (Com espaçamento seguro inferior contra sobreposição) */}
+            <div className="flex items-center gap-2 mt-4 pt-3 pb-2 border-t border-slate-800 bg-slate-900 shrink-0">
               {hasAnyFilterActive && (
                 <button
                   type="button"
@@ -376,7 +408,7 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
                     handleClearFilters();
                     setIsMobileDrawerOpen(false);
                   }}
-                  className="w-1/3 py-3 bg-slate-800 hover:bg-slate-700 text-rose-400 font-bold rounded-xl text-xs transition-all border border-slate-700"
+                  className="w-1/3 py-3 bg-slate-800 hover:bg-slate-700 text-rose-400 font-bold rounded-xl text-xs transition-all border border-slate-700 active:scale-95"
                 >
                   Limpar
                 </button>
@@ -384,10 +416,10 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
               <button
                 type="button"
                 onClick={() => setIsMobileDrawerOpen(false)}
-                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-2 active:scale-95"
               >
                 <Check size={18} />
-                {filteredCount !== null ? `Aplicar e Ver ${filteredCount} Hidrante(s)` : 'Aplicar Filtros'}
+                {filteredCount !== null ? `Aplicar e Ver ${filteredCount} no Mapa` : 'Aplicar e Ver no Mapa'}
               </button>
             </div>
 
