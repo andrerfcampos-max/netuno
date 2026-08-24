@@ -825,7 +825,7 @@ function BuildingTacticalViewModal({
         </div>
 
         {/* BARRA DE NAVEGAÇÃO HORIZONTAL POR CHIPS DE SEÇÕES (STICKY) */}
-        <div className="sticky top-0 z-20 flex items-center overflow-x-auto border-b border-slate-800 bg-slate-950/95 backdrop-blur-md px-2 sm:px-6 py-1.5 sm:py-2 gap-1 sm:gap-1.5 shrink-0 scrollbar-thin">
+        <div className="sticky top-0 z-20 flex items-center overflow-x-auto border-b border-slate-800 bg-slate-950/95 backdrop-blur-md px-3 sm:px-6 py-2 gap-1.5 shrink-0 scrollbar-thin">
           {tacticalSections.map(s => {
             const Icon = s.icon;
             const isActive = activeSec === s.id;
@@ -834,13 +834,13 @@ function BuildingTacticalViewModal({
                 key={s.id}
                 type="button"
                 onClick={() => scrollToSection(s.id)}
-                className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                   isActive
                     ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 bg-slate-900 border border-slate-800'
                 }`}
               >
-                <Icon size={12} className="sm:w-[14px] sm:h-[14px]" />
+                <Icon size={14} />
                 <span>{s.label}</span>
               </button>
             );
@@ -1166,20 +1166,20 @@ function BuildingTacticalViewModal({
         </div>
 
         {/* Rodapé da Ficha Tática */}
-        <div className="px-3 py-2 sm:px-4 sm:py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
+        <div className="px-4 py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-3 shrink-0">
           <button
             type="button"
             onClick={onEdit}
-            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm rounded-lg transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm rounded-lg transition-all"
           >
-            <Edit size={14} className="sm:w-4 sm:h-4" />
+            <Edit size={16} />
             <span>EDITAR DADOS DA FICHA</span>
           </button>
 
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 sm:px-5 sm:py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow transition-all active:scale-95"
+            className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow transition-all"
           >
             FECHAR FICHA PREPOP
           </button>
