@@ -216,11 +216,11 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white truncate">
+                <h2 className="text-base sm:text-xl font-bold tracking-tight text-white leading-tight">
                   ESTUDO DE EDIFICAÇÕES - PREPOP
                 </h2>
               </div>
-              <p className="text-xs text-slate-400 truncate">
+              <p className="text-xs text-slate-400 leading-tight mt-0.5">
                 Informações táticas essenciais para tomada de decisões em operações de incêndio
               </p>
             </div>
@@ -788,10 +788,10 @@ function BuildingTacticalViewModal({
                 Carga {study.cargaIncendio || 'Média'}
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug truncate">
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
               {study.nomeFantasia}
             </h2>
-            <p className="text-xs text-slate-300 truncate">
+            <p className="text-xs text-slate-300 leading-snug mt-0.5">
               {study.razaoSocial ? `${study.razaoSocial} • ` : ''}{study.endereco}
             </p>
           </div>
@@ -1467,11 +1467,11 @@ function BuildingStudyFormModal({
         {/* Topo do Formulário */}
         <div className="px-3 py-2.5 sm:px-6 sm:py-3 bg-slate-800 border-b border-slate-700 flex items-center justify-between gap-2 shrink-0">
           <div className="min-w-0 flex-1">
-            <h2 className="text-xs sm:text-base md:text-lg font-bold text-white flex items-center gap-1.5 truncate">
+            <h2 className="text-xs sm:text-base md:text-lg font-bold text-white flex items-center gap-1.5 leading-tight">
               <Building2 size={18} className="text-emerald-400 shrink-0" />
-              <span className="truncate">{studyData?.id ? 'Editar Estudo de Edificação (PREPOP)' : 'Novo Estudo de Edificação (PREPOP)'}</span>
+              <span>{studyData?.id ? 'Editar Estudo de Edificação (PREPOP)' : 'Novo Estudo de Edificação (PREPOP)'}</span>
             </h2>
-            <p className="text-[10px] sm:text-xs text-slate-400 truncate">
+            <p className="text-[10px] sm:text-xs text-slate-400 leading-tight mt-0.5">
               Preencha com calma e salve quando desejar
             </p>
           </div>
@@ -2209,7 +2209,7 @@ function BuildingStudyFormModal({
               type="submit"
               className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-950/50 text-xs sm:text-sm active:scale-95 transition-all"
             >
-              Salvar Ficha PREPOP
+              Finalizar ficha PREPOP
             </button>
           </div>
 
