@@ -82,12 +82,12 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
       {/* ======================================================== */}
       {/* 1. VISUALIZAÇÃO MOBILE COMPACTA (< md): 1 LINHA ENXUTA */}
       {/* ======================================================== */}
-      <div className="md:hidden flex items-center gap-1.5 bg-slate-800/95 border border-slate-700/80 rounded-xl p-1.5 shadow-md">
+      <div className="md:hidden flex items-center gap-1.5 bg-slate-800/95 border border-slate-700/80 rounded-xl p-1.5 shadow-md w-full max-w-full">
         
         {/* Seletor de RA Compacto */}
-        <div className="relative flex-1 min-w-[130px]">
+        <div className="relative flex-1 min-w-0">
           <select 
-            className={`w-full h-9 pl-7 pr-2 rounded-lg text-xs font-semibold focus:outline-none transition-all truncate ${
+            className={`w-full h-9 pl-6 pr-1.5 rounded-lg text-xs font-semibold focus:outline-none transition-all truncate ${
               filters.ra && filters.ra !== ''
                 ? 'bg-slate-850 border border-emerald-500 text-emerald-300 ring-1 ring-emerald-500/30' 
                 : 'bg-slate-900 border border-slate-700 text-slate-300'
@@ -95,29 +95,29 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
             value={filters.ra}
             onChange={(e) => handleChange('ra', e.target.value)}
           >
-            <option value="" className="bg-slate-900 text-slate-400">🎯 Escolha a RA...</option>
+            <option value="" className="bg-slate-900 text-slate-400">🎯 RA...</option>
             {regions.map(r => {
               const name = typeof r === 'object' && r ? r.name : r;
               return <option key={name} value={name} className="bg-slate-900 text-white">{name}</option>;
             })}
           </select>
-          <MapPin size={14} className={`absolute left-2 top-2.5 pointer-events-none ${filters.ra ? 'text-emerald-400' : 'text-slate-400'}`} />
+          <MapPin size={13} className={`absolute left-1.5 top-2.5 pointer-events-none ${filters.ra ? 'text-emerald-400' : 'text-slate-400'}`} />
         </div>
 
         {/* Busca Livre Rápida */}
-        <div className="relative flex-1 min-w-[130px]">
+        <div className="relative flex-1 min-w-0">
           <input 
             type="text" 
-            placeholder="🔍 Código, Rua, Endereço..." 
-            className="w-full h-9 pl-7 pr-6 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+            placeholder="Código, Rua..." 
+            className="w-full h-9 pl-6 pr-5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 truncate"
             value={filters.buscaGeral}
             onChange={(e) => handleChange('buscaGeral', e.target.value)}
           />
-          <Search size={13} className="absolute left-2 top-3 text-slate-400 pointer-events-none" />
+          <Search size={13} className="absolute left-1.5 top-2.5 text-slate-400 pointer-events-none" />
           {filters.buscaGeral && (
             <button 
               onClick={() => handleChange('buscaGeral', '')}
-              className="absolute right-2 top-2 text-slate-400 hover:text-white text-xs"
+              className="absolute right-1.5 top-2 text-slate-400 hover:text-white text-xs p-0.5"
             >
               ✕
             </button>
@@ -128,7 +128,7 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
         <button
           type="button"
           onClick={() => setIsMobileDrawerOpen(true)}
-          className={`h-9 px-2.5 flex items-center gap-1 rounded-lg text-xs font-bold transition-all flex-shrink-0 relative ${
+          className={`h-9 px-2 flex items-center justify-center gap-1 rounded-lg text-xs font-bold transition-all flex-shrink-0 relative ${
             activeSecondaryFiltersCount > 0
               ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400/40'
               : 'bg-slate-700/80 border border-slate-600 text-slate-300 hover:bg-slate-600'
@@ -136,7 +136,6 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
           title="Filtros Avançados (Status, Período, Problemas)"
         >
           <SlidersHorizontal size={14} />
-          <span className="hidden xs:inline">Filtros</span>
           {activeSecondaryFiltersCount > 0 && (
             <span className="bg-amber-400 text-slate-950 text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
               {activeSecondaryFiltersCount}
@@ -149,10 +148,10 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
           <button
             type="button"
             onClick={handleClearFilters}
-            className="h-9 px-2 bg-rose-950/60 border border-rose-800/80 text-rose-300 hover:bg-rose-900 rounded-lg text-xs font-bold transition-all flex items-center justify-center flex-shrink-0"
+            className="h-9 w-8 bg-rose-950/70 border border-rose-700/80 text-rose-300 hover:bg-rose-900 rounded-lg text-xs font-bold transition-all flex items-center justify-center flex-shrink-0 active:scale-95 shadow-sm"
             title="Limpar todos os filtros"
           >
-            <X size={14} />
+            <X size={15} />
           </button>
         )}
       </div>
