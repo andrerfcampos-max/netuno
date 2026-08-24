@@ -37,6 +37,104 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
+const parseDate = (dateStr) => {
+  if (!dateStr || dateStr === '-') return null;
+  const str = String(dateStr).trim();
+  if (!str || str === '-') return null;
+  const [datePart] = str.split(' ');
+  if (!datePart) return null;
+  const parts = datePart.split('/');
+  if (parts.length === 3) {
+    const d = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const y = parseInt(parts[2], 10);
+    if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+      return new Date(y, m, d);
+    }
+  }
+  if (datePart.includes('-')) {
+    const partsIso = datePart.split('-');
+    if (partsIso.length === 3) {
+      const y = parseInt(partsIso[0], 10);
+      const m = parseInt(partsIso[1], 10) - 1;
+      const d = parseInt(partsIso[2], 10);
+      if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+        return new Date(y, m, d);
+      }
+    }
+  }
+  return null;
+};
+
+const getFilteredData = (filters = {}, dataList = []) => {
+  let result = [...dataList];
+  if (filters.buscaGeral && String(filters.buscaGeral).trim() !== '') {
+    const termo = String(filters.buscaGeral).toLowerCase().trim();
+    result = result.filter(h => 
+      (h.dscEndereco && String(h.dscEndereco).toLowerCase().includes(termo)) ||
+      (h.nomHidrante && String(h.nomHidrante).toLowerCase().includes(termo)) ||
+      (h.codHidrante && String(h.codHidrante).toLowerCase().includes(termo)) ||
+      (h.dscPontoReferencia && String(h.dscPontoReferencia).toLowerCase().includes(termo))
+    );
+  }
+  if (filters.ra && String(filters.ra).trim() !== '') {
+    const targetRA = normalizeRAName(filters.ra);
+    result = result.filter(h => {
+      const hRA = normalizeRAName(h.dscLocalidade);
+      return hRA === targetRA || h.dscLocalidade === filters.ra;
+    });
+  }
+  if (filters.periodo && String(filters.periodo).trim() !== '') {
+    const periodoStr = String(filters.periodo);
+    result = result.filter(h => {
+      const d = parseDate(h.datHoraUltimaVistoria);
+      if (!d) return false;
+      
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      
+      if (periodoStr === 'hoje') {
+        return d.getTime() === hoje.getTime();
+      } else if (periodoStr === 'semana') {
+        const start = new Date(hoje);
+        start.setDate(start.getDate() - start.getDay());
+        return d >= start;
+      } else if (periodoStr === 'mes') {
+        return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
+      } else if (periodoStr === 'ano_atual') {
+        return d.getFullYear() === hoje.getFullYear();
+      } else if (periodoStr.startsWith('ano-')) {
+        const targetYear = parseInt(periodoStr.split('-')[1], 10);
+        return d.getFullYear() === targetYear;
+      } else if (periodoStr === 'personalizado') {
+        if (filters.dataInicio) {
+          const start = new Date(filters.dataInicio + 'T00:00:00');
+          if (d < start) return false;
+        }
+        if (filters.dataFim) {
+          const end = new Date(filters.dataFim + 'T23:59:59');
+          if (d > end) return false;
+        }
+        return true;
+      }
+      return true;
+    });
+  }
+  if (filters.status && filters.status !== 'Todos') {
+    const isOperante = filters.status === 'Operante';
+    result = result.filter(h => h.flgAtivo === isOperante);
+  }
+  if (filters.problema && String(filters.problema).trim() !== '') {
+    const targetProb = String(filters.problema).toUpperCase().trim();
+    result = result.filter(h => {
+      if (!h.problemasHidrante) return false;
+      const list = extractProblemsList(String(h.problemasHidrante));
+      return list.some(p => String(p).toUpperCase().includes(targetProb));
+    });
+  }
+  return result;
+};
+
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('netuno_user');
@@ -44,7 +142,6 @@ function App() {
   });
 
   const [hidrantes, setHidrantes] = useState([]);
-  const [filteredList, setFilteredList] = useState([]);
   const [activeView, _setActiveView] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const view = params.get('view');
@@ -89,6 +186,11 @@ function App() {
     }
     return {};
   });
+
+  const filteredList = useMemo(() => {
+    return getFilteredData(activeFilters, hidrantes);
+  }, [activeFilters, hidrantes]);
+
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [inspectingHidrante, setInspectingHidrante] = useState(null);
   const [editingHydrante, setEditingHydrante] = useState(null);
@@ -325,7 +427,6 @@ function App() {
               return mergedChanges.updated[k] ? { ...h, ...mergedChanges.updated[k] } : h;
             });
             setHidrantes(updatedHidrantes);
-            setFilteredList(getFilteredData(activeFilters, updatedHidrantes));
           }
         }
       } catch (e) {
@@ -399,7 +500,6 @@ function App() {
           }
 
           setHidrantes(merged);
-          setFilteredList(getFilteredData(activeFilters, merged));
         }
       });
     }
@@ -525,107 +625,6 @@ function App() {
     syncMissionToCloud(target);
   };
 
-  const parseDate = (dateStr) => {
-    if (!dateStr || dateStr === '-') return null;
-    const str = String(dateStr).trim();
-    if (!str || str === '-') return null;
-    const [datePart] = str.split(' ');
-    if (!datePart) return null;
-    const parts = datePart.split('/');
-    if (parts.length === 3) {
-      const d = parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10) - 1;
-      const y = parseInt(parts[2], 10);
-      if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
-        return new Date(y, m, d);
-      }
-    }
-    if (datePart.includes('-')) {
-      const partsIso = datePart.split('-');
-      if (partsIso.length === 3) {
-        const y = parseInt(partsIso[0], 10);
-        const m = parseInt(partsIso[1], 10) - 1;
-        const d = parseInt(partsIso[2], 10);
-        if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
-          return new Date(y, m, d);
-        }
-      }
-    }
-    return null;
-  };
-
-  const getFilteredData = (filters = {}, dataList = hidrantes) => {
-    const hasActiveFilter = 
-      (filters.ra && filters.ra !== '') ||
-      (filters.buscaGeral && filters.buscaGeral.trim() !== '') ||
-      (filters.periodo && filters.periodo !== '') ||
-      (filters.status && filters.status !== 'Todos') ||
-      (filters.problema && filters.problema !== '');
-
-    let result = [...dataList];
-    if (filters.buscaGeral) {
-      const termo = String(filters.buscaGeral).toLowerCase();
-      result = result.filter(h => 
-        (h.dscEndereco && String(h.dscEndereco).toLowerCase().includes(termo)) ||
-        (h.nomHidrante && String(h.nomHidrante).toLowerCase().includes(termo)) ||
-        (h.dscPontoReferencia && String(h.dscPontoReferencia).toLowerCase().includes(termo))
-      );
-    }
-    if (filters.ra && filters.ra.trim() !== '') {
-      result = result.filter(h => h.dscLocalidade === filters.ra);
-    }
-    if (filters.periodo) {
-      const periodoStr = String(filters.periodo);
-      result = result.filter(h => {
-        const d = parseDate(h.datHoraUltimaVistoria);
-        if (!d) return false;
-        
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-        
-        if (periodoStr === 'hoje') {
-          return d.getTime() === hoje.getTime();
-        } else if (periodoStr === 'semana') {
-          const start = new Date(hoje);
-          start.setDate(start.getDate() - start.getDay());
-          return d >= start;
-        } else if (periodoStr === 'mes') {
-          return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
-        } else if (periodoStr === 'ano_atual') {
-          return d.getFullYear() === hoje.getFullYear();
-        } else if (periodoStr.startsWith('ano-')) {
-          const targetYear = parseInt(periodoStr.split('-')[1], 10);
-          return d.getFullYear() === targetYear;
-        } else if (periodoStr === 'personalizado') {
-          if (filters.dataInicio) {
-            // Usa 'T00:00:00' para evitar shift de timezone no Date constructor
-            const start = new Date(filters.dataInicio + 'T00:00:00');
-            if (d < start) return false;
-          }
-          if (filters.dataFim) {
-            const end = new Date(filters.dataFim + 'T23:59:59');
-            if (d > end) return false;
-          }
-          return true;
-        }
-        return true;
-      });
-    }
-    if (filters.status && filters.status !== 'Todos') {
-      const isOperante = filters.status === 'Operante';
-      result = result.filter(h => h.flgAtivo === isOperante);
-    }
-    if (filters.problema) {
-      const targetProb = String(filters.problema).toUpperCase().trim();
-      result = result.filter(h => {
-        if (!h.problemasHidrante) return false;
-        const list = extractProblemsList(String(h.problemasHidrante));
-        return list.some(p => String(p).toUpperCase().includes(targetProb));
-      });
-    }
-    return result;
-  };
-
   // Extrair Regiões (RAs) únicas dinamicamente
   const regions = useMemo(() => {
     if (hidrantes.length > 0) {
@@ -645,7 +644,8 @@ function App() {
   const anosVistoria = useMemo(() => {
     let baseList = hidrantes;
     if (activeFilters.ra && activeFilters.ra.trim() !== '') {
-      baseList = baseList.filter(h => h.dscLocalidade === activeFilters.ra);
+      const targetRA = normalizeRAName(activeFilters.ra);
+      baseList = baseList.filter(h => normalizeRAName(h.dscLocalidade) === targetRA || h.dscLocalidade === activeFilters.ra);
     }
     const anos = new Set();
     baseList.forEach(h => {
@@ -661,7 +661,8 @@ function App() {
   const problemasVistoria = useMemo(() => {
     let baseList = hidrantes;
     if (activeFilters.ra && activeFilters.ra.trim() !== '') {
-      baseList = baseList.filter(h => h.dscLocalidade === activeFilters.ra);
+      const targetRA = normalizeRAName(activeFilters.ra);
+      baseList = baseList.filter(h => normalizeRAName(h.dscLocalidade) === targetRA || h.dscLocalidade === activeFilters.ra);
     }
     if (activeFilters.periodo) {
       const periodoStr = String(activeFilters.periodo);
@@ -716,13 +717,8 @@ function App() {
     if (file) {
       parseHydrantsCSV(file, (data) => {
         setHidrantes(data);
-        setFilteredList(data);
       });
     }
-  };
-
-  const applyFilters = (filters, dataList = hidrantes) => {
-    setFilteredList(getFilteredData(filters, dataList));
   };
 
   const handleFilterChange = (filters) => {
@@ -730,7 +726,6 @@ function App() {
     try {
       localStorage.setItem('netuno_saved_filters', JSON.stringify(filters));
     } catch (e) {}
-    applyFilters(filters, hidrantes);
   };
 
   const handleSaveInspection = (updatedHidrante) => {
@@ -758,7 +753,6 @@ function App() {
       updateCurrentMission({ completedIds: [...completedMissionIds, id] });
     }
 
-    applyFilters(activeFilters, newHidrantes);
     setLastInspectedCoords({ lat: sanitized.numLatitude, lng: sanitized.numLongitude });
     setInspectingHidrante(null);
     syncInspectionToCloud(sanitized);
@@ -801,7 +795,6 @@ function App() {
     
     saveHydrantChanges(changes);
     setHidrantes(newHidrantes);
-    applyFilters(activeFilters, newHidrantes);
     handleCloseEditHydrant();
     syncHydrantMutationToCloud(isExisting ? 'update' : 'add', sanitized);
     toast.success('Hidrante salvo com sucesso e sincronizado!');
@@ -827,7 +820,6 @@ function App() {
     saveHydrantChanges(changes);
 
     setHidrantes(newHidrantes);
-    applyFilters(activeFilters, newHidrantes);
     syncHydrantMutationToCloud('delete', delId);
     toast.success('Hidrante excluído da base com sucesso!');
   };
@@ -1266,6 +1258,7 @@ function App() {
       {!isMapFullscreen && (
         <div className="flex-shrink-0 px-2 pt-1.5 z-20 w-full">
           <FilterBar 
+            activeFilters={activeFilters}
             onFilterChange={handleFilterChange} 
             regions={regions} 
             anos={anosVistoria} 

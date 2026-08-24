@@ -1,35 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { Search, MapPin, AlertCircle, SlidersHorizontal, X, Check, Filter } from 'lucide-react';
 
-const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], isVisible, currentUser, onLogout, filteredCount = null }) => {
-  const [filters, setFilters] = useState(() => {
-    try {
-      const saved = localStorage.getItem('netuno_saved_filters');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return {
-          buscaGeral: parsed.buscaGeral || '',
-          ra: parsed.ra || '',
-          periodo: parsed.periodo || '',
-          dataInicio: parsed.dataInicio || '',
-          dataFim: parsed.dataFim || '',
-          status: parsed.status || 'Todos',
-          problema: parsed.problema || ''
-        };
-      }
-    } catch (e) {
-      console.warn('Erro ao carregar filtros persistidos', e);
-    }
+const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problemasAtivos = [], isVisible, currentUser, onLogout, filteredCount = null }) => {
+  const filters = useMemo(() => {
     return {
-      buscaGeral: '',
-      ra: '',
-      periodo: '',
-      dataInicio: '',
-      dataFim: '',
-      status: 'Todos',
-      problema: ''
+      buscaGeral: activeFilters?.buscaGeral || '',
+      ra: activeFilters?.ra || '',
+      periodo: activeFilters?.periodo || '',
+      dataInicio: activeFilters?.dataInicio || '',
+      dataFim: activeFilters?.dataFim || '',
+      status: activeFilters?.status || 'Todos',
+      problema: activeFilters?.problema || ''
     };
-  });
+  }, [activeFilters]);
 
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
@@ -56,7 +39,6 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
     if (key === 'ra') {
       if (newFilters.problema) newFilters.problema = '';
     }
-    setFilters(newFilters);
     try {
       localStorage.setItem('netuno_saved_filters', JSON.stringify(newFilters));
     } catch (e) {}
@@ -73,7 +55,6 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
       status: 'Todos',
       problema: ''
     };
-    setFilters(defaultFilters);
     try {
       localStorage.removeItem('netuno_saved_filters');
     } catch (e) {}
@@ -86,7 +67,6 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
        newFilters.dataInicio = '';
        newFilters.dataFim = '';
     }
-    setFilters(newFilters);
     try {
       localStorage.setItem('netuno_saved_filters', JSON.stringify(newFilters));
     } catch (e) {}
