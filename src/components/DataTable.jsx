@@ -3,35 +3,85 @@ import { LocateFixed, Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, 
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
 
+const parseDateToTimestamp = (dateStr) => {
+  if (!dateStr || dateStr === '-') return -Infinity;
+  const str = String(dateStr).trim();
+  if (!str || str === '-') return -Infinity;
+  const [datePart, timePart] = str.split(' ');
+  let d = 0, m = 0, y = 0, hh = 0, mm = 0, ss = 0;
+  if (datePart && datePart.includes('/')) {
+    const parts = datePart.split('/');
+    if (parts.length === 3) {
+      d = parseInt(parts[0], 10);
+      m = parseInt(parts[1], 10) - 1;
+      y = parseInt(parts[2], 10);
+    }
+  } else if (datePart && datePart.includes('-')) {
+    const parts = datePart.split('-');
+    if (parts.length === 3) {
+      y = parseInt(parts[0], 10);
+      m = parseInt(parts[1], 10) - 1;
+      d = parseInt(parts[2], 10);
+    }
+  }
+  if (timePart && timePart.includes(':')) {
+    const tParts = timePart.split(':');
+    hh = parseInt(tParts[0], 10) || 0;
+    mm = parseInt(tParts[1], 10) || 0;
+    ss = parseInt(tParts[2], 10) || 0;
+  }
+  if (y > 0) {
+    const dateObj = new Date(y, m, d, hh, mm, ss);
+    if (!isNaN(dateObj.getTime())) return dateObj.getTime();
+  }
+  return -Infinity;
+};
+
 const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState({ key: 'datHoraUltimaVistoria', direction: 'descending' });
   const [displayCount, setDisplayCount] = useState(50);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
 
   const sortedData = useMemo(() => {
     let sortableItems = [...data];
-    if (sortConfig !== null && sortConfig.key) {
-      sortableItems.sort((a, b) => {
-        let aValue = a[sortConfig.key];
-        let bValue = b[sortConfig.key];
+    const key = sortConfig?.key || 'datHoraUltimaVistoria';
+    const direction = sortConfig?.direction || 'descending';
 
-        if (aValue == null) aValue = '';
-        if (bValue == null) bValue = '';
-        
-        if (typeof aValue === 'boolean') {
-           aValue = aValue ? 1 : 0;
-           bValue = bValue ? 1 : 0;
-        }
+    sortableItems.sort((a, b) => {
+      let aValue = a[key];
+      let bValue = b[key];
 
-        if (aValue < bValue) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
+      if (key === 'datHoraUltimaVistoria') {
+        const timeA = parseDateToTimestamp(aValue);
+        const timeB = parseDateToTimestamp(bValue);
+        if (timeA === timeB) return 0;
+        if (direction === 'ascending') {
+          if (timeA === -Infinity) return 1;
+          if (timeB === -Infinity) return -1;
+          return timeA - timeB;
+        } else {
+          if (timeA === -Infinity) return 1;
+          if (timeB === -Infinity) return -1;
+          return timeB - timeA;
         }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
+      }
+
+      if (aValue == null) aValue = '';
+      if (bValue == null) bValue = '';
+      
+      if (typeof aValue === 'boolean') {
+         aValue = aValue ? 1 : 0;
+         bValue = bValue ? 1 : 0;
+      }
+
+      if (aValue < bValue) {
+        return direction === 'ascending' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return direction === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    });
     return sortableItems;
   }, [data, sortConfig]);
 

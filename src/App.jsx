@@ -1004,7 +1004,7 @@ function App() {
       <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans items-center justify-center p-4">
         <div className="bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700 w-full max-w-sm">
           <h1 className="text-3xl font-black tracking-tight text-emerald-400 drop-shadow-md text-center mb-2">NETUNO</h1>
-          <p className="text-slate-400 text-center text-sm mb-6">Sistema de mapeamento de hidrantes urbanos de incêndio - SEHUR/GPCIU</p>
+          <p className="text-slate-400 text-center text-xs sm:text-sm mb-6 leading-relaxed">Sistema de mapeamento e gestão de hidrantes urbanos e estudos das edificações da cidade para operações de incêndio</p>
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div>
               <label className="text-slate-400 text-sm font-bold mb-2 block">Matrícula Militar</label>
@@ -1088,9 +1088,14 @@ function App() {
 
       {/* Header */}
       <header className={isMapFullscreen ? "hidden" : "flex justify-between items-center p-3 bg-slate-900 border-b border-slate-700 z-50"}>
-        <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md">NETUNO</h1>
+        <div className="flex items-center gap-3 min-w-0 pr-2">
+          <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md shrink-0">NETUNO</h1>
+          <span className="hidden sm:inline-block text-[11px] lg:text-xs text-slate-400 font-medium border-l border-slate-700 pl-3 leading-tight line-clamp-2 max-w-xl">
+            Sistema de mapeamento e gestão de hidrantes urbanos e estudos das edificações da cidade para operações de incêndio
+          </span>
+        </div>
         
-        <div className="relative z-50 flex items-center gap-2">
+        <div className="relative z-50 flex items-center gap-2 shrink-0">
           <div className="hidden md:flex flex-col items-end mr-2">
             <span className="text-[10px] uppercase tracking-wider text-slate-300 font-bold">
               {currentUser.nome}
