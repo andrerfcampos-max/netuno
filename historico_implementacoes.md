@@ -334,4 +334,10 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Adicionada opção no menu principal **"Banco em Nuvem (Cloud DB)"** permitindo aos gestores e operadores verificar o status da conexão em tempo real, configurar URL/Key e acionar sincronização manual sob demanda.
 - **4. Arquitetura Offline-First Resiliente:**
   - Preserva 100% da operação local no `localStorage` caso a viatura esteja em área sem sinal celular/internet, sincronizando automaticamente os dados com a nuvem no momento em que a conectividade for restabelecida.
+- **5. Correção Crítica de Exclusão de Missões e Sincronização Multi-Dispositivo (`storage.js`, `App.jsx`, `MissionManagerModal.jsx`):**
+  - **Eliminação de Ressurreição de Missões:** Removida a reinjeção forçada de `MOCK_TEST_MISSIONS` no `loadMissions()` que recriava missões excluídas toda vez que o app abria no PC ou celular.
+  - **Recepção de Base Vazia/Excluída da Nuvem:** Corrigida a condição em `App.jsx` (`Array.isArray(cloudMissions)`) para que exclusões completas realizadas em um dispositivo reflitam imediatamente no outro.
+  - **Sincronização em Todas as Mutações:** Adicionada sincronização em nuvem nas ações de seleção/deseleção de hidrantes (`toggleMissionSelection`, `selectAllFiltered`) e movimentação entre pastas (`confirmMove`).
+  - **Permissão de Exclusão por Perfil:** Ajustado o RBAC em `MissionManagerModal.jsx` para que perfis `gestor` e `admin` possam excluir missões criadas por qualquer usuário.
+
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput, FileSpreadsheet, Printer } from 'lucide-react';
 import { createNewFolder } from '../utils/storage';
+import { syncMissionToCloud } from '../services/syncService';
 
 const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
@@ -116,8 +117,8 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
 
     // Arrastou para a esquerda de forma clara (> 65px)
     if (Math.abs(diffX) > Math.abs(diffY) * 1.5 && diffX > 65) {
-      if (mission.createdBy && mission.createdBy !== currentUser?.matricula && currentUser?.role !== 'admin') {
-        alert(`Somente o autor da rota (${mission.createdBy}) ou um admin pode excluí-la.`);
+      if (mission.createdBy && mission.createdBy !== currentUser?.matricula && currentUser?.role !== 'admin' && currentUser?.role !== 'gestor') {
+        alert(`Somente o autor da rota (${mission.createdBy}), um gestor ou um admin pode excluí-la.`);
       } else {
         setMissionToDelete(mission);
       }
@@ -243,7 +244,17 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
   };
 
   const confirmMove = (targetFolderId) => {
-    onMissionsChange(prev => prev.map(m => m.id === missionToMove.id ? { ...m, parentFolderId: targetFolderId } : m));
+    let target = null;
+    onMissionsChange(prev => prev.map(m => {
+      if (m.id === missionToMove.id) {
+        target = { ...m, parentFolderId: targetFolderId, updatedAt: new Date().toISOString() };
+        return target;
+      }
+      return m;
+    }));
+    if (target) {
+      syncMissionToCloud(target);
+    }
     setIsMoveMode(false);
     setMissionToMove(null);
   };
@@ -537,8 +548,8 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
                       </button>
                       <button 
                         onClick={() => {
-                          if (mission.createdBy && mission.createdBy !== currentUser?.matricula && currentUser?.role !== 'admin') {
-                            alert(`Somente o autor da rota (${mission.createdBy}) ou um admin pode excluí-la.`);
+                          if (mission.createdBy && mission.createdBy !== currentUser?.matricula && currentUser?.role !== 'admin' && currentUser?.role !== 'gestor') {
+                            alert(`Somente o autor da rota (${mission.createdBy}), um gestor ou um admin pode excluí-la.`);
                             return;
                           }
                           setMissionToDelete(mission);

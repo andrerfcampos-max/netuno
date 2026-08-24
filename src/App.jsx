@@ -295,12 +295,12 @@ function App() {
           fetchHydrantMutationsFromCloud()
         ]);
 
-        if (cloudMissions && cloudMissions.length > 0) {
+        if (Array.isArray(cloudMissions)) {
           setMissions(cloudMissions);
           saveMissions(cloudMissions);
         }
 
-        if (cloudFolders && cloudFolders.length > 0) {
+        if (Array.isArray(cloudFolders) && cloudFolders.length > 0) {
           setFolders(cloudFolders);
           saveFolders(cloudFolders);
         }
@@ -433,14 +433,12 @@ function App() {
     let currentComp = completedMissionIds;
 
     // Se tentar adicionar mas não tiver missão ativa, cria uma automaticamente
+    let createdMission = null;
     if (!currentId) {
-      const newMission = createNewMission("Rascunho de Hoje", null, currentUser);
-      newMission.createdBy = currentUser?.matricula;
-      newMission.createdByName = currentUser?.nome;
-      setMissions(prev => [...prev, newMission]);
-      setOpenMissionIds(prev => [...prev, newMission.id]);
-      setActiveMissionId(newMission.id);
-      currentId = newMission.id;
+      createdMission = createNewMission("Rascunho de Hoje", null, currentUser);
+      createdMission.createdBy = currentUser?.matricula;
+      createdMission.createdByName = currentUser?.nome;
+      currentId = createdMission.id;
       currentSel = [];
       currentComp = [];
     }
@@ -453,36 +451,72 @@ function App() {
       ? currentComp.filter(cId => cId !== id)
       : currentComp;
 
-    // Atualiza o estado
-    setMissions(prev => prev.map(m => m.id === currentId ? { ...m, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() } : m));
+    let target = null;
+    if (createdMission) {
+      target = { ...createdMission, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() };
+      setMissions(prev => [...prev, target]);
+      setOpenMissionIds(prev => [...prev, target.id]);
+      setActiveMissionId(target.id);
+    } else {
+      setMissions(prev => prev.map(m => {
+        if (m.id === currentId) {
+          target = { ...m, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() };
+          return target;
+        }
+        return m;
+      }));
+    }
+
+    if (target) {
+      syncMissionToCloud(target);
+    }
   };
 
   const selectAllFiltered = (isChecked, currentFilteredData) => {
     let currentId = activeMissionId;
     let currentSel = selectedMissionIds;
     let currentComp = completedMissionIds;
+    let createdMission = null;
 
     if (!currentId) {
-      const newMission = createNewMission("Rascunho de Hoje", null, currentUser);
-      newMission.createdBy = currentUser?.matricula;
-      newMission.createdByName = currentUser?.nome;
-      setMissions(prev => [...prev, newMission]);
-      setOpenMissionIds(prev => [...prev, newMission.id]);
-      setActiveMissionId(newMission.id);
-      currentId = newMission.id;
+      createdMission = createNewMission("Rascunho de Hoje", null, currentUser);
+      createdMission.createdBy = currentUser?.matricula;
+      createdMission.createdByName = currentUser?.nome;
+      currentId = createdMission.id;
       currentSel = [];
       currentComp = [];
     }
 
     const filteredIds = currentFilteredData.map(h => h.codHidrante || h.nomHidrante);
+    let newSelected = currentSel;
+    let newCompleted = currentComp;
     
     if (isChecked) {
       const idsToAdd = filteredIds.filter(id => !currentSel.includes(id));
-      setMissions(prev => prev.map(m => m.id === currentId ? { ...m, selectedIds: [...currentSel, ...idsToAdd], updatedAt: new Date().toISOString() } : m));
+      newSelected = [...currentSel, ...idsToAdd];
     } else {
-      const newSelected = currentSel.filter(id => !filteredIds.includes(id));
-      const newCompleted = currentComp.filter(id => !filteredIds.includes(id));
-      setMissions(prev => prev.map(m => m.id === currentId ? { ...m, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() } : m));
+      newSelected = currentSel.filter(id => !filteredIds.includes(id));
+      newCompleted = currentComp.filter(id => !filteredIds.includes(id));
+    }
+
+    let target = null;
+    if (createdMission) {
+      target = { ...createdMission, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() };
+      setMissions(prev => [...prev, target]);
+      setOpenMissionIds(prev => [...prev, target.id]);
+      setActiveMissionId(target.id);
+    } else {
+      setMissions(prev => prev.map(m => {
+        if (m.id === currentId) {
+          target = { ...m, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() };
+          return target;
+        }
+        return m;
+      }));
+    }
+
+    if (target) {
+      syncMissionToCloud(target);
     }
   };
 
@@ -826,7 +860,11 @@ function App() {
   };
 
   const handleDeleteMission = (id) => {
-    setMissions(prev => prev.filter(m => m.id !== id));
+    setMissions(prev => {
+      const updated = prev.filter(m => m.id !== id);
+      saveMissions(updated);
+      return updated;
+    });
     handleCloseTab(id);
     deleteMissionFromCloud(id);
   };

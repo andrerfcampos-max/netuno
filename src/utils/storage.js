@@ -6,13 +6,12 @@ const FOLDERS_STORAGE_KEY = 'argos_folders';
 export const loadMissions = () => {
   try {
     const data = localStorage.getItem(MISSIONS_STORAGE_KEY);
-    let savedMissions = [];
-    if (data) {
+    if (data !== null) {
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed)) {
         // Limpeza automática de rascunhos antigos (de dias anteriores)
         const todayString = new Date().toDateString();
-        savedMissions = parsed.filter(m => {
+        return parsed.filter(m => {
           if (m.isDraft) {
             const createdString = new Date(m.createdAt).toDateString();
             return createdString === todayString;
@@ -21,26 +20,10 @@ export const loadMissions = () => {
         });
       }
     }
-
-    // Merge: MOCK_TEST_MISSIONS são sempre garantidas com hidrantes reais da base
-    const mockIds = new Set(MOCK_TEST_MISSIONS.map(m => m.id));
-    // Remove mocks obsoletos e preserva apenas missões criadas pelo usuário
-    const userCustomMissions = savedMissions.filter(m => !m.id?.startsWith('mock-') && !mockIds.has(m.id));
-
-    // Se o usuário interagiu e atualizou alguma missão mock atual, preserva vistorias concluídas válidas
-    const mergedMocks = MOCK_TEST_MISSIONS.map(mock => {
-      const existing = savedMissions.find(m => m.id === mock.id);
-      if (existing && Array.isArray(existing.completedIds)) {
-        const validCompleted = existing.completedIds.filter(id => mock.selectedIds.includes(id));
-        return { ...mock, completedIds: validCompleted, updatedAt: existing.updatedAt || mock.updatedAt };
-      }
-      return mock;
-    });
-
-    return [...mergedMocks, ...userCustomMissions];
+    return [];
   } catch (error) {
     console.error("Erro ao ler missões do localStorage", error);
-    return MOCK_TEST_MISSIONS;
+    return [];
   }
 };
 
