@@ -440,20 +440,20 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         {/* Plotagem direta de todos os hidrantes */}
         {renderMarkers()}
 
-        {/* Marcador do Usuário com Azul Destacado e Pulso */}
+        {/* Marcador do Usuário com Azul Padrão Google Maps e Pulso */}
         {userLocation && (
           <Marker 
             position={[userLocation.lat, userLocation.lng]}
             icon={L.divIcon({
               className: 'custom-div-icon',
               html: `
-                <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
-                  <div style="position: absolute; width: 24px; height: 24px; border-radius: 50%; background-color: rgba(0, 229, 255, 0.45); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-                  <div style="background-color: #00E5FF; width: 14px; height: 14px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 0 10px #00E5FF, 0 0 4px rgba(0,0,0,0.8); position: relative; z-index: 2;"></div>
+                <div style="position: relative; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;">
+                  <div style="position: absolute; width: 26px; height: 26px; border-radius: 50%; background-color: rgba(26, 115, 232, 0.35); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                  <div style="background-color: #1a73e8; width: 15px; height: 15px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 10px rgba(26, 115, 232, 0.8); position: relative; z-index: 2;"></div>
                 </div>
               `,
-              iconSize: [24, 24],
-              iconAnchor: [12, 12]
+              iconSize: [26, 26],
+              iconAnchor: [13, 13]
             })}
             interactive={false}
             zIndexOffset={1000}
