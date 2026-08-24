@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut, ShieldAlert, RefreshCw, Map as MapIcon, List, Navigation, BarChart3, Cloud } from 'lucide-react';
+import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut, ShieldAlert, RefreshCw, Map as MapIcon, List, Navigation, BarChart3, Cloud, Building2 } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
@@ -14,6 +14,7 @@ import MissionReportPanel from './components/MissionReportPanel';
 import MissionTabs from './components/MissionTabs';
 import MissionManagerModal from './components/MissionManagerModal';
 import TechnicalStudyModal from './components/TechnicalStudyModal';
+import BuildingStudiesModal from './components/BuildingStudiesModal';
 import InconsistentHydrantsModal from './components/InconsistentHydrantsModal';
 import CloudConfigModal from './components/CloudConfigModal';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -235,6 +236,7 @@ function App() {
   const [isMissionManagerOpen, setIsMissionManagerOpen] = useState(false);
   const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
   const [isTechnicalStudyOpen, setIsTechnicalStudyOpen] = useState(false);
+  const [isBuildingStudiesOpen, setIsBuildingStudiesOpen] = useState(false);
   const [isInconsistentModalOpen, setIsInconsistentModalOpen] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -296,6 +298,8 @@ function App() {
     const modal = params.get('modal') || params.get('view');
     if ((modal === 'estudo-tecnico' || modal === 'technical-study') && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
       setIsTechnicalStudyOpen(true);
+    } else if ((modal === 'estudo-edificacoes' || modal === 'estudo-edificacao' || modal === 'building-study' || modal === 'ppo') && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
+      setIsBuildingStudiesOpen(true);
     } else if ((modal === 'novo-hidrante' || modal === 'new-hydrant') && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
       setEditingHydrante({});
     } else if (modal === 'admin' && currentUser?.role === 'admin') {
@@ -322,6 +326,15 @@ function App() {
 
   const handleCloseTechnicalStudy = () => {
     setIsTechnicalStudyOpen(false);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('modal')) {
+      url.searchParams.delete('modal');
+      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+    }
+  };
+
+  const handleCloseBuildingStudies = () => {
+    setIsBuildingStudiesOpen(false);
     const url = new URL(window.location.href);
     if (url.searchParams.has('modal')) {
       url.searchParams.delete('modal');
@@ -1156,7 +1169,7 @@ function App() {
                     className="fixed inset-0 z-[110]" 
                     onClick={() => setIsMenuOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl flex flex-col gap-1 p-2 z-[120] animate-scaleUp">
+                  <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl flex flex-col gap-1.5 p-2 z-[120] animate-scaleUp">
                     {currentUser.role === 'admin' && (
                       <a 
                         href="?modal=admin"
@@ -1186,6 +1199,29 @@ function App() {
                       >
                         <PlusCircle size={18} />
                         Novo Hidrante
+                      </a>
+                    )}
+                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                      <a 
+                        href="?modal=estudo-edificacoes"
+                        onClick={(e) => {
+                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                            e.preventDefault();
+                            setIsBuildingStudiesOpen(true);
+                            setIsMenuOpen(false);
+                          }
+                        }}
+                        className="flex items-start gap-2.5 w-full px-3 py-2 text-left bg-gradient-to-r from-amber-950/50 to-red-950/40 border border-amber-500/30 text-amber-300 font-semibold rounded-lg hover:from-amber-900/70 hover:to-red-900/60 transition-all group"
+                      >
+                        <Building2 size={18} className="text-amber-400 shrink-0 mt-0.5" />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-bold text-amber-300 group-hover:text-white transition-colors">
+                            Estudo de edificações
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-normal leading-tight group-hover:text-slate-300 transition-colors">
+                            informações importantes para operações de incêndio
+                          </span>
+                        </div>
                       </a>
                     )}
                     {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
@@ -1596,8 +1632,15 @@ function App() {
 
       <TechnicalStudyModal
         isOpen={isTechnicalStudyOpen}
-        onClose={() => setIsTechnicalStudyOpen(false)}
+        onClose={handleCloseTechnicalStudy}
         hidrantes={hidrantes}
+        currentUser={currentUser}
+      />
+
+      <BuildingStudiesModal
+        isOpen={isBuildingStudiesOpen}
+        onClose={handleCloseBuildingStudies}
+        allHydrantes={hidrantes}
         currentUser={currentUser}
       />
     </div>

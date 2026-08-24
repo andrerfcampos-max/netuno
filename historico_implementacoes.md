@@ -389,6 +389,29 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Linha 1: Botão largo de destaque **`+ CADASTRAR VISTORIA`** em verde esmeralda (100% da largura, touch-target confortável sem corte lateral de texto).
   - Linha 2: Grade fluida com 6 botões quadrados de ação rápida (`[Waze]`, `[Maps]`, `[360°]`, `[Zap]`, `[Rota +/-]`, `[Editar]`), cabendo perfeitamente em telas pequenas de 360px sem overflow.
 
+### [24/08/2026] Etapa 55 Concluída: Módulo de Pré-Planejamento Operacional (PPO) - Estudo de Edificações para Operações de Incêndio (CBMDF)
+- **1. Item no Menu Superior e Acesso Direto (`App.jsx`):**
+  - Adicionado novo item de menu com título **"Estudo de edificações"** e descrição **"informações importantes para operações de incêndio"** com ícone tático `Building2`.
+  - Suporte a abertura em nova guia via URL query param (`?modal=estudo-edificacoes` ou `?view=building-study`).
+- **2. Mensagem Explicativa Orientativa (`BuildingStudiesModal.jsx`):**
+  - Renderizada a faixa de instrução no topo: *"Escolha a cidade e verifique as informações pre cadastradas sobre as edificações para auxiliar na tomada de decisões das operações de incêndio."*
+- **3. Filtros Rápidos por Cidade e Busca com Digitação (`BuildingStudiesModal.jsx`):**
+  - Filtro por Cidade (Região Administrativa) utilizando a lista unificada `raList.js` e contadores de estudos cadastrados.
+  - Busca livre instantânea desacentuada por nome do edifício, razão social, endereço, tipo de ocupação, produtos perigosos e áreas críticas.
+  - Botão de ação `+ Novo Estudo` para cadastro ágil.
+- **4. Campos e Estruturação de Dados Táticos (Doutrina CBMDF / SCI) (`buildingStudiesStorage.js`):**
+  - **A. Identificação e Reconhecimento:** Nome fantasia, razão social, endereço padronizado, RA, CEP, Coordenadas (com captura automática de GPS), Classificação de Ocupação (NT/CBMDF), População (Fixa x Flutuante e alerta de evacuação prioritária) e Contatos de Emergência com botões de discagem rápida (`tel:`).
+  - **B. Trem de Socorro e SCI:** Vias de acesso principal e alternativa, restrições viárias/gabaritos, posicionamento pré-definido para ABT (combate), AET/Plataforma (salvamento em altura com raio livre), Posto de Comando (PC) do SCI e Área de Concentração de Vítimas (ACV) / Triagem START.
+  - **C. Abastecimento Hídrico:** Reserva Técnica de Incêndio (RTI em Litros/m³), Registro de Recalque (tipo passeio/fachada e localização), identificação dos 2 hidrantes urbanos CAESB mais próximos *(com geocálculo automático na base de dados do Netuno)* e mananciais alternativos.
+  - **D. Sistemas de Proteção e Cortes:** Chave Geral de Energia Elétrica (QDG/Subestação), Válvula Geral de Gás (GLP/GN), Sprinklers (localização da VGA), Escadas de Emergência/Pressurização e Gerador de Emergência.
+  - **E. Riscos Específicos e Carga de Incêndio:** Classificação da Carga (Baixa, Média, Alta), Produtos Perigosos/Químicos com classe ONU, Áreas Críticas internas e Risco de Colapso Estrutural.
+  - **F. Arquivos Táticos Anexos:** Foto da Fachada Principal (com compressão automática via Canvas) e Croqui Tático Simplificado / Planta Baixa com visualizador em tela cheia e zoom.
+- **5. Ficha Tática Operacional de Resposta Rápida e Despacho WhatsApp (`BuildingStudiesModal.jsx`):**
+  - Modal de alto contraste para leitura sob luz solar/fumaça em campo.
+  - Botão de compartilhamento formatado no padrão SCI para despacho operacional imediato via WhatsApp.
+  - Botão para impressão/exportação da ficha tática PPO.
+  - Resiliência offline garantida via `localStorage` (`netuno_building_studies`) com carga inicial de edifícios de referência do DF (Hospital de Base, JK Shopping, Venâncio Shopping).
+
 
 
 
