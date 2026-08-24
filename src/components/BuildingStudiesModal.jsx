@@ -205,8 +205,8 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[150] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-6xl h-[94vh] flex flex-col shadow-2xl overflow-hidden text-slate-100">
+    <div className="fixed inset-0 z-[150] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-1 sm:p-4 overflow-hidden animate-fadeIn">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-xl sm:rounded-2xl w-full max-w-6xl h-[98dvh] sm:h-[94vh] flex flex-col shadow-2xl overflow-hidden text-slate-100">
         
         {/* CABEÇALHO PRINCIPAL */}
         <div className="px-4 py-3 sm:px-6 sm:py-4 bg-slate-800/90 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
@@ -771,13 +771,13 @@ function BuildingTacticalViewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[180] bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden animate-fadeIn">
-      <div className="bg-slate-900 border border-red-500/50 rounded-2xl w-full max-w-5xl h-[94vh] flex flex-col shadow-2xl overflow-hidden text-slate-100">
+    <div className="fixed inset-0 z-[180] bg-black/90 backdrop-blur-md flex items-center justify-center p-1 sm:p-4 overflow-hidden animate-fadeIn">
+      <div className="bg-slate-900 border border-red-500/50 rounded-xl sm:rounded-2xl w-full max-w-5xl h-[98dvh] sm:h-[94vh] flex flex-col shadow-2xl overflow-hidden text-slate-100">
         
         {/* Cabeçalho Ficha Tática */}
-        <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border-b border-red-500/40 flex items-center justify-between gap-3 shrink-0">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
+        <div className="px-3 py-2 sm:px-6 sm:py-4 bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border-b border-red-500/40 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
+          <div className="min-w-0 flex-1">
+            <div className="hidden sm:flex items-center gap-2 flex-wrap mb-1">
               <span className="px-2.5 py-0.5 bg-red-600 text-white font-extrabold text-[11px] rounded uppercase tracking-wider shadow">
                 SCI / CBMDF • RESPOSTA RÁPIDA
               </span>
@@ -788,44 +788,44 @@ function BuildingTacticalViewModal({
                 Carga {study.cargaIncendio || 'Média'}
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
+            <h2 className="text-sm sm:text-2xl font-black text-white tracking-tight leading-tight truncate sm:whitespace-normal">
               {study.nomeFantasia}
             </h2>
-            <p className="text-xs text-slate-300 leading-snug mt-0.5">
+            <p className="hidden sm:block text-xs text-slate-300 leading-snug mt-0.5">
               {study.razaoSocial ? `${study.razaoSocial} • ` : ''}{study.endereco}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={onShareWhatsApp}
-              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow-md transition-all"
+              className="flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow-md transition-all active:scale-95"
               title="Despacho WhatsApp"
             >
-              <Share2 size={16} />
+              <Share2 size={15} />
               <span className="hidden sm:inline">WhatsApp</span>
             </button>
             <button
               type="button"
               onClick={() => window.print()}
-              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition-all"
+              className="p-1.5 sm:p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition-all"
               title="Imprimir Ficha"
             >
-              <Printer size={18} />
+              <Printer size={16} />
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
             >
-              <X size={22} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
         {/* BARRA DE NAVEGAÇÃO HORIZONTAL POR CHIPS DE SEÇÕES (STICKY) */}
-        <div className="sticky top-0 z-20 flex items-center overflow-x-auto border-b border-slate-800 bg-slate-950/95 backdrop-blur-md px-3 sm:px-6 py-2 gap-1.5 shrink-0 scrollbar-thin">
+        <div className="sticky top-0 z-20 flex items-center overflow-x-auto border-b border-slate-800 bg-slate-950/95 backdrop-blur-md px-2 sm:px-6 py-1.5 sm:py-2 gap-1 sm:gap-1.5 shrink-0 scrollbar-thin">
           {tacticalSections.map(s => {
             const Icon = s.icon;
             const isActive = activeSec === s.id;
@@ -834,13 +834,13 @@ function BuildingTacticalViewModal({
                 key={s.id}
                 type="button"
                 onClick={() => scrollToSection(s.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all ${
                   isActive
                     ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 bg-slate-900 border border-slate-800'
                 }`}
               >
-                <Icon size={14} />
+                <Icon size={12} className="sm:w-[14px] sm:h-[14px]" />
                 <span>{s.label}</span>
               </button>
             );
@@ -851,7 +851,7 @@ function BuildingTacticalViewModal({
         <div 
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 text-sm bg-slate-950/40 scroll-smooth"
+          className="flex-1 overflow-y-auto p-2.5 sm:p-6 space-y-3 sm:space-y-6 text-xs sm:text-sm bg-slate-950/40 scroll-smooth"
         >
 
           {/* SEÇÃO A: IDENTIFICAÇÃO E POPULAÇÃO */}
@@ -1166,20 +1166,20 @@ function BuildingTacticalViewModal({
         </div>
 
         {/* Rodapé da Ficha Tática */}
-        <div className="px-4 py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-3 shrink-0">
+        <div className="px-3 py-2 sm:px-4 sm:py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={onEdit}
-            className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm rounded-lg transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm rounded-lg transition-all active:scale-95"
           >
-            <Edit size={16} />
+            <Edit size={14} className="sm:w-4 sm:h-4" />
             <span>EDITAR DADOS DA FICHA</span>
           </button>
 
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow transition-all"
+            className="px-3 py-1.5 sm:px-5 sm:py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow transition-all active:scale-95"
           >
             FECHAR FICHA PREPOP
           </button>
