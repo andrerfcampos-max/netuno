@@ -2212,7 +2212,7 @@ function BuildingStudyFormModal({
               type="submit"
               className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-950/50 text-xs sm:text-sm active:scale-95 transition-all"
             >
-              Salvar Estudo de Edificação
+              Salvar Ficha PREPOP
             </button>
           </div>
 
