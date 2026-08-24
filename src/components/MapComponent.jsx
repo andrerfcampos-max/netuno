@@ -16,22 +16,22 @@ L.Icon.Default.mergeOptions({
 });
 
 // Estilização dos Marcadores (Design Consistente com Desktop e Mobile)
-const createDivIcon = (isOperante, isSelected) => {
-  const statusColor = isOperante ? '#10b981' : '#ef4444'; // Verde Esmeralda ou Vermelho Sólido de Alta Definição
+const createDivIcon = (isOperante, isSelected, isInspected) => {
+  const statusColor = isOperante ? '#10b981' : '#ef4444'; // Verde Esmeralda ou Vermelho Sólido
   
-  // Se selecionado, o pino fica "vazio" (fundo transparente) com borda ciano muito destacada
+  // EXCLUSIVO para hidrantes adicionados à rota de missão: fundo transparente com anel ciano destacado
   const bgColor = isSelected ? 'rgba(0,0,0,0.5)' : statusColor; 
-  const bgImage = `background-color: ${bgColor};`;
-  
-  const borderColor = isSelected ? '#00FFFF' : 'white';
-  const borderWidth = isSelected ? '4px' : '2px';
-  const shadow = isSelected ? '0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9)' : `0 0 4px rgba(0,0,0,0.6)`;
-  const size = isSelected ? 32 : 18;
+  const borderColor = isSelected ? '#00FFFF' : (isInspected ? '#FFFFFF' : 'white');
+  const borderWidth = isSelected ? '4px' : (isInspected ? '3px' : '2px');
+  const shadow = isSelected 
+    ? '0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9)' 
+    : (isInspected ? '0 0 12px rgba(255,255,255,0.9), 0 0 4px rgba(0,0,0,0.8)' : '0 0 4px rgba(0,0,0,0.6)');
+  const size = isSelected ? 32 : (isInspected ? 22 : 18);
   
   return L.divIcon({
     className: 'custom-div-icon',
     html: `<div style="
-      ${bgImage}
+      background-color: ${bgColor};
       width: ${size}px;
       height: ${size}px;
       border-radius: 50%;
@@ -233,7 +233,33 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
 
   const [userLocation, setUserLocation] = useState(null);
   const [selectedHydrant, setSelectedHydrant] = useState(null);
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const touchStartY = useRef(0);
+  const isDragging = useRef(false);
   const markerRefs = useRef({});
+
+  // Suporte a arrastar / deslizar para baixo para fechar o Bottom Sheet
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+    isDragging.current = true;
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging.current) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY.current;
+    if (deltaY > 0) {
+      setDragOffsetY(deltaY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (dragOffsetY > 65) {
+      setSelectedHydrant(null);
+    }
+    setDragOffsetY(0);
+    isDragging.current = false;
+  };
 
   // Sincronizar com centerPosition externo quando recebido (ex: da Tabela ou Rota)
   useEffect(() => {
@@ -316,7 +342,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         <Marker 
           key={id} 
           position={[h.numLatitude, h.numLongitude]}
-          icon={createDivIcon(h.flgAtivo, isSelected || isCurrentActive)}
+          icon={createDivIcon(h.flgAtivo, isSelected, isCurrentActive)}
           ref={(marker) => {
             if (marker) {
               markerRefs.current[id] = marker;
@@ -337,7 +363,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                 if (e.originalEvent.stopPropagation) e.originalEvent.stopPropagation();
                 return;
               }
-              // Abre o Bottom Sheet tático e centraliza o pino acima do painel
+              // Abre o Bottom Sheet tático e centraliza o pino acima do painel SEM adicionar à rota
               setSelectedHydrant(h);
             },
             dblclick: (e) => {
@@ -454,13 +480,26 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
       {selectedHydrant && (
         <div 
           onClick={(e) => e.stopPropagation()} 
-          className="absolute bottom-0 inset-x-0 sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-md z-[1050] bg-slate-900/98 sm:bg-slate-900/95 backdrop-blur-xl border-t sm:border border-slate-700/90 shadow-[0_-10px_35px_rgba(0,0,0,0.85)] sm:rounded-2xl rounded-t-2xl p-3.5 sm:p-4 text-slate-100 flex flex-col gap-2.5 transition-all duration-300 ease-out select-text pointer-events-auto"
+          style={{ transform: dragOffsetY > 0 ? `translateY(${dragOffsetY}px)` : undefined }}
+          className="absolute bottom-0 inset-x-0 sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-md z-[1050] bg-slate-900/98 sm:bg-slate-900/95 backdrop-blur-xl border-t sm:border border-slate-700/90 shadow-[0_-10px_35px_rgba(0,0,0,0.85)] sm:rounded-2xl rounded-t-2xl p-3.5 sm:p-4 text-slate-100 flex flex-col gap-2.5 transition-transform duration-150 ease-out select-text pointer-events-auto"
         >
-          {/* Barra de puxar / Handle visual para mobile */}
-          <div className="w-12 h-1 bg-slate-700 rounded-full mx-auto sm:hidden mb-0.5"></div>
+          {/* Barra de puxar / Handle visual para mobile com suporte a arrastar para baixo */}
+          <div 
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className="w-full pt-1 pb-2 cursor-grab active:cursor-grabbing flex items-center justify-center -mt-2 -mb-1"
+          >
+            <div className="w-12 h-1.5 bg-slate-600 hover:bg-slate-500 rounded-full"></div>
+          </div>
 
           {/* Cabeçalho: Código, Foto (se houver), RA, Status e Botão Fechar */}
-          <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+          <div 
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2"
+          >
             <div className="flex items-center gap-2 min-w-0">
               {selectedHydrant.fotoPerfil && (
                 <img 
@@ -545,91 +584,94 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
             </div>
           </div>
 
-          {/* Barra de Ações Ergonômicas Touch-Friendly (Botões de 46-48px) */}
-          <div className="flex items-center gap-1.5 pt-1">
-            {/* Botão Primário: Vistoria */}
+          {/* Barra de Ações Ergonômicas em Duas Linhas (Layout Perfeito para Mobile) */}
+          <div className="flex flex-col gap-2 pt-1">
+            {/* Linha 1: Botão Primário Largo de Vistoria */}
             <button 
               onClick={() => { onInspect(selectedHydrant); }}
-              className="flex-1 min-w-0 h-12 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-xl font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5 transition-all"
+              className="w-full h-11 sm:h-12 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-xl font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-all tracking-wide"
               title="Cadastrar Vistoria Técnica"
             >
-              <Plus size={18} strokeWidth={3} />
-              <span className="tracking-wide">VISTORIA</span>
+              <Plus size={19} strokeWidth={3} />
+              <span>+ CADASTRAR VISTORIA</span>
             </button>
 
-            {/* Navegação Waze */}
-            <a 
-              href={`https://waze.com/ul?ll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}&navigate=yes`} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="h-12 w-12 sm:w-14 shrink-0 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 shadow-md transition-all" 
-              title="Navegar com Waze"
-            >
-              <Navigation size={18} />
-              <span className="text-[9px] uppercase tracking-wider font-extrabold">Waze</span>
-            </a>
-
-            {/* Google Maps */}
-            <a 
-              href={`https://maps.google.com/maps?q=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="h-12 w-12 sm:w-14 shrink-0 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700 rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 transition-all shadow-sm" 
-              title="Abrir no Google Maps"
-            >
-              <MapIcon size={17} className="text-emerald-400" />
-              <span className="text-[9px] uppercase tracking-wider font-extrabold">Maps</span>
-            </a>
-
-            {/* Street View 360° */}
-            <a 
-              href={`https://maps.google.com/maps?q=&layer=c&cbll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="h-12 w-12 sm:w-14 shrink-0 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700 rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 transition-all shadow-sm" 
-              title="Street View 360°"
-            >
-              <MapPin size={17} className="text-amber-400" />
-              <span className="text-[9px] uppercase tracking-wider font-extrabold">360°</span>
-            </a>
-
-            {/* Compartilhar WhatsApp */}
-            <button 
-              onClick={() => handleShareWhatsApp(selectedHydrant)}
-              className="h-12 w-12 sm:w-14 shrink-0 bg-green-600 hover:bg-green-500 active:scale-95 text-white rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 shadow-md transition-all" 
-              title="Compartilhar no WhatsApp"
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a5.8 5.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-              <span className="text-[9px] uppercase tracking-wider font-extrabold">Zap</span>
-            </button>
-
-            {/* Adicionar / Remover Missão (Gestor / Admin) */}
-            {isGestor && (
-              <button 
-                onClick={() => onToggleMission && onToggleMission(selectedHydrant.codHidrante || selectedHydrant._internalId || selectedHydrant.nomHidrante)}
-                className={`h-12 w-12 sm:w-14 shrink-0 rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 shadow-md transition-all active:scale-95 ${
-                  (selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId))
-                    ? 'bg-rose-600 text-white ring-1 ring-rose-400' 
-                    : 'bg-cyan-600 hover:bg-cyan-500 text-white ring-1 ring-cyan-400/40'
-                }`}
-                title={(selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? 'Remover da Missão' : 'Adicionar à Missão'}
+            {/* Linha 2: Ações Rápidas em Grade Fluida de Ícones Grandes */}
+            <div className="flex items-center gap-1.5 w-full">
+              {/* Navegação Waze */}
+              <a 
+                href={`https://waze.com/ul?ll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}&navigate=yes`} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="flex-1 h-11 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 shadow-md transition-all min-w-0" 
+                title="Navegar com Waze"
               >
-                <span className="text-sm leading-none">{(selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? '✕' : '➕'}</span>
-                <span className="text-[9px] uppercase tracking-wider font-extrabold">Rota</span>
-              </button>
-            )}
+                <Navigation size={16} />
+                <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">Waze</span>
+              </a>
 
-            {/* Editar Dados do Hidrante (Gestor / Admin) */}
-            {isGestor && (
-              <button 
-                onClick={() => onEdit && onEdit(selectedHydrant)}
-                className="h-12 w-10 sm:w-12 shrink-0 bg-amber-700 hover:bg-amber-600 active:scale-95 text-white rounded-xl flex flex-col items-center justify-center gap-0.5 shadow-md transition-colors"
-                title="Editar Cadastro do Hidrante"
+              {/* Google Maps */}
+              <a 
+                href={`https://maps.google.com/maps?q=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="flex-1 h-11 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700 rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 transition-all shadow-sm min-w-0" 
+                title="Abrir no Google Maps"
               >
-                <Edit size={16} />
-                <span className="text-[9px] uppercase tracking-wider font-extrabold">Edit</span>
+                <MapIcon size={16} className="text-emerald-400" />
+                <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">Maps</span>
+              </a>
+
+              {/* Street View 360° */}
+              <a 
+                href={`https://maps.google.com/maps?q=&layer=c&cbll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="flex-1 h-11 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700 rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 transition-all shadow-sm min-w-0" 
+                title="Street View 360°"
+              >
+                <MapPin size={16} className="text-amber-400" />
+                <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">360°</span>
+              </a>
+
+              {/* Compartilhar WhatsApp */}
+              <button 
+                onClick={() => handleShareWhatsApp(selectedHydrant)}
+                className="flex-1 h-11 bg-green-600 hover:bg-green-500 active:scale-95 text-white rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 shadow-md transition-all min-w-0" 
+                title="Compartilhar no WhatsApp"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a5.8 5.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+                <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">Zap</span>
               </button>
-            )}
+
+              {/* Adicionar / Remover Missão (Gestor / Admin) */}
+              {isGestor && (
+                <button 
+                  onClick={() => onToggleMission && onToggleMission(selectedHydrant.codHidrante || selectedHydrant._internalId || selectedHydrant.nomHidrante)}
+                  className={`flex-1 h-11 rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 shadow-md transition-all active:scale-95 min-w-0 ${
+                    (selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId))
+                      ? 'bg-rose-600 text-white ring-1 ring-rose-400' 
+                      : 'bg-cyan-600 hover:bg-cyan-500 text-white ring-1 ring-cyan-400/40'
+                  }`}
+                  title={(selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? 'Remover da Missão' : 'Adicionar à Missão'}
+                >
+                  <span className="text-xs leading-none">{(selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? '✕' : '➕'}</span>
+                  <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">Rota</span>
+                </button>
+              )}
+
+              {/* Editar Dados do Hidrante (Gestor / Admin) */}
+              {isGestor && (
+                <button 
+                  onClick={() => onEdit && onEdit(selectedHydrant)}
+                  className="flex-1 h-11 bg-amber-700 hover:bg-amber-600 active:scale-95 text-white rounded-xl flex flex-col items-center justify-center gap-0.5 shadow-md transition-colors min-w-0"
+                  title="Editar Cadastro do Hidrante"
+                >
+                  <Edit size={15} />
+                  <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">Edit</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

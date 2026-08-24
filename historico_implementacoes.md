@@ -380,7 +380,15 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
     - **`+ Rota / ✕ Rota`** e **`Editar`**: Ações de missão e edição cadastral para gestor e administrador.
 - **4. Interação Fluida no Mapa (`MapComponent.jsx`):**
   - Tocar no mapa fora do painel fecha o Bottom Sheet suavemente.
+  - Adicionado suporte nativo a **Gesto de Arrastar/Deslizar para Baixo (Touch Swipe Down)** na barra de puxar e cabeçalho para minimizar e fechar a dialog com facilidade.
   - O botão de GPS e a legenda do mapa ajustam suas posições automaticamente quando o painel está aberto, evitando sobreposições.
+- **5. Isolamento Visual do Pino Inspecionado vs. Selecionado para Rota (`MapComponent.jsx`):**
+  - O anel azul-ciano (`#00FFFF`) pulsante é reservado **exclusivamente** para hidrantes adicionados à Rota de Missão (`isSelected`).
+  - Ao clicar no pino para abrir a dialog, o hidrante não é adicionado à rota e recebe apenas uma borda branca de destaque (`isInspected`), eliminando falsas impressões de seleção.
+- **6. Layout dos Botões de Ação em Duas Linhas Táticas (`MapComponent.jsx`):**
+  - Linha 1: Botão largo de destaque **`+ CADASTRAR VISTORIA`** em verde esmeralda (100% da largura, touch-target confortável sem corte lateral de texto).
+  - Linha 2: Grade fluida com 6 botões quadrados de ação rápida (`[Waze]`, `[Maps]`, `[360°]`, `[Zap]`, `[Rota +/-]`, `[Editar]`), cabendo perfeitamente em telas pequenas de 360px sem overflow.
+
 
 
 
