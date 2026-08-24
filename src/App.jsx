@@ -1211,11 +1211,11 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-start gap-2.5 w-full px-3 py-2 text-left bg-gradient-to-r from-blue-950/60 to-indigo-950/50 border border-blue-500/30 text-blue-300 font-semibold rounded-lg hover:from-blue-900/70 hover:to-indigo-900/60 transition-all group"
+                        className="flex items-start gap-2.5 w-full px-3 py-2 text-left bg-gradient-to-r from-emerald-950/60 to-teal-950/50 border border-emerald-500/30 text-emerald-300 font-semibold rounded-lg hover:from-emerald-900/70 hover:to-teal-900/60 transition-all group"
                       >
-                        <Building2 size={18} className="text-blue-400 shrink-0 mt-0.5" />
+                        <Building2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
                         <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-bold text-blue-300 group-hover:text-white transition-colors">
+                          <span className="text-sm font-bold text-emerald-300 group-hover:text-white transition-colors">
                             Estudo PREPOP
                           </span>
                           <span className="text-[11px] text-slate-400 font-normal leading-tight group-hover:text-slate-300 transition-colors">

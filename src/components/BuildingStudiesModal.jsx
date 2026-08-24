@@ -211,7 +211,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
         {/* CABEÇALHO PRINCIPAL */}
         <div className="px-4 py-3 sm:px-6 sm:py-4 bg-slate-800/90 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white shadow-lg shadow-blue-950/50 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-950/50 shrink-0">
               <Building2 size={22} className="animate-pulse" />
             </div>
             <div className="min-w-0">
@@ -625,7 +625,7 @@ function BuildingTacticalCard({
         <button
           type="button"
           onClick={onOpenTacticalView}
-          className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs rounded-lg border border-blue-500/40 shadow-md shadow-blue-950/60 active:scale-95 transition-all"
+          className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-lg border border-emerald-500/40 shadow-md shadow-emerald-950/60 active:scale-95 transition-all"
         >
           <Eye size={14} />
           <span>Ficha completa PREPOP</span>
@@ -772,13 +772,13 @@ function BuildingTacticalViewModal({
 
   return (
     <div className="fixed inset-0 z-[180] bg-black/90 backdrop-blur-md flex items-center justify-center p-1 sm:p-4 overflow-hidden animate-fadeIn">
-      <div className="bg-slate-900 border border-blue-500/50 rounded-xl sm:rounded-2xl w-full max-w-5xl h-[98dvh] sm:h-[94vh] flex flex-col shadow-2xl overflow-hidden text-slate-100">
+      <div className="bg-slate-900 border border-emerald-500/40 rounded-xl sm:rounded-2xl w-full max-w-5xl h-[98dvh] sm:h-[94vh] flex flex-col shadow-2xl overflow-hidden text-slate-100">
         
         {/* Cabeçalho Ficha Tática */}
-        <div className="px-3 py-2 sm:px-6 sm:py-4 bg-gradient-to-r from-blue-950 via-slate-900 to-blue-950 border-b border-blue-500/40 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
+        <div className="px-3 py-2 sm:px-6 sm:py-4 bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-950/80 border-b border-emerald-500/30 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
           <div className="min-w-0 flex-1">
             <div className="hidden sm:flex items-center gap-2 flex-wrap mb-1">
-              <span className="px-2.5 py-0.5 bg-blue-600 text-white font-extrabold text-[11px] rounded uppercase tracking-wider shadow">
+              <span className="px-2.5 py-0.5 bg-emerald-600 text-white font-extrabold text-[11px] rounded uppercase tracking-wider shadow">
                 SCI / CBMDF • RESPOSTA RÁPIDA
               </span>
               <span className="px-2 py-0.5 bg-blue-950 text-cyan-300 border border-cyan-500/30 text-xs font-bold rounded">
@@ -836,7 +836,7 @@ function BuildingTacticalViewModal({
                 onClick={() => scrollToSection(s.id)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                   isActive
-                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 bg-slate-900 border border-slate-800'
                 }`}
               >
@@ -1179,7 +1179,7 @@ function BuildingTacticalViewModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow transition-all"
+            className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow-lg shadow-emerald-950/50 active:scale-95 transition-all"
           >
             Fechar ficha PREPOP
           </button>
