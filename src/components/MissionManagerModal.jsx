@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput, FileSpreadsheet, Printer } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput, FileSpreadsheet, Printer, BarChart3, Activity, Clock, CheckCircle2, Search, ArrowRight, Shield, Layers, Filter } from 'lucide-react';
 import { createNewFolder } from '../utils/storage';
 import { syncMissionToCloud } from '../services/syncService';
 
@@ -19,6 +19,8 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
   const [isMoveMode, setIsMoveMode] = useState(false);
   const [missionToMove, setMissionToMove] = useState(null);
   const [missionToDelete, setMissionToDelete] = useState(null);
+  const [dashboardSearch, setDashboardSearch] = useState('');
+  const [dashboardOnlyWithMissions, setDashboardOnlyWithMissions] = useState(false);
 
   // Set default folder
   const handleSetDefaultFolder = () => {
@@ -61,6 +63,82 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
   };
 
   const availableMissions = isGestor ? missions : missions.filter(m => !m.isDraft);
+
+  // Estatísticas Consolidadas do Dashboard de Comando (Multiquartéis)
+  const dashboardStats = useMemo(() => {
+    let totalHidrantes = 0;
+    let totalConcluidos = 0;
+    let totalNaoIniciadas = 0;
+    let totalEmAndamento = 0;
+    let totalConcluidas = 0;
+
+    const quartelStats = folders.map(folder => {
+      const fMissions = availableMissions.filter(m => (m.parentFolderId || null) === folder.id);
+      let qHidrantes = 0;
+      let qConcluidos = 0;
+      let qNaoIniciadas = 0;
+      let qEmAndamento = 0;
+      let qConcluidas = 0;
+
+      const missionsDetail = fMissions.map(m => {
+        const total = (m.selectedIds || []).length;
+        const completed = (m.completedIds || []).filter(id => (m.selectedIds || []).includes(id)).length;
+        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const status = total > 0 && completed >= total ? 'concluida' : completed > 0 ? 'em_andamento' : 'nao_iniciada';
+        
+        qHidrantes += total;
+        qConcluidos += completed;
+        if (status === 'concluida') qConcluidas++;
+        else if (status === 'em_andamento') qEmAndamento++;
+        else qNaoIniciadas++;
+
+        return {
+          id: m.id,
+          name: m.name,
+          atribuicao: m.atribuicao || 'Não atribuída',
+          total,
+          completed,
+          percent,
+          status,
+          ratioText: `${completed}/${total}`
+        };
+      });
+
+      totalHidrantes += qHidrantes;
+      totalConcluidos += qConcluidos;
+      totalNaoIniciadas += qNaoIniciadas;
+      totalEmAndamento += qEmAndamento;
+      totalConcluidas += qConcluidas;
+
+      const progGeral = qHidrantes > 0 ? Math.round((qConcluidos / qHidrantes) * 100) : 0;
+
+      return {
+        folder,
+        missions: missionsDetail,
+        totalMissions: fMissions.length,
+        totalHidrantes: qHidrantes,
+        totalConcluidos: qConcluidos,
+        naoIniciadas: qNaoIniciadas,
+        emAndamento: qEmAndamento,
+        concluidas: qConcluidas,
+        progGeral
+      };
+    });
+
+    const globalProgGeral = totalHidrantes > 0 ? Math.round((totalConcluidos / totalHidrantes) * 100) : 0;
+
+    return {
+      totalQuarteis: folders.length,
+      totalMissions: availableMissions.length,
+      totalHidrantes,
+      totalConcluidos,
+      totalNaoIniciadas,
+      totalEmAndamento,
+      totalConcluidas,
+      globalProgGeral,
+      quartelStats
+    };
+  }, [availableMissions, folders]);
 
   // Filtra as pastas e missões
   let displayMissions = [];
@@ -108,90 +186,107 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
     const today = new Date().toLocaleDateString('pt-BR');
     
     let html = `
-      <html><head><title>Relatório - Dashboard de Comando</title>
+      <html><head><title>Relatório - Dashboard de Comando Multiquartéis</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-        h1 { text-align: center; color: #1e293b; margin-bottom: 5px; }
-        h2 { text-align: center; color: #64748b; font-size: 14px; margin-top: 0; margin-bottom: 30px; }
-        .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
-        .folder-box { width: 300px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); break-inside: avoid; margin-bottom: 20px; }
-        .folder-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; }
-        .folder-title { font-weight: bold; font-size: 16px; color: #0f172a; }
-        .folder-badge { font-size: 11px; background: #e2e8f0; padding: 3px 8px; border-radius: 12px; color: #475569; }
-        .progress-bar-bg { width: 100%; background-color: #e2e8f0; border-radius: 8px; height: 16px; position: relative; margin-bottom: 15px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; background-color: #3b82f6; border-radius: 8px; }
-        .progress-bar-fill.complete { background-color: #10b981; }
-        .progress-text { position: absolute; width: 100%; text-align: center; top: 0; left: 0; font-size: 10px; font-weight: bold; color: #fff; line-height: 16px; text-shadow: 0 0 2px rgba(0,0,0,0.8); }
-        .stats-grid { display: flex; justify-content: space-between; gap: 10px; text-align: center; }
-        .stat-box { flex: 1; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 0; background: #f8fafc; }
-        .stat-label { font-size: 10px; color: #64748b; display: block; text-transform: uppercase; }
-        .stat-value { font-size: 18px; font-weight: bold; color: #0f172a; display: block; margin-top: 4px; }
-        .stat-box.planejadas { border-color: #cbd5e1; }
-        .stat-box.andamento { border-color: #fcd34d; background: #fffbeb; }
-        .stat-box.concluidas { border-color: #6ee7b7; background: #ecfdf5; }
-        .signature { margin-top: 60px; text-align: center; page-break-inside: avoid; }
+        body { font-family: Arial, sans-serif; padding: 20px; color: #1e293b; line-height: 1.4; }
+        h1 { text-align: center; color: #0f172a; margin-bottom: 4px; font-size: 18px; text-transform: uppercase; }
+        h2 { text-align: center; color: #475569; font-size: 12px; margin-top: 0; margin-bottom: 20px; text-transform: uppercase; }
+        .kpi-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
+        .kpi-box { flex: 1; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; text-align: center; background: #f8fafc; }
+        .kpi-title { font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase; }
+        .kpi-val { font-size: 18px; font-weight: bold; color: #0f172a; margin-top: 2px; }
+        
+        .section-title { font-size: 14px; font-weight: bold; color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin: 20px 0 12px 0; text-transform: uppercase; }
+        .quartel-block { border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 14px; overflow: hidden; break-inside: avoid; }
+        .quartel-header { background: #f1f5f9; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; font-weight: bold; font-size: 12px; }
+        .mission-row { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; font-size: 11px; }
+        .mission-row:last-child { border-bottom: none; }
+        .mission-name { flex: 1; font-weight: bold; color: #1e293b; }
+        .mission-sub { font-size: 10px; color: #64748b; font-weight: normal; margin-top: 2px; }
+        .mission-progress { width: 200px; margin: 0 12px; }
+        .progress-bg { background: #e2e8f0; height: 14px; border-radius: 7px; overflow: hidden; position: relative; }
+        .progress-fill { height: 100%; background: #3b82f6; }
+        .progress-fill.complete { background: #10b981; }
+        .progress-text { position: absolute; inset: 0; font-size: 9px; font-weight: bold; display: flex; align-items: center; justify-content: center; color: #fff; text-shadow: 0 0 2px rgba(0,0,0,0.8); }
+        .badge { padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: bold; white-space: nowrap; }
+        .badge-done { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .badge-prog { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+        .badge-pending { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .signature { margin-top: 40px; text-align: center; page-break-inside: avoid; font-size: 11px; }
       </style></head>
       <body>
-        <h1>NETUNO - RELATÓRIO DO DASHBOARD DE COMANDO</h1>
-        <h2>Data de Emissão: ${today}</h2>
-        <div class="grid">
-    `;
-    
-    folders.forEach(folder => {
-      const fMissions = availableMissions.filter(m => m.parentFolderId === folder.id);
-      
-      let totalHidrantes = 0;
-      let totalConcluidos = 0;
-      let naoIniciadas = 0;
-      let emAndamento = 0;
-      let concluidas = 0;
-
-      fMissions.forEach(m => {
-        const t = (m.selectedIds || []).length;
-        const c = (m.completedIds || []).filter(id => (m.selectedIds || []).includes(id)).length;
-        totalHidrantes += t;
-        totalConcluidos += c;
-        if (t > 0 && c >= t) concluidas++;
-        else if (c > 0) emAndamento++;
-        else naoIniciadas++;
-      });
-      
-      const progGeral = totalHidrantes > 0 ? Math.round((totalConcluidos / totalHidrantes) * 100) : 0;
-      const progressClass = progGeral === 100 ? 'progress-bar-fill complete' : 'progress-bar-fill';
-
-      html += `
-        <div class="folder-box">
-          <div class="folder-header">
-            <span class="folder-title">${folder.name}</span>
-            <span class="folder-badge">${fMissions.length} Missões</span>
+        <h1>NETUNO - RELATÓRIO DO DASHBOARD DE COMANDO MULTIQUARTÉIS</h1>
+        <h2>Corpo de Bombeiros Militar do Distrito Federal | Emissão: ${today}</h2>
+        
+        <div class="kpi-row">
+          <div class="kpi-box">
+            <div class="kpi-title">Quartéis Monitorados</div>
+            <div class="kpi-val">${dashboardStats.totalQuarteis}</div>
           </div>
-          <div class="progress-bar-bg">
-            <div class="${progressClass}" style="width: ${progGeral}%"></div>
-            <div class="progress-text">${progGeral}% (${totalConcluidos}/${totalHidrantes})</div>
+          <div class="kpi-box">
+            <div class="kpi-title">Total de Missões</div>
+            <div class="kpi-val">${dashboardStats.totalMissions}</div>
           </div>
-          <div class="stats-grid">
-            <div class="stat-box planejadas">
-              <span class="stat-label">Planejadas</span>
-              <span class="stat-label stat-value">${naoIniciadas}</span>
-            </div>
-            <div class="stat-box andamento">
-              <span class="stat-label">Andamento</span>
-              <span class="stat-label stat-value">${emAndamento}</span>
-            </div>
-            <div class="stat-box concluidas">
-              <span class="stat-label">Concluídas</span>
-              <span class="stat-label stat-value">${concluidas}</span>
+          <div class="kpi-box">
+            <div class="kpi-title">Hidrantes Concluídos</div>
+            <div class="kpi-val">${dashboardStats.totalConcluidos} / ${dashboardStats.totalHidrantes} (${dashboardStats.globalProgGeral}%)</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Status Global</div>
+            <div class="kpi-val" style="font-size: 12px; margin-top: 4px;">
+              <span style="color: #475569;">⏳ ${dashboardStats.totalNaoIniciadas} Plan.</span> | 
+              <span style="color: #b45309;">🔄 ${dashboardStats.totalEmAndamento} And.</span> | 
+              <span style="color: #15803d;">✅ ${dashboardStats.totalConcluidas} Conc.</span>
             </div>
           </div>
         </div>
+
+        <div class="section-title">📊 Gráfico Multiquartéis: Progresso Executado das Missões (0/5, 2/5, 5/5)</div>
+    `;
+    
+    dashboardStats.quartelStats.forEach(qs => {
+      if (qs.totalMissions === 0) return;
+      
+      html += `
+        <div class="quartel-block">
+          <div class="quartel-header">
+            <span>🏢 ${qs.folder.name} (${qs.totalMissions} ${qs.totalMissions === 1 ? 'Missão' : 'Missões'})</span>
+            <span>Progresso Geral: ${qs.totalConcluidos}/${qs.totalHidrantes} (${qs.progGeral}%)</span>
+          </div>
       `;
+
+      qs.missions.forEach(m => {
+        const progClass = m.percent === 100 ? 'progress-fill complete' : 'progress-fill';
+        const badgeClass = m.status === 'concluida' ? 'badge badge-done' : m.status === 'em_andamento' ? 'badge badge-prog' : 'badge badge-pending';
+        const badgeLabel = m.status === 'concluida' ? 'Concluída ✅' : m.status === 'em_andamento' ? 'Em Andamento 🔄' : 'Planejada ⏳';
+
+        html += `
+          <div class="mission-row">
+            <div class="mission-name">
+              <div>${m.name}</div>
+              <div class="mission-sub">${m.atribuicao}</div>
+            </div>
+            <div style="font-weight: bold; font-family: monospace; font-size: 12px; margin-right: 8px;">
+              ${m.ratioText}
+            </div>
+            <div class="mission-progress">
+              <div class="progress-bg">
+                <div class="${progClass}" style="width: ${m.percent}%"></div>
+                <div class="progress-text">${m.ratioText} (${m.percent}%)</div>
+              </div>
+            </div>
+            <span class="${badgeClass}">${badgeLabel}</span>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
     });
 
     html += `
-        </div>
         <div class="signature">
           <br><br>_________________________________________<br>
-          Assinatura do Responsável
+          Comando Operacional / SEHUR - CBMDF
         </div>
       </body></html>
     `;
@@ -356,85 +451,285 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
         <div className={`flex-1 overflow-y-auto ${activeTab === 'dashboard_comando' ? 'p-0' : 'p-4'} flex flex-col gap-3`}>
           
           {activeTab === 'dashboard_comando' && (
-            <div className="flex flex-col h-full w-full bg-slate-900 overflow-y-auto gap-4 p-4 pb-8 items-start">
-              <div className="flex flex-col md:flex-row justify-between w-full items-start md:items-center mb-2 gap-4">
+            <div className="flex flex-col h-full w-full bg-slate-900 overflow-y-auto gap-5 p-4 pb-8 items-start">
+              
+              {/* Header do Dashboard */}
+              <div className="flex flex-col md:flex-row justify-between w-full items-start md:items-center gap-3 border-b border-slate-800 pb-3">
                 <div>
                   <h3 className="text-xl font-bold text-white flex items-center gap-2">
                      <Target className="text-blue-400" /> Dashboard de Comando
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Clique em qualquer quartel para abrir diretamente a pasta de missões.</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Monitoramento integrado de missões e progresso de vistorias de todos os quartéis do Distrito Federal.
+                  </p>
                 </div>
                 <button 
                   onClick={handleExportPDFComando}
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-lg transition-transform active:scale-95 text-sm"
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-lg transition-transform active:scale-95 text-xs sm:text-sm shrink-0"
                 >
-                  <Printer size={18} /> Exportar Relatório (PDF)
+                  <Printer size={16} /> Exportar Relatório (PDF)
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-                {folders.map(folder => {
-                  const fMissions = availableMissions.filter(m => m.parentFolderId === folder.id);
-                  
-                  let totalHidrantes = 0;
-                  let totalConcluidos = 0;
-                  let naoIniciadas = 0;
-                  let emAndamento = 0;
-                  let concluidas = 0;
+              {/* KPIs Executivos Globais */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+                <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+                  <span className="text-[11px] font-bold uppercase text-slate-400">Quartéis Monitorados</span>
+                  <div className="text-2xl font-black text-white mt-1">{dashboardStats.totalQuarteis}</div>
+                  <span className="text-[10px] text-slate-400 mt-1">Unidades e GBMs cadastrados</span>
+                </div>
 
-                  fMissions.forEach(m => {
-                    const t = (m.selectedIds || []).length;
-                    const c = (m.completedIds || []).filter(id => (m.selectedIds || []).includes(id)).length;
-                    totalHidrantes += t;
-                    totalConcluidos += c;
-                    if (t > 0 && c >= t) concluidas++;
-                    else if (c > 0) emAndamento++;
-                    else naoIniciadas++;
-                  });
-                  
-                  const progGeral = totalHidrantes > 0 ? Math.round((totalConcluidos / totalHidrantes) * 100) : 0;
+                <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+                  <span className="text-[11px] font-bold uppercase text-slate-400">Total de Missões</span>
+                  <div className="text-2xl font-black text-cyan-400 mt-1">{dashboardStats.totalMissions}</div>
+                  <span className="text-[10px] text-slate-400 mt-1">Missões ativas no DF</span>
+                </div>
 
-                  return (
+                <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5 flex flex-col justify-between shadow-sm col-span-2 sm:col-span-1">
+                  <span className="text-[11px] font-bold uppercase text-slate-400">Hidrantes Vistoriados</span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-2xl font-black text-emerald-400">{dashboardStats.totalConcluidos}</span>
+                    <span className="text-xs text-slate-400">/ {dashboardStats.totalHidrantes}</span>
+                    <span className="text-xs font-bold text-emerald-300 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/60 ml-auto">
+                      {dashboardStats.globalProgGeral}%
+                    </span>
+                  </div>
+                  {/* Barra Global */}
+                  <div className="w-full bg-slate-900 rounded-full h-2 mt-2 overflow-hidden border border-slate-700">
+                    <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${dashboardStats.globalProgGeral}%` }}></div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5 flex flex-col justify-between shadow-sm col-span-2 sm:col-span-1">
+                  <span className="text-[11px] font-bold uppercase text-slate-400">Status das Missões</span>
+                  <div className="grid grid-cols-3 gap-1 text-center mt-2 text-xs font-bold">
+                    <div className="bg-slate-900/60 p-1.5 rounded border border-slate-700" title="Missões não iniciadas">
+                      <span className="text-[10px] text-slate-400 block">⏳ Plan.</span>
+                      <span className="text-slate-200 text-sm">{dashboardStats.totalNaoIniciadas}</span>
+                    </div>
+                    <div className="bg-amber-950/30 p-1.5 rounded border border-amber-800/40" title="Missões em andamento">
+                      <span className="text-[10px] text-amber-400 block">🔄 And.</span>
+                      <span className="text-amber-300 text-sm">{dashboardStats.totalEmAndamento}</span>
+                    </div>
+                    <div className="bg-emerald-950/30 p-1.5 rounded border border-emerald-800/40" title="Missões 100% concluídas">
+                      <span className="text-[10px] text-emerald-400 block">✅ Conc.</span>
+                      <span className="text-emerald-300 text-sm">{dashboardStats.totalConcluidas}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* GRÁFICO MULTIQUARTÉIS CONSOLIDADO COM BARRAS 0/5, 2/5, 5/5 */}
+              <div className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-4 sm:p-5 shadow-lg flex flex-col gap-4">
+                
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-700 pb-3">
+                  <div>
+                    <h4 className="text-base font-bold text-white flex items-center gap-2">
+                      <BarChart3 className="text-cyan-400" size={20} />
+                      Gráfico Multiquartéis: Progresso Executado das Missões (0/5, 2/5, 5/5)
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Acompanhamento simultâneo de todas as missões e taxas de execução de cada quartel em um único gráfico consolidado.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                      <input 
+                        type="text"
+                        placeholder="Filtrar quartel ou missão..."
+                        value={dashboardSearch}
+                        onChange={(e) => setDashboardSearch(e.target.value)}
+                        className="bg-slate-900 border border-slate-600 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 w-48 sm:w-56"
+                      />
+                      <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                    </div>
+
+                    <button
+                      onClick={() => setDashboardOnlyWithMissions(!dashboardOnlyWithMissions)}
+                      className={`text-xs px-3 py-1.5 rounded-lg border font-semibold transition-colors ${dashboardOnlyWithMissions ? 'bg-cyan-600/30 text-cyan-300 border-cyan-500' : 'bg-slate-700 text-slate-300 border-slate-600 hover:bg-slate-600'}`}
+                    >
+                      {dashboardOnlyWithMissions ? 'Apenas com Missões' : 'Todos os Quartéis'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Lista Multiquartéis com Barras de Progresso */}
+                <div className="flex flex-col gap-4">
+                  {dashboardStats.quartelStats
+                    .filter(qs => {
+                      if (dashboardOnlyWithMissions && qs.totalMissions === 0) return false;
+                      if (!dashboardSearch.trim()) return true;
+                      const term = dashboardSearch.toLowerCase();
+                      const matchFolder = qs.folder.name.toLowerCase().includes(term);
+                      const matchMission = qs.missions.some(m => m.name.toLowerCase().includes(term) || m.atribuicao.toLowerCase().includes(term));
+                      return matchFolder || matchMission;
+                    })
+                    .map((qs) => (
+                      <div key={qs.folder.id} className="bg-slate-900/80 border border-slate-700/80 rounded-xl overflow-hidden shadow-sm">
+                        
+                        {/* Cabeçalho do Quartel */}
+                        <div className="bg-slate-800/80 p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700">
+                          <div className="flex items-center gap-2.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                            <span className="font-bold text-slate-100 text-sm sm:text-base">{qs.folder.name}</span>
+                            <span className="text-[11px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full font-semibold">
+                              {qs.totalMissions} {qs.totalMissions === 1 ? 'Missão' : 'Missões'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="text-slate-400 font-medium">Progresso do Quartel:</span>
+                              <span className="font-mono font-bold text-emerald-400">{qs.totalConcluidos}/{qs.totalHidrantes}</span>
+                              <span className="font-bold text-slate-200">({qs.progGeral}%)</span>
+                            </div>
+                            
+                            <button
+                              onClick={() => {
+                                setCurrentFolderId(qs.folder.id);
+                                setActiveTab('todas');
+                              }}
+                              className="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 text-cyan-300 rounded border border-slate-600 transition-colors"
+                              title="Abrir pasta deste quartel"
+                            >
+                              Ver Pasta →
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Barra de Progresso Geral do Quartel */}
+                        <div className="w-full bg-slate-950 h-1.5">
+                          <div 
+                            className={`h-full ${qs.progGeral === 100 ? 'bg-emerald-500' : 'bg-cyan-500'} transition-all duration-500`}
+                            style={{ width: `${qs.progGeral}%` }}
+                          ></div>
+                        </div>
+
+                        {/* Missões do Quartel */}
+                        <div className="p-3 sm:p-4 flex flex-col gap-2.5">
+                          {qs.missions.length === 0 ? (
+                            <div className="text-xs text-slate-500 italic py-1 text-center sm:text-left">
+                              Nenhuma missão cadastrada neste quartel.
+                            </div>
+                          ) : (
+                            qs.missions.map((m) => (
+                              <div 
+                                key={m.id}
+                                className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-600 p-2.5 sm:p-3 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors group"
+                              >
+                                {/* Info da Missão */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-slate-100 text-xs sm:text-sm truncate" title={m.name}>
+                                      {m.name}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+                                    {m.atribuicao}
+                                  </div>
+                                </div>
+
+                                {/* Badge de Execução (0/5, 2/5, 5/5) e Barra de Progresso */}
+                                <div className="flex items-center gap-3 w-full md:w-auto shrink-0">
+                                  
+                                  {/* Badge Numérico 0/5, 2/5, 5/5 */}
+                                  <span 
+                                    className="font-mono font-bold text-xs sm:text-sm px-2.5 py-1 rounded bg-slate-950 border border-slate-700 text-cyan-300 shrink-0 text-center min-w-[54px]"
+                                    title="Hidrantes concluídos / Total de hidrantes da missão"
+                                  >
+                                    {m.ratioText}
+                                  </span>
+
+                                  {/* Barra de Progresso Visual Individual */}
+                                  <div className="flex-1 md:w-56 lg:w-72">
+                                    <div className="w-full bg-slate-950 rounded-full h-5 overflow-hidden border border-slate-700 relative shadow-inner flex items-center">
+                                      <div 
+                                        className={`h-full transition-all duration-500 ${
+                                          m.percent === 100 
+                                            ? 'bg-emerald-500' 
+                                            : m.percent > 0 
+                                              ? 'bg-gradient-to-r from-blue-600 to-amber-500' 
+                                              : 'bg-slate-800'
+                                        }`}
+                                        style={{ width: `${Math.max(0, m.percent)}%` }}
+                                      ></div>
+                                      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                                        {m.percent === 100 ? `${m.ratioText} (100%) - Concluída ✅` : m.percent > 0 ? `${m.ratioText} (${m.percent}%) - Em Andamento 🔄` : `${m.ratioText} (0%) - Não Iniciada ⏳`}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Ação Rápida de Abertura */}
+                                  <button
+                                    onClick={() => {
+                                      onOpenMission(m.id);
+                                      onClose();
+                                    }}
+                                    className="p-1.5 bg-slate-700 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-lg transition-colors shrink-0 active:scale-95"
+                                    title="Abrir missão no mapa"
+                                  >
+                                    <ArrowRight size={15} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Cards Tradicionais por Quartel (Mosaico de Acesso Rápido) */}
+              <div className="w-full mt-2">
+                <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">
+                  🏢 Mosaico de Pastas dos Quartéis
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
+                  {dashboardStats.quartelStats.map(qs => (
                     <div 
-                      key={folder.id} 
+                      key={qs.folder.id} 
                       onClick={() => {
-                        setCurrentFolderId(folder.id);
+                        setCurrentFolderId(qs.folder.id);
                         setActiveTab('todas');
                       }}
-                      className="bg-slate-800 border border-slate-700 hover:border-emerald-500 rounded-xl p-4 flex flex-col gap-3 shadow-md cursor-pointer hover:scale-[1.02] transition-all group"
-                      title="Clique para abrir esta pasta de missões"
+                      className="bg-slate-800 border border-slate-700 hover:border-emerald-500 rounded-xl p-3.5 flex flex-col gap-2.5 shadow-md cursor-pointer hover:scale-[1.01] transition-all group"
+                      title="Clique para abrir as missões deste quartel"
                     >
-                       <h4 className="font-bold text-emerald-400 group-hover:text-emerald-300 text-lg border-b border-slate-700 pb-2 flex justify-between items-center">
-                          {folder.name}
-                          <span className="text-xs bg-emerald-900/50 text-emerald-300 px-2 py-1 rounded-full">{fMissions.length} Missões</span>
-                       </h4>
+                       <h5 className="font-bold text-emerald-400 group-hover:text-emerald-300 text-base border-b border-slate-700 pb-2 flex justify-between items-center">
+                          <span className="truncate">{qs.folder.name}</span>
+                          <span className="text-xs bg-emerald-950/80 text-emerald-300 px-2 py-0.5 rounded-full shrink-0 border border-emerald-800/60">
+                            {qs.totalMissions} Missões
+                          </span>
+                       </h5>
                        
-                       <div className="w-full bg-slate-700 rounded-full h-4 mb-1 overflow-hidden border border-slate-600 relative">
-                         <div className={`h-full ${progGeral === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${progGeral}%` }}></div>
-                         <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">{progGeral}% ({totalConcluidos}/${totalHidrantes})</div>
+                       <div className="w-full bg-slate-700 rounded-full h-3.5 overflow-hidden border border-slate-600 relative">
+                         <div className={`h-full ${qs.progGeral === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${qs.progGeral}%` }}></div>
+                         <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+                           {qs.progGeral}% ({qs.totalConcluidos}/{qs.totalHidrantes})
+                         </div>
                        </div>
                        
-                       <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold mt-2">
-                         <div className="bg-slate-700/50 rounded py-2 border border-slate-600 flex flex-col">
-                           <span className="text-slate-400">Planejadas</span>
-                           <span className="text-lg text-slate-200">{naoIniciadas}</span>
+                       <div className="grid grid-cols-3 gap-1.5 text-center text-xs font-bold mt-1">
+                         <div className="bg-slate-700/50 rounded py-1.5 border border-slate-600 flex flex-col">
+                           <span className="text-[10px] text-slate-400">Plan.</span>
+                           <span className="text-sm text-slate-200">{qs.naoIniciadas}</span>
                          </div>
-                         <div className="bg-amber-900/20 rounded py-2 border border-amber-900/50 flex flex-col">
-                           <span className="text-amber-500">Andamento</span>
-                           <span className="text-lg text-amber-400">{emAndamento}</span>
+                         <div className="bg-amber-900/20 rounded py-1.5 border border-amber-900/50 flex flex-col">
+                           <span className="text-[10px] text-amber-400">Andam.</span>
+                           <span className="text-sm text-amber-400">{qs.emAndamento}</span>
                          </div>
-                         <div className="bg-emerald-900/20 rounded py-2 border border-emerald-900/50 flex flex-col">
-                           <span className="text-emerald-500">Concluídas</span>
-                           <span className="text-lg text-emerald-400">{concluidas}</span>
+                         <div className="bg-emerald-900/20 rounded py-1.5 border border-emerald-900/50 flex flex-col">
+                           <span className="text-[10px] text-emerald-400">Concl.</span>
+                           <span className="text-sm text-emerald-400">{qs.concluidas}</span>
                          </div>
                        </div>
                     </div>
-                  );
-                })}
-                {availableMissions.length === 0 && (
-                  <div className="col-span-full text-center text-slate-500 py-8">Nenhuma missão registrada.</div>
-                )}
+                  ))}
+                </div>
               </div>
+
             </div>
           )}
 

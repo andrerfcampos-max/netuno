@@ -129,3 +129,11 @@
     margin: 10mm;
   }
 }
+
+/* Fix Leaflet custom div icons */
+.custom-red-marker-icon,
+.custom-red-marker-icon.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+

@@ -235,52 +235,192 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   const handleCopySEI = async () => {
     try {
-      let html = `<table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;" border="1">`;
+      const nowStr = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      
+      let html = `<div style="font-family: Arial, Helvetica, sans-serif; color: #1e293b; max-width: 1000px; line-height: 1.4;">`;
+      
+      // 1. Cabeçalho Oficial
+      html += `<div style="text-align: center; border-bottom: 2px solid #334155; padding-bottom: 12px; margin-bottom: 16px;">
+        <h2 style="margin: 0; font-size: 16px; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">Corpo de Bombeiros Militar do Distrito Federal</h2>
+        <h3 style="margin: 4px 0 0 0; font-size: 14px; color: ${reportType === 'interno' ? '#1e40af' : '#047857'}; text-transform: uppercase; font-weight: bold;">
+          ${reportType === 'interno' ? 'Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos' : 'Solicitação de Manutenção de Hidrantes Urbanos de Incêndio - CBMDF / CAESB'}
+        </h3>
+        ${reportType === 'caesb' ? '<p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b;">De acordo com o Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019</p>' : ''}
+        <div style="margin-top: 8px; font-size: 12px; color: #475569;">
+          <strong>Regiões Administrativas (RAs):</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}<br/>
+          ${currentMission ? `<strong>Missão Ativa:</strong> ${currentMission.name}<br/>` : ''}
+          <strong>Data de Emissão:</strong> ${nowStr}
+        </div>
+      </div>`;
+
+      // 2. Quadro de Indicadores Gerais (KPIs)
+      if (reportType === 'interno') {
+        html += `<div style="margin-bottom: 20px;">
+          <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #0f172a; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
+            📊 Resumo Geral de Operacionalidade
+          </h4>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-family: Arial, sans-serif; font-size: 12px;">
+            <tr>
+              <td style="width: 33%; padding: 10px; background-color: #f1f5f9; border: 1px solid #cbd5e1; text-align: center;">
+                <span style="font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase;">Total Vistoriado</span><br/>
+                <span style="font-size: 20px; font-weight: bold; color: #0f172a;">${total}</span>
+              </td>
+              <td style="width: 33%; padding: 10px; background-color: #ecfdf5; border: 1px solid #a7f3d0; text-align: center;">
+                <span style="font-size: 10px; color: #065f46; font-weight: bold; text-transform: uppercase;">Operantes</span><br/>
+                <span style="font-size: 20px; font-weight: bold; color: #166534;">${operantes}</span>
+                <span style="font-size: 12px; font-weight: bold; color: #059669;"> (${operantesPercent}%)</span>
+              </td>
+              <td style="width: 33%; padding: 10px; background-color: #fef2f2; border: 1px solid #fecaca; text-align: center;">
+                <span style="font-size: 10px; color: #991b1b; font-weight: bold; text-transform: uppercase;">Inoperantes</span><br/>
+                <span style="font-size: 20px; font-weight: bold; color: #dc2626;">${inoperantes}</span>
+                <span style="font-size: 12px; font-weight: bold; color: #b91c1c;"> (${inoperantesPercent}%)</span>
+              </td>
+            </tr>
+          </table>
+
+          <div style="padding: 8px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+            <div style="font-size: 11px; font-weight: bold; color: #334155; margin-bottom: 6px; text-transform: uppercase;">
+              Operacionalidade Global: ${operantesPercent}% OK (${operantes} Operantes / ${inoperantes} Inoperantes)
+            </div>
+            <table style="width: 100%; height: 16px; border-collapse: collapse; background-color: #e2e8f0; border-radius: 4px; overflow: hidden;">
+              <tr>
+                ${operantesPercent > 0 ? `<td style="width: ${operantesPercent}%; background-color: #10b981;" title="Operantes: ${operantesPercent}%"></td>` : ''}
+                ${inoperantesPercent > 0 ? `<td style="width: ${inoperantesPercent}%; background-color: #ef4444;" title="Inoperantes: ${inoperantesPercent}%"></td>` : ''}
+              </tr>
+            </table>
+          </div>
+        </div>`;
+      } else {
+        html += `<div style="margin-bottom: 20px; padding: 10px; background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 4px;">
+          <strong style="color: #065f46; font-size: 13px;">Total de Hidrantes com Solicitação de Manutenção / Alteração:</strong>
+          <span style="font-size: 18px; font-weight: bold; color: #166534; margin-left: 8px;">${currentData.length}</span>
+        </div>`;
+      }
+
+      // 3. Comparativo por Região Administrativa (Multi-Cidades)
+      if (reportType === 'interno' && isMultiCity && cityOperabilityStats.length > 0) {
+        html += `<div style="margin-bottom: 20px;">
+          <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #0f172a; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
+            📊 Comparativo de Operacionalidade por Região Administrativa (RA)
+          </h4>
+          <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px;" border="1" bordercolor="#cbd5e1">
+            <tr style="background-color: #f1f5f9; font-weight: bold;">
+              <th style="padding: 6px; text-align: left;">Região Administrativa (RA)</th>
+              <th style="padding: 6px; text-align: center;">Total</th>
+              <th style="padding: 6px; text-align: center; color: #166534;">Operantes</th>
+              <th style="padding: 6px; text-align: center; color: #991b1b;">Inoperantes</th>
+              <th style="padding: 6px; text-align: left; width: 35%;">Proporção Visual (Operante / Inoperante)</th>
+            </tr>
+            ${cityOperabilityStats.map(c => `
+              <tr>
+                <td style="padding: 6px; font-weight: bold;">${c.nome}</td>
+                <td style="padding: 6px; text-align: center;">${c.total}</td>
+                <td style="padding: 6px; text-align: center; color: #166534; font-weight: bold;">${c.operantes} (${c.operantesPercent}%)</td>
+                <td style="padding: 6px; text-align: center; color: #991b1b; font-weight: bold;">${c.inoperantes} (${c.inoperantesPercent}%)</td>
+                <td style="padding: 6px;">
+                  <table style="width: 100%; height: 12px; border-collapse: collapse; background-color: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                    <tr>
+                      ${c.operantesPercent > 0 ? `<td style="width: ${c.operantesPercent}%; background-color: #10b981;" title="Operantes: ${c.operantesPercent}%"></td>` : ''}
+                      ${c.inoperantesPercent > 0 ? `<td style="width: ${c.inoperantesPercent}%; background-color: #ef4444;" title="Inoperantes: ${c.inoperantesPercent}%"></td>` : ''}
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            `).join('')}
+          </table>
+        </div>`;
+      }
+
+      // 4. Top Defeitos e Cidades Mais Afetadas
+      if (reportType === 'interno' && topDefeitosComCidades && topDefeitosComCidades.length > 0) {
+        html += `<div style="margin-bottom: 20px;">
+          <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #991b1b; text-transform: uppercase; border-bottom: 1px solid #fecaca; padding-bottom: 4px;">
+            ⚠️ Principais Defeitos do DF e Cidades Mais Afetadas
+          </h4>
+          <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px;" border="1" bordercolor="#cbd5e1">
+            <tr style="background-color: #fef2f2; font-weight: bold; color: #991b1b;">
+              <th style="padding: 6px; text-align: left;">Defeito / Inconformidade</th>
+              <th style="padding: 6px; text-align: center;">Ocorrências</th>
+              <th style="padding: 6px; text-align: center;">% do Total de Defeitos</th>
+              <th style="padding: 6px; text-align: left;">Cidades com Maior Incidência</th>
+            </tr>
+            ${topDefeitosComCidades.map(d => `
+              <tr>
+                <td style="padding: 6px; font-weight: bold; color: #7f1d1d;">${d.nome}</td>
+                <td style="padding: 6px; text-align: center; font-weight: bold;">${d.total}</td>
+                <td style="padding: 6px; text-align: center;">${d.percent.toFixed(1)}%</td>
+                <td style="padding: 6px; color: #475569;">${d.topCidades.map(tc => `${tc.cidade} (${tc.qtd})`).join(', ') || '-'}</td>
+              </tr>
+            `).join('')}
+          </table>
+        </div>`;
+      }
+
+      // 5. Tabela Detalhada de Hidrantes
+      html += `<div style="margin-bottom: 20px;">
+        <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #0f172a; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
+          📋 Relação Detalhada dos Hidrantes (${currentData.length} registros)
+        </h4>
+        <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px;" border="1" bordercolor="#cbd5e1">`;
       
       if (reportType === 'interno') {
-        html += `<tr style="background-color: #f2f2f2;">
-          <th style="padding: 8px; text-align: left;">CÓDIGO</th>
-          <th style="padding: 8px; text-align: left;">ENDEREÇO</th>
-          <th style="padding: 8px; text-align: left;">PONTO DE REFERÊNCIA</th>
-          <th style="padding: 8px; text-align: left;">DATA DA VISTORIA</th>
-          <th style="padding: 8px; text-align: left;">VISTORIADOR</th>
-          <th style="padding: 8px; text-align: center;">SITUAÇÃO ATUAL</th>
-          <th style="padding: 8px; text-align: left;">PROBLEMAS ENCONTRADOS</th>
-          <th style="padding: 8px; text-align: left;">OBSERVAÇÕES</th>
-          <th style="padding: 8px; text-align: left;">LOCALIZAÇÃO</th>
+        html += `<tr style="background-color: #f1f5f9; font-weight: bold;">
+          <th style="padding: 6px; text-align: left;">CÓDIGO</th>
+          <th style="padding: 6px; text-align: left;">ENDEREÇO</th>
+          <th style="padding: 6px; text-align: left;">PONTO DE REFERÊNCIA</th>
+          <th style="padding: 6px; text-align: left;">DATA DA VISTORIA</th>
+          <th style="padding: 6px; text-align: left;">VISTORIADOR</th>
+          <th style="padding: 6px; text-align: center;">SITUAÇÃO</th>
+          <th style="padding: 6px; text-align: left;">PROBLEMAS ENCONTRADOS</th>
+          <th style="padding: 6px; text-align: left;">OBSERVAÇÕES</th>
+          <th style="padding: 6px; text-align: center;">LOCALIZAÇÃO</th>
         </tr>`;
       } else {
-        html += `<tr style="background-color: #f2f2f2;">
-          <th style="padding: 8px; text-align: left;">CÓDIGO</th>
-          <th style="padding: 8px; text-align: left;">ENDEREÇO</th>
-          <th style="padding: 8px; text-align: left;">PONTO DE REFERÊNCIA</th>
-          <th style="padding: 8px; text-align: left;">PROBLEMA DO HIDRANTE</th>
-          <th style="padding: 8px; text-align: left;">LOCALIZAÇÃO</th>
+        html += `<tr style="background-color: #f1f5f9; font-weight: bold;">
+          <th style="padding: 6px; text-align: left;">CÓDIGO</th>
+          <th style="padding: 6px; text-align: left;">ENDEREÇO</th>
+          <th style="padding: 6px; text-align: left;">PONTO DE REFERÊNCIA</th>
+          <th style="padding: 6px; text-align: left;">PROBLEMA DO HIDRANTE</th>
+          <th style="padding: 6px; text-align: center;">LOCALIZAÇÃO</th>
         </tr>`;
       }
       
       currentData.forEach(h => {
         const wazeLink = `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`;
         html += `<tr>`;
-        html += `<td style="padding: 8px;">${h.nomHidrante || h.codHidrante}</td>`;
-        html += `<td style="padding: 8px;">${h.dscEndereco || h.dscLocalidade || '-'}</td>`;
-        html += `<td style="padding: 8px;">${h.dscPontoReferencia || '-'}</td>`;
+        html += `<td style="padding: 6px; font-weight: bold;">${h.nomHidrante || h.codHidrante}</td>`;
+        html += `<td style="padding: 6px;">${h.dscEndereco || h.dscLocalidade || '-'}</td>`;
+        html += `<td style="padding: 6px;">${h.dscPontoReferencia || '-'}</td>`;
         if (reportType === 'interno') {
-          html += `<td style="padding: 8px;">${formatDateOnly(h.datHoraUltimaVistoria)}</td>`;
-          html += `<td style="padding: 8px;">${h.vistoriadorNome || '-'}</td>`;
-          html += `<td style="padding: 8px; text-align: center; color: ${h.flgAtivo ? '#166534' : '#991b1b'}; font-weight: bold;">${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}</td>`;
-          html += `<td style="padding: 8px; color: #991b1b;">${h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}</td>`;
-          html += `<td style="padding: 8px;">${h.dscObservacao || h.observacoes || h.obsVistoria || '-'}</td>`;
+          html += `<td style="padding: 6px;">${formatDateOnly(h.datHoraUltimaVistoria)}</td>`;
+          html += `<td style="padding: 6px;">${h.vistoriadorNome || '-'}</td>`;
+          html += `<td style="padding: 6px; text-align: center; color: ${h.flgAtivo ? '#166534' : '#991b1b'}; font-weight: bold; background-color: ${h.flgAtivo ? '#f0fdf4' : '#fef2f2'};">${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}</td>`;
+          html += `<td style="padding: 6px; color: #991b1b; font-weight: ${!h.flgAtivo ? 'bold' : 'normal'};">${h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}</td>`;
+          html += `<td style="padding: 6px;">${h.dscObservacao || h.observacoes || h.obsVistoria || '-'}</td>`;
         } else {
-          html += `<td style="padding: 8px; color: #991b1b;">${h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}</td>`;
+          html += `<td style="padding: 6px; color: #991b1b; font-weight: bold;">${h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}</td>`;
         }
-        html += `<td style="padding: 8px;"><a href="${wazeLink}">Waze</a></td>`;
+        html += `<td style="padding: 6px; text-align: center;"><a href="${wazeLink}" style="color: #2563eb; text-decoration: underline;">Waze</a></td>`;
         html += `</tr>`;
       });
-      html += `</table>`;
+      html += `</table></div></div>`;
+
+      // Plain text fallback
+      let text = `========================================================\n`;
+      text += `CORPO DE BOMBEIROS MILITAR DO DISTRITO FEDERAL\n`;
+      text += `SISTEMA NETUNO - RELATÓRIO DE VISTORIA\n`;
+      text += `Emissão: ${nowStr}\n`;
+      text += `Regiões: ${rasPresentes || 'Todas as RAs'}\n`;
+      if (currentMission) text += `Missão: ${currentMission.name}\n`;
+      text += `========================================================\n\n`;
+      text += `RESUMO: Total: ${total} | Operantes: ${operantes} (${operantesPercent}%) | Inoperantes: ${inoperantes} (${inoperantesPercent}%)\n\n`;
+      text += `CÓDIGO\tENDEREÇO\tSITUAÇÃO\tPROBLEMAS\n`;
+      currentData.forEach(h => {
+        text += `${h.nomHidrante || h.codHidrante}\t${h.dscEndereco || h.dscLocalidade || '-'}\t${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}\t${h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}\n`;
+      });
 
       const blobHtml = new Blob([html], { type: 'text/html' });
-      const blobText = new Blob([currentData.map(h => `${h.nomHidrante || h.codHidrante}\t${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}\t${h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : '-'}`).join('\n')], { type: 'text/plain' });
+      const blobText = new Blob([text], { type: 'text/plain' });
       
       await navigator.clipboard.write([
         new ClipboardItem({
@@ -479,9 +619,10 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
               <button 
                 onClick={() => { handleCopySEI(); setIsExportMenuOpen(false); }}
                 className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                title="Copiar dados e gráficos formatados para SEI / Word"
               >
                 <Copy size={16} className="text-amber-400 shrink-0" />
-                <span>{copied ? 'Copiado para o SEI!' : 'Copiar p/ SEI'}</span>
+                <span>{copied ? 'DADOS COPIADOS!' : 'COPIAR DADOS'}</span>
               </button>
               <button 
                 onClick={() => { handleWhatsApp(); setIsExportMenuOpen(false); }}

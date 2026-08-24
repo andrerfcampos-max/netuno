@@ -7,18 +7,19 @@ import { isValidDFCoordinate } from '../utils/geoUtils';
 import { fixEncoding } from '../utils/textUtils';
 
 const redPinIcon = L.divIcon({
-  className: 'custom-red-marker-icon',
+  className: 'custom-red-marker-icon bg-transparent border-0',
   html: `
-    <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-      <svg viewBox="0 0 24 24" width="36" height="36" fill="#ef4444" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));">
+    <div style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; transform: translate(0, 0);">
+      <svg viewBox="0 0 24 24" width="40" height="40" fill="#dc2626" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.8));">
         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-        <circle cx="12" cy="10" r="3.2" fill="#ffffff"></circle>
+        <circle cx="12" cy="10" r="3.8" fill="#ffffff"></circle>
+        <circle cx="12" cy="10" r="2" fill="#dc2626"></circle>
       </svg>
     </div>
   `,
-  iconSize: [36, 36],
-  iconAnchor: [18, 36],
-  popupAnchor: [0, -36]
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
 });
 
 const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes = [] }) => {
