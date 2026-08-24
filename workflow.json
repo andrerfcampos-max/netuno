@@ -297,7 +297,7 @@
     },
     {
       "id": 51,
-      "status": "pending",
+      "status": "completed",
       "name": "Integração com Banco de Dados em Nuvem (Cloud Database) para Sincronização Multi-Dispositivo em Tempo Real (Mobile ⇄ Desktop)",
       "prompt": "Atue como Arquiteto de Software e Engenheiro Backend/Cloud no projeto NETUNO. Implemente a sincronização centralizada em nuvem multi-dispositivo:\n\n1. CAMADA DE BANCO DE DADOS EM NUVEM:\n- Conectar a aplicação a um backend/banco de dados centralizado em nuvem (ex: Supabase / Firebase / Vercel KV / API REST) para persistência global compartilhada entre todos os militares e dispositivos.\n- Criar sincronização bidirecional em tempo real (WebSockets / Polling Inteligente) para as entidades:\n  * Missões e Rotas cadastradas (`missoes`);\n  * Pastas de quartéis (`pastas`);\n  * Vistorias técnicas realizadas (`vistorias`);\n  * Hidrantes customizados/editados/adicionados (`hidrantes_mutations`).\n\n2. SINCRONIZAÇÃO INSTANTÂNEA MOBILE ⇄ DESKTOP:\n- Ao cadastrar, editar ou concluir uma missão/rota no celular em campo, os dados devem ser enviados imediatamente para o banco de dados em nuvem.\n- Qualquer outro usuário conectado via Desktop (ou outro smartphone) deve visualizar as novas rotas, pastas e status atualizados em tempo real ou ao recarregar a tela.\n\n3. ARQUITETURA OFFLINE-FIRST RESILIENTE:\n- Manter o cache local no localStorage/IndexedDB como fallback quando a viatura estiver em área de sombra sem sinal de internet móvel.\n- Sincronizar automaticamente as alterações pendentes com o banco na nuvem assim que a conexão de rede for restabelecida.\n\nResponda 'ETAPA CONCLUIDA' ao finalizar e validar a sincronização entre múltiplos dispositivos."
     }

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut, ShieldAlert, RefreshCw, Map as MapIcon, List, Navigation, BarChart3 } from 'lucide-react';
+import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut, ShieldAlert, RefreshCw, Map as MapIcon, List, Navigation, BarChart3, Cloud } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
@@ -15,9 +15,12 @@ import MissionTabs from './components/MissionTabs';
 import MissionManagerModal from './components/MissionManagerModal';
 import TechnicalStudyModal from './components/TechnicalStudyModal';
 import InconsistentHydrantsModal from './components/InconsistentHydrantsModal';
+import CloudConfigModal from './components/CloudConfigModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState } from './utils/storage';
+import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime } from './services/syncService';
+import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
 import { extractProblemsList } from './utils/problemUtils';
@@ -103,6 +106,7 @@ function App() {
   const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
   const [isTechnicalStudyOpen, setIsTechnicalStudyOpen] = useState(false);
   const [isInconsistentModalOpen, setIsInconsistentModalOpen] = useState(false);
+  const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -279,6 +283,82 @@ function App() {
     saveActiveMissionState({ openMissionIds, activeMissionId });
   }, [openMissionIds, activeMissionId]);
 
+  // Sincronização com o Banco de Dados em Nuvem (Supabase / Cloud DB)
+  useEffect(() => {
+    const syncWithCloud = async () => {
+      if (!isCloudConfigured()) return;
+
+      try {
+        const [cloudMissions, cloudFolders, cloudMutations] = await Promise.all([
+          fetchMissionsFromCloud(),
+          fetchFoldersFromCloud(),
+          fetchHydrantMutationsFromCloud()
+        ]);
+
+        if (cloudMissions && cloudMissions.length > 0) {
+          setMissions(cloudMissions);
+          saveMissions(cloudMissions);
+        }
+
+        if (cloudFolders && cloudFolders.length > 0) {
+          setFolders(cloudFolders);
+          saveFolders(cloudFolders);
+        }
+
+        if (cloudMutations) {
+          const localChanges = loadHydrantChanges();
+          const mergedChanges = {
+            updated: { ...localChanges.updated, ...cloudMutations.updated },
+            added: [...localChanges.added, ...cloudMutations.added.filter(ca => !localChanges.added.some(la => (la._internalId || la.codHidrante) === (ca._internalId || ca.codHidrante)))],
+            deleted: Array.from(new Set([...localChanges.deleted, ...cloudMutations.deleted]))
+          };
+          saveHydrantChanges(mergedChanges);
+
+          if (hidrantes.length > 0) {
+            let updatedHidrantes = hidrantes.filter(h => !mergedChanges.deleted.includes(h._internalId) && !mergedChanges.deleted.includes(h.codHidrante) && !mergedChanges.deleted.includes(h.nomHidrante));
+            updatedHidrantes = updatedHidrantes.map(h => {
+              const k = h._internalId || h.codHidrante || h.nomHidrante;
+              return mergedChanges.updated[k] ? { ...h, ...mergedChanges.updated[k] } : h;
+            });
+            setHidrantes(updatedHidrantes);
+            setFilteredList(getFilteredData(activeFilters, updatedHidrantes));
+          }
+        }
+      } catch (e) {
+        console.warn('Erro ao sincronizar com banco em nuvem:', e);
+      }
+    };
+
+    syncWithCloud();
+
+    // Listener Realtime (WebSockets) para atualizações instantâneas entre Mobile e Desktop
+    const unsubscribe = subscribeToCloudRealtime({
+      onMissionsChange: (freshMissions) => {
+        setMissions(freshMissions);
+        saveMissions(freshMissions);
+      },
+      onFoldersChange: (freshFolders) => {
+        setFolders(freshFolders);
+        saveFolders(freshFolders);
+      },
+      onHydrantChange: () => {
+        syncWithCloud();
+      }
+    });
+
+    // Polling inteligente a cada 10 segundos
+    const pollInterval = setInterval(() => {
+      if (isCloudConfigured() && navigator.onLine) {
+        syncWithCloud();
+      }
+    }, 10000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(pollInterval);
+    };
+  }, [hidrantes.length]);
+
   // Hidratação por Link Mágico (?ds=ID1,ID2) e Carregamento Automático com Fusão de Mutações
   useEffect(() => {
     // 1. Carregar Base Pre-carregada automaticamente se estiver vazio e aplicar mutações persistidas
@@ -325,6 +405,7 @@ function App() {
         setOpenMissionIds(prev => [...prev, newMission.id]);
         setActiveMissionId(newMission.id);
         setActiveView('route');
+        syncMissionToCloud(newMission);
         // Limpa a URL para não duplicar no F5
         window.history.replaceState({}, document.title, window.location.pathname);
       }
@@ -333,7 +414,17 @@ function App() {
 
   const updateCurrentMission = (updates) => {
     if (!activeMissionId) return;
-    setMissions(prev => prev.map(m => m.id === activeMissionId ? { ...m, ...updates, updatedAt: new Date().toISOString() } : m));
+    let target = null;
+    setMissions(prev => prev.map(m => {
+      if (m.id === activeMissionId) {
+        target = { ...m, ...updates, updatedAt: new Date().toISOString() };
+        return target;
+      }
+      return m;
+    }));
+    if (target) {
+      syncMissionToCloud(target);
+    }
   };
 
   const toggleMissionSelection = (id) => {
@@ -636,7 +727,9 @@ function App() {
     applyFilters(activeFilters, newHidrantes);
     setLastInspectedCoords({ lat: sanitized.numLatitude, lng: sanitized.numLongitude });
     setInspectingHidrante(null);
-    toast.success('Vistoria salva com sucesso e persistida na base!');
+    syncInspectionToCloud(sanitized);
+    syncHydrantMutationToCloud('update', sanitized);
+    toast.success('Vistoria salva com sucesso e sincronizada!');
   };
 
   const handleSaveEdit = (updatedHidrante) => {
@@ -676,7 +769,8 @@ function App() {
     setHidrantes(newHidrantes);
     applyFilters(activeFilters, newHidrantes);
     handleCloseEditHydrant();
-    toast.success('Hidrante salvo com sucesso e persistido na base!');
+    syncHydrantMutationToCloud(isExisting ? 'update' : 'add', sanitized);
+    toast.success('Hidrante salvo com sucesso e sincronizado!');
   };
 
   const handleDeleteHydrant = (hydrantToDelete) => {
@@ -700,6 +794,7 @@ function App() {
 
     setHidrantes(newHidrantes);
     applyFilters(activeFilters, newHidrantes);
+    syncHydrantMutationToCloud('delete', delId);
     toast.success('Hidrante excluído da base com sucesso!');
   };
 
@@ -711,6 +806,7 @@ function App() {
     setMissions(prev => [...prev, newMission]);
     setOpenMissionIds(prev => [...prev, newMission.id]);
     setActiveMissionId(newMission.id);
+    syncMissionToCloud(newMission);
   };
 
   const handleOpenMission = (id) => {
@@ -732,6 +828,15 @@ function App() {
   const handleDeleteMission = (id) => {
     setMissions(prev => prev.filter(m => m.id !== id));
     handleCloseTab(id);
+    deleteMissionFromCloud(id);
+  };
+
+  const handleFoldersChange = (newFolders) => {
+    setFolders(newFolders);
+    saveFolders(newFolders);
+    if (Array.isArray(newFolders)) {
+      newFolders.forEach(f => syncFolderToCloud(f));
+    }
   };
 
   const handleLogout = () => {
@@ -1073,6 +1178,18 @@ function App() {
 
                     <button
                       type="button"
+                      onClick={() => {
+                        setIsCloudModalOpen(true);
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-800 border border-slate-600 text-cyan-300 font-semibold rounded hover:bg-slate-700 active:scale-95 transition-all text-xs"
+                    >
+                      <Cloud size={16} className="text-cyan-400" />
+                      Banco em Nuvem (Cloud DB)
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={async () => {
                         setIsMenuOpen(false);
                         toast.info('Atualizando aplicação e limpando cache...');
@@ -1356,11 +1473,32 @@ function App() {
           onOpenMission={handleOpenMission}
           onNewMission={handleNewMission}
           onDeleteMission={handleDeleteMission}
-          onFoldersChange={setFolders}
+          onFoldersChange={handleFoldersChange}
           onMissionsChange={setMissions}
           currentUser={currentUser}
         />
       )}
+
+      {isCloudModalOpen && (
+        <CloudConfigModal 
+          onClose={() => setIsCloudModalOpen(false)}
+          onSyncNow={async () => {
+            toast.info('Sincronizando dados com o Supabase...');
+            try {
+              if (Array.isArray(missions)) {
+                for (const m of missions) await syncMissionToCloud(m);
+              }
+              if (Array.isArray(folders)) {
+                for (const f of folders) await syncFolderToCloud(f);
+              }
+              toast.success('Banco de Dados em Nuvem sincronizado com sucesso!');
+            } catch (err) {
+              toast.error('Falha ao sincronizar: ' + err.message);
+            }
+          }}
+        />
+      )}
+
       {/* Toasts */}
       <ToastContainer theme="dark" position="bottom-center" />
 

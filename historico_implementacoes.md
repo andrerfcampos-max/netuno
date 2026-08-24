@@ -322,3 +322,16 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Desenvolvido mecanismo estruturado de gravação em `localStorage` (`loadHydrantChanges`/`saveHydrantChanges` e `loadActiveMissionState`/`saveActiveMissionState`).
   - Na recarga de tela (F5), a base de dados funde automaticamente as vistorias realizadas, novos hidrantes cadastrados, edições e exclusões, além de manter ativas as abas de missões abertas.
 
+### [24/08/2026] Etapa 51 Concluída: Integração com Banco de Dados em Nuvem (Supabase Cloud DB) para Sincronização Multi-Dispositivo (Mobile ⇄ Desktop)
+- **1. Arquitetura de Banco de Dados em Nuvem (`supabase/schema.sql`, `supabase.js`, `syncService.js`):**
+  - Integração do cliente oficial `@supabase/supabase-js` com suporte a variáveis de ambiente (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) e configuração dinâmica pelo usuário em runtime.
+  - Script SQL de criação das tabelas `netuno_missions`, `netuno_folders`, `netuno_inspections` e `netuno_hydrant_mutations` com políticas abertas de RLS e publicação Realtime ativa.
+- **2. Sincronização Bidirecional e WebSockets em Tempo Real (`syncService.js`, `App.jsx`):**
+  - Ao cadastrar, editar ou concluir uma missão/rota no smartphone em campo, o Netuno envia os dados imediatamente para o Supabase (`syncMissionToCloud`).
+  - Outros aparelhos conectados (computador desktop ou outros celulares) recebem os novos dados instantaneamente via canal WebSockets Realtime ou polling inteligente (10s) sem necessidade de intervenção manual.
+  - Vistorias realizadas em campo e edições cadastrais de hidrantes são gravadas nas tabelas de nuvem e espelhadas para toda a tropa conectada.
+- **3. Modal de Configuração e Teste de Conexão (`CloudConfigModal.jsx`):**
+  - Adicionada opção no menu principal **"Banco em Nuvem (Cloud DB)"** permitindo aos gestores e operadores verificar o status da conexão em tempo real, configurar URL/Key e acionar sincronização manual sob demanda.
+- **4. Arquitetura Offline-First Resiliente:**
+  - Preserva 100% da operação local no `localStorage` caso a viatura esteja em área sem sinal celular/internet, sincronizando automaticamente os dados com a nuvem no momento em que a conectividade for restabelecida.
+
