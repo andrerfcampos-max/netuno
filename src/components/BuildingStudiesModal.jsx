@@ -624,14 +624,14 @@ function BuildingTacticalCard({
       {/* Barra de Ações Rápidas do Card */}
       <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-1.5 flex-wrap">
         
-        {/* Botão Principal: Visão Tática de Resposta Rápida (Ficha Completa PPO) */}
+        {/* Botão Principal: Visão Tática de Resposta Rápida (FICHA COMPLETA PREPOP) */}
         <button
           type="button"
           onClick={onOpenTacticalView}
-          className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs rounded-lg shadow-md shadow-red-950/50 active:scale-95 transition-all"
+          className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-xs rounded-lg border border-red-500/50 shadow-md shadow-red-950/60 active:scale-95 transition-all"
         >
           <Eye size={14} />
-          <span>Ficha Completa PPO</span>
+          <span>FICHA COMPLETA PREPOP</span>
         </button>
 
         {/* Rotas Rápidas (Waze / Maps) */}
@@ -1176,7 +1176,7 @@ function BuildingTacticalViewModal({
             className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm rounded-lg transition-all"
           >
             <Edit size={16} />
-            <span>Editar Dados da Edificação</span>
+            <span>EDITAR DADOS DA FICHA</span>
           </button>
 
           <button
@@ -1184,7 +1184,7 @@ function BuildingTacticalViewModal({
             onClick={onClose}
             className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow transition-all"
           >
-            Fechar Ficha Tática
+            FECHAR FICHA PREPOP
           </button>
         </div>
 
