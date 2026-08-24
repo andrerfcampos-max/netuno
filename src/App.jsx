@@ -1211,15 +1211,15 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-start gap-2.5 w-full px-3 py-2 text-left bg-gradient-to-r from-amber-950/50 to-red-950/40 border border-amber-500/30 text-amber-300 font-semibold rounded-lg hover:from-amber-900/70 hover:to-red-900/60 transition-all group"
+                        className="flex items-start gap-2.5 w-full px-3 py-2 text-left bg-gradient-to-r from-blue-950/60 to-indigo-950/50 border border-blue-500/30 text-blue-300 font-semibold rounded-lg hover:from-blue-900/70 hover:to-indigo-900/60 transition-all group"
                       >
-                        <Building2 size={18} className="text-amber-400 shrink-0 mt-0.5" />
+                        <Building2 size={18} className="text-blue-400 shrink-0 mt-0.5" />
                         <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-bold text-amber-300 group-hover:text-white transition-colors">
-                            PREPOP de edificações
+                          <span className="text-sm font-bold text-blue-300 group-hover:text-white transition-colors">
+                            Estudo PREPOP
                           </span>
                           <span className="text-[11px] text-slate-400 font-normal leading-tight group-hover:text-slate-300 transition-colors">
-                            informações importantes para operações de incêndio
+                            Informações importantes para operações de incêndio
                           </span>
                         </div>
                       </a>
@@ -1272,10 +1272,17 @@ function App() {
                           setIsMenuOpen(false);
                         }
                       }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-700 text-emerald-400 font-semibold rounded hover:bg-slate-600 transition-all"
+                      className="flex items-start gap-2.5 w-full px-3 py-2 text-left bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 font-semibold rounded-lg hover:bg-emerald-900/60 transition-all group"
                     >
-                      <FolderOpen size={18} />
-                      Central de Missões
+                      <FolderOpen size={18} className="text-emerald-400 shrink-0 mt-0.5" />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-bold text-emerald-300 group-hover:text-white transition-colors">
+                          Central de missões
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-normal leading-tight group-hover:text-slate-300 transition-colors">
+                          Acesse as missões de vistoria de hidrante de cada quartel
+                        </span>
+                      </div>
                     </a>
 
                     <button

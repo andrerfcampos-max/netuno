@@ -211,13 +211,13 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
         {/* CABEÇALHO PRINCIPAL */}
         <div className="px-4 py-3 sm:px-6 sm:py-4 bg-slate-800/90 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center text-white shadow-lg shadow-red-950/50 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white shadow-lg shadow-blue-950/50 shrink-0">
               <Building2 size={22} className="animate-pulse" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-xl font-bold tracking-tight text-white leading-tight">
-                  ESTUDO DE EDIFICAÇÕES - PREPOP
+                  Estudo de edificações - PREPOP
                 </h2>
               </div>
               <p className="text-xs text-slate-400 leading-tight mt-0.5">
@@ -237,7 +237,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
               title="Cadastrar novo estudo de edificação"
             >
               <PlusCircle size={16} />
-              <span className="hidden sm:inline">Novo Estudo</span>
+              <span className="hidden sm:inline">Novo estudo</span>
             </button>
             
             <button
@@ -367,7 +367,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
                 className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm rounded-lg shadow-lg shadow-emerald-950/50 transition-all"
               >
                 <PlusCircle size={16} />
-                Cadastrar Primeiro Estudo
+                Cadastrar primeiro estudo
               </button>
             </div>
           ) : (
@@ -457,7 +457,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
                 onClick={() => handleDeleteStudy(deleteConfirmId)}
                 className="px-3 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-red-950/50"
               >
-                Sim, Excluir
+                Sim, excluir
               </button>
             </div>
           </div>
@@ -621,14 +621,14 @@ function BuildingTacticalCard({
       {/* Barra de Ações Rápidas do Card */}
       <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-1.5 flex-wrap">
         
-        {/* Botão Principal: Visão Tática de Resposta Rápida (FICHA COMPLETA PREPOP) */}
+        {/* Botão Principal: Visão Tática de Resposta Rápida (Ficha completa PREPOP) */}
         <button
           type="button"
           onClick={onOpenTacticalView}
-          className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-xs rounded-lg border border-red-500/50 shadow-md shadow-red-950/60 active:scale-95 transition-all"
+          className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs rounded-lg border border-blue-500/40 shadow-md shadow-blue-950/60 active:scale-95 transition-all"
         >
           <Eye size={14} />
-          <span>FICHA COMPLETA PREPOP</span>
+          <span>Ficha completa PREPOP</span>
         </button>
 
         {/* Rotas Rápidas (Waze / Maps) */}
@@ -660,7 +660,7 @@ function BuildingTacticalCard({
           type="button"
           onClick={onShareWhatsApp}
           className="p-2 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs transition-all"
-          title="Compartilhar Ficha via WhatsApp"
+          title="Compartilhar ficha via WhatsApp"
         >
           <Share2 size={14} />
         </button>
@@ -671,7 +671,7 @@ function BuildingTacticalCard({
             type="button"
             onClick={onEdit}
             className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all"
-            title="Editar Estudo"
+            title="Editar estudo"
           >
             <Edit size={14} />
           </button>
@@ -679,7 +679,7 @@ function BuildingTacticalCard({
             type="button"
             onClick={onDelete}
             className="p-2 bg-red-950/50 hover:bg-red-900/70 text-red-400 rounded-lg transition-all"
-            title="Excluir Estudo"
+            title="Excluir estudo"
           >
             <Trash2 size={14} />
           </button>
@@ -736,12 +736,12 @@ function BuildingTacticalViewModal({
 
   const tacticalSections = [
     { id: 'view-sec-A', label: 'A. Identificação', icon: Users },
-    { id: 'view-sec-B', label: 'B. Trem de Socorro / SCI', icon: Truck },
-    { id: 'view-sec-C', label: 'C. Recursos Hídricos', icon: Droplets },
-    { id: 'view-sec-D', label: 'D. Cortes & Sistemas', icon: Zap },
-    { id: 'view-sec-E', label: 'E. Riscos & Carga', icon: Flame },
-    ...(study.fotoFachada || study.croquiPlanta ? [{ id: 'view-sec-F', label: 'F. Fotos & Croquis', icon: Layers }] : []),
-    ...(study.informacoesExtras ? [{ id: 'view-sec-G', label: 'G. Informações Extras', icon: FileText }] : [])
+    { id: 'view-sec-B', label: 'B. Trem de socorro / SCI', icon: Truck },
+    { id: 'view-sec-C', label: 'C. Recursos hídricos', icon: Droplets },
+    { id: 'view-sec-D', label: 'D. Cortes & sistemas', icon: Zap },
+    { id: 'view-sec-E', label: 'E. Riscos & carga', icon: Flame },
+    ...(study.fotoFachada || study.croquiPlanta ? [{ id: 'view-sec-F', label: 'F. Fotos & croquis', icon: Layers }] : []),
+    ...(study.informacoesExtras ? [{ id: 'view-sec-G', label: 'G. Informações extras', icon: FileText }] : [])
   ];
 
   const scrollToSection = (secId) => {
@@ -772,13 +772,13 @@ function BuildingTacticalViewModal({
 
   return (
     <div className="fixed inset-0 z-[180] bg-black/90 backdrop-blur-md flex items-center justify-center p-1 sm:p-4 overflow-hidden animate-fadeIn">
-      <div className="bg-slate-900 border border-red-500/50 rounded-xl sm:rounded-2xl w-full max-w-5xl h-[98dvh] sm:h-[94vh] flex flex-col shadow-2xl overflow-hidden text-slate-100">
+      <div className="bg-slate-900 border border-blue-500/50 rounded-xl sm:rounded-2xl w-full max-w-5xl h-[98dvh] sm:h-[94vh] flex flex-col shadow-2xl overflow-hidden text-slate-100">
         
         {/* Cabeçalho Ficha Tática */}
-        <div className="px-3 py-2 sm:px-6 sm:py-4 bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border-b border-red-500/40 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
+        <div className="px-3 py-2 sm:px-6 sm:py-4 bg-gradient-to-r from-blue-950 via-slate-900 to-blue-950 border-b border-blue-500/40 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
           <div className="min-w-0 flex-1">
             <div className="hidden sm:flex items-center gap-2 flex-wrap mb-1">
-              <span className="px-2.5 py-0.5 bg-red-600 text-white font-extrabold text-[11px] rounded uppercase tracking-wider shadow">
+              <span className="px-2.5 py-0.5 bg-blue-600 text-white font-extrabold text-[11px] rounded uppercase tracking-wider shadow">
                 SCI / CBMDF • RESPOSTA RÁPIDA
               </span>
               <span className="px-2 py-0.5 bg-blue-950 text-cyan-300 border border-cyan-500/30 text-xs font-bold rounded">
@@ -836,7 +836,7 @@ function BuildingTacticalViewModal({
                 onClick={() => scrollToSection(s.id)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                   isActive
-                    ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-md'
+                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 bg-slate-900 border border-slate-800'
                 }`}
               >
@@ -856,7 +856,7 @@ function BuildingTacticalViewModal({
 
           {/* SEÇÃO A: IDENTIFICAÇÃO E POPULAÇÃO */}
           <div id="view-sec-A" className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 sm:p-5 shadow-lg scroll-mt-3">
-            <div className="flex items-center gap-2 text-red-400 font-bold text-sm sm:text-base mb-3 pb-2 border-b border-slate-800">
+            <div className="flex items-center gap-2 text-blue-400 font-bold text-sm sm:text-base mb-3 pb-2 border-b border-slate-800">
               <Users size={18} />
               <span>A. Identificação, Ocupação e População Prioritária</span>
             </div>
@@ -1122,7 +1122,7 @@ function BuildingTacticalViewModal({
                       <img src={study.fotoFachada} alt="Fachada" className="w-full h-full object-cover group-hover:scale-105 transition-all" />
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <span className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/90 text-white rounded-lg text-xs font-bold">
-                          <Maximize2 size={14} /> Ampliar Foto
+                          <Maximize2 size={14} /> Ampliar foto
                         </span>
                       </div>
                     </button>
@@ -1140,7 +1140,7 @@ function BuildingTacticalViewModal({
                       <img src={study.croquiPlanta} alt="Croqui" className="w-full h-full object-contain group-hover:scale-105 transition-all" />
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <span className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/90 text-white rounded-lg text-xs font-bold">
-                          <Maximize2 size={14} /> Ampliar Croqui
+                          <Maximize2 size={14} /> Ampliar croqui
                         </span>
                       </div>
                     </button>
@@ -1155,7 +1155,7 @@ function BuildingTacticalViewModal({
             <div id="view-sec-G" className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 sm:p-5 shadow-lg scroll-mt-3">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm sm:text-base mb-3 pb-2 border-b border-slate-800">
                 <FileText size={18} />
-                <span>G. Informações Extras e Observações Operacionais</span>
+                <span>G. Informações extras e observações operacionais</span>
               </div>
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line">
                 {study.informacoesExtras}
@@ -1173,15 +1173,15 @@ function BuildingTacticalViewModal({
             className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm rounded-lg transition-all"
           >
             <Edit size={16} />
-            <span>EDITAR DADOS DA FICHA</span>
+            <span>Editar dados da ficha</span>
           </button>
 
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow transition-all"
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow transition-all"
           >
-            FECHAR FICHA PREPOP
+            Fechar ficha PREPOP
           </button>
         </div>
 
@@ -1253,12 +1253,12 @@ function BuildingStudyFormModal({
 
   const formSections = [
     { id: 'form-sec-A', label: 'A. Identificação', icon: Building2 },
-    { id: 'form-sec-B', label: 'B. Trem de Socorro / SCI', icon: Truck },
-    { id: 'form-sec-C', label: 'C. Recursos Hídricos', icon: Droplets },
-    { id: 'form-sec-D', label: 'D. Cortes & Sistemas', icon: Zap },
-    { id: 'form-sec-E', label: 'E. Riscos & Carga', icon: Flame },
-    { id: 'form-sec-F', label: 'F. Fotos & Croquis', icon: Layers },
-    { id: 'form-sec-G', label: 'G. Informações Extras', icon: FileText }
+    { id: 'form-sec-B', label: 'B. Trem de socorro / SCI', icon: Truck },
+    { id: 'form-sec-C', label: 'C. Recursos hídricos', icon: Droplets },
+    { id: 'form-sec-D', label: 'D. Cortes & sistemas', icon: Zap },
+    { id: 'form-sec-E', label: 'E. Riscos & carga', icon: Flame },
+    { id: 'form-sec-F', label: 'F. Fotos & croquis', icon: Layers },
+    { id: 'form-sec-G', label: 'G. Informações extras', icon: FileText }
   ];
 
   // Efeito para rolar suavemente até o novo contato adicionado e dar foco no campo
@@ -1469,7 +1469,7 @@ function BuildingStudyFormModal({
           <div className="min-w-0 flex-1">
             <h2 className="text-xs sm:text-base md:text-lg font-bold text-white flex items-center gap-1.5 leading-tight">
               <Building2 size={18} className="text-emerald-400 shrink-0" />
-              <span>{studyData?.id ? 'Editar Estudo de Edificação (PREPOP)' : 'Novo Estudo de Edificação (PREPOP)'}</span>
+              <span>{studyData?.id ? 'Editar estudo de edificação (PREPOP)' : 'Novo estudo de edificação (PREPOP)'}</span>
             </h2>
             <p className="text-[10px] sm:text-xs text-slate-400 leading-tight mt-0.5">
               Preencha com calma e salve quando desejar
@@ -1485,7 +1485,7 @@ function BuildingStudyFormModal({
               title="Salvar alterações no banco e continuar editando nesta mesma tela"
             >
               <CheckCircle2 size={15} className="shrink-0" />
-              <span>Salvar e Continuar</span>
+              <span>Salvar e continuar</span>
             </button>
 
             <button
@@ -1530,7 +1530,7 @@ function BuildingStudyFormModal({
             title="Salvar alterações sem fechar a tela"
           >
             <CheckCircle2 size={13} />
-            <span>Salvar Rascunho</span>
+            <span>Salvar rascunho</span>
           </button>
         </div>
 
@@ -1663,7 +1663,7 @@ function BuildingStudyFormModal({
                   className="flex items-center gap-1 px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 rounded-lg text-xs font-semibold active:scale-95 transition-all"
                 >
                   <LocateFixed size={14} />
-                  <span>Puxar Meu GPS</span>
+                  <span>Puxar meu GPS</span>
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -1738,7 +1738,7 @@ function BuildingStudyFormModal({
                   onClick={handleAddContact}
                   className="px-3 py-1.5 bg-emerald-950 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs font-bold active:scale-95 transition-all"
                 >
-                  + Adicionar Contato
+                  + Adicionar contato
                 </button>
               </div>
               {formData.contatos.map((c, idx) => (
@@ -1930,7 +1930,7 @@ function BuildingStudyFormModal({
                   onClick={handleAutoFindHydrants}
                   className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 rounded-lg text-xs font-bold active:scale-95 transition-all"
                 >
-                  🔍 Buscar 3 Mais Próximos Automaticamente
+                  🔍 Buscar 3 mais próximos automaticamente
                 </button>
               </div>
 
