@@ -143,7 +143,7 @@ export default function BuildingStudiesModal({
 
   // Compartilhar via WhatsApp estruturado para SCI / CBMDF
   const handleShareWhatsApp = (study) => {
-    const text = `🚨 *NETUNO - PRÉ-PLANEJAMENTO OPERACIONAL (PPO / CBMDF)* 🚒
+    const text = `🚨 *NETUNO - PRÉ-PLANEJAMENTO OPERACIONAL (PREPOP / CBMDF)* 🚒
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏢 *EDIFICAÇÃO:* ${study.nomeFantasia || 'S/N'}
 🏛️ *Razão Social:* ${study.razaoSocial || 'N/I'}
@@ -1465,36 +1465,36 @@ function BuildingStudyFormModal({
       <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl h-[94vh] flex flex-col shadow-2xl overflow-hidden text-slate-100">
         
         {/* Topo do Formulário */}
-        <div className="px-4 py-3 sm:px-6 bg-slate-800 border-b border-slate-700 flex items-center justify-between gap-3 shrink-0">
-          <div className="min-w-0">
-            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 truncate">
-              <Building2 size={20} className="text-emerald-400 shrink-0" />
-              <span>{studyData?.id ? 'Editar Estudo de Edificação (PPO)' : 'Novo Estudo de Edificação (PPO)'}</span>
+        <div className="px-3 py-2.5 sm:px-6 sm:py-3 bg-slate-800 border-b border-slate-700 flex items-center justify-between gap-2 shrink-0">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-xs sm:text-base md:text-lg font-bold text-white flex items-center gap-1.5 truncate">
+              <Building2 size={18} className="text-emerald-400 shrink-0" />
+              <span className="truncate">{studyData?.id ? 'Editar Estudo de Edificação (PREPOP)' : 'Novo Estudo de Edificação (PREPOP)'}</span>
             </h2>
-            <p className="text-xs text-slate-400 truncate">
-              Formulário tático • Preencha com calma e salve quando desejar
+            <p className="text-[10px] sm:text-xs text-slate-400 truncate">
+              Preencha com calma e salve quando desejar
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={handleQuickSave}
               disabled={isSaving}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow-lg shadow-emerald-950/50 transition-all active:scale-95 cursor-pointer"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow-lg shadow-emerald-950/50 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
               title="Salvar alterações no banco e continuar editando nesta mesma tela"
             >
-              <CheckCircle2 size={16} />
+              <CheckCircle2 size={15} className="shrink-0" />
               <span>Salvar e Continuar</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/60 rounded-lg transition-all"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-slate-700/60 rounded-lg transition-all"
               title="Fechar formulário"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
