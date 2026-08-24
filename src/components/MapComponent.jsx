@@ -510,7 +510,9 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
           <MapPin size={15} className="text-emerald-400 shrink-0 animate-pulse" />
           <span>
             {!isCitySelected 
-              ? '🗺️ Visão do DF Completo ativa: A Lista e os Relatórios contêm todos os hidrantes. Clique aqui para selecionar uma Cidade/RA no mapa.'
+              ? (isGestor 
+                  ? 'Todas as cidades estão ativas no filtro. Selecione uma cidade específica para visualizar os hidrantes no mapa.'
+                  : 'Selecione uma cidade para visualizar os hidrantes no mapa.')
               : 'Nenhum hidrante encontrado para os filtros selecionados (Toque aqui)'}
           </span>
         </div>
