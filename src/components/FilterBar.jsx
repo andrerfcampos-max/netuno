@@ -403,10 +403,7 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
               {hasAnyFilterActive && (
                 <button
                   type="button"
-                  onClick={() => {
-                    handleClearFilters();
-                    setIsMobileDrawerOpen(false);
-                  }}
+                  onClick={handleClearFilters}
                   className="w-1/3 py-2 bg-slate-800 hover:bg-slate-700 text-rose-400 font-bold rounded-xl text-xs transition-all border border-slate-700 active:scale-95 text-center"
                 >
                   Limpar

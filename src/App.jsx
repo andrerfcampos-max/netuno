@@ -1004,7 +1004,7 @@ function App() {
       <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans items-center justify-center p-4">
         <div className="bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700 w-full max-w-sm">
           <h1 className="text-3xl font-black tracking-tight text-emerald-400 drop-shadow-md text-center mb-2">NETUNO</h1>
-          <p className="text-slate-400 text-center text-xs sm:text-sm mb-6 leading-relaxed">Sistema de mapeamento e gestão de hidrantes urbanos e estudos das edificações da cidade para operações de incêndio</p>
+          <p className="text-slate-400 text-center text-xs sm:text-sm mb-6 leading-relaxed">Sistema de mapeamento de hidrantes urbanos e estudos das edificações para operações de incêndio</p>
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div>
               <label className="text-slate-400 text-sm font-bold mb-2 block">Matrícula Militar</label>
@@ -1036,6 +1036,9 @@ function App() {
               Acessar Sistema
             </button>
           </form>
+          <p className="text-[11px] text-slate-500 text-center mt-5 font-medium tracking-wide select-none">
+            Desenvolvido por Sgt Roméro
+          </p>
           <ToastContainer theme="dark" position="bottom-center" />
         </div>
       </div>
@@ -1091,7 +1094,7 @@ function App() {
         <div className="flex items-center gap-3 min-w-0 pr-2">
           <h1 className="text-xl font-bold tracking-tight text-emerald-400 drop-shadow-md shrink-0">NETUNO</h1>
           <span className="hidden sm:inline-block text-[11px] lg:text-xs text-slate-400 font-medium border-l border-slate-700 pl-3 leading-tight line-clamp-2 max-w-xl">
-            Sistema de mapeamento e gestão de hidrantes urbanos e estudos das edificações da cidade para operações de incêndio
+            Sistema de mapeamento de hidrantes urbanos e estudos das edificações para operações de incêndio
           </span>
         </div>
         
@@ -1241,18 +1244,6 @@ function App() {
 
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsCloudModalOpen(true);
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-left bg-slate-800 border border-slate-600 text-cyan-300 font-semibold rounded hover:bg-slate-700 active:scale-95 transition-all text-xs"
-                    >
-                      <Cloud size={16} className="text-cyan-400" />
-                      Banco em Nuvem (Cloud DB)
-                    </button>
-
-                    <button
-                      type="button"
                       onClick={async () => {
                         setIsMenuOpen(false);
                         toast.info('Atualizando aplicação e limpando cache...');
@@ -1277,6 +1268,10 @@ function App() {
                       <RefreshCw size={16} className="text-cyan-400" />
                       Atualizar Sistema (Limpar Cache)
                     </button>
+
+                    <div className="pt-2 mt-1 border-t border-slate-700/60 text-center text-[10px] text-slate-500 font-medium select-none">
+                      Desenvolvido por Sgt Roméro
+                    </div>
                   </div>
                 </>
               )}
