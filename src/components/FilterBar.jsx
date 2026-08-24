@@ -104,11 +104,11 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
         </div>
 
         {/* Busca Livre Rápida */}
-        <div className="relative flex-1 min-w-[100px]">
+        <div className="relative flex-1 min-w-[130px]">
           <input 
             type="text" 
-            placeholder="Buscar..." 
-            className="w-full h-9 pl-7 pr-6 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            placeholder="🔍 Código, Rua, Endereço..." 
+            className="w-full h-9 pl-7 pr-6 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
             value={filters.buscaGeral}
             onChange={(e) => handleChange('buscaGeral', e.target.value)}
           />
@@ -226,13 +226,13 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
               <div>
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <Search size={14} className="text-cyan-400" />
-                  Busca Livre (Nome / Rua / Código)
+                  Busca Livre (Código, Endereço, Rua ou Ponto de Ref.)
                 </label>
                 <div className="relative">
                   <input 
                     type="text" 
-                    placeholder="Ex: Sobradinho, Q.02, SOB00019..." 
-                    className="w-full p-2.5 pl-8 pr-8 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                    placeholder="🔍 Digite Código (ex: GUA00101), Endereço, Rua, Bairro ou Ponto de Ref..." 
+                    className="w-full p-2.5 pl-8 pr-8 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                     value={filters.buscaGeral}
                     onChange={(e) => handleChange('buscaGeral', e.target.value)}
                   />
@@ -249,7 +249,9 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
                 {filteredCount !== null && (
                   <div className="mt-1.5 flex items-center justify-between text-xs px-1">
                     <span className={`font-semibold flex items-center gap-1 ${filteredCount > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {filteredCount > 0 ? `✓ ${filteredCount} hidrante(s) encontrado(s)` : `⚠️ Nenhum hidrante encontrado`}
+                      {filteredCount > 0 
+                        ? `✓ ${filteredCount} hidrante(s) encontrado(s)${filters.ra ? ` no ${filters.ra}` : ' no DF'}` 
+                        : `⚠️ Nenhum hidrante encontrado${filters.ra ? ` no ${filters.ra}` : ' no DF'}`}
                     </span>
                     {filters.buscaGeral && <span className="text-[10px] text-slate-400">Filtrando em tempo real</span>}
                   </div>
@@ -435,12 +437,22 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
 
           {/* 2. Busca Textual (Geral) */}
           <div className="flex flex-col gap-0.5 sm:col-span-1 lg:col-span-3">
-            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Busca Livre (Nome/Rua/Código)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <Search size={12} className="text-cyan-400" />
+                Busca Livre
+              </label>
+              {filteredCount !== null && (
+                <span className={`text-[10px] font-semibold ${filteredCount > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {filteredCount > 0 ? `${filteredCount} hidrante(s)${filters.ra ? ` (${filters.ra})` : ' no DF'}` : `0 encontrados`}
+                </span>
+              )}
+            </div>
             <div className="relative flex items-center">
               <input 
                 type="text" 
-                placeholder="Ex: Mercado, Guará 57, BSB001..." 
-                className="min-h-[38px] w-full px-2.5 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"
+                placeholder="🔍 Buscar por Código (ex: GUA00101), Endereço, Rua, Bairro ou Ponto de Ref..." 
+                className="min-h-[38px] w-full px-2.5 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                 value={filters.buscaGeral}
                 onChange={(e) => handleChange('buscaGeral', e.target.value)}
               />

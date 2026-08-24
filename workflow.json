@@ -306,6 +306,12 @@
       "status": "completed",
       "name": "Ajustes de UI/UX, Navegação Rota ⇄ Missões, Correção de Loop no Mapa, Plotagem por Cidade e Refinamentos Gerais",
       "prompt": "Atue como Arquiteto de Software e Engenheiro Frontend no projeto NETUNO. Implemente: 1. Excluir frase na base inferior ('Selecione ou crie uma Missão na Central'). 2. Mudar legenda do mapa para 'Hidrante operante' e 'Hidrante inoperante'. 3. Mensagem de confirmação ao deletar hidrante da rota de missão. 4. Asterisco vermelho nas respostas obrigatórias do formulário de vistoria. 5. Botão Voltar no painel de rota para retornar à Central de Missões. 6. Botão Voltar na Central de Missões navegando corretamente de subpastas para pastas anteriores. 7. Correção do bug de loop/piscamento no mapa ao clicar no mapa do hidrante vindo da rota. 8. Plotagem de pinos no mapa exclusivamente quando uma cidade for selecionada com aviso orientativo, mantendo a listagem e relatórios populados com todos os hidrantes quando o filtro estiver na opção padrão 'Escolha a Cidade / RA', e remoção da opção 'Todas as Cidades'. 9. Normatização do ícone de GPS (LocateFixed) padrão Google Maps. 10. Pino vermelho no mapa de cadastrar/editar hidrante. 11. Cancelamento de touch swipe de exclusão na Central de Missões."
+    },
+    {
+      "id": 53,
+      "status": "completed",
+      "name": "Ordenação Alfabética de Cidades, Sugestão de Endereço Estilo iFood, GPS no Cadastro de Hidrante, Descrição e Conexão de Busca Livre com Cidade",
+      "prompt": "Atue como Arquiteto de Software e Engenheiro Frontend no projeto NETUNO. Implemente rigorosamente: 1. Ordenação alfabética estrita da lista de cidades (RAs) na tela de cadastrar e editar hidrantes. 2. Autocomplete e sugestões pré-preenchidas de endereço no cadastro de novo hidrante (estilo iFood), com busca instantânea na base local e geocodificação. 3. Puxar localização GPS do usuário automaticamente na tela de Cadastrar Novo Hidrante, posicionando o pino e centralizando o mapa, além de botão flutuante para re-centralizar no GPS. 4. Descrição clara e intuitiva dentro dos campos de texto (placeholders) do filtro de busca livre no desktop e mobile. 5. Conexão e sincronismo perfeito entre a busca livre e o filtro de cidade (RA), normalização de texto desacentuado e exibição reativa da numeração correta de hidrantes encontrados."
     }
   ]
 }

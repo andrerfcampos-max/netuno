@@ -66,23 +66,51 @@ const parseDate = (dateStr) => {
   return null;
 };
 
+const normalizeSearchText = (str) => {
+  if (!str) return '';
+  return String(str)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+};
+
 const getFilteredData = (filters = {}, dataList = []) => {
   let result = [...dataList];
-  if (filters.buscaGeral && String(filters.buscaGeral).trim() !== '') {
-    const termo = String(filters.buscaGeral).toLowerCase().trim();
-    result = result.filter(h => 
-      (h.dscEndereco && String(h.dscEndereco).toLowerCase().includes(termo)) ||
-      (h.nomHidrante && String(h.nomHidrante).toLowerCase().includes(termo)) ||
-      (h.codHidrante && String(h.codHidrante).toLowerCase().includes(termo)) ||
-      (h.dscPontoReferencia && String(h.dscPontoReferencia).toLowerCase().includes(termo))
-    );
-  }
+
+  // 1. Filtro por Região Administrativa (RA)
   if (filters.ra && String(filters.ra).trim() !== '') {
     const targetRA = normalizeRAName(filters.ra);
     result = result.filter(h => {
       const hRA = normalizeRAName(h.dscLocalidade);
-      return hRA === targetRA || h.dscLocalidade === filters.ra;
+      return hRA === targetRA || (h.dscLocalidade && h.dscLocalidade.toLowerCase() === filters.ra.toLowerCase());
     });
+  }
+
+  // 2. Filtro de Busca Livre Inteligente (conectado à Cidade/RA e cruzando todos os campos)
+  if (filters.buscaGeral && String(filters.buscaGeral).trim() !== '') {
+    const termoNorm = normalizeSearchText(filters.buscaGeral);
+    const palavras = termoNorm.split(/\s+/).filter(Boolean);
+    if (palavras.length > 0) {
+      result = result.filter(h => {
+        const nom = normalizeSearchText(h.nomHidrante);
+        const cod = normalizeSearchText(h.codHidrante);
+        const end = normalizeSearchText(h.dscEndereco);
+        const ref = normalizeSearchText(h.dscPontoReferencia);
+        const loc = normalizeSearchText(h.dscLocalidade);
+        const prob = normalizeSearchText(h.problemasHidrante);
+        
+        // Todas as palavras digitadas devem estar presentes em algum dos campos do hidrante
+        return palavras.every(palavra => 
+          nom.includes(palavra) || 
+          cod.includes(palavra) || 
+          end.includes(palavra) || 
+          ref.includes(palavra) || 
+          loc.includes(palavra) ||
+          prob.includes(palavra)
+        );
+      });
+    }
   }
   if (filters.periodo && String(filters.periodo).trim() !== '') {
     const periodoStr = String(filters.periodo);

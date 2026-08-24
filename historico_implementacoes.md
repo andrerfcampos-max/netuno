@@ -341,12 +341,25 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Removida a opção `__TODAS__` (*Todas as Cidades / Visão DF Completo*) de todos os dropdowns de seleção de RA.
   - O mapa plota pinos exclusivamente quando uma Cidade/RA for selecionada (ou hidrante individual aberto), exibindo banner orientativo aos usuários.
   - A Lista (`DataTable`), Relatórios e Dashboard continuam recebendo e processando a totalidade dos hidrantes do DF quando o seletor estiver na opção padrão *"Escolha a Cidade / RA..."*.
-- **9. Normatização do Ícone de GPS (`MapComponent.jsx`):**
-  - Substituído o ícone de seta (`Navigation`) pelo ícone oficial de mira/localização (`LocateFixed`) no botão flutuante de GPS, idêntico ao padrão Google Maps.
-- **10. Pino Vermelho no Mapa de Cadastro/Edição de Hidrantes (`EditHydrantModal.jsx`):**
-  - Substituído o marcador azul padrão por um pino vetorial vermelho (`redPinIcon`) de alta visibilidade e definição.
-- **11. Cancelamento de Touch Swipe na Central de Missões (`MissionManagerModal.jsx`):**
-  - Removidos os detectores e ouvintes de arraste para o lado (touch swipe) nos cards de missões, evitando exclusões acidentais.
+### [24/08/2026] Etapa 53 Concluída: Ordenação Alfabética de Cidades, Sugestão de Endereço Estilo iFood, GPS no Cadastro de Hidrante, Descrição e Conexão de Busca Livre com Cidade
+- **1. Ordenação Alfabética Estrita das Cidades / RAs (`src/utils/raList.js`, `EditHydrantModal.jsx`):**
+  - Lista de RAs oficiais padronizada e ordenada rigorosamente em ordem alfabética (Águas Claras, Arniqueira, Brasília, Brazlândia, Candangolândia, Ceilândia, Cruzeiro, Fercal, Gama, Guará, Itapoã, Jardim Botânico, Lago Norte, Lago Sul, Núcleo Bandeirante, Paranoá, Park Way, Planaltina, Recanto das Emas, Riacho Fundo, Riacho Fundo II, Samambaia, Santa Maria, São Sebastião, SCIA/Estrutural, SIA, Sobradinho, Sobradinho II, Sol Nascente/Pôr do Sol, Sudoeste e Octogonal, Taguatinga, Varjão, Vicente Pires).
+  - No formulário de cadastrar e editar hidrantes, o dropdown de RAs renderiza a lista em ordem alfabética.
+- **2. Sugestão Pré-preenchida de Endereços Estilo iFood (`EditHydrantModal.jsx`):**
+  - Implementado sistema de autocomplete com dropdown de sugestões em tempo real ao digitar no campo "Endereço".
+  - Cruzamento de dados inteligente: consulta rápida na base de hidrantes (filtrando por RA selecionada com ponto de referência e coordenadas) e consulta via API de Geocodificação OpenStreetMap/Nominatim (limitada ao DF com debounce).
+  - Ao clicar em uma sugestão, o endereço, ponto de referência, RA, código sequencial e coordenadas são automaticamente preenchidos, com o mapa de satélite voando suavemente para a posição.
+  - Ao reposicionar o pino no mapa, um chip sugere o endereço do ponto clicado com 1 toque ("Usar este").
+- **3. Localização do Usuário por GPS no Cadastro de Hidrante (`EditHydrantModal.jsx`):**
+  - Ao abrir a tela "Cadastrar Novo Hidrante", o sistema solicita automaticamente o GPS do usuário, centralizando o mapa de satélite no local e posicionando o pino vermelho nas coordenadas exatas.
+  - Se nenhuma RA tiver sido selecionada, o sistema calcula a distância geodésica e seleciona automaticamente a RA mais próxima, gerando o código sequencial posterior.
+  - Adicionado botão flutuante no mapa (`[ 🎯 Minha Localização ]`) com feedback visual de carregamento para re-centralizar no GPS sob demanda.
+- **4. Descrições Claras nos Campos de Busca Livre (`FilterBar.jsx`):**
+  - Atualizados os placeholders dos inputs de busca livre no Desktop (`🔍 Buscar por Código (ex: GUA00101), Endereço, Rua, Bairro ou Ponto de Ref...`), Mobile (`🔍 Código, Rua, Endereço...`) e Drawer de filtros avançados (`🔍 Digite Código (ex: GUA00101), Endereço, Rua, Bairro ou Ponto de Ref...`).
+- **5. Integração Perfeita entre Busca Livre e Filtro de Cidade com Contadores Reativos (`App.jsx`, `FilterBar.jsx`):**
+  - A busca livre agora normaliza textos desacentuados (`normalizeSearchText`) e pesquisa em múltiplos termos contra Código, Nome, Endereço, Ponto de Referência, RA (Cidade) e Problemas.
+  - Busca livre opera perfeitamente conectada e restrita à cidade selecionada (ou a todo o DF caso nenhuma esteja selecionada).
+  - Adicionados badges de contagem reativa em tempo real no Desktop e Mobile, exibindo com precisão quantos hidrantes foram encontrados (ex: `12 hidrante(s) (Guará)` ou `✓ 12 hidrante(s) encontrado(s) no Guará`, ou `0 encontrados`).
 
 
 
