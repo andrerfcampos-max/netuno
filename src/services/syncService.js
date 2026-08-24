@@ -30,18 +30,29 @@ export const fetchMissionsFromCloud = async () => {
       return null;
     }
 
-    return (data || []).map(row => ({
-      id: row.id,
-      name: row.name,
-      parentFolderId: row.parent_folder_id,
-      selectedIds: row.selected_ids || [],
-      completedIds: row.completed_ids || [],
-      isDraft: row.is_draft,
-      createdBy: row.created_by,
-      createdByName: row.created_by_name,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    }));
+    return (data || []).map(row => {
+      let selected = row.selected_ids || [];
+      if (typeof selected === 'string') {
+        try { selected = JSON.parse(selected); } catch { selected = []; }
+      }
+      let completed = row.completed_ids || [];
+      if (typeof completed === 'string') {
+        try { completed = JSON.parse(completed); } catch { completed = []; }
+      }
+
+      return {
+        id: String(row.id),
+        name: row.name || 'Missão sem título',
+        parentFolderId: row.parent_folder_id || null,
+        selectedIds: Array.isArray(selected) ? selected : [],
+        completedIds: Array.isArray(completed) ? completed : [],
+        isDraft: Boolean(row.is_draft),
+        createdBy: row.created_by || null,
+        createdByName: row.created_by_name || null,
+        createdAt: row.created_at || new Date().toISOString(),
+        updatedAt: row.updated_at || row.created_at || new Date().toISOString(),
+      };
+    });
   } catch (err) {
     console.warn('Falha na requisição de missões:', err);
     return null;

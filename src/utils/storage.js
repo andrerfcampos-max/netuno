@@ -182,4 +182,98 @@ export const saveActiveMissionState = (state) => {
   }
 };
 
+/**
+ * Mescla de forma inteligente missões locais e da nuvem sem perda de dados
+ */
+export const mergeMissions = (localMissions = [], cloudMissions = []) => {
+  if (!Array.isArray(cloudMissions) || cloudMissions.length === 0) {
+    return Array.isArray(localMissions) ? localMissions : [];
+  }
+  if (!Array.isArray(localMissions) || localMissions.length === 0) {
+    return cloudMissions;
+  }
+
+  const map = new Map();
+
+  // 1. Carrega todas as missões locais
+  localMissions.forEach(m => {
+    if (m && m.id) {
+      map.set(String(m.id), {
+        ...m,
+        selectedIds: Array.isArray(m.selectedIds) ? m.selectedIds : [],
+        completedIds: Array.isArray(m.completedIds) ? m.completedIds : [],
+      });
+    }
+  });
+
+  // 2. Mescla missões da nuvem
+  cloudMissions.forEach(cloudM => {
+    if (!cloudM || !cloudM.id) return;
+    const key = String(cloudM.id);
+    const localM = map.get(key);
+
+    const safeCloudM = {
+      ...cloudM,
+      selectedIds: Array.isArray(cloudM.selectedIds) ? cloudM.selectedIds : [],
+      completedIds: Array.isArray(cloudM.completedIds) ? cloudM.completedIds : [],
+    };
+
+    if (!localM) {
+      map.set(key, safeCloudM);
+    } else {
+      const localTime = new Date(localM.updatedAt || localM.createdAt || 0).getTime();
+      const cloudTime = new Date(safeCloudM.updatedAt || safeCloudM.createdAt || 0).getTime();
+
+      if (cloudTime > localTime) {
+        // Se a nuvem for mais recente, mas não tiver hidrantes e o local tiver, preserva os hidrantes locais
+        if (safeCloudM.selectedIds.length === 0 && localM.selectedIds.length > 0) {
+          map.set(key, { ...safeCloudM, selectedIds: localM.selectedIds, completedIds: localM.completedIds });
+        } else {
+          map.set(key, safeCloudM);
+        }
+      } else if (localTime > cloudTime) {
+        map.set(key, localM);
+      } else {
+        if (safeCloudM.selectedIds.length >= localM.selectedIds.length) {
+          map.set(key, safeCloudM);
+        } else {
+          map.set(key, localM);
+        }
+      }
+    }
+  });
+
+  return Array.from(map.values()).sort((a, b) => {
+    const timeA = new Date(a.createdAt || 0).getTime();
+    const timeB = new Date(b.createdAt || 0).getTime();
+    return timeB - timeA;
+  });
+};
+
+/**
+ * Mescla pastas locais e da nuvem garantindo pastas fixas
+ */
+export const mergeFolders = (localFolders = [], cloudFolders = []) => {
+  const combinedMap = new Map();
+
+  // 1. Pastas fixas padrão
+  DEFAULT_FOLDERS.forEach(f => combinedMap.set(f.id, f));
+
+  // 2. Pastas locais customizadas
+  (localFolders || []).forEach(f => {
+    if (f && f.id && !combinedMap.has(f.id)) {
+      combinedMap.set(f.id, f);
+    }
+  });
+
+  // 3. Pastas da nuvem customizadas
+  (cloudFolders || []).forEach(f => {
+    if (f && f.id && !combinedMap.has(f.id)) {
+      combinedMap.set(f.id, f);
+    }
+  });
+
+  return Array.from(combinedMap.values());
+};
+
 

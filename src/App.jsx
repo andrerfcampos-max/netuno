@@ -18,7 +18,7 @@ import InconsistentHydrantsModal from './components/InconsistentHydrantsModal';
 import CloudConfigModal from './components/CloudConfigModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
-import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState } from './utils/storage';
+import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders } from './utils/storage';
 import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime } from './services/syncService';
 import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
@@ -294,13 +294,19 @@ function App() {
         ]);
 
         if (Array.isArray(cloudMissions)) {
-          setMissions(cloudMissions);
-          saveMissions(cloudMissions);
+          setMissions(prevMissions => {
+            const merged = mergeMissions(prevMissions, cloudMissions);
+            saveMissions(merged);
+            return merged;
+          });
         }
 
         if (Array.isArray(cloudFolders) && cloudFolders.length > 0) {
-          setFolders(cloudFolders);
-          saveFolders(cloudFolders);
+          setFolders(prevFolders => {
+            const merged = mergeFolders(prevFolders, cloudFolders);
+            saveFolders(merged);
+            return merged;
+          });
         }
 
         if (cloudMutations) {
@@ -332,24 +338,34 @@ function App() {
     // Listener Realtime (WebSockets) para atualizações instantâneas entre Mobile e Desktop
     const unsubscribe = subscribeToCloudRealtime({
       onMissionsChange: (freshMissions) => {
-        setMissions(freshMissions);
-        saveMissions(freshMissions);
+        if (Array.isArray(freshMissions)) {
+          setMissions(prevMissions => {
+            const merged = mergeMissions(prevMissions, freshMissions);
+            saveMissions(merged);
+            return merged;
+          });
+        }
       },
       onFoldersChange: (freshFolders) => {
-        setFolders(freshFolders);
-        saveFolders(freshFolders);
+        if (Array.isArray(freshFolders)) {
+          setFolders(prevFolders => {
+            const merged = mergeFolders(prevFolders, freshFolders);
+            saveFolders(merged);
+            return merged;
+          });
+        }
       },
       onHydrantChange: () => {
         syncWithCloud();
       }
     });
 
-    // Polling inteligente a cada 10 segundos
+    // Polling inteligente a cada 15 segundos
     const pollInterval = setInterval(() => {
       if (isCloudConfigured() && navigator.onLine) {
         syncWithCloud();
       }
-    }, 10000);
+    }, 15000);
 
     return () => {
       unsubscribe();
@@ -426,20 +442,18 @@ function App() {
   };
 
   const toggleMissionSelection = (id) => {
-    let currentId = activeMissionId;
-    let currentSel = selectedMissionIds;
-    let currentComp = completedMissionIds;
-
-    // Se tentar adicionar mas não tiver missão ativa, cria uma automaticamente
+    let currentM = missions.find(m => m.id === activeMissionId);
     let createdMission = null;
-    if (!currentId) {
+
+    if (!currentM) {
       createdMission = createNewMission("Rascunho de Hoje", null, currentUser);
       createdMission.createdBy = currentUser?.matricula;
       createdMission.createdByName = currentUser?.nome;
-      currentId = createdMission.id;
-      currentSel = [];
-      currentComp = [];
+      currentM = createdMission;
     }
+
+    const currentSel = currentM.selectedIds || [];
+    const currentComp = currentM.completedIds || [];
 
     const newSelected = currentSel.includes(id) 
       ? currentSel.filter(missionId => missionId !== id) 
@@ -449,43 +463,39 @@ function App() {
       ? currentComp.filter(cId => cId !== id)
       : currentComp;
 
-    let target = null;
+    const target = {
+      ...currentM,
+      selectedIds: newSelected,
+      completedIds: newCompleted,
+      updatedAt: new Date().toISOString()
+    };
+
     if (createdMission) {
-      target = { ...createdMission, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() };
-      setMissions(prev => [...prev, target]);
-      setOpenMissionIds(prev => [...prev, target.id]);
+      setMissions(prev => [...prev.filter(m => m.id !== target.id), target]);
+      setOpenMissionIds(prev => prev.includes(target.id) ? prev : [...prev, target.id]);
       setActiveMissionId(target.id);
     } else {
-      setMissions(prev => prev.map(m => {
-        if (m.id === currentId) {
-          target = { ...m, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() };
-          return target;
-        }
-        return m;
-      }));
+      setMissions(prev => prev.map(m => m.id === target.id ? target : m));
     }
 
-    if (target) {
-      syncMissionToCloud(target);
-    }
+    syncMissionToCloud(target);
   };
 
   const selectAllFiltered = (isChecked, currentFilteredData) => {
-    let currentId = activeMissionId;
-    let currentSel = selectedMissionIds;
-    let currentComp = completedMissionIds;
+    let currentM = missions.find(m => m.id === activeMissionId);
     let createdMission = null;
 
-    if (!currentId) {
+    if (!currentM) {
       createdMission = createNewMission("Rascunho de Hoje", null, currentUser);
       createdMission.createdBy = currentUser?.matricula;
       createdMission.createdByName = currentUser?.nome;
-      currentId = createdMission.id;
-      currentSel = [];
-      currentComp = [];
+      currentM = createdMission;
     }
 
-    const filteredIds = currentFilteredData.map(h => h.codHidrante || h.nomHidrante);
+    const currentSel = currentM.selectedIds || [];
+    const currentComp = currentM.completedIds || [];
+
+    const filteredIds = currentFilteredData.map(h => h.codHidrante || h.nomHidrante || h._internalId);
     let newSelected = currentSel;
     let newCompleted = currentComp;
     
@@ -497,25 +507,22 @@ function App() {
       newCompleted = currentComp.filter(id => !filteredIds.includes(id));
     }
 
-    let target = null;
+    const target = {
+      ...currentM,
+      selectedIds: newSelected,
+      completedIds: newCompleted,
+      updatedAt: new Date().toISOString()
+    };
+
     if (createdMission) {
-      target = { ...createdMission, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() };
-      setMissions(prev => [...prev, target]);
-      setOpenMissionIds(prev => [...prev, target.id]);
+      setMissions(prev => [...prev.filter(m => m.id !== target.id), target]);
+      setOpenMissionIds(prev => prev.includes(target.id) ? prev : [...prev, target.id]);
       setActiveMissionId(target.id);
     } else {
-      setMissions(prev => prev.map(m => {
-        if (m.id === currentId) {
-          target = { ...m, selectedIds: newSelected, completedIds: newCompleted, updatedAt: new Date().toISOString() };
-          return target;
-        }
-        return m;
-      }));
+      setMissions(prev => prev.map(m => m.id === target.id ? target : m));
     }
 
-    if (target) {
-      syncMissionToCloud(target);
-    }
+    syncMissionToCloud(target);
   };
 
   const parseDate = (dateStr) => {
@@ -1391,19 +1398,55 @@ function App() {
                 setActiveView('report');
               }}
               onSaveRouteToFolder={(folderId, newName) => {
-                const finalName = newName || currentMission.name;
-                const isDuplicate = missions.some(m => m.id !== currentMission.id && m.parentFolderId === folderId && m.name.toLowerCase() === finalName.toLowerCase());
+                let targetMission = missions.find(m => m.id === activeMissionId);
+                const finalName = (newName && newName.trim()) ? newName.trim() : (targetMission?.name || 'Nova Rota');
+                
+                const isDuplicate = missions.some(m => 
+                  m.id !== activeMissionId && 
+                  (m.parentFolderId || null) === (folderId || null) && 
+                  (m.name || '').trim().toLowerCase() === finalName.toLowerCase()
+                );
                 if (isDuplicate) {
                   if (!window.confirm(`Já existe uma missão com o nome "${finalName}" nesta pasta. Deseja salvar assim mesmo e duplicar?`)) {
                     return;
                   }
                 }
-                updateCurrentMission({
-                  parentFolderId: folderId,
-                  name: finalName,
-                  isDraft: false
-                });
-                toast.success('Rota salva na Central de Missões!');
+
+                if (!targetMission) {
+                  const created = createNewMission(finalName, folderId, currentUser);
+                  created.selectedIds = [...selectedMissionIds];
+                  created.completedIds = [...completedMissionIds];
+                  created.isDraft = false;
+                  created.createdBy = currentUser?.matricula;
+                  created.createdByName = currentUser?.nome;
+                  created.updatedAt = new Date().toISOString();
+
+                  setMissions(prev => {
+                    const updated = [...prev.filter(m => m.id !== created.id), created];
+                    saveMissions(updated);
+                    return updated;
+                  });
+                  setOpenMissionIds(prev => prev.includes(created.id) ? prev : [...prev, created.id]);
+                  setActiveMissionId(created.id);
+                  syncMissionToCloud(created);
+                } else {
+                  const updatedMission = {
+                    ...targetMission,
+                    parentFolderId: folderId,
+                    name: finalName,
+                    isDraft: false,
+                    updatedAt: new Date().toISOString()
+                  };
+
+                  setMissions(prev => {
+                    const updated = prev.map(m => m.id === targetMission.id ? updatedMission : m);
+                    saveMissions(updated);
+                    return updated;
+                  });
+                  syncMissionToCloud(updatedMission);
+                }
+
+                toast.success(`Rota "${finalName}" salva com sucesso na Central de Missões!`);
               }}
             />
           </div>

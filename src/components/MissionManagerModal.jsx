@@ -83,8 +83,8 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
   }
 
   const filteredMissions = displayMissions.filter(m => {
-    const total = m.selectedIds.length;
-    const completed = (m.completedIds || []).filter(id => m.selectedIds.includes(id)).length;
+    const total = (m.selectedIds || []).length;
+    const completed = (m.completedIds || []).filter(id => (m.selectedIds || []).includes(id)).length;
     const isCompleted = total > 0 && completed >= total;
     const isNotStarted = completed === 0;
     const isPartial = !isNotStarted && !isCompleted;
@@ -94,7 +94,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
     if (activeTab === 'em_andamento' && isPartial) return true;
     if (activeTab === 'finalizadas' && isCompleted) return true;
     return true;
-  }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }).sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   const confirmDelete = () => {
     if (missionToDelete) {
@@ -147,8 +147,8 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
       let concluidas = 0;
 
       fMissions.forEach(m => {
-        const t = m.selectedIds.length;
-        const c = (m.completedIds || []).filter(id => m.selectedIds.includes(id)).length;
+        const t = (m.selectedIds || []).length;
+        const c = (m.completedIds || []).filter(id => (m.selectedIds || []).includes(id)).length;
         totalHidrantes += t;
         totalConcluidos += c;
         if (t > 0 && c >= t) concluidas++;
@@ -383,8 +383,8 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
                   let concluidas = 0;
 
                   fMissions.forEach(m => {
-                    const t = m.selectedIds.length;
-                    const c = (m.completedIds || []).filter(id => m.selectedIds.includes(id)).length;
+                    const t = (m.selectedIds || []).length;
+                    const c = (m.completedIds || []).filter(id => (m.selectedIds || []).includes(id)).length;
                     totalHidrantes += t;
                     totalConcluidos += c;
                     if (t > 0 && c >= t) concluidas++;
@@ -470,8 +470,8 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
 
           {activeTab !== 'dashboard_comando' && filteredMissions.map(mission => {
             const isOpen = openMissionIds.includes(mission.id);
-            const total = mission.selectedIds.length;
-            const completed = (mission.completedIds || []).filter(id => mission.selectedIds.includes(id)).length;
+            const total = (mission.selectedIds || []).length;
+            const completed = (mission.completedIds || []).filter(id => (mission.selectedIds || []).includes(id)).length;
             const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
             const isCompleted = total > 0 && total === completed;
 
