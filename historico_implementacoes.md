@@ -361,5 +361,27 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Busca livre opera perfeitamente conectada e restrita à cidade selecionada (ou a todo o DF caso nenhuma esteja selecionada).
   - Adicionados badges de contagem reativa em tempo real no Desktop e Mobile, exibindo com precisão quantos hidrantes foram encontrados (ex: `12 hidrante(s) (Guará)` ou `✓ 12 hidrante(s) encontrado(s) no Guará`, ou `0 encontrados`).
 
+### [24/08/2026] Etapa 54 Concluída: Bottom Sheet Tático do Hidrante no Mobile, Centralização com Map Offset Pan e Botões Touch-Friendly Padronizados
+- **1. Painel Inferior Tático (Bottom Sheet) no Mobile (`MapComponent.jsx`):**
+  - Substituído o popup flutuante tradicional do Leaflet por um **Bottom Sheet Tático** ancorado na base da tela (`inset-x-0 bottom-0 z-[1050]`), otimizado para navegação mobile com uma mão só.
+  - O painel ocupa uma altura contida (~30% da tela), deixando a área superior do mapa totalmente desobstruída para visualização do pino e arruamento.
+  - Cabeçalho limpo com Código em destaque, Foto em miniatura (expansível com zoom), RA, Badge de Status (`● OPERANTE` / `● INOPERANTE`) e botão `✕` de fechamento.
+  - Informações essenciais organizadas: Endereço em destaque, Ponto de Referência, tarja de alerta em vermelho caso haja defeitos registrados e coordenadas/data da última vistoria em tipografia compacta.
+- **2. Centralização Inteligente do Pino com Deslocamento Vertical (Map Offset Pan) (`MapComponent.jsx`):**
+  - Ao selecionar um hidrante pelo mapa, tabela ou rota, o mapa calcula o deslocamento em pixels (`yOffset = 115px`) no espaço de projeção do Leaflet.
+  - O pino do hidrante fica perfeitamente posicionado e centralizado na área útil visível do mapa (entre o topo e o Bottom Sheet), permitindo enxergar simultaneamente o hidrante, a rota e a ficha cadastral sem sobreposição.
+- **3. Barra de Ações Ergonômicas Touch-Friendly (Botões de 48px de altura) (`MapComponent.jsx`):**
+  - Botões táteis largos e padronizados para acionamento fácil em viatura:
+    - **`+ VISTORIA`**: Botão primário largo verde esmeralda para cadastro rápido;
+    - **`Waze`**: Botão azul tático com ícone de navegação e label;
+    - **`Google Maps`**: Botão para rotas alternativas;
+    - **`Street View 360°`**: Botão âmbar para inspeção visual da fachada/calçada;
+    - **`WhatsApp`**: Botão para compartilhamento instantâneo com emojis operacionais;
+    - **`+ Rota / ✕ Rota`** e **`Editar`**: Ações de missão e edição cadastral para gestor e administrador.
+- **4. Interação Fluida no Mapa (`MapComponent.jsx`):**
+  - Tocar no mapa fora do painel fecha o Bottom Sheet suavemente.
+  - O botão de GPS e a legenda do mapa ajustam suas posições automaticamente quando o painel está aberto, evitando sobreposições.
+
+
 
 
