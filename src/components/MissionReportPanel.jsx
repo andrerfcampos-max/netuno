@@ -364,7 +364,10 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       text += `🌐 *Netuno Web:* ${window.location.origin}\n`;
     }
     
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const url = isMobile
+      ? `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`
+      : `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
 
@@ -411,33 +414,6 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     document.body.removeChild(link);
   };
 
-  const touchStartX = useRef(null);
-  const touchStartY = useRef(null);
-
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchEnd = (e) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    const diffX = touchStartX.current - e.changedTouches[0].clientX;
-    const diffY = touchStartY.current - e.changedTouches[0].clientY;
-    
-    // Se o movimento horizontal for maior que vertical e significativo (> 50px)
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-      if (diffX > 0) {
-        // Arrastou para a esquerda -> CAESB
-        setReportType('caesb');
-      } else {
-        // Arrastou para a direita -> Geral (interno)
-        setReportType('interno');
-      }
-    }
-    touchStartX.current = null;
-    touchStartY.current = null;
-  };
-
   const scrollToTop = () => {
     if (panelRef.current) {
       if (isMaximized) {
@@ -459,15 +435,13 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   };
 
   const containerClasses = isMaximized
-    ? "fixed inset-0 z-[100] bg-slate-900 flex flex-col print-container overflow-y-auto p-4 select-none touch-pan-y"
-    : "flex flex-col p-2 lg:p-4 w-full h-auto bg-slate-900/50 print-container select-none touch-pan-y";
+    ? "fixed inset-0 z-[100] bg-slate-900 flex flex-col print-container overflow-y-auto p-4 select-none"
+    : "flex flex-col p-2 lg:p-4 w-full h-auto bg-slate-900/50 print-container select-none";
 
   return (
     <div 
       className={containerClasses} 
       ref={panelRef}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
     >
       <style>{`
         @media print {

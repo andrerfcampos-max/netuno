@@ -17,6 +17,10 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
 
   const [isMoveMode, setIsMoveMode] = useState(false);
   const [missionToMove, setMissionToMove] = useState(null);
+  const [missionToDelete, setMissionToDelete] = useState(null);
+  const [touchStartX, setTouchStartX] = useState(null);
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [swipingMissionId, setSwipingMissionId] = useState(null);
 
   // Set default folder
   const handleSetDefaultFolder = () => {
@@ -55,6 +59,78 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
     if (name && name.trim()) {
       const newFolder = createNewFolder(name.trim(), currentFolderId, currentUser?.matricula);
       onFoldersChange([...folders, newFolder]);
+    }
+  };
+
+  const availableMissions = isGestor ? missions : missions.filter(m => !m.isDraft);
+
+  // Filtra as pastas e missões
+  let displayMissions = [];
+  let displayFolders = [];
+
+  if (currentFolderId === null) {
+    // Na pasta raiz: se houver busca, busca nomes de pastas e missões da raiz
+    if (searchTerm.trim() !== '') {
+      const term = searchTerm.toLowerCase();
+      displayFolders = folders.filter(f => (f.parentFolderId || null) === null && f.name.toLowerCase().includes(term));
+      displayMissions = availableMissions.filter(m => (m.parentFolderId || null) === null && ((m.name?.toLowerCase() || '').includes(term) || (m.atribuicao?.toLowerCase() || '').includes(term)));
+    } else {
+      displayFolders = folders.filter(f => (f.parentFolderId || null) === null);
+      displayMissions = availableMissions.filter(m => (m.parentFolderId || null) === null);
+    }
+  } else {
+    // Dentro de uma subpasta: busca por digitação desativada, exibe apenas os itens daquela pasta
+    displayFolders = folders.filter(f => f.parentFolderId === currentFolderId);
+    displayMissions = availableMissions.filter(m => m.parentFolderId === currentFolderId);
+  }
+
+  const filteredMissions = displayMissions.filter(m => {
+    const total = m.selectedIds.length;
+    const completed = (m.completedIds || []).filter(id => m.selectedIds.includes(id)).length;
+    const isCompleted = total > 0 && completed >= total;
+    const isNotStarted = completed === 0;
+    const isPartial = !isNotStarted && !isCompleted;
+
+    if (activeTab === 'todas') return true;
+    if (activeTab === 'nao_iniciadas' && isNotStarted) return true;
+    if (activeTab === 'em_andamento' && isPartial) return true;
+    if (activeTab === 'finalizadas' && isCompleted) return true;
+    return true;
+  }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const handleTouchCardStart = (e, missionId) => {
+    setTouchStartX(e.touches[0].clientX);
+    setTouchStartY(e.touches[0].clientY);
+    setSwipingMissionId(missionId);
+  };
+
+  const handleTouchCardEnd = (e, mission) => {
+    if (touchStartX === null || touchStartY === null || swipingMissionId !== mission.id) {
+      setTouchStartX(null);
+      setTouchStartY(null);
+      setSwipingMissionId(null);
+      return;
+    }
+    const diffX = touchStartX - e.changedTouches[0].clientX;
+    const diffY = touchStartY - e.changedTouches[0].clientY;
+
+    // Arrastou para a esquerda de forma clara (> 65px)
+    if (Math.abs(diffX) > Math.abs(diffY) * 1.5 && diffX > 65) {
+      if (mission.createdBy && mission.createdBy !== currentUser?.matricula && currentUser?.role !== 'admin') {
+        alert(`Somente o autor da rota (${mission.createdBy}) ou um admin pode excluí-la.`);
+      } else {
+        setMissionToDelete(mission);
+      }
+    }
+    setTouchStartX(null);
+    setTouchStartY(null);
+    setSwipingMissionId(null);
+  };
+
+  const confirmDelete = () => {
+    if (missionToDelete) {
+      onDeleteMission(missionToDelete.id);
+      setMissionToDelete(null);
     }
   };
 
@@ -172,45 +248,6 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
     setMissionToMove(null);
   };
 
-  const availableMissions = isGestor ? missions : missions.filter(m => !m.isDraft);
-
-  // Filtra as missões que pertencem à pasta atual (se não estiver buscando)
-  let displayMissions = availableMissions;
-  let displayFolders = folders;
-
-  if (searchTerm.trim() === '') {
-    displayMissions = availableMissions.filter(m => (m.parentFolderId || null) === currentFolderId);
-    displayFolders = folders.filter(f => (f.parentFolderId || null) === currentFolderId);
-  } else {
-    // Busca global ignora pastas
-    displayFolders = [];
-  }
-
-  const filteredMissions = displayMissions.filter(m => {
-    const total = m.selectedIds.length;
-    // count only completed ids that are actually in selectedIds
-    const completed = (m.completedIds || []).filter(id => m.selectedIds.includes(id)).length;
-    const isCompleted = total > 0 && completed >= total;
-    const isNotStarted = completed === 0;
-    const isPartial = !isNotStarted && !isCompleted;
-
-    let matchTab = false;
-    if (activeTab === 'todas') matchTab = true;
-    if (activeTab === 'nao_iniciadas' && isNotStarted) matchTab = true;
-    if (activeTab === 'em_andamento' && isPartial) matchTab = true;
-    if (activeTab === 'finalizadas' && isCompleted) matchTab = true;
-
-    let matchSearch = true;
-    if (searchTerm.trim() !== '') {
-      const term = searchTerm.toLowerCase();
-      const name = m.name?.toLowerCase() || '';
-      const atri = m.atribuicao?.toLowerCase() || '';
-      matchSearch = name.includes(term) || atri.includes(term);
-    }
-
-    return matchTab && matchSearch;
-  }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-
   const formatDate = (isoString) => {
     try {
       if (!isoString) return '';
@@ -248,7 +285,10 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
         {/* Breadcrumbs */}
         <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-800 border-b border-slate-700 text-sm font-semibold">
           <button 
-            onClick={() => setCurrentFolderId(null)}
+            onClick={() => {
+              setCurrentFolderId(null);
+              setSearchTerm('');
+            }}
             className="flex items-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors"
           >
             <Home size={16} /> Início
@@ -305,16 +345,24 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
           )}
         </div>
 
-        {/* Search Bar (Only if not in comando) */}
-        {activeTab !== 'dashboard_comando' && (
+        {/* Search Bar (Visível apenas na pasta raiz) */}
+        {activeTab !== 'dashboard_comando' && currentFolderId === null && (
           <div className="p-3 bg-slate-900/30 border-b border-slate-700 flex gap-2">
             <input 
               type="text" 
-              placeholder="Buscar globalmente..." 
+              placeholder="Buscar pasta ou missão na raiz (ex: Guará, 13º GBM, Missão)..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
             />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="px-3 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold rounded-lg"
+              >
+                Limpar
+              </button>
+            )}
           </div>
         )}
 
@@ -377,7 +425,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
                        
                        <div className="w-full bg-slate-700 rounded-full h-4 mb-1 overflow-hidden border border-slate-600 relative">
                          <div className={`h-full ${progGeral === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${progGeral}%` }}></div>
-                         <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">{progGeral}% ({totalConcluidos}/{totalHidrantes})</div>
+                         <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">{progGeral}% ({totalConcluidos}/${totalHidrantes})</div>
                        </div>
                        
                        <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold mt-2">
@@ -437,12 +485,17 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
           {activeTab !== 'dashboard_comando' && filteredMissions.map(mission => {
             const isOpen = openMissionIds.includes(mission.id);
             const total = mission.selectedIds.length;
-            const completed = mission.completedIds.length;
+            const completed = (mission.completedIds || []).filter(id => mission.selectedIds.includes(id)).length;
             const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
             const isCompleted = total > 0 && total === completed;
 
             return (
-              <div key={mission.id} className="bg-slate-700/50 border border-slate-600 rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:bg-slate-700 transition-colors w-full">
+              <div 
+                key={mission.id} 
+                onTouchStart={(e) => handleTouchCardStart(e, mission.id)}
+                onTouchEnd={(e) => handleTouchCardEnd(e, mission)}
+                className="bg-slate-700/50 border border-slate-600 rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:bg-slate-700 transition-all w-full relative select-none"
+              >
                 <div className="flex-1 w-full min-w-0 overflow-hidden">
                   <h3 className="font-bold text-lg text-slate-200 truncate flex items-center gap-2">
                     {isCompleted ? <CheckCircle size={18} className="text-emerald-500 shrink-0" /> : <Target size={18} className="text-amber-500 shrink-0" />}
@@ -488,9 +541,10 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
                             alert(`Somente o autor da rota (${mission.createdBy}) ou um admin pode excluí-la.`);
                             return;
                           }
-                          if(window.confirm("Deseja realmente apagar esta missão?")) onDeleteMission(mission.id);
+                          setMissionToDelete(mission);
                         }}
                         className="p-2 bg-slate-800 hover:bg-red-600 text-slate-400 hover:text-white rounded-lg transition-colors"
+                        title="Excluir Missão"
                       >
                         <Trash2 size={20} />
                       </button>
@@ -505,6 +559,37 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
             <div className="text-center text-slate-500 py-8">Nenhum item encontrado nesta pasta.</div>
           )}
         </div>
+
+        {/* Modal de Confirmação de Exclusão */}
+        {missionToDelete && (
+          <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-red-500/50 rounded-xl p-5 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-scaleUp">
+              <div className="flex items-center gap-3 text-red-400">
+                <Trash2 size={24} />
+                <h3 className="text-lg font-bold text-white">Confirmar Exclusão</h3>
+              </div>
+              <p className="text-sm text-slate-300">
+                Deseja realmente excluir a missão <strong className="text-white">"{missionToDelete.name}"</strong>? Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex gap-2 justify-end mt-2">
+                <button
+                  type="button"
+                  onClick={() => setMissionToDelete(null)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg text-sm transition-colors border border-slate-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-sm transition-colors shadow-lg shadow-red-900/50"
+                >
+                  Confirmar Exclusão
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

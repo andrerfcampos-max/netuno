@@ -297,3 +297,28 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **5. Correção do Overflow da Barra de Progresso na Central de Missões (`MissionManagerModal.jsx`):**
   - Aplicado `w-full min-w-0` e `overflow-hidden` no container da barra de progresso nos cards de missões, com limitador de percentual (`Math.min(100, Math.max(0, progress))`), impedindo que a barra extrapole a box do card no mobile.
 
+### [24/08/2026] Etapa 50 Concluída: Bateria de Ajustes Mobile, Usabilidade, WhatsApp, Gestão de Missões e Persistência Resiliente no F5
+- **1. Seleção Total na Lista Mobile (`DataTable.jsx`):**
+  - Adicionado no topo da visualização em cards mobile o checkbox de controle rápido **"Selecionar Todos ({data.length})"**, permitindo incluir ou remover todos os hidrantes filtrados da Rota de Missão com 1 toque no smartphone.
+- **2. Correção de Emojis no WhatsApp Desktop vs Mobile (`MissionReportPanel.jsx`, `MissionRoutePanel.jsx`, `MapComponent.jsx`):**
+  - Substituída a rota intermediária com perda de codificação UTF-8 (`wa.me`) por detecção inteligente de ambiente: no Desktop direciona direto para `https://web.whatsapp.com/send?text=...`, preservando 100% dos emojis militares (🚒, 📋, 👤, 📊, ✅, ⏳, 🟢, 🔴, 🔗, 🌐, 📍) sem caracteres quebrados; no Mobile mantém abertura direta para o aplicativo nativo (`api.whatsapp.com`).
+- **3. Feedback Visual Instantâneo na Busca com Filtros no Mobile (`FilterBar.jsx`, `App.jsx`):**
+  - No Bottom Sheet de filtros avançados no mobile, adicionado contador de hidrantes reativo em tempo real logo abaixo do campo de busca livre (`🔍 {count} hidrante(s) encontrado(s)`), no cabeçalho do drawer e no botão dinâmico de rodapé (`✓ Aplicar e Ver {count} Hidrante(s)`).
+- **4. Deslizar para Excluir com Confirmação na Central de Missões (`MissionManagerModal.jsx`):**
+  - Implementado suporte ao gesto tátil de swipe para a esquerda nos cards de missões, abrindo diálogo modal de confirmação de exclusão (`Deseja realmente excluir a missão '{name}'?`) com opções explícitas para confirmar ou cancelar.
+- **5. Limpeza de Busca no Botão "Início" (`MissionManagerModal.jsx`):**
+  - Ao clicar no botão "Início" da barra de breadcrumbs, a pasta raiz é selecionada e o campo de busca por digitação é automaticamente limpo.
+- **6. Busca por Digitação Exclusiva na Pasta Raiz (`MissionManagerModal.jsx`):**
+  - A caixa de busca por texto é renderizada exclusivamente na pasta raiz da Central de Missões, ocultando-se ao navegar dentro de pastas de quartéis.
+- **7. Busca na Raiz por Nome de Pastas e Missões (`MissionManagerModal.jsx`):**
+  - O filtro de busca na raiz agora pesquisa simultaneamente os nomes das pastas de quartéis e das missões da raiz.
+- **8. Remoção de Gestos de Arrastar para o Lado (`App.jsx`, `MissionReportPanel.jsx`):**
+  - Removidos todos os atalhos de swipe horizontal para troca de abas principais e troca entre relatórios, eliminando transições acidentais de tela durante o manuseio.
+- **9. Confirmação ao Salvar Alterações de Hidrante (`EditHydrantModal.jsx`):**
+  - Adicionado diálogo de confirmação ao clicar em "Salvar Alterações", oferecendo as opções "Salvar Alterações", "Continuar Editando" e "Descartar Alterações".
+- **10. Renomeação do Botão de Rota (`MissionRoutePanel.jsx`):**
+  - Botão de salvamento de rota padronizado para **"Cadastrar nova rota de missão"** (e modal atualizado para **"Cadastrar Nova Rota de Missão"**).
+- **11. Persistência Resiliente no F5 de Vistorias, Edições e Rotas (`storage.js`, `App.jsx`):**
+  - Desenvolvido mecanismo estruturado de gravação em `localStorage` (`loadHydrantChanges`/`saveHydrantChanges` e `loadActiveMissionState`/`saveActiveMissionState`).
+  - Na recarga de tela (F5), a base de dados funde automaticamente as vistorias realizadas, novos hidrantes cadastrados, edições e exclusões, além de manter ativas as abas de missões abertas.
+

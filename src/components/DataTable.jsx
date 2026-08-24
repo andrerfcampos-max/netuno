@@ -154,6 +154,22 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
           {/* 1. VISUALIZAÇÃO MOBILE EM CARDS TÁTICOS COMPACTOS (< md) */}
           {/* ======================================================== */}
           <div className="md:hidden flex-1 overflow-y-auto space-y-2 pr-0.5">
+            {isGestor && (
+              <div className="sticky top-0 z-10 flex items-center justify-between bg-slate-900/95 backdrop-blur-sm border border-slate-700/90 rounded-lg px-2.5 py-1.5 shadow-md">
+                <label className="flex items-center gap-2 cursor-pointer text-slate-200 text-xs font-bold select-none">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 cursor-pointer accent-emerald-500 rounded"
+                    checked={isAllSelected}
+                    onChange={handleSelectAll}
+                  />
+                  <span>Selecionar Todos ({data.length})</span>
+                </label>
+                <span className="text-[11px] font-semibold text-emerald-400">
+                  {selectedMissionIds.length} selecionado(s)
+                </span>
+              </div>
+            )}
             {sortedData.slice(0, displayCount).map((h, i) => {
               const id = h.codHidrante || h._internalId || h.nomHidrante;
               const isSelected = selectedMissionIds.includes(id);

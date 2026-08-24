@@ -143,3 +143,60 @@ export const createNewMission = (name = "Rascunho de Hoje", parentFolderId = nul
   };
 };
 
+const HYDRANT_CHANGES_KEY = 'netuno_hydrant_changes';
+const ACTIVE_MISSION_STATE_KEY = 'netuno_active_mission_state';
+
+export const loadHydrantChanges = () => {
+  try {
+    const data = localStorage.getItem(HYDRANT_CHANGES_KEY);
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          updated: parsed.updated || {},
+          added: Array.isArray(parsed.added) ? parsed.added : [],
+          deleted: Array.isArray(parsed.deleted) ? parsed.deleted : []
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao ler alterações de hidrantes do localStorage:", error);
+  }
+  return { updated: {}, added: [], deleted: [] };
+};
+
+export const saveHydrantChanges = (changes) => {
+  try {
+    localStorage.setItem(HYDRANT_CHANGES_KEY, JSON.stringify(changes));
+  } catch (error) {
+    console.error("Erro ao salvar alterações de hidrantes no localStorage:", error);
+  }
+};
+
+export const loadActiveMissionState = () => {
+  try {
+    const data = localStorage.getItem(ACTIVE_MISSION_STATE_KEY);
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          openMissionIds: Array.isArray(parsed.openMissionIds) ? parsed.openMissionIds : [],
+          activeMissionId: parsed.activeMissionId || null
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao ler estado da missão ativa do localStorage:", error);
+  }
+  return { openMissionIds: [], activeMissionId: null };
+};
+
+export const saveActiveMissionState = (state) => {
+  try {
+    localStorage.setItem(ACTIVE_MISSION_STATE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.error("Erro ao salvar estado da missão ativa no localStorage:", error);
+  }
+};
+
+

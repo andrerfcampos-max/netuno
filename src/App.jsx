@@ -17,7 +17,7 @@ import TechnicalStudyModal from './components/TechnicalStudyModal';
 import InconsistentHydrantsModal from './components/InconsistentHydrantsModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
-import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders } from './utils/storage';
+import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState } from './utils/storage';
 import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
 import { extractProblemsList } from './utils/problemUtils';
@@ -96,8 +96,9 @@ function App() {
   // Controle de Missões Persistentes
   const [missions, setMissions] = useState(loadMissions());
   const [folders, setFolders] = useState(loadFolders());
-  const [openMissionIds, setOpenMissionIds] = useState([]);
-  const [activeMissionId, setActiveMissionId] = useState(null);
+  const savedMissionState = useMemo(() => loadActiveMissionState(), []);
+  const [openMissionIds, setOpenMissionIds] = useState(savedMissionState.openMissionIds || []);
+  const [activeMissionId, setActiveMissionId] = useState(savedMissionState.activeMissionId || null);
   const [isMissionManagerOpen, setIsMissionManagerOpen] = useState(false);
   const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
   const [isTechnicalStudyOpen, setIsTechnicalStudyOpen] = useState(false);
@@ -273,14 +274,38 @@ function App() {
     saveMissions(missions);
   }, [missions]);
 
-  // Hidratação por Link Mágico (?ds=ID1,ID2) e Carregamento Automático
+  // Sincroniza abas abertas e missão ativa com LocalStorage
   useEffect(() => {
-    // 1. Carregar Base Pre-carregada automaticamente se estiver vazio
+    saveActiveMissionState({ openMissionIds, activeMissionId });
+  }, [openMissionIds, activeMissionId]);
+
+  // Hidratação por Link Mágico (?ds=ID1,ID2) e Carregamento Automático com Fusão de Mutações
+  useEffect(() => {
+    // 1. Carregar Base Pre-carregada automaticamente se estiver vazio e aplicar mutações persistidas
     if (hidrantes.length === 0) {
       loadPreloadedDatabase((data) => {
         if (data.length > 0) {
-          setHidrantes(data);
-          setFilteredList(getFilteredData(activeFilters, data));
+          const changes = loadHydrantChanges();
+          // 1. Filtra excluídos
+          let merged = data.filter(h => {
+            const delKeys = [h._internalId, h.codHidrante, h.nomHidrante].filter(Boolean);
+            return !delKeys.some(k => changes.deleted.includes(k));
+          });
+          // 2. Aplica alterações/vistorias cadastradas
+          merged = merged.map(h => {
+            const idKey = h._internalId || h.codHidrante || h.nomHidrante;
+            if (changes.updated && changes.updated[idKey]) {
+              return { ...h, ...changes.updated[idKey] };
+            }
+            return h;
+          });
+          // 3. Anexa novos hidrantes cadastrados
+          if (changes.added && changes.added.length > 0) {
+            merged = [...merged, ...changes.added];
+          }
+
+          setHidrantes(merged);
+          setFilteredList(getFilteredData(activeFilters, merged));
         }
       });
     }
@@ -476,59 +501,6 @@ function App() {
     return result;
   };
 
-  // Touch Swipe na tela principal para alternar abas (desativado no Mapa para permitir arrasto livre)
-  const mainTouchStartX = useRef(null);
-  const mainTouchStartY = useRef(null);
-
-  const handleMainTouchStart = (e) => {
-    // Nunca capturar gesto de swipe na visualização do mapa nem em elementos interativos
-    if (
-      activeView === 'map' || 
-      e.target.closest('.leaflet-container') || 
-      e.target.closest('table') || 
-      e.target.closest('input') || 
-      e.target.closest('select') || 
-      e.target.closest('textarea') || 
-      e.target.closest('button')
-    ) {
-      mainTouchStartX.current = null;
-      mainTouchStartY.current = null;
-      return;
-    }
-    mainTouchStartX.current = e.touches[0].clientX;
-    mainTouchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleMainTouchEnd = (e) => {
-    if (activeView === 'map' || mainTouchStartX.current === null || mainTouchStartY.current === null) {
-      mainTouchStartX.current = null;
-      mainTouchStartY.current = null;
-      return;
-    }
-    const diffX = mainTouchStartX.current - e.changedTouches[0].clientX;
-    const diffY = mainTouchStartY.current - e.changedTouches[0].clientY;
-
-    // Apenas se for um gesto horizontal claro e expressivo fora do mapa
-    if (Math.abs(diffX) > Math.abs(diffY) * 1.5 && Math.abs(diffX) > 80) {
-      const views = ['map', 'table'];
-      if (activeMissionId && selectedMissionIds.length > 0) views.push('route');
-      if (currentUser?.role === 'gestor' || currentUser?.role === 'admin') views.push('report');
-
-      const currentIndex = views.indexOf(activeView);
-      if (currentIndex !== -1) {
-        if (diffX > 0 && currentIndex < views.length - 1) {
-          // Arrastou para esquerda -> próxima aba
-          setActiveView(views[currentIndex + 1]);
-        } else if (diffX < 0 && currentIndex > 0) {
-          // Arrastou para direita -> aba anterior
-          setActiveView(views[currentIndex - 1]);
-        }
-      }
-    }
-    mainTouchStartX.current = null;
-    mainTouchStartY.current = null;
-  };
-
   // Extrair Regiões (RAs) únicas dinamicamente
   const regions = useMemo(() => {
     if (hidrantes.length > 0) {
@@ -650,6 +622,12 @@ function App() {
     });
     setHidrantes(newHidrantes);
     
+    // Grava alteração no localStorage para persistir após F5
+    const changes = loadHydrantChanges();
+    const idKey = sanitized._internalId || sanitized.codHidrante || sanitized.nomHidrante;
+    changes.updated[idKey] = sanitized;
+    saveHydrantChanges(changes);
+
     const id = sanitized.codHidrante || sanitized.nomHidrante;
     if (activeMissionId && selectedMissionIds.includes(id) && !completedMissionIds.includes(id)) {
       updateCurrentMission({ completedIds: [...completedMissionIds, id] });
@@ -658,6 +636,7 @@ function App() {
     applyFilters(activeFilters, newHidrantes);
     setLastInspectedCoords({ lat: sanitized.numLatitude, lng: sanitized.numLongitude });
     setInspectingHidrante(null);
+    toast.success('Vistoria salva com sucesso e persistida na base!');
   };
 
   const handleSaveEdit = (updatedHidrante) => {
@@ -669,6 +648,8 @@ function App() {
     const isExisting = Boolean(sanitized._internalId);
     
     let newHidrantes = [];
+    const changes = loadHydrantChanges();
+
     if (isExisting) {
       newHidrantes = hidrantes.map(h => {
         if (h._internalId === sanitized._internalId) {
@@ -677,6 +658,9 @@ function App() {
         }
         return h;
       });
+      if (exists) {
+        changes.updated[sanitized._internalId] = sanitized;
+      }
     }
 
     if (!exists) {
@@ -685,14 +669,18 @@ function App() {
         _internalId: `hid_new_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
       };
       newHidrantes = isExisting ? [...newHidrantes, newEntity] : [...hidrantes, newEntity];
+      changes.added.push(newEntity);
     }
     
+    saveHydrantChanges(changes);
     setHidrantes(newHidrantes);
     applyFilters(activeFilters, newHidrantes);
     handleCloseEditHydrant();
+    toast.success('Hidrante salvo com sucesso e persistido na base!');
   };
 
   const handleDeleteHydrant = (hydrantToDelete) => {
+    const delId = hydrantToDelete._internalId || hydrantToDelete.codHidrante || hydrantToDelete.nomHidrante;
     const newHidrantes = hidrantes.filter(h => {
       if (hydrantToDelete._internalId && h._internalId) {
         return h._internalId !== hydrantToDelete._internalId;
@@ -701,6 +689,15 @@ function App() {
       const idB = h.codHidrante || h.nomHidrante;
       return idA !== idB;
     });
+    
+    const changes = loadHydrantChanges();
+    if (!changes.deleted.includes(delId)) {
+      changes.deleted.push(delId);
+    }
+    changes.added = changes.added.filter(h => (h._internalId || h.codHidrante) !== delId);
+    delete changes.updated[delId];
+    saveHydrantChanges(changes);
+
     setHidrantes(newHidrantes);
     applyFilters(activeFilters, newHidrantes);
     toast.success('Hidrante excluído da base com sucesso!');
@@ -1120,7 +1117,8 @@ function App() {
             problemasAtivos={problemasVistoria} 
             isVisible={!isMapFullscreen} 
             currentUser={currentUser} 
-            onLogout={handleLogout} 
+            onLogout={handleLogout}
+            filteredCount={filteredList.length}
           />
         </div>
       )}
@@ -1174,9 +1172,7 @@ function App() {
 
       {/* ÁREA PRINCIPAL DE CONTEÚDO */}
       <main 
-        onTouchStart={handleMainTouchStart}
-        onTouchEnd={handleMainTouchEnd}
-        className={isMapFullscreen ? "h-full w-full p-0 m-0 relative" : "flex-1 min-h-0 w-full relative p-2 pt-0 flex flex-col select-none touch-pan-y overflow-hidden"}
+        className={isMapFullscreen ? "h-full w-full p-0 m-0 relative" : "flex-1 min-h-0 w-full relative p-2 pt-0 flex flex-col select-none overflow-hidden"}
       >
         {/* MÓDULO 2: MAPA TÁTICO INTEGRADO */}
         <div className={`w-full h-full relative z-0 flex-1 min-h-0 ${activeView === 'map' ? 'block' : 'hidden'}`}>

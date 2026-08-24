@@ -117,6 +117,8 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
     reader.readAsDataURL(file);
   };
 
+  const [showConfirmSave, setShowConfirmSave] = useState(false);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isNew && !formData.dscLocalidade) {
@@ -144,6 +146,12 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
       return;
     }
 
+    setShowConfirmSave(true);
+  };
+
+  const executeSave = () => {
+    let lat = parseFloat(String(formData.numLatitude).replace(',', '.'));
+    let lng = parseFloat(String(formData.numLongitude).replace(',', '.'));
     if (lng > 0) lng = -lng;
 
     onSave({
@@ -155,6 +163,7 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
       numLatitude: parseFloat(lat.toFixed(6)),
       numLongitude: parseFloat(lng.toFixed(6))
     });
+    setShowConfirmSave(false);
   };
 
   const currentNumericLat = parseFloat(String(formData.numLatitude).replace(',', '.'));
@@ -372,6 +381,44 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
             </button>
           </div>
         </form>
+
+        {/* Modal de Confirmação: Salvar ou Descartar */}
+        {showConfirmSave && (
+          <div className="fixed inset-0 z-[120] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-amber-500/50 rounded-2xl p-5 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-scaleUp">
+              <div className="flex items-center gap-2.5 text-amber-400 border-b border-slate-800 pb-3">
+                <Save size={22} />
+                <h3 className="text-base font-bold text-white">Salvar Alterações do Hidrante</h3>
+              </div>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Deseja <strong className="text-white">salvar</strong> ou <strong className="text-white">descartar</strong> as alterações cadastrais deste hidrante ({formData.codHidrante || 'Novo Hidrante'})?
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-end mt-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-red-950/60 text-red-400 hover:text-red-300 font-semibold rounded-lg text-xs transition-colors border border-slate-700 hover:border-red-850"
+                >
+                  Descartar Alterações
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmSave(false)}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg text-xs transition-colors border border-slate-700"
+                >
+                  Continuar Editando
+                </button>
+                <button
+                  type="button"
+                  onClick={executeSave}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg text-xs transition-colors shadow-lg shadow-amber-900/50 flex items-center justify-center gap-1.5"
+                >
+                  <Save size={14} /> Salvar Alterações
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

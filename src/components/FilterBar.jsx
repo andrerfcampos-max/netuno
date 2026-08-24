@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search, MapPin, AlertCircle, SlidersHorizontal, X, Check, Filter } from 'lucide-react';
 
-const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], isVisible, currentUser, onLogout }) => {
+const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], isVisible, currentUser, onLogout, filteredCount = null }) => {
   const [filters, setFilters] = useState(() => {
     try {
       const saved = localStorage.getItem('netuno_saved_filters');
@@ -190,7 +190,9 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
             <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal size={18} className="text-emerald-400" />
-                <h3 className="text-base font-bold text-white">Filtros Avançados</h3>
+                <h3 className="text-base font-bold text-white">
+                  Filtros Avançados {filteredCount !== null && <span className="text-xs text-emerald-400 font-bold font-mono">({filteredCount})</span>}
+                </h3>
                 {activeSecondaryFiltersCount > 0 && (
                   <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs px-2 py-0.5 rounded-full font-bold">
                     {activeSecondaryFiltersCount} ativos
@@ -266,6 +268,14 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
                     </button>
                   )}
                 </div>
+                {filteredCount !== null && (
+                  <div className="mt-1.5 flex items-center justify-between text-xs px-1">
+                    <span className={`font-semibold flex items-center gap-1 ${filteredCount > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {filteredCount > 0 ? `✓ ${filteredCount} hidrante(s) encontrado(s)` : `⚠️ Nenhum hidrante encontrado`}
+                    </span>
+                    {filters.buscaGeral && <span className="text-[10px] text-slate-400">Filtrando em tempo real</span>}
+                  </div>
+                )}
               </div>
 
               {/* 3. Status Operacional */}
@@ -397,7 +407,7 @@ const FilterBar = ({ onFilterChange, regions, anos = [], problemasAtivos = [], i
                 className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-2"
               >
                 <Check size={18} />
-                Aplicar Filtros
+                {filteredCount !== null ? `Aplicar e Ver ${filteredCount} Hidrante(s)` : 'Aplicar Filtros'}
               </button>
             </div>
 
