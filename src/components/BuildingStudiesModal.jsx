@@ -215,7 +215,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
               <Building2 size={22} className="animate-pulse" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-base sm:text-xl font-bold tracking-tight text-white leading-tight">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight">
                 Estudo de edificações - PREPOP
               </h2>
             </div>
@@ -1462,11 +1462,11 @@ function BuildingStudyFormModal({
         {/* Topo do Formulário */}
         <div className="px-3 py-2.5 sm:px-6 sm:py-3 bg-slate-800 border-b border-slate-700 flex items-center justify-between gap-2 shrink-0">
           <div className="min-w-0 flex-1">
-            <h2 className="text-xs sm:text-base md:text-lg font-bold text-white flex items-center gap-1.5 leading-tight">
+            <h2 className="text-sm sm:text-lg font-bold text-white flex items-center gap-2 leading-tight">
               <Building2 size={18} className="text-emerald-400 shrink-0" />
               <span>{studyData?.id ? 'Editar estudo de edificação (PREPOP)' : 'Novo estudo de edificação (PREPOP)'}</span>
             </h2>
-            <p className="text-[10px] sm:text-xs text-slate-400 leading-tight mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-400 leading-tight mt-0.5">
               Preencha com calma e salve quando desejar
             </p>
           </div>
