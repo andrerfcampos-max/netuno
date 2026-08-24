@@ -410,9 +410,16 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Modal de alto contraste para leitura sob luz solar/fumaça em campo.
   - Botão de compartilhamento formatado no padrão SCI para despacho operacional imediato via WhatsApp.
   - Botão para impressão/exportação da ficha tática PPO.
-  - Resiliência offline garantida via `localStorage` (`netuno_building_studies`) com carga inicial de edifícios de referência do DF (Hospital de Base, JK Shopping, Venâncio Shopping).
 
-
-
-
-
+### [24/08/2026] Etapa 56 Concluída: Ajustes no Módulo de Estudo de Edificações (PPO): Ficha Completa PPO, 3 Hidrantes mais Próximos com Waze, Salvar e Continuar, e Auto-Scroll em Novo Contato
+- **1. Renomeação do Botão Principal (`BuildingStudiesModal.jsx`):**
+  - O botão de abertura da visão tática nos cards de edificações e nas ações correspondentes foi renomeado de **"Ficha Tática PPO"** para **"Ficha Completa PPO"**, preservando o ícone `Eye` e seu destaque visual com gradiente.
+- **2. Exibição dos 3 Hidrantes mais Próximos com Navegação Waze (`BuildingStudiesModal.jsx`, `buildingStudiesStorage.js`):**
+  - A função `findNearestHydrantsForBuilding` foi atualizada para calcular e retornar por padrão os **3 hidrantes urbanos mais próximos** (`limit = 3`) com coordenadas geográficas (`lat`, `lng`), código, endereço, status operacional e distância geodésica calculada.
+  - Na visualização da **Ficha Completa PPO** (Seção C: Abastecimento Hídrico / Hidrantes Urbanos de Coluna Próximos), os 3 hidrantes mais próximos são apresentados em cards estruturados contendo código, status, endereço e um **botão rápido do Waze** (`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`) para navegação tática direta da viatura até o hidrante urbano.
+  - Na seção C do formulário de preenchimento, o botão de busca automática foi atualizado para **"Buscar 3 Mais Próximos Automaticamente"**, com botões de navegação Waze disponíveis para validação em campo.
+- **3. Botão de Acesso Rápido "Salvar e Continuar" (`BuildingStudiesModal.jsx`):**
+  - Adicionado no cabeçalho e na barra de navegação sticky do formulário de estudo de edificações o botão **"Salvar e Continuar"** / **"Salvar Rascunho"**.
+  - O militar pode salvar as alterações preenchidas no `localStorage` a qualquer momento durante a digitação **sem fechar a tela** e sem perder a rolagem ou a seção ativa, com feedback visual em banner toast esmeralda (*"✅ Alterações salvas com sucesso!"*).
+- **4. Auto-Scroll e Foco ao Adicionar Novo Contato (`BuildingStudiesModal.jsx`):**
+  - No formulário de preenchimento (Seção A: Identificação e Contatos), ao clicar no botão **"+ Adicionar Contato"**, a tela realiza uma rolagem suave (`scrollIntoView`) até a nova linha criada e posiciona automaticamente o cursor/foco no primeiro campo de digitação, fornecendo feedback tátil imediato ao usuário.

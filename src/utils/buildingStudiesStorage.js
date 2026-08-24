@@ -37,8 +37,9 @@ export const INITIAL_BUILDING_STUDIES = [
     registroRecalqueLocal: 'Localizado no passeio público frontal da entrada da Emergência Geral, tampa metálica pintada de vermelho.',
     fotoRecalque: '',
     hidrantesProximos: [
-      { codigo: 'BSB00102', endereco: 'SMHS Qd 101 Bloco A (em frente ao Trauma)', distancia: '45m', diametro: '100mm', status: 'Operante' },
-      { codigo: 'BSB00108', endereco: 'Via W3 Sul próx. Setor Hospitalar', distancia: '130m', diametro: '150mm', status: 'Operante' }
+      { codigo: 'BSB00102', endereco: 'SMHS Qd 101 Bloco A (em frente ao Trauma)', distancia: '45m', diametro: '100mm', status: 'Operante', lat: -15.797200, lng: -47.886000 },
+      { codigo: 'BSB00108', endereco: 'Via W3 Sul próx. Setor Hospitalar', distancia: '130m', diametro: '150mm', status: 'Operante', lat: -15.798100, lng: -47.887100 },
+      { codigo: 'BSB00115', endereco: 'SMHS próx. Hospital Sarah Kubitschek', distancia: '190m', diametro: '100mm', status: 'Operante', lat: -15.796300, lng: -47.885500 }
     ],
     mananciaisAlternativos: 'Espelho d\'água da Praça dos Tribunais a 400m e cisterna suplementar de reserva de 50.000L no bloco de caldeiras.',
     // D. Sistemas de Proteção e Pontos de Corte
@@ -90,8 +91,9 @@ export const INITIAL_BUILDING_STUDIES = [
     registroRecalqueLocal: 'Calçada frontal próximo à entrada principal da Av. Hélio Prates, protegido por mureta amarela.',
     fotoRecalque: '',
     hidrantesProximos: [
-      { codigo: 'TAG00245', endereco: 'Av. Hélio Prates em frente ao Shopping', distancia: '30m', diametro: '150mm', status: 'Operante' },
-      { codigo: 'CEI00312', endereco: 'QNM 34 Conjunto A lote 2', distancia: '110m', diametro: '100mm', status: 'Operante' }
+      { codigo: 'TAG00245', endereco: 'Av. Hélio Prates em frente ao Shopping', distancia: '30m', diametro: '150mm', status: 'Operante', lat: -15.808100, lng: -48.106200 },
+      { codigo: 'CEI00312', endereco: 'QNM 34 Conjunto A lote 2', distancia: '110m', diametro: '100mm', status: 'Operante', lat: -15.807500, lng: -48.107200 },
+      { codigo: 'TAG00251', endereco: 'Av. Hélio Prates próx. Feira dos Goianos', distancia: '160m', diametro: '100mm', status: 'Operante', lat: -15.809200, lng: -48.105400 }
     ],
     mananciaisAlternativos: 'Cisterna pluvial do shopping de 100.000L acessível por sucção na área de docas.',
     chaveGeralEnergia: 'Subestação de Entrada no Subsolo 2. Chave de desenergização geral controlada na sala do CCO.',
@@ -140,8 +142,9 @@ export const INITIAL_BUILDING_STUDIES = [
     registroRecalqueLocal: 'Coluna frontal da torre B, altura de 1,20m do solo, identificação nítida em vermelho.',
     fotoRecalque: '',
     hidrantesProximos: [
-      { codigo: 'BSB00078', endereco: 'SCS Qd 08 próx. Galeria Venâncio', distancia: '40m', diametro: '100mm', status: 'Operante' },
-      { codigo: 'BSB00082', endereco: 'Via W3 Sul Qd 502', distancia: '95m', diametro: '150mm', status: 'Operante' }
+      { codigo: 'BSB00078', endereco: 'SCS Qd 08 próx. Galeria Venâncio', distancia: '40m', diametro: '100mm', status: 'Operante', lat: -15.796000, lng: -47.891100 },
+      { codigo: 'BSB00082', endereco: 'Via W3 Sul Qd 502', distancia: '95m', diametro: '150mm', status: 'Operante', lat: -15.795500, lng: -47.891800 },
+      { codigo: 'BSB00090', endereco: 'SCS Qd 06 Ed. Bandeirantes', distancia: '150m', diametro: '150mm', status: 'Operante', lat: -15.797000, lng: -47.892500 }
     ],
     mananciaisAlternativos: 'Fontes e cisterna de reserva técnica da Caesb a 500m.',
     chaveGeralEnergia: 'Subestação Central no 2º Subsolo. Chave de seccionamento com comando na guarita de segurança.',
@@ -242,7 +245,7 @@ export const deleteBuildingStudy = (studyId) => {
 /**
  * Encontra os hidrantes urbanos mais próximos de uma coordenada no DF
  */
-export const findNearestHydrantsForBuilding = (lat, lng, allHydrants = [], limit = 2) => {
+export const findNearestHydrantsForBuilding = (lat, lng, allHydrants = [], limit = 3) => {
   if (!isValidDFCoordinate(lat, lng) || !Array.isArray(allHydrants) || allHydrants.length === 0) {
     return [];
   }

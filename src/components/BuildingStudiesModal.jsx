@@ -107,17 +107,26 @@ export default function BuildingStudiesModal({
   }, [studies, selectedCity, searchTerm]);
 
   // Salvar novo/editado
-  const handleSaveStudy = (formData) => {
+  const handleSaveStudy = (formData, keepOpen = false) => {
     const res = saveBuildingStudy(formData);
     if (res.success) {
       setStudies(res.data);
-      setIsFormOpen(false);
-      setEditingStudy(null);
+      if (!keepOpen) {
+        setIsFormOpen(false);
+        setEditingStudy(null);
+      } else {
+        const savedItem = res.data.find(s => (formData.id ? s.id === formData.id : true));
+        if (savedItem) {
+          setEditingStudy(savedItem);
+        }
+      }
       if (tacticalViewStudy && tacticalViewStudy.id === formData.id) {
         const updated = res.data.find(s => s.id === formData.id);
         setTacticalViewStudy(updated || null);
       }
+      return { success: true, studyId: formData.id || res.data[0]?.id };
     }
+    return { success: false };
   };
 
   // Excluir estudo
@@ -417,6 +426,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
           isOpen={!!tacticalViewStudy}
           onClose={() => setTacticalViewStudy(null)}
           study={tacticalViewStudy}
+          allHydrantes={allHydrantes}
           onEdit={() => {
             setEditingStudy(tacticalViewStudy);
             setIsFormOpen(true);
@@ -614,14 +624,14 @@ function BuildingTacticalCard({
       {/* Barra de Ações Rápidas do Card */}
       <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-1.5 flex-wrap">
         
-        {/* Botão Principal: Visão Tática de Resposta Rápida */}
+        {/* Botão Principal: Visão Tática de Resposta Rápida (Ficha Completa PPO) */}
         <button
           type="button"
           onClick={onOpenTacticalView}
           className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs rounded-lg shadow-md shadow-red-950/50 active:scale-95 transition-all"
         >
           <Eye size={14} />
-          <span>Ficha Tática PPO</span>
+          <span>Ficha Completa PPO</span>
         </button>
 
         {/* Rotas Rápidas (Waze / Maps) */}
@@ -691,12 +701,37 @@ function BuildingTacticalViewModal({
   isOpen, 
   onClose, 
   study, 
+  allHydrantes = [],
   onEdit, 
   onShareWhatsApp,
   onOpenZoom
 }) {
   const [activeSec, setActiveSec] = useState('view-sec-A');
   const scrollContainerRef = useRef(null);
+
+  const hydrantsToDisplay = useMemo(() => {
+    if (!study) return [];
+    if (study.hidrantesProximos && study.hidrantesProximos.length > 0) {
+      const enriched = study.hidrantesProximos.map(h => {
+        if (h.lat && h.lng) return h;
+        if (Array.isArray(allHydrantes) && allHydrantes.length > 0) {
+          const match = allHydrantes.find(ah => (ah.nomHidrante === h.codigo || ah.codHidrante === h.codigo));
+          if (match && isValidDFCoordinate(match.numLatitude, match.numLongitude)) {
+            return { ...h, lat: match.numLatitude, lng: match.numLongitude };
+          }
+        }
+        return h;
+      });
+      if (enriched.length >= 3 || !isValidDFCoordinate(study.numLatitude, study.numLongitude)) {
+        return enriched.slice(0, 3);
+      }
+    }
+    if (isValidDFCoordinate(study.numLatitude, study.numLongitude) && Array.isArray(allHydrantes) && allHydrantes.length > 0) {
+      const computed = findNearestHydrantsForBuilding(study.numLatitude, study.numLongitude, allHydrantes, 3);
+      if (computed.length > 0) return computed;
+    }
+    return study.hidrantesProximos || [];
+  }, [study, allHydrantes]);
 
   if (!isOpen || !study) return null;
 
@@ -954,32 +989,57 @@ function BuildingTacticalViewModal({
               </div>
             </div>
 
-            {/* Hidrantes CAESB Próximos */}
+            {/* Hidrantes Urbanos de Coluna Próximos (Top 3 com Waze) */}
             <div className="mb-3">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                Hidrantes Urbanos de Coluna Próximos (CAESB):
-              </span>
-              {study.hidrantesProximos && study.hidrantesProximos.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {study.hidrantesProximos.map((h, idx) => (
-                    <div key={idx} className="bg-slate-950 border border-slate-800 p-3 rounded-lg flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Droplets size={14} className="text-cyan-400" />
+                  <span>3 Hidrantes Urbanos de Coluna Mais Próximos (CAESB)</span>
+                </span>
+                <span className="text-[11px] text-cyan-400/90 font-medium">Navegação direta</span>
+              </div>
+              {hydrantsToDisplay && hydrantsToDisplay.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {hydrantsToDisplay.map((h, idx) => (
+                    <div key={idx} className="bg-slate-950 border border-slate-800 hover:border-slate-700 p-3 rounded-xl flex flex-col justify-between gap-2.5 transition-all shadow-md">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <strong className="text-xs text-white font-mono">{h.codigo}</strong>
-                          <span className={`px-1.5 py-0.2 text-[10px] font-bold rounded ${h.status === 'Operante' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' : 'bg-red-950 text-red-400 border border-red-500/40'}`}>
-                            {h.status}
+                        <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <strong className="text-xs text-white font-mono">{h.codigo}</strong>
+                            <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${h.status === 'Operante' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' : 'bg-red-950 text-red-400 border border-red-500/40'}`}>
+                              {h.status}
+                            </span>
+                          </div>
+                          <span className="text-[11px] font-bold text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30 shrink-0">
+                            {h.distancia || 'Próx.'}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 mt-1">{h.endereco}</p>
+                        <p className="text-[11px] text-slate-300 leading-snug line-clamp-2" title={h.endereco}>
+                          {h.endereco}
+                        </p>
                       </div>
-                      <span className="text-xs font-bold text-cyan-400 bg-cyan-950/60 px-2 py-1 rounded border border-cyan-500/30 shrink-0">
-                        {h.distancia || 'Prox'}
-                      </span>
+                      
+                      {h.lat && h.lng ? (
+                        <a
+                          href={`https://waze.com/ul?ll=${h.lat},${h.lng}&navigate=yes`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-1.5 w-full py-1.5 px-2 bg-sky-950 hover:bg-sky-900 border border-sky-500/40 hover:border-sky-400 text-sky-300 rounded-lg text-xs font-bold transition-all active:scale-95 shadow"
+                          title={`Navegar no Waze até o hidrante ${h.codigo}`}
+                        >
+                          <Navigation size={13} className="text-sky-400" />
+                          <span>Navegar no Waze</span>
+                        </a>
+                      ) : (
+                        <span className="text-[10px] text-slate-500 italic text-center py-1">Coordenada não informada</span>
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-500 italic">Nenhum hidrante urbano específico associado.</p>
+                <p className="text-xs text-slate-500 italic bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  Nenhum hidrante urbano específico associado.
+                </p>
               )}
             </div>
 
@@ -1190,6 +1250,9 @@ function BuildingStudyFormModal({
   });
 
   const [formError, setFormError] = useState('');
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const lastAddedContactIndexRef = useRef(null);
 
   const formSections = [
     { id: 'form-sec-A', label: 'A. Identificação', icon: Building2 },
@@ -1200,6 +1263,22 @@ function BuildingStudyFormModal({
     { id: 'form-sec-F', label: 'F. Fotos & Croquis', icon: Layers },
     { id: 'form-sec-G', label: 'G. Informações Extras', icon: FileText }
   ];
+
+  // Efeito para rolar suavemente até o novo contato adicionado e dar foco no campo
+  useEffect(() => {
+    if (lastAddedContactIndexRef.current !== null) {
+      const idx = lastAddedContactIndexRef.current;
+      lastAddedContactIndexRef.current = null;
+      setTimeout(() => {
+        const el = document.getElementById(`contact-row-${idx}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const firstInput = el.querySelector('input');
+          if (firstInput) firstInput.focus();
+        }
+      }, 70);
+    }
+  }, [formData.contatos.length]);
 
   // Pular direto para uma determinada seção via navegação horizontal
   const scrollToFormSection = (secId) => {
@@ -1242,10 +1321,12 @@ function BuildingStudyFormModal({
   };
 
   const handleAddContact = () => {
+    const newIndex = formData.contatos.length;
     setFormData(prev => ({
       ...prev,
       contatos: [...prev.contatos, { nome: '', funcao: 'Contato Adicional', telefone: '' }]
     }));
+    lastAddedContactIndexRef.current = newIndex;
   };
 
   const handleRemoveContact = (index) => {
@@ -1272,7 +1353,7 @@ function BuildingStudyFormModal({
     );
   };
 
-  // Buscar automaticamente os 2 hidrantes mais próximos do Netuno
+  // Buscar automaticamente os 3 hidrantes mais próximos do Netuno
   const handleAutoFindHydrants = () => {
     const lat = parseFloat(formData.numLatitude);
     const lng = parseFloat(formData.numLongitude);
@@ -1281,7 +1362,7 @@ function BuildingStudyFormModal({
       return;
     }
 
-    const nearest = findNearestHydrantsForBuilding(lat, lng, allHydrantes, 2);
+    const nearest = findNearestHydrantsForBuilding(lat, lng, allHydrantes, 3);
     if (nearest.length === 0) {
       alert('Nenhum hidrante encontrado na base de dados próximo a esta coordenada.');
       return;
@@ -1294,9 +1375,35 @@ function BuildingStudyFormModal({
         endereco: h.endereco,
         distancia: h.distancia,
         diametro: h.diametro,
-        status: h.status
+        status: h.status,
+        lat: h.lat,
+        lng: h.lng
       }))
     }));
+  };
+
+  // Salvar rascunho / alterações e continuar na tela de edição
+  const handleQuickSave = () => {
+    if (!formData.nomeFantasia.trim()) {
+      setFormError('O Nome Fantasia / Popular da edificação é obrigatório para salvar.');
+      scrollToFormSection('form-sec-A');
+      return;
+    }
+    if (!formData.endereco.trim()) {
+      setFormError('O Endereço da edificação é obrigatório para salvar.');
+      scrollToFormSection('form-sec-A');
+      return;
+    }
+
+    setIsSaving(true);
+    setFormError('');
+    const res = onSave(formData, true);
+    if (res && res.studyId && !formData.id) {
+      setFormData(prev => ({ ...prev, id: res.studyId }));
+    }
+    setIsSaving(false);
+    setSaveSuccessMsg('✅ Alterações salvas com sucesso! Você pode continuar adicionando o restante das informações.');
+    setTimeout(() => setSaveSuccessMsg(''), 4500);
   };
 
   // Upload e compressão de imagem via Canvas (WebP/JPEG max 120KB)
@@ -1362,51 +1469,94 @@ function BuildingStudyFormModal({
         
         {/* Topo do Formulário */}
         <div className="px-4 py-3 sm:px-6 bg-slate-800 border-b border-slate-700 flex items-center justify-between gap-3 shrink-0">
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <Building2 size={20} className="text-emerald-400" />
-              {studyData?.id ? 'Editar Estudo de Edificação (PPO)' : 'Novo Estudo de Edificação (PPO)'}
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 truncate">
+              <Building2 size={20} className="text-emerald-400 shrink-0" />
+              <span>{studyData?.id ? 'Editar Estudo de Edificação (PPO)' : 'Novo Estudo de Edificação (PPO)'}</span>
             </h2>
-            <p className="text-xs text-slate-400">
-              Formulário tático completo • Role livremente ou use os chips acima para saltar direto para uma seção
+            <p className="text-xs text-slate-400 truncate">
+              Formulário tático • Preencha com calma e salve quando desejar
             </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleQuickSave}
+              disabled={isSaving}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow-lg shadow-emerald-950/50 transition-all active:scale-95 cursor-pointer"
+              title="Salvar alterações no banco e continuar editando nesta mesma tela"
+            >
+              <CheckCircle2 size={16} />
+              <span>Salvar e Continuar</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/60 rounded-lg transition-all"
+              title="Fechar formulário"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* BARRA DE NAVEGAÇÃO HORIZONTAL POR CHIPS DE SEÇÕES (STICKY NO FORMULÁRIO) */}
+        <div className="sticky top-0 z-20 flex items-center justify-between overflow-x-auto border-b border-slate-800 bg-slate-950/95 backdrop-blur-md px-2 sm:px-4 py-2 gap-1.5 shrink-0 scrollbar-thin">
+          <div className="flex items-center gap-1.5 min-w-max">
+            {formSections.map(t => {
+              const Icon = t.icon;
+              const isActive = activeTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => scrollToFormSection(t.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                    isActive 
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md' 
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 bg-slate-900 border border-slate-800'
+                  }`}
+                >
+                  <Icon size={14} />
+                  <span>{t.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           <button
             type="button"
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-lg"
+            onClick={handleQuickSave}
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1 bg-emerald-700/80 hover:bg-emerald-600 border border-emerald-500/50 text-white text-xs font-bold rounded-lg shadow shrink-0 active:scale-95 transition-all ml-2"
+            title="Salvar alterações sem fechar a tela"
           >
-            <X size={20} />
+            <CheckCircle2 size={13} />
+            <span>Salvar Rascunho</span>
           </button>
         </div>
 
-        {/* BARRA DE NAVEGAÇÃO HORIZONTAL POR CHIPS DE SEÇÕES (STICKY NO FORMULÁRIO) */}
-        <div className="sticky top-0 z-20 flex items-center overflow-x-auto border-b border-slate-800 bg-slate-950/95 backdrop-blur-md px-2 sm:px-4 py-2 gap-1.5 shrink-0 scrollbar-thin">
-          {formSections.map(t => {
-            const Icon = t.icon;
-            const isActive = activeTab === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => scrollToFormSection(t.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                  isActive 
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md' 
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 bg-slate-900 border border-slate-800'
-                }`}
-              >
-                <Icon size={14} />
-                <span>{t.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Mensagem de Feedback de Sucesso ao Salvar e Continuar */}
+        {saveSuccessMsg && (
+          <div className="mx-4 mt-3 px-3.5 py-2.5 bg-emerald-950/90 border border-emerald-500/60 rounded-xl text-xs sm:text-sm text-emerald-200 flex items-center justify-between shadow-xl animate-fadeIn shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+              <span className="font-semibold">{saveSuccessMsg}</span>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => setSaveSuccessMsg('')} 
+              className="text-emerald-400 hover:text-emerald-200 font-bold ml-2 text-sm p-1"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Mensagem de Erro de Validação */}
         {formError && (
-          <div className="mx-4 mt-3 px-3 py-2 bg-red-950 border border-red-500/50 rounded-lg text-xs text-red-200 flex items-center justify-between">
+          <div className="mx-4 mt-3 px-3 py-2 bg-red-950 border border-red-500/50 rounded-lg text-xs text-red-200 flex items-center justify-between shrink-0">
             <span>{formError}</span>
             <button type="button" onClick={() => setFormError('')} className="text-red-400 font-bold ml-2">✕</button>
           </div>
@@ -1595,7 +1745,7 @@ function BuildingStudyFormModal({
                 </button>
               </div>
               {formData.contatos.map((c, idx) => (
-                <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <div key={idx} id={`contact-row-${idx}`} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800 transition-all scroll-mt-20">
                   <div className="sm:col-span-4">
                     <input
                       type="text"
@@ -1776,27 +1926,46 @@ function BuildingStudyFormModal({
             <div className="bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="text-xs font-bold text-cyan-400">
-                  2 Hidrantes Urbanos CAESB Mais Próximos
+                  3 Hidrantes Urbanos CAESB Mais Próximos (Com Waze)
                 </span>
                 <button
                   type="button"
                   onClick={handleAutoFindHydrants}
                   className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 rounded-lg text-xs font-bold active:scale-95 transition-all"
                 >
-                  🔍 Buscar 2 Mais Próximos Automaticamente
+                  🔍 Buscar 3 Mais Próximos Automaticamente
                 </button>
               </div>
 
               {formData.hidrantesProximos.length > 0 ? (
                 <div className="space-y-2">
                   {formData.hidrantesProximos.map((h, idx) => (
-                    <div key={idx} className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between text-xs">
-                      <div>
-                        <strong className="text-white font-mono">{h.codigo}</strong> • {h.endereco}
+                    <div key={idx} className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between gap-2 text-xs">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <strong className="text-white font-mono">{h.codigo}</strong>
+                          <span className={`px-1.5 py-0.2 text-[10px] font-bold rounded ${h.status === 'Operante' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' : 'bg-red-950 text-red-400 border border-red-500/40'}`}>
+                            {h.status || 'Operante'}
+                          </span>
+                        </div>
+                        <p className="text-slate-400 text-[11px] truncate mt-0.5">{h.endereco}</p>
                       </div>
-                      <span className="text-cyan-300 font-bold bg-cyan-950 px-2 py-0.5 rounded shrink-0">
-                        {h.distancia}
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-cyan-300 font-bold bg-cyan-950 px-2 py-0.5 rounded border border-cyan-500/30">
+                          {h.distancia}
+                        </span>
+                        {h.lat && h.lng && (
+                          <a
+                            href={`https://waze.com/ul?ll=${h.lat},${h.lng}&navigate=yes`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 bg-sky-950 hover:bg-sky-900 border border-sky-500/40 text-sky-300 rounded-lg text-xs font-bold transition-all shadow"
+                            title={`Abrir Waze para ${h.codigo}`}
+                          >
+                            <Navigation size={13} />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
