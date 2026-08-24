@@ -159,7 +159,7 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
       const normRef = normalizeStr(ref);
 
       if (normAddr.includes(text) || normRef.includes(text)) {
-        const key = `${normAddr}|${normStr(ra)}`;
+        const key = `${normAddr}|${normalizeStr(ra)}`;
         if (!seen.has(key)) {
           seen.add(key);
           suggestions.push({
