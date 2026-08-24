@@ -55,6 +55,8 @@ export const INITIAL_BUILDING_STUDIES = [
     // F. Arquivos Táticos
     fotoFachada: '',
     croquiPlanta: '',
+    // G. Informações Extras
+    informacoesExtras: 'Hospital terciário de alta complexidade com heliponto ativo na cobertura. Acesso preferencial de ambulâncias e viaturas de resgate pela rampa oeste. Manter contato imediato com a Central de Regulação Médica em ocorrências com múltiplas vítimas.',
     dataCadastro: '2026-08-20',
     ultimaAtualizacao: '2026-08-24'
   },
@@ -103,6 +105,8 @@ export const INITIAL_BUILDING_STUDIES = [
     riscoColapso: 'Estrutura mista (Concreto armado e estrutura metálica na cobertura da praça de alimentação e cinemas). Atenção à deformação da cobertura metálica em caso de fogo prolongado.',
     fotoFachada: '',
     croquiPlanta: '',
+    // G. Informações Extras
+    informacoesExtras: 'Acesso de viaturas pelas docas traseiras possui portão basculante operado pelo CCO 24h. Em caso de sinistro, a chave mestre de desativação dos elevadores encontra-se na portaria de serviço da QNM 34.',
     dataCadastro: '2026-08-18',
     ultimaAtualizacao: '2026-08-24'
   },
@@ -151,6 +155,8 @@ export const INITIAL_BUILDING_STUDIES = [
     riscoColapso: 'Concreto armado com lajes maciças.',
     fotoFachada: '',
     croquiPlanta: '',
+    // G. Informações Extras
+    informacoesExtras: 'Galeria subterrânea interliga as torres A, B e C. Acesso tático aos subsolos deve ser feito preferencialmente com equipes em linha guia devido à compartimentação complexa das garagens.',
     dataCadastro: '2026-08-15',
     ultimaAtualizacao: '2026-08-24'
   }
