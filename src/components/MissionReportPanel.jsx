@@ -16,6 +16,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   useEffect(() => {
     localStorage.setItem('lastReportType', reportType);
+    setIsExportMenuOpen(false);
   }, [reportType]);
 
   // Fecha dropdown ao clicar fora
@@ -656,7 +657,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         {/* BOTÕES FLUTUANTES (ELEVADOR + EXPORTAÇÃO RÁPIDA) */}
       <div className="fixed right-3 sm:right-4 bottom-20 sm:bottom-24 z-50 flex flex-col gap-2 no-print">
         {/* Botão Flutuante de Compartilhar/Exportar */}
-        <div className="relative">
+        <div className="relative" ref={exportDropdownRef}>
           <button 
             onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} 
             className="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all active:scale-95 flex items-center justify-center"
@@ -666,7 +667,20 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           </button>
 
           {isExportMenuOpen && (
-            <div className="absolute right-0 bottom-full mb-2 w-56 sm:w-60 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-[120] py-1.5 text-xs sm:text-sm text-slate-200 animate-scaleUp">
+            <div className="absolute right-0 bottom-full mb-2 w-60 sm:w-64 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-[120] py-2 text-xs sm:text-sm text-slate-200 animate-scaleUp">
+              <div className="px-3.5 sm:px-4 py-1.5 border-b border-slate-700/80 mb-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                {reportType === 'interno' ? (
+                  <>
+                    <ShieldHalf size={14} className="text-blue-400 shrink-0" />
+                    <span className="text-blue-300">Relatório Geral (CBMDF)</span>
+                  </>
+                ) : (
+                  <>
+                    <Building2 size={14} className="text-emerald-400 shrink-0" />
+                    <span className="text-emerald-300">Relatório CAESB</span>
+                  </>
+                )}
+              </div>
               <button 
                 onClick={() => { handlePrint(); setIsExportMenuOpen(false); }}
                 className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
@@ -700,7 +714,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
               {isGestorOrAdmin && (
                 <button 
                   onClick={() => { setShowSeiModal(true); setIsExportMenuOpen(false); }}
-                  className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors border-t border-slate-700"
+                  className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors border-t border-slate-700 mt-1"
                 >
                   <span className="shrink-0">🚀</span>
                   <span className="text-emerald-400">Gerar Processo no SEI</span>
@@ -727,7 +741,6 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         </button>
       </div>
 
-
       {/* TOOLBAR SUPERIOR NO PRINT */}
       <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 pb-2 border-b border-slate-700 no-print px-2 lg:px-0 gap-3 ${isMaximized ? 'sticky top-0 z-[110] bg-slate-900/95 backdrop-blur-sm pt-4 shadow-sm' : ''}`}>
         <div className="flex items-center justify-between w-full lg:w-auto gap-2">
@@ -752,13 +765,19 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         
         <div className="flex bg-slate-800 rounded-lg p-1 w-full lg:w-auto shadow-inner border border-slate-700">
           <button 
-            onClick={() => setReportType('interno')}
+            onClick={() => {
+              setReportType('interno');
+              setIsExportMenuOpen(false);
+            }}
             className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-1.5 sm:py-2 rounded-md font-bold text-xs sm:text-sm transition-all ${reportType === 'interno' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
           >
             <ShieldHalf size={15} /> Relatório Geral (CBMDF)
           </button>
           <button 
-            onClick={() => setReportType('caesb')}
+            onClick={() => {
+              setReportType('caesb');
+              setIsExportMenuOpen(false);
+            }}
             className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-1.5 sm:py-2 rounded-md font-bold text-xs sm:text-sm transition-all ${reportType === 'caesb' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
           >
             <Building2 size={15} /> Relatório de Alterações (CAESB)
