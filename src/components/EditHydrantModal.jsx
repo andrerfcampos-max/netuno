@@ -732,7 +732,7 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
 
         {/* Modal de Confirmação: Salvar ou Descartar */}
         {showConfirmSave && (
-          <div className="fixed inset-0 z-[120] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-slate-900 border border-amber-500/50 rounded-2xl p-5 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-scaleUp">
               <div className="flex items-center gap-2.5 text-amber-400 border-b border-slate-800 pb-3">
                 <Save size={22} />
