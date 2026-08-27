@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { LocateFixed, Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, MessageSquareText, AlertTriangle } from 'lucide-react';
+import { Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, MessageSquareText, AlertTriangle } from 'lucide-react';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
+import { isHydrantSelected } from '../utils/geoUtils';
 
 const parseDateToTimestamp = (dateStr) => {
   if (!dateStr || dateStr === '-') return -Infinity;
@@ -168,7 +169,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
     requestSort('nomHidrante');
   };
 
-  const isAllSelected = data.length > 0 && data.every(h => selectedMissionIds.includes(h.codHidrante || h._internalId || h.nomHidrante));
+  const isAllSelected = data.length > 0 && data.every(h => isHydrantSelected(h, selectedMissionIds));
 
   const handleSelectAll = (e) => {
     if (onSelectAllMission) {
@@ -222,7 +223,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
             )}
             {sortedData.slice(0, displayCount).map((h, i) => {
               const id = h.codHidrante || h._internalId || h.nomHidrante;
-              const isSelected = selectedMissionIds.includes(id);
+              const isSelected = isHydrantSelected(h, selectedMissionIds);
               const dataFormatada = h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' 
                 ? String(h.datHoraUltimaVistoria).split(' ')[0] 
                 : 'Não vistoriado';
@@ -403,7 +404,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
               <tbody>
                 {sortedData.slice(0, displayCount).map((h, i) => {
                   const id = h.codHidrante || h._internalId || h.nomHidrante;
-                  const isSelected = selectedMissionIds.includes(id);
+                  const isSelected = isHydrantSelected(h, selectedMissionIds);
                   return (
                   <tr key={id || i} className={`border-b border-slate-700/50 hover:bg-slate-700/50 transition-colors ${isSelected ? 'bg-cyan-900/20' : ''}`}>
                     {isGestor && (

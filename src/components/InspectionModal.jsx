@@ -84,8 +84,8 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        const MAX_HEIGHT = 800;
+        const MAX_WIDTH = 600;
+        const MAX_HEIGHT = 600;
         let width = img.width;
         let height = img.height;
 
@@ -105,7 +105,7 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
         
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.45);
         setFotoBase64(compressedBase64);
       };
       img.src = event.target.result;
@@ -258,8 +258,8 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md border border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4">
+      <div className="bg-slate-800 sm:rounded-xl shadow-2xl w-full max-w-md border-0 sm:border border-slate-700 overflow-hidden flex flex-col h-[100dvh] sm:h-auto sm:max-h-[90dvh]">
         
         <div className="bg-slate-900 p-4 border-b border-slate-700 flex justify-between items-center">
           <div>
@@ -406,7 +406,7 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
         </div>
 
-        <div className="p-3 bg-slate-900 border-t border-slate-700 flex gap-3">
+        <div className="p-3 bg-slate-900 border-t border-slate-700 flex gap-3 sticky bottom-0 z-10 shrink-0">
           <button 
             type="button"
             onClick={onClose}

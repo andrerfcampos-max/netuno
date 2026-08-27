@@ -226,6 +226,7 @@ const GpsControl = ({ userLocation, isSheetOpen }) => {
 };
 
 const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '', hasFilter = false }) => {
+  const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const validHidrantes = useMemo(() => {
     return hidrantes.filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude));
@@ -510,26 +511,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                     src={selectedHydrant.fotoPerfil} 
                     alt="Foto" 
                     className="w-10 h-10 rounded-lg object-cover cursor-pointer hover:scale-105 transition-transform border border-slate-600 shrink-0 shadow-sm"
-                    onClick={() => {
-                      const img = document.createElement('img');
-                      img.src = selectedHydrant.fotoPerfil;
-                      img.style.maxWidth = '90%';
-                      img.style.maxHeight = '90%';
-                      img.style.objectFit = 'contain';
-                      
-                      const div = document.createElement('div');
-                      div.style.position = 'fixed';
-                      div.style.inset = '0';
-                      div.style.backgroundColor = 'rgba(0,0,0,0.9)';
-                      div.style.zIndex = '999999';
-                      div.style.display = 'flex';
-                      div.style.alignItems = 'center';
-                      div.style.justifyContent = 'center';
-                      
-                      div.onclick = () => document.body.removeChild(div);
-                      div.appendChild(img);
-                      document.body.appendChild(div);
-                    }}
+                    onClick={() => setFullscreenPhoto(selectedHydrant.fotoPerfil)}
                   />
                 )}
                 <div className="flex flex-col min-w-0">
@@ -685,26 +667,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                     alt="Foto do Hidrante" 
                     className="w-12 h-12 rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform border border-slate-600 shrink-0 shadow-md"
                     title="Clique para ampliar a foto"
-                    onClick={() => {
-                      const img = document.createElement('img');
-                      img.src = selectedHydrant.fotoPerfil;
-                      img.style.maxWidth = '90%';
-                      img.style.maxHeight = '90%';
-                      img.style.objectFit = 'contain';
-                      
-                      const div = document.createElement('div');
-                      div.style.position = 'fixed';
-                      div.style.inset = '0';
-                      div.style.backgroundColor = 'rgba(0,0,0,0.9)';
-                      div.style.zIndex = '999999';
-                      div.style.display = 'flex';
-                      div.style.alignItems = 'center';
-                      div.style.justifyContent = 'center';
-                      
-                      div.onclick = () => document.body.removeChild(div);
-                      div.appendChild(img);
-                      document.body.appendChild(div);
-                    }}
+                    onClick={() => setFullscreenPhoto(selectedHydrant.fotoPerfil)}
                   />
                 ) : (
                   <div className="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl shrink-0">
@@ -874,6 +837,18 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         >
           <Maximize2 size={22} />
         </button>
+      )}
+      {fullscreenPhoto && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-[999999] flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setFullscreenPhoto(null)}
+        >
+          <img 
+            src={fullscreenPhoto} 
+            alt="Foto Ampliada" 
+            className="max-w-[90%] max-h-[90%] object-contain" 
+          />
+        </div>
       )}
     </div>
   );

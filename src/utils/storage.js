@@ -52,12 +52,19 @@ export const loadMissions = () => {
   }
 };
 
-export const saveMissions = (missions) => {
+const safeSetItem = (key, value) => {
   try {
-    localStorage.setItem(MISSIONS_STORAGE_KEY, JSON.stringify(missions));
+    localStorage.setItem(key, value);
   } catch (error) {
-    console.error("Erro ao salvar missões no localStorage", error);
+    console.error(`Erro ao salvar ${key} no localStorage`, error);
+    if (error.name === 'QuotaExceededError' || error.message.includes('quota')) {
+      alert('Aviso: Armazenamento local cheio. O aplicativo pode não salvar as últimas alterações. Tente sincronizar com a nuvem e limpar os dados.');
+    }
   }
+};
+
+export const saveMissions = (missions) => {
+  safeSetItem(MISSIONS_STORAGE_KEY, JSON.stringify(missions));
 };
 
 const DEFAULT_FOLDERS = [
@@ -114,11 +121,7 @@ export const loadFolders = () => {
 };
 
 export const saveFolders = (folders) => {
-  try {
-    localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(folders));
-  } catch (error) {
-    console.error("Erro ao salvar pastas no localStorage", error);
-  }
+  safeSetItem(FOLDERS_STORAGE_KEY, JSON.stringify(folders));
 };
 
 export const generateId = () => {
@@ -174,11 +177,7 @@ export const loadHydrantChanges = () => {
 };
 
 export const saveHydrantChanges = (changes) => {
-  try {
-    localStorage.setItem(HYDRANT_CHANGES_KEY, JSON.stringify(changes));
-  } catch (error) {
-    console.error("Erro ao salvar alterações de hidrantes no localStorage:", error);
-  }
+  safeSetItem(HYDRANT_CHANGES_KEY, JSON.stringify(changes));
 };
 
 export const loadActiveMissionState = () => {
@@ -200,11 +199,30 @@ export const loadActiveMissionState = () => {
 };
 
 export const saveActiveMissionState = (state) => {
+  safeSetItem(ACTIVE_MISSION_STATE_KEY, JSON.stringify(state));
+};
+
+const RBAC_USERS_KEY = 'netuno_rbac_users';
+
+export const loadRbacUsers = () => {
   try {
-    localStorage.setItem(ACTIVE_MISSION_STATE_KEY, JSON.stringify(state));
+    const data = localStorage.getItem(RBAC_USERS_KEY);
+    if (data !== null) {
+      return JSON.parse(data);
+    }
   } catch (error) {
-    console.error("Erro ao salvar estado da missão ativa no localStorage:", error);
+    console.error("Erro ao ler usuários RBAC", error);
   }
+  return [
+    { matricula: '123', nome: 'Vistoriador Silva', role: 'vistoriador' },
+    { matricula: '456', nome: 'Gestor Souza', role: 'gestor' },
+    { matricula: '789', nome: 'Gestor Oliveira', role: 'gestor' },
+    { matricula: 'admin', nome: 'Administrador', role: 'admin' },
+  ];
+};
+
+export const saveRbacUsers = (users) => {
+  safeSetItem(RBAC_USERS_KEY, JSON.stringify(users));
 };
 
 /**

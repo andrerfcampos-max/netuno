@@ -51,3 +51,17 @@ export const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
 };
+
+/**
+ * Valida de forma uniforme se o hidrante está contido em uma lista de IDs (selecionados ou concluídos),
+ * cruzando codHidrante, nomHidrante e _internalId para prevenir problemas de dessincronização.
+ * @param {Object} hydrant O objeto do hidrante
+ * @param {Array<string>} selectedIds A lista de IDs da missão
+ * @returns {boolean}
+ */
+export const isHydrantSelected = (hydrant, selectedIds) => {
+  if (!hydrant || !Array.isArray(selectedIds)) return false;
+  return selectedIds.includes(hydrant.codHidrante) || 
+         selectedIds.includes(hydrant.nomHidrante) || 
+         (hydrant._internalId && selectedIds.includes(hydrant._internalId));
+};

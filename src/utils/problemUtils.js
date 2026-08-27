@@ -97,7 +97,7 @@ export const extractProblemsList = (raw) => {
   const trimmed = raw.trim();
   if (trimmed === '' || trimmed === '-' || trimmed.toLowerCase() === 'nenhum' || trimmed.toLowerCase() === 'falso' || trimmed === '.') return [];
   
-  return trimmed.split(/[;|\n]+/)
+  return trimmed.split(/[;|\n]+|\s+[-/]\s+/)
     .map(p => normalizeProblemName(p))
     .filter(p => p && p !== '-' && p !== '.');
 };

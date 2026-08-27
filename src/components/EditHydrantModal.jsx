@@ -44,8 +44,8 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
   const defaultRAObj = sortedRAList.find(r => r.name === initialRA) || sortedRAList[0];
 
   // Sanitização rigorosa das coordenadas iniciais
-  let parsedLat = parseFloat(String(hidrante.numLatitude || '').replace(',', '.'));
-  let parsedLng = parseFloat(String(hidrante.numLongitude || '').replace(',', '.'));
+  let parsedLat = parseFloat(String(hidrante.numLatitude || '').replace(/,/g, '.'));
+  let parsedLng = parseFloat(String(hidrante.numLongitude || '').replace(/,/g, '.'));
 
   // Se a longitude estiver positiva (ex: 47.88 ou 48.05), ajusta para negativa no DF
   if (!isNaN(parsedLng) && parsedLng > 0) {
@@ -281,7 +281,7 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
 
   const handleCoordinateBlur = (name) => {
     setFormData(prev => {
-      let valStr = String(prev[name] || '').trim().replace(',', '.');
+      let valStr = String(prev[name] || '').trim().replace(/,/g, '.');
       let num = parseFloat(valStr);
       if (isNaN(num)) return prev;
 
@@ -366,8 +366,8 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
       formData.codHidrante = generated;
     }
 
-    let lat = parseFloat(String(formData.numLatitude).replace(',', '.'));
-    let lng = parseFloat(String(formData.numLongitude).replace(',', '.'));
+    let lat = parseFloat(String(formData.numLatitude).replace(/,/g, '.'));
+    let lng = parseFloat(String(formData.numLongitude).replace(/,/g, '.'));
 
     if (isNaN(lat) || isNaN(lng)) {
       alert("Por favor, informe coordenadas geográficas válidas.");
@@ -378,8 +378,8 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
   };
 
   const executeSave = () => {
-    let lat = parseFloat(String(formData.numLatitude).replace(',', '.'));
-    let lng = parseFloat(String(formData.numLongitude).replace(',', '.'));
+    let lat = parseFloat(String(formData.numLatitude).replace(/,/g, '.'));
+    let lng = parseFloat(String(formData.numLongitude).replace(/,/g, '.'));
     if (lng > 0) lng = -lng;
 
     onSave({
@@ -394,8 +394,8 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
     setShowConfirmSave(false);
   };
 
-  const currentNumericLat = parseFloat(String(formData.numLatitude).replace(',', '.'));
-  const currentNumericLng = parseFloat(String(formData.numLongitude).replace(',', '.'));
+  const currentNumericLat = parseFloat(String(formData.numLatitude).replace(/,/g, '.'));
+  const currentNumericLng = parseFloat(String(formData.numLongitude).replace(/,/g, '.'));
 
   const validLat = !isNaN(currentNumericLat) ? currentNumericLat : defaultRAObj.lat;
   const validLng = !isNaN(currentNumericLng) ? (currentNumericLng > 0 ? -currentNumericLng : currentNumericLng) : defaultRAObj.lng;
@@ -424,8 +424,8 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-800 w-full max-w-3xl rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-600">
+    <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4">
+      <div className="bg-slate-800 w-full max-w-3xl sm:rounded-xl shadow-2xl flex flex-col overflow-hidden border-0 sm:border border-slate-600 h-[100dvh] sm:h-auto sm:max-h-[90dvh]">
         
         <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900">
           <div className="flex items-center gap-3">
@@ -712,7 +712,7 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
             </div>
           </div>
 
-          <div className="flex gap-3 mt-2">
+          <div className="flex gap-3 mt-auto sticky bottom-[-1rem] bg-slate-800 p-4 border-t border-slate-700 z-10 -mx-4 -mb-4">
             <button 
               type="button" 
               onClick={onClose} 

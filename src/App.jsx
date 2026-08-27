@@ -1,23 +1,23 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Upload, GitMerge, FolderOpen, PlusCircle, Calculator, LogOut, ShieldAlert, RefreshCw, Map as MapIcon, List, Navigation, BarChart3, Cloud, Building2 } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef, Suspense, lazy } from 'react';
+import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2 } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
 import MapComponent from './components/MapComponent';
 import FilterBar from './components/FilterBar';
-import InspectionModal from './components/InspectionModal';
-import EditHydrantModal from './components/EditHydrantModal';
-import UserManagerModal from './components/UserManagerModal';
 import DataTable from './components/DataTable';
 import MissionRoutePanel from './components/MissionRoutePanel';
 import MissionReportPanel from './components/MissionReportPanel';
-import MissionTabs from './components/MissionTabs';
-import MissionManagerModal from './components/MissionManagerModal';
-import TechnicalStudyModal from './components/TechnicalStudyModal';
-import BuildingStudiesModal from './components/BuildingStudiesModal';
-import InconsistentHydrantsModal from './components/InconsistentHydrantsModal';
-import CloudConfigModal from './components/CloudConfigModal';
 import ErrorBoundary from './components/ErrorBoundary';
+
+const InspectionModal = lazy(() => import('./components/InspectionModal'));
+const EditHydrantModal = lazy(() => import('./components/EditHydrantModal'));
+const UserManagerModal = lazy(() => import('./components/UserManagerModal'));
+const MissionManagerModal = lazy(() => import('./components/MissionManagerModal'));
+const TechnicalStudyModal = lazy(() => import('./components/TechnicalStudyModal'));
+const BuildingStudiesModal = lazy(() => import('./components/BuildingStudiesModal'));
+const InconsistentHydrantsModal = lazy(() => import('./components/InconsistentHydrantsModal'));
+const CloudConfigModal = lazy(() => import('./components/CloudConfigModal'));
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders } from './utils/storage';
 import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime } from './services/syncService';
@@ -327,46 +327,25 @@ function App() {
   const handleCloseTechnicalStudy = () => {
     setIsTechnicalStudyOpen(false);
     const url = new URL(window.location.href);
-    if (url.searchParams.has('modal')) {
-      url.searchParams.delete('modal');
-      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
-    }
+    url.searchParams.delete('modal');
+    window.history.replaceState({}, '', url.pathname + url.search);
   };
 
   const handleCloseBuildingStudies = () => {
     setIsBuildingStudiesOpen(false);
     const url = new URL(window.location.href);
-    if (url.searchParams.has('modal')) {
-      url.searchParams.delete('modal');
-      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
-    }
-  };
-
-  const handleCloseMissionManager = () => {
-    setIsMissionManagerOpen(false);
-    const url = new URL(window.location.href);
-    if (url.searchParams.has('modal')) {
-      url.searchParams.delete('modal');
-      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
-    }
-  };
-
-  const handleCloseUserManager = () => {
-    setIsUserManagerOpen(false);
-    const url = new URL(window.location.href);
-    if (url.searchParams.has('modal')) {
-      url.searchParams.delete('modal');
-      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
-    }
+    url.searchParams.delete('modal');
+    window.history.replaceState({}, '', url.pathname + url.search);
   };
 
   const handleCloseEditHydrant = () => {
     setEditingHydrante(null);
     const url = new URL(window.location.href);
-    if (url.searchParams.has('modal')) {
-      url.searchParams.delete('modal');
-      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
-    }
+    url.searchParams.delete('modal');
+    url.searchParams.delete('id');
+    url.searchParams.delete('hid');
+    url.searchParams.delete('hidrante');
+    window.history.replaceState({}, '', url.pathname + url.search);
   };
 
   const handleInspect = (h) => {
@@ -461,14 +440,15 @@ function App() {
           };
           saveHydrantChanges(mergedChanges);
 
-          if (hidrantes.length > 0) {
-            let updatedHidrantes = hidrantes.filter(h => !mergedChanges.deleted.includes(h._internalId) && !mergedChanges.deleted.includes(h.codHidrante) && !mergedChanges.deleted.includes(h.nomHidrante));
+          setHidrantes(prevHidrantes => {
+            if (prevHidrantes.length === 0) return prevHidrantes;
+            let updatedHidrantes = prevHidrantes.filter(h => !mergedChanges.deleted.includes(h._internalId) && !mergedChanges.deleted.includes(h.codHidrante) && !mergedChanges.deleted.includes(h.nomHidrante));
             updatedHidrantes = updatedHidrantes.map(h => {
               const k = h._internalId || h.codHidrante || h.nomHidrante;
               return mergedChanges.updated[k] ? { ...h, ...mergedChanges.updated[k] } : h;
             });
-            setHidrantes(updatedHidrantes);
-          }
+            return updatedHidrantes;
+          });
         }
       } catch (e) {
         console.warn('Erro ao sincronizar com banco em nuvem:', e);
@@ -752,15 +732,6 @@ function App() {
     });
     return Array.from(problemas).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }, [hidrantes, activeFilters.ra, activeFilters.periodo, activeFilters.dataInicio, activeFilters.dataFim, activeFilters.status]);
-
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      parseHydrantsCSV(file, (data) => {
-        setHidrantes(data);
-      });
-    }
-  };
 
   const handleFilterChange = (filters) => {
     setActiveFilters(filters);
@@ -1069,37 +1040,45 @@ function App() {
 
       {/* HEADER / FILTER BAR */}
       {inspectingHidrante && (
-        <InspectionModal 
-          hidrante={inspectingHidrante}
-          onClose={() => setInspectingHidrante(null)}
-          onSave={handleSaveInspection}
-          currentUser={currentUser}
-        />
+        <Suspense fallback={null}>
+          <InspectionModal 
+            hidrante={inspectingHidrante}
+            onClose={() => setInspectingHidrante(null)}
+            onSave={handleSaveInspection}
+            currentUser={currentUser}
+          />
+        </Suspense>
       )}
       
       {editingHydrante && (
-        <EditHydrantModal 
-          hidrante={editingHydrante}
-          onClose={() => setEditingHydrante(null)}
-          onSave={handleSaveEdit}
-          currentUser={currentUser}
-          allHidrantes={hidrantes}
-        />
+        <Suspense fallback={null}>
+          <EditHydrantModal 
+            hidrante={editingHydrante}
+            onClose={() => setEditingHydrante(null)}
+            onSave={handleSaveEdit}
+            currentUser={currentUser}
+            allHidrantes={hidrantes}
+          />
+        </Suspense>
       )}
 
       {isUserManagerOpen && (
-        <UserManagerModal onClose={() => setIsUserManagerOpen(false)} />
+        <Suspense fallback={null}>
+          <UserManagerModal onClose={() => setIsUserManagerOpen(false)} />
+        </Suspense>
       )}
 
       {isInconsistentModalOpen && (
-        <InconsistentHydrantsModal
-          isOpen={isInconsistentModalOpen}
-          onClose={() => setIsInconsistentModalOpen(false)}
-          hidrantes={hidrantes}
-          onEditHydrant={(h) => setEditingHydrante(h)}
-          onDeleteHydrant={handleDeleteHydrant}
-          currentUser={currentUser}
-        />
+        <Suspense fallback={null}>
+          <InconsistentHydrantsModal
+            isOpen={isInconsistentModalOpen}
+            onClose={() => setIsInconsistentModalOpen(false)}
+            hidrantes={hidrantes}
+            onEditHydrant={(h) => setEditingHydrante(h)}
+            onDeleteHydrant={handleDeleteHydrant}
+            currentUser={currentUser}
+          />
+        </Suspense>
       )}
 
       {/* Header */}
@@ -1601,56 +1580,68 @@ function App() {
       </footer>
 
       {isMissionManagerOpen && (
-        <MissionManagerModal 
-          missions={missions}
-          folders={folders}
-          openMissionIds={openMissionIds}
-          onClose={() => setIsMissionManagerOpen(false)}
-          onOpenMission={handleOpenMission}
-          onNewMission={handleNewMission}
-          onDeleteMission={handleDeleteMission}
-          onFoldersChange={handleFoldersChange}
-          onMissionsChange={setMissions}
-          currentUser={currentUser}
-        />
+        <Suspense fallback={null}>
+          <MissionManagerModal 
+            missions={missions}
+            folders={folders}
+            openMissionIds={openMissionIds}
+            onClose={() => setIsMissionManagerOpen(false)}
+            onOpenMission={handleOpenMission}
+            onNewMission={handleNewMission}
+            onDeleteMission={handleDeleteMission}
+            onFoldersChange={handleFoldersChange}
+            onMissionsChange={setMissions}
+            currentUser={currentUser}
+          />
+        </Suspense>
       )}
 
       {isCloudModalOpen && (
-        <CloudConfigModal 
-          onClose={() => setIsCloudModalOpen(false)}
-          onSyncNow={async () => {
-            toast.info('Sincronizando dados com o Supabase...');
-            try {
-              if (Array.isArray(missions)) {
-                for (const m of missions) await syncMissionToCloud(m);
+        <Suspense fallback={null}>
+          <CloudConfigModal 
+            onClose={() => setIsCloudModalOpen(false)}
+            onSyncNow={async () => {
+              toast.info('Sincronizando dados com o Supabase...');
+              try {
+                if (Array.isArray(missions)) {
+                  for (const m of missions) await syncMissionToCloud(m);
+                }
+                if (Array.isArray(folders)) {
+                  for (const f of folders) await syncFolderToCloud(f);
+                }
+                toast.success('Banco de Dados em Nuvem sincronizado com sucesso!');
+              } catch (err) {
+                toast.error('Falha ao sincronizar: ' + err.message);
               }
-              if (Array.isArray(folders)) {
-                for (const f of folders) await syncFolderToCloud(f);
-              }
-              toast.success('Banco de Dados em Nuvem sincronizado com sucesso!');
-            } catch (err) {
-              toast.error('Falha ao sincronizar: ' + err.message);
-            }
-          }}
-        />
+            }}
+          />
+        </Suspense>
       )}
 
       {/* Toasts */}
       <ToastContainer theme="dark" position="bottom-center" />
 
-      <TechnicalStudyModal
-        isOpen={isTechnicalStudyOpen}
-        onClose={handleCloseTechnicalStudy}
-        hidrantes={hidrantes}
-        currentUser={currentUser}
-      />
+      {isTechnicalStudyOpen && (
+        <Suspense fallback={null}>
+          <TechnicalStudyModal
+            isOpen={isTechnicalStudyOpen}
+            onClose={handleCloseTechnicalStudy}
+            hidrantes={hidrantes}
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
 
-      <BuildingStudiesModal
-        isOpen={isBuildingStudiesOpen}
-        onClose={handleCloseBuildingStudies}
-        allHydrantes={hidrantes}
-        currentUser={currentUser}
-      />
+      {isBuildingStudiesOpen && (
+        <Suspense fallback={null}>
+          <BuildingStudiesModal
+            isOpen={isBuildingStudiesOpen}
+            onClose={handleCloseBuildingStudies}
+            allHydrantes={hidrantes}
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

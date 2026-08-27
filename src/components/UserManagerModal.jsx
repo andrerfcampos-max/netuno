@@ -1,19 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, UserCog, Shield, Save } from 'lucide-react';
+import { loadRbacUsers, saveRbacUsers } from '../utils/storage';
 
 const UserManagerModal = ({ onClose }) => {
-  const [users, setUsers] = useState([
-    { matricula: '123', nome: 'Vistoriador Silva', role: 'vistoriador' },
-    { matricula: '456', nome: 'Gestor Souza', role: 'gestor' },
-    { matricula: '789', nome: 'Gestor Oliveira', role: 'gestor' },
-    { matricula: 'admin', nome: 'Administrador', role: 'admin' },
-  ]);
+  const [users, setUsers] = useState(loadRbacUsers());
 
   const [editingMatricula, setEditingMatricula] = useState(null);
   const [tempRole, setTempRole] = useState('');
 
   const handleRoleChange = (matricula, newRole) => {
-    setUsers(prev => prev.map(u => u.matricula === matricula ? { ...u, role: newRole } : u));
+    const updatedUsers = users.map(u => u.matricula === matricula ? { ...u, role: newRole } : u);
+    setUsers(updatedUsers);
+    saveRbacUsers(updatedUsers);
     setEditingMatricula(null);
   };
 

@@ -192,8 +192,8 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
 
   const handleOptimizeRoute = async () => {
     setIsOptimizing(true);
-    if (pendingRoute.length > 0) {
-      const start = userLocation ? pendingRoute[0] : pendingRoute[0]; // TODO startLat startLng
+    if (pendingRoute && pendingRoute.length > 0 && pendingRoute[0]) {
+      const start = pendingRoute[0]; // TODO startLat startLng
       const startLat = userLocation ? userLocation.lat : start.numLatitude;
       const startLng = userLocation ? userLocation.lng : start.numLongitude;
 
@@ -262,7 +262,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
   };
 
   const handleWazeRoute = () => {
-    if (pendingRoute.length === 0) return;
+    if (!pendingRoute || pendingRoute.length === 0 || !pendingRoute[0]) return;
     const nextTarget = pendingRoute[0];
     const url = `https://waze.com/ul?ll=${nextTarget.numLatitude},${nextTarget.numLongitude}&navigate=yes`;
     window.open(url, '_blank');
@@ -446,7 +446,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
               <span className="truncate">🚀 NAVEGAR PARA PRÓXIMO ALVO (WAZE)</span>
             </div>
             <div className="text-xs font-mono font-bold bg-blue-800/80 px-2 py-0.5 rounded border border-blue-400/40 shrink-0">
-              {pendingRoute[0].nomHidrante || pendingRoute[0].codHidrante}
+              {pendingRoute[0]?.nomHidrante || pendingRoute[0]?.codHidrante || 'Alvo'}
             </div>
             <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] skew-x-12"></div>
           </button>
