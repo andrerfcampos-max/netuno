@@ -612,76 +612,91 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
                           ></div>
                         </div>
 
-                        {/* Missões do Quartel */}
-                        <div className="p-3 sm:p-4 flex flex-col gap-2.5">
-                          {qs.missions.length === 0 ? (
-                            <div className="text-xs text-slate-500 italic py-1 text-center sm:text-left">
-                              Nenhuma missão cadastrada neste quartel.
-                            </div>
-                          ) : (
-                            qs.missions.map((m) => (
-                              <div 
-                                key={m.id}
-                                className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-600 p-2.5 sm:p-3 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors group"
-                              >
-                                {/* Info da Missão */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-semibold text-slate-100 text-xs sm:text-sm truncate" title={m.name}>
-                                      {m.name}
-                                    </span>
-                                  </div>
-                                  <div className="text-[11px] text-slate-400 mt-0.5 truncate">
-                                    {m.atribuicao}
-                                  </div>
-                                </div>
-
-                                {/* Badge de Execução (0/5, 2/5, 5/5) e Barra de Progresso */}
-                                <div className="flex items-center gap-3 w-full md:w-auto shrink-0">
-                                  
-                                  {/* Badge Numérico 0/5, 2/5, 5/5 */}
-                                  <span 
-                                    className="font-mono font-bold text-xs sm:text-sm px-2.5 py-1 rounded bg-slate-950 border border-slate-700 text-cyan-300 shrink-0 text-center min-w-[54px]"
-                                    title="Hidrantes concluídos / Total de hidrantes da missão"
-                                  >
-                                    {m.ratioText}
-                                  </span>
-
-                                  {/* Barra de Progresso Visual Individual */}
-                                  <div className="flex-1 md:w-56 lg:w-72">
-                                    <div className="w-full bg-slate-950 rounded-full h-5 overflow-hidden border border-slate-700 relative shadow-inner flex items-center">
-                                      <div 
-                                        className={`h-full transition-all duration-500 ${
-                                          m.percent === 100 
-                                            ? 'bg-emerald-500' 
-                                            : m.percent > 0 
-                                              ? 'bg-gradient-to-r from-blue-600 to-amber-500' 
-                                              : 'bg-slate-800'
-                                        }`}
-                                        style={{ width: `${Math.max(0, m.percent)}%` }}
-                                      ></div>
-                                      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                                        {m.percent === 100 ? `${m.ratioText} (100%) - Concluída ✅` : m.percent > 0 ? `${m.ratioText} (${m.percent}%) - Em Andamento 🔄` : `${m.ratioText} (0%) - Não Iniciada ⏳`}
-                                      </span>
+                                {/* Missões do Quartel */}
+                                <div className="p-3 sm:p-4 flex flex-col gap-2.5">
+                                  {qs.missions.length === 0 ? (
+                                    <div className="text-xs text-slate-500 italic py-1 text-center sm:text-left">
+                                      Nenhuma missão cadastrada neste quartel.
                                     </div>
-                                  </div>
+                                  ) : (
+                                    qs.missions.map((m) => (
+                                      <div 
+                                        key={m.id}
+                                        className="bg-slate-800/60 hover:bg-slate-800 border border-slate-700/70 hover:border-slate-600 p-3 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-3 transition-all group shadow-sm"
+                                      >
+                                        {/* Info da Missão + Status Badge */}
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="font-semibold text-slate-100 text-xs sm:text-sm truncate max-w-[280px] sm:max-w-md" title={m.name}>
+                                              {m.name}
+                                            </span>
+                                            {/* Status Badge */}
+                                            {m.status === 'concluida' ? (
+                                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 shrink-0">
+                                                Concluída ✅
+                                              </span>
+                                            ) : m.status === 'em_andamento' ? (
+                                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-950/80 text-amber-300 border border-amber-800/60 shrink-0">
+                                                Em Andamento 🔄
+                                              </span>
+                                            ) : (
+                                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 shrink-0">
+                                                Não Iniciada ⏳
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+                                            {m.atribuicao}
+                                          </div>
+                                        </div>
 
-                                  {/* Ação Rápida de Abertura */}
-                                  <button
-                                    onClick={() => {
-                                      onOpenMission(m.id);
-                                      onClose();
-                                    }}
-                                    className="p-1.5 bg-slate-700 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-lg transition-colors shrink-0 active:scale-95"
-                                    title="Abrir missão no mapa"
-                                  >
-                                    <ArrowRight size={15} />
-                                  </button>
+                                        {/* Badge de Execução (0/5, 2/5, 5/5), Barra de Progresso e Ação */}
+                                        <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0">
+                                          
+                                          {/* Badge Numérico Ratio */}
+                                          <div 
+                                            className="font-mono font-bold text-xs px-2 py-1 rounded bg-slate-950 border border-slate-700 text-cyan-300 shrink-0 text-center min-w-[50px] shadow-inner"
+                                            title="Hidrantes concluídos / Total de hidrantes da missão"
+                                          >
+                                            {m.ratioText}
+                                          </div>
+
+                                          {/* Barra de Progresso Visual Individual */}
+                                          <div className="flex-1 md:w-44 lg:w-60">
+                                            <div className="w-full bg-slate-950 rounded-full h-4 overflow-hidden border border-slate-700/80 relative shadow-inner flex items-center">
+                                              <div 
+                                                className={`h-full transition-all duration-500 ${
+                                                  m.percent === 100 
+                                                    ? 'bg-emerald-500' 
+                                                    : m.percent > 0 
+                                                      ? 'bg-gradient-to-r from-cyan-500 to-emerald-400' 
+                                                      : 'bg-transparent'
+                                                }`}
+                                                style={{ width: `${Math.max(0, m.percent)}%` }}
+                                              ></div>
+                                              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] whitespace-nowrap select-none">
+                                                {m.percent}%
+                                              </span>
+                                            </div>
+                                          </div>
+
+                                          {/* Ação Rápida de Abertura */}
+                                          <button
+                                            onClick={() => {
+                                              onOpenMission(m.id);
+                                              onClose();
+                                            }}
+                                            className="p-1.5 px-2.5 bg-slate-700 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-lg transition-all shrink-0 active:scale-95 flex items-center gap-1 text-xs font-semibold"
+                                            title="Abrir missão no mapa"
+                                          >
+                                            <span className="hidden sm:inline">Abrir</span>
+                                            <ArrowRight size={14} />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))
+                                  )}
                                 </div>
-                              </div>
-                            ))
-                          )}
-                        </div>
                       </div>
                     ))}
                 </div>
