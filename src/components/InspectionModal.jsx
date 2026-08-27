@@ -56,6 +56,8 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
   const [fotoBase64, setFotoBase64] = useState(null);
   const fileInputRef = useRef(null);
 
+  const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
+
   // Determina se há problemas que forçam o hidrante a ser inoperante
   const motivoInoperante = useMemo(() => {
     if (q2 === 'SOTERRADO') return 'Registro está soterrado';
@@ -125,6 +127,12 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
     }
 
     const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
+
+    if (!fotoBase64 && !isGestor) {
+      alert("⚠️ FOTO OBRIGATÓRIA: O vistoriador deve obrigatoriamente cadastrar a foto da vistoria (registre uma foto do problema ou do hidrante durante a descarga de água).");
+      return;
+    }
+
     const bloqueioMsg = "vc está a mais de 100 M de distância do hidrante. Não pode. Se houver problemas técnico, envie o relatório da vistoria através do sei para GPCIU/sehur";
 
     const procederSalvamento = () => {
@@ -373,24 +381,31 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
           {/* Foto */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">Anexo Fotográfico (Opcional)</label>
+            <div className="flex flex-col">
+              <label className="font-bold text-slate-300 text-sm flex items-center justify-between">
+                <span>Registro Fotográfico {!isGestor && <span className="text-red-500 font-bold ml-1">* (Obrigatório)</span>}</span>
+              </label>
+              <p className="text-xs text-amber-300/90 font-medium mt-0.5">
+                Registre uma foto do problema ou do hidrante durante a descarga de água.
+              </p>
+            </div>
             {!fotoBase64 ? (
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="p-2 rounded bg-slate-700 border border-slate-600 text-white font-bold text-sm hover:bg-slate-600 active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="p-2.5 rounded bg-slate-700 border border-slate-600 text-white font-bold text-sm hover:bg-slate-600 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
               >
-                📸 Tirar Foto
+                📸 Tirar Foto / Anexar Imagem
               </button>
             ) : (
               <div className="relative">
-                <img src={fotoBase64} alt="Preview do Defeito" className="w-full h-32 object-cover rounded border border-slate-600" />
+                <img src={fotoBase64} alt="Preview da Vistoria" className="w-full h-36 object-cover rounded border border-slate-600" />
                 <button
                   type="button"
                   onClick={() => setFotoBase64(null)}
-                  className="absolute top-2 right-2 bg-red-600 text-white p-1 px-3 rounded-full font-bold text-xs shadow"
+                  className="absolute top-2 right-2 bg-red-600 text-white p-1 px-3 rounded-full font-bold text-xs shadow hover:bg-red-700 transition-colors"
                 >
-                  Remover
+                  Remover Foto
                 </button>
               </div>
             )}

@@ -12,6 +12,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     return localStorage.getItem('lastReportType') || 'interno';
   });
 
+  const isGestorOrAdmin = currentUser?.role === 'admin' || currentUser?.role === 'gestor';
+
   useEffect(() => {
     localStorage.setItem('lastReportType', reportType);
   }, [reportType]);
@@ -514,6 +516,10 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   
   const handleGenerateSeiProcess = () => {
+    if (!isGestorOrAdmin) {
+      alert('Acesso restrito: A integração com processo SEI é exclusiva para Gestores e Administradores.');
+      return;
+    }
     const dataPack = {
       rasPresentes,
       total,
@@ -691,6 +697,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                 <span>Exportar Planilha (CSV)</span>
               </button>
 
+              {isGestorOrAdmin && (
                 <button 
                   onClick={() => { setShowSeiModal(true); setIsExportMenuOpen(false); }}
                   className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors border-t border-slate-700"
@@ -698,6 +705,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                   <span className="shrink-0">🚀</span>
                   <span className="text-emerald-400">Gerar Processo no SEI</span>
                 </button>
+              )}
 
             </div>
           )}

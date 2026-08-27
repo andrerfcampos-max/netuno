@@ -1196,7 +1196,7 @@ function App() {
                         <Building2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
                         <div className="flex flex-col min-w-0">
                           <span className="text-sm font-semibold text-emerald-300 group-hover:text-white transition-colors">
-                            Estudo PREPOP
+                            Estudos PREPOP das edificações
                           </span>
                           <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
                             Informações importantes para operações de incêndio
@@ -1217,7 +1217,7 @@ function App() {
                         className="flex items-center gap-2.5 w-full px-3 py-2.5 text-left bg-purple-900/30 text-purple-400 font-semibold rounded-lg hover:bg-purple-900/50 transition-all text-sm"
                       >
                         <Calculator size={18} className="text-purple-400 shrink-0" />
-                        Estudo Técnico
+                        Parecer técnico de Hidrante
                       </a>
                     )}
                     {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (

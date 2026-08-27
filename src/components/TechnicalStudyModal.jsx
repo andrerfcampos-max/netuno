@@ -425,7 +425,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
             ← Voltar
           </button>
           <Calculator className="text-emerald-400" size={24} />
-          <h2 className="text-xl font-bold text-white">Módulo de Estudo Técnico</h2>
+          <h2 className="text-xl font-bold text-white">Parecer Técnico de Hidrante</h2>
         </div>
         <div className="flex items-center gap-3">
           {results && (

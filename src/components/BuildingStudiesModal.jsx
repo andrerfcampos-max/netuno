@@ -250,7 +250,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
         <div className="px-4 py-2.5 sm:px-6 bg-gradient-to-r from-blue-950/80 via-slate-800/80 to-blue-950/80 border-b border-blue-900/40 flex items-center gap-2.5 text-xs sm:text-sm text-blue-200">
           <Radio size={16} className="text-cyan-400 shrink-0 animate-pulse" />
           <p className="leading-snug">
-            Escolha a cidade e verifique as informações pre cadastradas sobre as edificações para auxiliar na tomada de decisões das operações de incêndio.
+            Busque pela cidade e pelo nome da edificação. Acesse a ficha PREPOP e verifique as informações cadastradas para auxiliar a tomada de decisão durante a operação de incêndio.
           </p>
         </div>
 
