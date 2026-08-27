@@ -669,10 +669,10 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
                                                   m.percent === 100 
                                                     ? 'bg-emerald-500' 
                                                     : m.percent > 0 
-                                                      ? 'bg-gradient-to-r from-cyan-500 to-emerald-400' 
+                                                      ? 'bg-amber-500' 
                                                       : 'bg-transparent'
                                                 }`}
-                                                style={{ width: `${Math.max(0, m.percent)}%` }}
+                                                style={{ width: `${Math.min(100, Math.max(0, m.percent))}%` }}
                                               ></div>
                                               <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] whitespace-nowrap select-none">
                                                 {m.percent}%
