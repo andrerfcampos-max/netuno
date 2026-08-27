@@ -160,13 +160,9 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', 'hidrantes_filtrados.csv');
-    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
-    setTimeout(() => {
-      if (document.body.contains(link)) document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }, 1000);
+    document.body.removeChild(link);
   };
 
   const handleSortCode = () => {
