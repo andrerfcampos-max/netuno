@@ -690,6 +690,15 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                 <Download size={16} className="text-blue-400 shrink-0" />
                 <span>Exportar Planilha (CSV)</span>
               </button>
+
+                <button 
+                  onClick={() => { setShowSeiModal(true); setIsExportMenuOpen(false); }}
+                  className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors border-t border-slate-700"
+                >
+                  <span className="shrink-0">🚀</span>
+                  <span className="text-emerald-400">Gerar Processo no SEI</span>
+                </button>
+
             </div>
           )}
         </div>
