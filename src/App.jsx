@@ -527,7 +527,7 @@ function App() {
 
     // 2. Link Mágico
     const params = new URLSearchParams(window.location.search);
-    const ds = params.get('ds');
+    const ds = params.get('ds') || params.get('route');
     if (ds) {
       const ids = ds.split(',').filter(Boolean);
       if (ids.length > 0) {

@@ -576,9 +576,13 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
     link.setAttribute("download", `relatorio_${reportType}_${new Date().getTime()}.csv`);
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    setTimeout(() => {
+      if (document.body.contains(link)) document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 1000);
   };
 
   const scrollToTop = () => {
