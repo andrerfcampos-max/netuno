@@ -7,6 +7,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   const panelRef = useRef(null);
   const [copied, setCopied] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [showSeiModal, setShowSeiModal] = useState(false);
   const [reportType, setReportType] = useState(() => {
     return localStorage.getItem('lastReportType') || 'interno';
   });
@@ -511,6 +512,25 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     window.open(url, '_blank');
   };
 
+  
+  const handleGenerateSeiProcess = () => {
+    const dataPack = {
+      rasPresentes,
+      total,
+      operantes,
+      inoperantes,
+      operantesPercent,
+      inoperantesPercent,
+      ano: new Date().getFullYear(),
+      origem: 'SEHUR/SUOMA',
+      destino: 'SEHUR/SUTEC',
+      htmlContent: document.getElementById('report-content-to-print')?.innerHTML || ''
+    };
+    localStorage.setItem('netuno_sei_data', JSON.stringify(dataPack));
+    setShowSeiModal(false);
+    window.open('https://sei.df.gov.br', '_blank');
+  };
+  
   const handleExportCSV = () => {
     let headers = [];
     let rows = [];
@@ -595,7 +615,39 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         }
       `}</style>
       
-      {/* BOTÕES FLUTUANTES (ELEVADOR + EXPORTAÇÃO RÁPIDA) */}
+      
+  {showSeiModal && (
+    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-md shadow-2xl overflow-hidden">
+        <div className="bg-emerald-600/20 p-4 border-b border-emerald-500/30 flex justify-between items-center">
+          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <span className="text-2xl">🚀</span> Integração SEI-GDF
+          </h3>
+          <button onClick={() => setShowSeiModal(false)} className="text-slate-400 hover:text-white"><X size={24} /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="bg-slate-700/50 p-4 rounded-lg space-y-2">
+            <p className="text-slate-300"><span className="font-semibold text-white">Cidade (RA):</span> {rasPresentes || 'Todas as Cidades'}</p>
+            <p className="text-slate-300"><span className="font-semibold text-white">Total de Hidrantes:</span> {total}</p>
+            <p className="text-slate-300"><span className="font-semibold text-white">Inoperantes:</span> {inoperantes} ({inoperantesPercent}%)</p>
+            <hr className="border-slate-600 my-2" />
+            <p className="text-slate-300"><span className="font-semibold text-white">Unidade Origem:</span> SEHUR/SUOMA</p>
+            <p className="text-slate-300"><span className="font-semibold text-white">Destino Teste:</span> SEHUR/SUTEC</p>
+          </div>
+          <p className="text-sm text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20">
+            Atenção: Ao confirmar, a extensão do navegador assumirá o controle no SEI para gerar o processo automaticamente.
+          </p>
+        </div>
+        <div className="p-4 bg-slate-800/80 border-t border-slate-700 flex justify-end gap-3">
+          <button onClick={() => setShowSeiModal(false)} className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 font-semibold transition-colors">Cancelar</button>
+          <button onClick={handleGenerateSeiProcess} className="px-5 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 font-bold transition-all shadow-lg">Iniciar Automação</button>
+        </div>
+      </div>
+    </div>
+  )}
+  
+
+        {/* BOTÕES FLUTUANTES (ELEVADOR + EXPORTAÇÃO RÁPIDA) */}
       <div className="fixed right-3 sm:right-4 bottom-20 sm:bottom-24 z-50 flex flex-col gap-2 no-print">
         {/* Botão Flutuante de Compartilhar/Exportar */}
         <div className="relative">
