@@ -165,44 +165,94 @@ export const INITIAL_BUILDING_STUDIES = [
   }
 ];
 
+let cachedPrepopData = null;
+const CUSTOM_STORAGE_KEY = 'netuno_custom_building_studies';
+const DELETED_STORAGE_KEY = 'netuno_deleted_building_studies';
+
+const getCustomStudies = () => {
+  try {
+    const raw = localStorage.getItem(CUSTOM_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.warn('Erro ao ler custom studies:', e);
+    return [];
+  }
+};
+
+const getDeletedStudyIds = () => {
+  try {
+    const raw = localStorage.getItem(DELETED_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+};
+
 export const loadPrepopBuildingStudies = async () => {
+  if (cachedPrepopData && cachedPrepopData.length > 0) {
+    return getBuildingStudies();
+  }
   try {
     const res = await fetch('/prepop_estabelecimentos.json');
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        return data;
+        cachedPrepopData = data;
+        return getBuildingStudies();
       }
     }
   } catch (e) {
     console.warn('Fallback para estudos de edificação embutidos:', e);
   }
-  return INITIAL_BUILDING_STUDIES;
+  cachedPrepopData = INITIAL_BUILDING_STUDIES;
+  return getBuildingStudies();
 };
 
 /**
- * Obtém todos os estudos de edificações salvos no localStorage (com fallback para os dados iniciais)
+ * Obtém todos os estudos de edificações combinando base PREPOP + customizações do usuário
  */
 export const getBuildingStudies = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_BUILDING_STUDIES));
-      return INITIAL_BUILDING_STUDIES;
+  const base = cachedPrepopData && cachedPrepopData.length > 0 ? cachedPrepopData : INITIAL_BUILDING_STUDIES;
+  const customs = getCustomStudies();
+  const deletedIds = new Set(getDeletedStudyIds());
+
+  // Mapear atualizações personalizadas sobre base
+  const customMap = new Map();
+  customs.forEach(c => customMap.set(c.id, c));
+
+  const merged = [];
+
+  // Adicionar customs novos primeiro
+  customs.forEach(c => {
+    if (!deletedIds.has(c.id) && !base.some(b => b.id === c.id)) {
+      merged.push({
+        ...c,
+        nomeEstabelecimento: c.nomeEstabelecimento || c.nomeFantasia || c.razaoSocial || 'Edificação Sem Nome'
+      });
     }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed.map(s => ({
-        ...s,
-        nomeEstabelecimento: s.nomeEstabelecimento || s.nomeFantasia || s.razaoSocial || 'Edificação Sem Nome'
-      }));
+  });
+
+  // Processar itens da base
+  base.forEach(b => {
+    if (deletedIds.has(b.id)) return;
+    if (customMap.has(b.id)) {
+      merged.push({
+        ...customMap.get(b.id),
+        nomeEstabelecimento: customMap.get(b.id).nomeEstabelecimento || customMap.get(b.id).nomeFantasia || customMap.get(b.id).razaoSocial || 'Edificação Sem Nome'
+      });
+    } else {
+      merged.push({
+        ...b,
+        nomeEstabelecimento: b.nomeEstabelecimento || b.nomeFantasia || b.razaoSocial || 'Edificação Sem Nome'
+      });
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_BUILDING_STUDIES));
-    return INITIAL_BUILDING_STUDIES;
-  } catch (e) {
-    console.warn('Erro ao carregar estudos de edificações do localStorage:', e);
-    return INITIAL_BUILDING_STUDIES;
-  }
+  });
+
+  return merged;
 };
 
 /**
@@ -210,35 +260,40 @@ export const getBuildingStudies = () => {
  */
 export const saveBuildingStudy = (studyData) => {
   try {
-    const studies = getBuildingStudies();
+    const customs = getCustomStudies();
     const now = new Date().toISOString().split('T')[0];
     
-    let updated;
+    let updatedCustoms;
+    let savedId = studyData.id;
+
     if (studyData.id) {
       // Atualização
-      updated = studies.map(s => {
-        if (s.id === studyData.id) {
-          return {
-            ...s,
-            ...studyData,
-            ultimaAtualizacao: now
-          };
-        }
-        return s;
-      });
+      const existingIdx = customs.findIndex(s => s.id === studyData.id);
+      const updatedStudy = {
+        ...studyData,
+        ultimaAtualizacao: now
+      };
+      if (existingIdx >= 0) {
+        updatedCustoms = customs.map(s => s.id === studyData.id ? updatedStudy : s);
+      } else {
+        updatedCustoms = [updatedStudy, ...customs];
+      }
     } else {
       // Novo cadastro
+      savedId = `ppo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const newStudy = {
         ...studyData,
-        id: `ppo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        id: savedId,
         dataCadastro: now,
         ultimaAtualizacao: now
       };
-      updated = [newStudy, ...studies];
+      updatedCustoms = [newStudy, ...customs];
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    return { success: true, data: updated };
+    localStorage.setItem(CUSTOM_STORAGE_KEY, JSON.stringify(updatedCustoms));
+    
+    const all = getBuildingStudies();
+    return { success: true, data: all, studyId: savedId };
   } catch (e) {
     console.error('Erro ao salvar estudo de edificação:', e);
     return { success: false, error: e.message };
@@ -250,10 +305,18 @@ export const saveBuildingStudy = (studyData) => {
  */
 export const deleteBuildingStudy = (studyId) => {
   try {
-    const studies = getBuildingStudies();
-    const filtered = studies.filter(s => s.id !== studyId);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    return { success: true, data: filtered };
+    const customs = getCustomStudies();
+    const filteredCustoms = customs.filter(s => s.id !== studyId);
+    localStorage.setItem(CUSTOM_STORAGE_KEY, JSON.stringify(filteredCustoms));
+
+    const deletedIds = getDeletedStudyIds();
+    if (!deletedIds.includes(studyId)) {
+      deletedIds.push(studyId);
+      localStorage.setItem(DELETED_STORAGE_KEY, JSON.stringify(deletedIds));
+    }
+
+    const all = getBuildingStudies();
+    return { success: true, data: all };
   } catch (e) {
     console.error('Erro ao excluir estudo de edificação:', e);
     return { success: false, error: e.message };

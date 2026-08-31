@@ -58,6 +58,7 @@ const RA_NORMALIZATION = {
   'JARDIM BOTANICO': 'Jardim Botânico',
   'JARDIM BOTÂNICO': 'Jardim Botânico',
   'SOL NASCENTE/POR DO SOL': 'Sol Nascente/Pôr do Sol',
+  'SOL NASCENTE': 'Sol Nascente/Pôr do Sol',
   'ARNIQUEIRA': 'Arniqueira'
 };
 
@@ -88,11 +89,45 @@ const OBM_TO_RA = {
   '45º GBM': 'Sudoeste/Octogonal'
 };
 
+const RA_DEFAULT_COORDS = {
+  'Brasília': { lat: -15.7942, lng: -47.8822 },
+  'Taguatinga': { lat: -15.8331, lng: -48.0566 },
+  'Ceilândia': { lat: -15.8197, lng: -48.1106 },
+  'Samambaia': { lat: -15.8732, lng: -48.0851 },
+  'Gama': { lat: -16.0152, lng: -48.0645 },
+  'Santa Maria': { lat: -16.0028, lng: -47.9972 },
+  'Planaltina': { lat: -15.6237, lng: -47.6541 },
+  'Sobradinho': { lat: -15.6543, lng: -47.7915 },
+  'Sobradinho II': { lat: -15.6322, lng: -47.8189 },
+  'Guará': { lat: -15.8282, lng: -47.9822 },
+  'Águas Claras': { lat: -15.8398, lng: -48.0245 },
+  'Núcleo Bandeirante': { lat: -15.8686, lng: -47.9625 },
+  'Candangolândia': { lat: -15.8542, lng: -47.9508 },
+  'Riacho Fundo I': { lat: -15.8822, lng: -48.0167 },
+  'Riacho Fundo II': { lat: -15.9011, lng: -48.0578 },
+  'Recanto das Emas': { lat: -15.9083, lng: -48.0711 },
+  'São Sebastião': { lat: -15.9036, lng: -47.7719 },
+  'Paranoá': { lat: -15.7725, lng: -47.7778 },
+  'Itapoã': { lat: -15.7489, lng: -47.7656 },
+  'Brazlândia': { lat: -15.6764, lng: -48.2047 },
+  'Lago Sul': { lat: -15.8456, lng: -47.8767 },
+  'Lago Norte': { lat: -15.7367, lng: -47.8489 },
+  'SIA': { lat: -15.8167, lng: -47.9556 },
+  'SCIA / Estrutural': { lat: -15.7833, lng: -47.9889 },
+  'Sudoeste/Octogonal': { lat: -15.7989, lng: -47.9256 },
+  'Varjão': { lat: -15.7167, lng: -47.8833 },
+  'Park Way': { lat: -15.8944, lng: -47.9472 },
+  'Vicente Pires': { lat: -15.8083, lng: -48.0278 },
+  'Jardim Botânico': { lat: -15.8806, lng: -47.8139 },
+  'Sol Nascente/Pôr do Sol': { lat: -15.8289, lng: -48.1472 },
+  'Arniqueira': { lat: -15.8583, lng: -48.0167 }
+};
+
 function normalizeRA(rawText, obmDescription) {
   if (!rawText && obmDescription && OBM_TO_RA[obmDescription]) {
     return OBM_TO_RA[obmDescription];
   }
-  if (!rawText) return 'Brasília';
+  if (!rawText) return obmDescription && OBM_TO_RA[obmDescription] ? OBM_TO_RA[obmDescription] : 'Brasília';
   const upper = String(rawText).toUpperCase().trim();
   for (const [key, val] of Object.entries(RA_NORMALIZATION)) {
     if (upper.includes(key)) return val;
@@ -103,48 +138,80 @@ function normalizeRA(rawText, obmDescription) {
   return 'Brasília';
 }
 
-function parseCoordinate(val) {
+function parseSingleCoord(val) {
   if (val === undefined || val === null || val === '') return null;
-  if (typeof val === 'number') return val;
+  if (typeof val === 'number') {
+    if (Math.abs(val) > 100) {
+      let f = val;
+      while (Math.abs(f) > 100) f /= 10;
+      return parseFloat((f > 0 ? -f : f).toFixed(6));
+    }
+    return parseFloat(val.toFixed(6));
+  }
   let str = String(val).trim().replace(',', '.');
+  
   const dmsMatch = str.match(/(\d+)º\s*(\d+)['’]\s*([\d.]+)[”"]?\s*([SWNE]?)/i);
   if (dmsMatch) {
     const deg = parseFloat(dmsMatch[1]);
     const min = parseFloat(dmsMatch[2]);
     const sec = parseFloat(dmsMatch[3]);
-    const dir = dmsMatch[4].toUpperCase();
+    const dir = (dmsMatch[4] || '').toUpperCase();
     let dec = deg + (min / 60) + (sec / 3600);
-    if (dir === 'S' || dir === 'W') dec = -dec;
+    if (dir === 'S' || dir === 'W' || (!dir && deg > 0)) dec = -dec;
     return parseFloat(dec.toFixed(6));
   }
+
   const num = parseFloat(str);
   if (!isNaN(num)) {
-    if (Math.abs(num) > 1000) {
-      const fixed = num / 100000;
-      return fixed > 0 ? -fixed : fixed;
+    if (Math.abs(num) > 100) {
+      let f = num;
+      while (Math.abs(f) > 100) f /= 10;
+      return parseFloat((f > 0 ? -f : f).toFixed(6));
     }
     return parseFloat(num.toFixed(6));
   }
   return null;
 }
 
-function extractCoordinatesFromText(text) {
-  if (!text) return null;
-  const match = String(text).match(/coord\.?\s*([-\d.,º'"\sSWNE]+)/i);
-  if (match) {
-    const rawCoords = match[1].trim();
-    const parts = rawCoords.split(/,|\s{2,}/);
-    if (parts.length >= 2) {
-      const lat = parseCoordinate(parts[0]);
-      const lng = parseCoordinate(parts[1]);
-      if (lat && lng) return { lat, lng };
+function parseCoordinatePair(rawStr) {
+  if (!rawStr) return null;
+  let str = String(rawStr);
+
+  const hrefMatch = str.match(/maps\?q=([-\d.,º'"\sSWNE]+)/i);
+  if (hrefMatch) {
+    str = hrefMatch[1];
+  }
+
+  const parts = str.split(/[,;\/]+|\s{2,}/).map(s => s.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const lat = parseSingleCoord(parts[0]);
+    const lng = parseSingleCoord(parts[1]);
+    if (isValidDF(lat, lng)) {
+      return { lat, lng };
     }
   }
+
+  const decMatches = str.match(/-1[56]\.\d+|-4[78]\.\d+/g);
+  if (decMatches && decMatches.length >= 2) {
+    const lat = parseFloat(decMatches[0]);
+    const lng = parseFloat(decMatches[1]);
+    if (isValidDF(lat, lng)) {
+      return { lat, lng };
+    }
+  }
+
   return null;
 }
 
+function isValidDF(lat, lng) {
+  return typeof lat === 'number' && typeof lng === 'number' &&
+         !isNaN(lat) && !isNaN(lng) &&
+         lat <= -15.0 && lat >= -16.6 &&
+         lng <= -47.0 && lng >= -48.6;
+}
+
 function normalizeOccupancy(tipoDesc) {
-  if (!tipoDesc) return 'Outros';
+  if (!tipoDesc || String(tipoDesc).trim() === '') return '-';
   const upper = String(tipoDesc).toUpperCase().trim();
   if (upper.includes('ESCOL')) return 'Escolar / Educacional';
   if (upper.includes('COMERC')) return 'Comercial';
@@ -158,19 +225,20 @@ function normalizeOccupancy(tipoDesc) {
 }
 
 function cleanAddress(addr) {
-  if (!addr) return '';
-  return String(addr)
+  if (!addr || String(addr).trim() === '') return '-';
+  const cleaned = String(addr)
     .replace(/coord\.?\s*([-\d.,º'"\sSWNE]+)/gi, '')
     .replace(/complemento\s*-\s*$/i, '')
     .replace(/-\s*DF,?\s*\d{5}-?\d{3}/gi, '')
     .replace(/,\s*Brasília\s*-\s*DF/gi, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
+  return cleaned || '-';
 }
 
 function expandSchoolName(name, ra) {
-  if (!name) return name;
-  let expanded = String(name);
+  if (!name || String(name).trim() === '') return '';
+  let expanded = String(name).trim();
   expanded = expanded.replace(/\bEC\s*(\d+)\b/gi, 'Escola Classe $1');
   expanded = expanded.replace(/\bCEF\s*(\d+)\b/gi, 'Centro de Ensino Fundamental $1');
   expanded = expanded.replace(/\bCEM\s*(\d+)\b/gi, 'Centro de Ensino Médio $1');
@@ -232,105 +300,209 @@ function extractEstablishmentName(row, ra) {
   if (tipo.includes('COMERC')) return 'Estabelecimento Comercial (' + cleanAddr + ')';
   if (tipo.includes('RESID')) return 'Edificação Residencial (' + cleanAddr + ')';
   if (tipo.includes('CONCENTRA')) return 'Local de Reunião de Público (' + cleanAddr + ')';
-  return cleanAddr || 'Edificação Cadastrada - ' + ra;
+  return cleanAddr && cleanAddr !== '-' ? cleanAddr : 'Edificação Cadastrada - ' + ra;
+}
+
+function cleanVal(v) {
+  if (v === undefined || v === null) return '-';
+  const str = String(v).trim();
+  if (str === '' || str.toLowerCase() === 'não informado' || str.toLowerCase() === 'nao informado' || str.toLowerCase() === 'não cadastrada' || str.toLowerCase() === 'nao cadastrada' || str.toLowerCase() === 'null') {
+    return '-';
+  }
+  return str;
+}
+
+function determineHazard(row) {
+  const classe = String(row.classedeincendiopredominante || '').toUpperCase().trim();
+  const tipo = String(row.tipodescription || '').toUpperCase().trim();
+  if (classe.includes('B') || classe.includes('C') || classe.includes('D') || tipo.includes('INDUS') || tipo.includes('ARMAZEN') || tipo.includes('POSTO')) {
+    return 'Alta';
+  }
+  if (classe.includes('A') || tipo.includes('COMERC') || tipo.includes('CONCENTRA') || tipo.includes('HOSP')) {
+    return 'Média';
+  }
+  return 'Baixa';
 }
 
 function processPrepopFile() {
-  const filePath = 'C:/Users/andre/Downloads/oPERACIONALPREPOP-20260827032950.xlsx';
-  if (!fs.existsSync(filePath)) {
-    console.error('Arquivo não encontrado: ' + filePath);
-    return;
+  const possiblePaths = [
+    'C:/Users/andre/Downloads/oPERACIONALPREPOP-20260827032950.xlsx',
+    path.resolve(__dirname, '../oPERACIONALPREPOP-20260827032950.xlsx'),
+    path.resolve(__dirname, '../../oPERACIONALPREPOP-20260827032950.xlsx')
+  ];
+
+  let filePath = possiblePaths.find(p => fs.existsSync(p));
+  if (!filePath) {
+    console.error('Arquivo PREPOP não encontrado em nenhum dos caminhos:', possiblePaths);
+    process.exit(1);
   }
+
   console.log('Lendo arquivo PREPOP: ' + filePath + '...');
   const wb = xlsx.readFile(filePath);
   const sheetName = wb.SheetNames[0];
   const rawRows = xlsx.utils.sheet_to_json(wb.Sheets[sheetName], { defval: '' });
-  console.log('Total de linhas brutas: ' + rawRows.length);
+  console.log('Total de registros brutos: ' + rawRows.length);
 
   const processedList = [];
-  let extractedCount = 0;
 
   rawRows.forEach((row, idx) => {
-    const obm = row.obmdescription || '';
-    const ra = normalizeRA(row.dsc_endereco || row.enddescription || row.enderecofinal || '', obm);
+    const obm = cleanVal(row.obmdescription);
+    const obmText = obm !== '-' ? obm : '';
+    const ra = normalizeRA(row.dsc_endereco || row.enddescription || row.enderecofinal || '', obmText);
 
-    let lat = parseCoordinate(row.endlat || row.obmlatituade);
-    let lng = parseCoordinate(row.endllong || row.obmlongitude);
-
-    if (!lat || !lng || lat > -15.0 || lat < -16.6 || lng < -48.6 || lng > -47.0) {
-      const extractedCoords = extractCoordinatesFromText(row.dsc_endereco || row.enderecofinal);
-      if (extractedCoords) {
-        lat = extractedCoords.lat;
-        lng = extractedCoords.lng;
+    let coords = null;
+    if (row.endlat && row.endllong) {
+      const lat = parseSingleCoord(row.endlat);
+      const lng = parseSingleCoord(row.endllong);
+      if (isValidDF(lat, lng)) {
+        coords = { lat, lng };
       }
     }
-    if (!lat || !lng || lat > -15.0 || lat < -16.6 || lng < -48.6 || lng > -47.0) {
-      lat = -15.794200;
-      lng = -47.882200;
+    if (!coords && row.coodernadasdogooglemaps) {
+      coords = parseCoordinatePair(row.coodernadasdogooglemaps);
+    }
+    if (!coords && row.irparamapa) {
+      coords = parseCoordinatePair(row.irparamapa);
+    }
+    if (!coords && row.vermapa) {
+      coords = parseCoordinatePair(row.vermapa);
+    }
+    if (!coords && row.dsc_endereco) {
+      const coordMatch = row.dsc_endereco.match(/coord\.?\s*([-\d.,º'"\sSWNE]+)/i);
+      if (coordMatch) coords = parseCoordinatePair(coordMatch[1]);
+    }
+    if (!coords && row.obmlatituade && row.obmlongitude) {
+      const lat = parseSingleCoord(row.obmlatituade);
+      const lng = parseSingleCoord(row.obmlongitude);
+      if (isValidDF(lat, lng)) {
+        coords = { lat, lng };
+      }
+    }
+    if (!coords) {
+      coords = RA_DEFAULT_COORDS[ra] || { lat: -15.7942, lng: -47.8822 };
     }
 
-    const nomeEstabelecimento = extractEstablishmentName(row, ra);
-    if (!row.estabelecimento || String(row.estabelecimento).trim() === '') {
-      extractedCount++;
-    }
-
+    const nomeEstabelecimento = extractEstablishmentName(row, ra) || 'Edificação ' + (row.cod_levantamento || idx + 1);
     const enderecoLimpo = cleanAddress(row.enddescription || row.dsc_endereco || row.enderecofinal);
     const ocupacao = normalizeOccupancy(row.tipodescription);
+    const cargaIncendio = determineHazard(row);
 
     const possuiSubsolo = String(row.possuisubsolo).toLowerCase() === 'true' || String(row.possuisubsolo).toLowerCase() === 'sim' || row.possuisubsolo === true;
     const centralGas = String(row.centraldegas).toLowerCase() === 'true' || String(row.centraldegas).toLowerCase() === 'sim' || row.centraldegas === true;
     const apoioAutoescada = String(row.possuilocalparaapoiodeviaturastipoautoescada).toLowerCase() === 'true' || String(row.possuilocalparaapoiodeviaturastipoautoescada).toLowerCase() === 'sim' || row.possuilocalparaapoiodeviaturastipoautoescada === true;
 
-    const cepMatch = (row.dsc_endereco || '').match(/\b\d{5}-?\d{3}\b/);
+    const cepMatch = (row.dsc_endereco || row.enderecofinal || '').match(/\b\d{5}-?\d{3}\b/);
+    const cepLimpo = cepMatch ? cepMatch[0] : '-';
+
+    const respVistoria = cleanVal(row.responsavelnome);
+    const dataVistoria = cleanVal(row.responsaveldata);
+    const melhorAcesso = cleanVal(row.melhoracesso);
+    const pontoImpedimento = cleanVal(row.pontoquepodeimpediraatividadedebm);
+    const materialInflamavel = cleanVal(row.materialinflamavelarmazenadolocalizacao);
+    const vulnerabilidades = cleanVal(row.vulnerabilidadeencontradas);
+    const sistemasExistentes = cleanVal(row.sistemaspreventivosexistentes);
+    const quadroEnergia = cleanVal(row.localizacaodoquadrodeenergia);
+    const locGas = cleanVal(row.localizacao);
+    const hidranteProxDesc = cleanVal(row.hidrantemaisproximo);
 
     const item = {
       id: 'prepop_' + (row.cod_levantamento || idx + 1),
-      codLevantamento: row.cod_levantamento || idx + 1,
+      codLevantamento: row.cod_levantamento || (idx + 1),
       nomeEstabelecimento: nomeEstabelecimento,
       nomeFantasia: nomeEstabelecimento,
       razaoSocial: nomeEstabelecimento,
       ra: ra,
-      endereco: enderecoLimpo || 'Endereço não especificado',
-      cep: cepMatch ? cepMatch[0] : '',
-      numLatitude: lat,
-      numLongitude: lng,
+      endereco: enderecoLimpo,
+      cep: cepLimpo,
+      numLatitude: coords.lat,
+      numLongitude: coords.lng,
       ocupacao: ocupacao,
-      construcao: row.construcao || 'Alvenaria',
-      qtdPavimentos: row.qtdpavimentos || 1,
-      corPredominante: row.corpredominante || '',
-      hidranteMaisProximoDesc: row.hidrantemaisproximo || '',
+      construcao: cleanVal(row.construcao),
+      qtdPavimentos: row.qtdpavimentos ? Number(row.qtdpavimentos) || 1 : 1,
+      corPredominante: cleanVal(row.corpredominante),
+      hidranteMaisProximoDesc: hidranteProxDesc,
       possuisubsolo: possuiSubsolo,
       centraldegas: centralGas,
-      localizacaoCentralGas: row.localizacao || '',
-      localizacaoQuadroEnergia: row.localizacaodoquadrodeenergia || '',
-      qtdAcessos: row.qtddeacessos || 1,
-      melhorAcesso: row.melhoracesso || 'Entrada Principal',
+      localizacaoCentralGas: centralGas ? (locGas !== '-' ? locGas : 'Possui central de gás') : '-',
+      localizacaoQuadroEnergia: quadroEnergia,
+      qtdAcessos: row.qtddeacessos ? (Number(row.qtddeacessos) || 1) : 1,
+      melhorAcesso: melhorAcesso,
       apoioAutoescada: apoioAutoescada,
-      pontoImpedimento: row.pontoquepodeimpediraatividadedebm || 'Nenhum',
-      materialInflamavel: row.materialinflamavelarmazenadolocalizacao || 'Nenhum',
-      classeIncendio: row.classedeincendiopredominante || 'A',
-      vulnerabilidades: row.vulnerabilidadeencontradas || 'Nenhuma vulnerabilidade crítica registrada.',
-      sistemasPreventivos: row.sistemaspreventivosexistentes || 'Extintores',
-      responsavelVistoria: row.responsavelnome || '',
-      dataLevantamento: row.responsaveldata || '2026-08-27',
-      obmResponsavel: obm || '',
+      pontoImpedimento: pontoImpedimento,
+      materialInflamavel: materialInflamavel,
+      classeIncendio: cleanVal(row.classedeincendiopredominante) !== '-' ? cleanVal(row.classedeincendiopredominante) : 'A',
+      vulnerabilidades: vulnerabilidades,
+      sistemasPreventivos: sistemasExistentes,
+      responsavelVistoria: respVistoria,
+      dataLevantamento: dataVistoria,
+      obmResponsavel: obm,
       fotoFachada: '',
-      croquiPlanta: ''
+      croquiPlanta: '',
+
+      populacaoFixa: '-',
+      populacaoFlutuante: '-',
+      populacaoPrioritaria: vulnerabilidades !== '-' && (vulnerabilidades.toUpperCase().includes('CRIANÇA') || vulnerabilidades.toUpperCase().includes('IDOSO') || vulnerabilidades.toUpperCase().includes('HOSP') || vulnerabilidades.toUpperCase().includes('ALTO')) ? vulnerabilidades : '-',
+      contatos: [
+        {
+          nome: respVistoria !== '-' ? respVistoria : 'Vistoriador CBMDF',
+          funcao: obm !== '-' ? `Vistoriador CBMDF (${obm})` : 'Vistoriador CBMDF',
+          telefone: '-'
+        }
+      ],
+      viaPrincipal: melhorAcesso !== '-' ? melhorAcesso : (enderecoLimpo !== '-' ? enderecoLimpo : '-'),
+      viaAlternativa: '-',
+      restricoesViarias: pontoImpedimento,
+      posicionamentoABT: melhorAcesso !== '-' ? `Acesso sugerido: ${melhorAcesso}` : '-',
+      posicionamentoAET: apoioAutoescada ? 'Possui local para apoio e armação de viatura Autoescada (AET)' : (row.possuilocalparaapoiodeviaturastipoautoescada !== '' ? 'Sem apoio específico para viatura Autoescada (AET)' : '-'),
+      postoComando: '-',
+      acvStart: '-',
+      volumeRTI: '-',
+      registroRecalqueTipo: '-',
+      registroRecalqueLocal: '-',
+      hidrantesProximos: hidranteProxDesc !== '-' ? [
+        {
+          codigo: 'PREPOP',
+          endereco: hidranteProxDesc,
+          distancia: '-',
+          diametro: '-',
+          status: 'Operante'
+        }
+      ] : [],
+      mananciaisAlternativos: '-',
+      chaveGeralEnergia: quadroEnergia,
+      valvulaGeralGas: centralGas ? (locGas !== '-' ? locGas : 'Possui central de gás') : '-',
+      sprinklersVGA: sistemasExistentes !== '-' && sistemasExistentes.toUpperCase().includes('SPRINK') ? sistemasExistentes : '-',
+      escadasPressurizacao: row.qtdpavimentos ? `${row.qtdpavimentos} pavimento(s)` : '-',
+      geradorEmergencia: '-',
+      cargaIncendio: cargaIncendio,
+      produtosPerigosos: materialInflamavel,
+      areasCriticas: vulnerabilidades,
+      riscoColapso: `Estrutura: ${cleanVal(row.construcao)}, ${row.qtdpavimentos || 1} pavimento(s)${cleanVal(row.corpredominante) !== '-' ? ', cor ' + cleanVal(row.corpredominante) : ''}`,
+      informacoesExtras: `Levantamento PREPOP realizado em ${dataVistoria} por ${respVistoria} (${obm}). Acessos: ${row.qtddeacessos || '-'}. Hidrante mais próximo: ${hidranteProxDesc}. Subsolo: ${possuiSubsolo ? 'Sim' : 'Não'}. Central de gás: ${centralGas ? (locGas !== '-' ? locGas : 'Sim') : 'Não'}. Sistemas: ${sistemasExistentes}.`,
+      dataCadastro: dataVistoria !== '-' ? dataVistoria : '2026-08-27',
+      ultimaAtualizacao: dataVistoria !== '-' ? dataVistoria : '2026-08-27'
     };
 
     processedList.push(item);
   });
 
-  console.log('Processamento concluído: ' + processedList.length + ' estabelecimentos.');
-  console.log('Nomes recuperados/higienizados: ' + extractedCount);
+  console.log(`Processamento concluído com sucesso: ${processedList.length} estabelecimentos PREPOP.`);
 
-  if (!fs.existsSync(path.resolve(__dirname, '../public'))) {
-    fs.mkdirSync(path.resolve(__dirname, '../public'), { recursive: true });
+  const publicDir = path.resolve(__dirname, '../public');
+  if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
   }
 
-  const outputPath = path.resolve(__dirname, '../public/prepop_estabelecimentos.json');
+  const outputPath = path.resolve(publicDir, 'prepop_estabelecimentos.json');
   fs.writeFileSync(outputPath, JSON.stringify(processedList, null, 2), 'utf8');
   console.log('Arquivo salvo em: ' + outputPath);
+
+  const distDir = path.resolve(__dirname, '../dist');
+  if (fs.existsSync(distDir)) {
+    const distOutputPath = path.resolve(distDir, 'prepop_estabelecimentos.json');
+    fs.writeFileSync(distOutputPath, JSON.stringify(processedList, null, 2), 'utf8');
+    console.log('Arquivo salvo no dist em: ' + distOutputPath);
+  }
 }
 
 processPrepopFile();

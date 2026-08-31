@@ -647,9 +647,7 @@ function App() {
   };
 
   const removeHydrantFromMission = (id) => {
-    if (window.confirm('Deseja realmente remover o hidrante desta missão?')) {
-      toggleMissionSelection(id);
-    }
+    toggleMissionSelection(id);
   };
 
   const toggleMissionSelection = (id) => {

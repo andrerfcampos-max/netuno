@@ -65,6 +65,8 @@ export default function BuildingStudiesModal({
   const [studies, setStudies] = useState([]);
   const [selectedCity, setSelectedCity] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(30);
   
   // Modais secundários
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -76,20 +78,21 @@ export default function BuildingStudiesModal({
   // Recarregar estudos
   useEffect(() => {
     if (isOpen) {
-      const local = getBuildingStudies();
-      if (local && local.length > 3) {
-        setStudies(local);
-      } else {
-        loadPrepopBuildingStudies().then(prepop => {
-          if (prepop && prepop.length > 0) {
-            setStudies(prepop);
-          } else {
-            setStudies(local);
-          }
-        });
-      }
+      setIsLoading(true);
+      loadPrepopBuildingStudies().then(all => {
+        setStudies(all);
+        setIsLoading(false);
+      }).catch(() => {
+        setStudies(getBuildingStudies());
+        setIsLoading(false);
+      });
     }
   }, [isOpen]);
+
+  // Reset pagination on filter or search changes
+  useEffect(() => {
+    setVisibleCount(30);
+  }, [selectedCity, searchTerm]);
 
   // Filtragem
   const filteredStudies = useMemo(() => {
@@ -154,54 +157,54 @@ export default function BuildingStudiesModal({
 
   // Compartilhar via WhatsApp estruturado para SCI / CBMDF
   const handleShareWhatsApp = (study) => {
-    const nomeEdificacao = (study.nomeFantasia || study.razaoSocial || 'ESTUDO DE EDIFICAÇÃO').toUpperCase();
+    const nomeEdificacao = (study.nomeFantasia || study.razaoSocial || study.nomeEstabelecimento || 'ESTUDO DE EDIFICAÇÃO').toUpperCase();
     const text = `🚨 *NETUNO - ${nomeEdificacao} (CBMDF)* 🚒
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-🏢 *EDIFICAÇÃO:* ${study.nomeFantasia || 'S/N'}
-🏛️ *Razão Social:* ${study.razaoSocial || 'N/I'}
-📍 *Endereço:* ${study.ra ? `${study.ra} - ` : ''}${study.endereco || 'N/I'}
-🏷️ *Ocupação:* ${study.ocupacao || 'N/I'} | *Carga de Incêndio:* ${study.cargaIncendio || 'N/I'}
-👥 *População Prioritária:* ${study.populacaoPrioritaria || 'Sem registro'}
+🏢 *EDIFICAÇÃO:* ${study.nomeFantasia || study.nomeEstabelecimento || '-'}
+🏛️ *Razão Social:* ${study.razaoSocial || '-'}
+📍 *Endereço:* ${study.ra ? `${study.ra} - ` : ''}${study.endereco || '-'}
+🏷️ *Ocupação:* ${study.ocupacao || '-'} | *Carga de Incêndio:* ${study.cargaIncendio || 'Média'}
+👥 *População Prioritária:* ${study.populacaoPrioritaria || '-'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚒 *TREM DE SOCORRO E ACESSOS:*
-• *Via Principal:* ${study.viaPrincipal || 'N/I'}
-• *Via Alternativa:* ${study.viaAlternativa || 'N/I'}
-• *Posicionamento ABT:* ${study.posicionamentoABT || 'N/I'}
-• *Posicionamento AET/Plataforma:* ${study.posicionamentoAET || 'N/I'}
-• *Posto de Comando (PC):* ${study.postoComando || 'N/I'}
-• *ACV / Triagem START:* ${study.acvStart || 'N/I'}
-⚠️ *Restrições/Gabaritos:* ${study.restricoesViarias || 'Nenhuma registrada'}
+• *Via Principal:* ${study.viaPrincipal || '-'}
+• *Via Alternativa:* ${study.viaAlternativa || '-'}
+• *Posicionamento ABT:* ${study.posicionamentoABT || '-'}
+• *Posicionamento AET/Plataforma:* ${study.posicionamentoAET || '-'}
+• *Posto de Comando (PC):* ${study.postoComando || '-'}
+• *ACV / Triagem START:* ${study.acvStart || '-'}
+⚠️ *Restrições/Gabaritos:* ${study.restricoesViarias || '-'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 💧 *RECURSOS HÍDRICOS:*
-• *Reserva Técnica (RTI):* ${study.volumeRTI || 'N/I'}
-• *Registro de Recalque:* ${study.registroRecalqueTipo || ''} - ${study.registroRecalqueLocal || 'N/I'}
+• *Reserva Técnica (RTI):* ${study.volumeRTI || '-'}
+• *Registro de Recalque:* ${study.registroRecalqueTipo && study.registroRecalqueTipo !== '-' ? `${study.registroRecalqueTipo} - ` : ''}${study.registroRecalqueLocal || '-'}
 • *Hidrantes CAESB Próximos:*
 ${study.hidrantesProximos && study.hidrantesProximos.length > 0 
-  ? study.hidrantesProximos.map(h => `  - ${h.codigo} (${h.distancia || ''}) | ${h.status} | ${h.endereco}`).join('\n')
+  ? study.hidrantesProximos.map(h => `  - ${h.codigo} (${h.distancia || '-'}) | ${h.status || 'Operante'} | ${h.endereco || '-'}`).join('\n')
   : '  - Consultar hidrantes urbanos no mapa Netuno'}
-• *Mananciais Alternativos:* ${study.mananciaisAlternativos || 'Não identificados'}
+• *Mananciais Alternativos:* ${study.mananciaisAlternativos || '-'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚡ *PONTOS DE CORTE E SISTEMAS:*
-• *Chave Geral Energia:* ${study.chaveGeralEnergia || 'N/I'}
-• *Válvula Geral de Gás:* ${study.valvulaGeralGas || 'N/I'}
-• *Sprinklers / VGA:* ${study.sprinklersVGA || 'N/I'}
-• *Escadas / Pressurização:* ${study.escadasPressurizacao || 'N/I'}
-• *Gerador:* ${study.geradorEmergencia || 'N/I'}
+• *Chave Geral Energia:* ${study.chaveGeralEnergia || '-'}
+• *Válvula Geral de Gás:* ${study.valvulaGeralGas || '-'}
+• *Sprinklers / VGA:* ${study.sprinklersVGA || '-'}
+• *Escadas / Pressurização:* ${study.escadasPressurizacao || '-'}
+• *Gerador:* ${study.geradorEmergencia || '-'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️ *RISCOS ESPECÍFICOS & COLAPSO:*
-• *Produtos Perigosos:* ${study.produtosPerigosos || 'Nenhum informado'}
-• *Áreas Críticas:* ${study.areasCriticas || 'N/I'}
-• *Risco de Colapso:* ${study.riscoColapso || 'N/I'}
+• *Produtos Perigosos:* ${study.produtosPerigosos || '-'}
+• *Áreas Críticas:* ${study.areasCriticas || '-'}
+• *Risco de Colapso:* ${study.riscoColapso || '-'}
 ${study.informacoesExtras ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📝 *INFORMAÇÕES EXTRAS & OBSERVAÇÕES:*\n${study.informacoesExtras}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 📞 *CONTATOS DE EMERGÊNCIA:*
 ${study.contatos && study.contatos.length > 0 
-  ? study.contatos.map(c => `• ${c.funcao || 'Contato'}: ${c.nome || ''} - Tel: ${c.telefone || ''}`).join('\n')
+  ? study.contatos.map(c => `• ${c.funcao || 'Contato'}: ${c.nome || '-'} - Tel: ${c.telefone || '-'}`).join('\n')
   : '• Sem contatos pré-cadastrados'}
 
 🗺️ *Waze:* https://waze.com/ul?ll=${study.numLatitude},${study.numLongitude}&navigate=yes
@@ -238,7 +241,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
                 Estudos PREPOP das Edificações
               </h2>
               <p className="text-[11px] sm:text-xs text-slate-400 truncate">
-                Fichas táticas e planejamento prévio de combate a incêndio
+                Plano de Reconhecimento Preventivo Operacional
               </p>
             </div>
           </div>
@@ -365,8 +368,24 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
         </div>
 
         {/* CORPO DA LISTAGEM DE ESTUDOS */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-950/50 space-y-3">
-          {filteredStudies.length === 0 ? (
+        <div 
+          onScroll={(e) => {
+            const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+            if (scrollTop + clientHeight >= scrollHeight - 350) {
+              if (visibleCount < filteredStudies.length) {
+                setVisibleCount(prev => Math.min(prev + 30, filteredStudies.length));
+              }
+            }
+          }}
+          className="flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-950/50 space-y-4"
+        >
+          {isLoading ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-8">
+              <div className="w-10 h-10 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mb-3"></div>
+              <p className="text-sm font-semibold text-slate-300">Carregando base PREPOP do DF...</p>
+              <p className="text-xs text-slate-500 mt-1">Carregando estabelecimentos e fichas táticas</p>
+            </div>
+          ) : filteredStudies.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-slate-900/40 border border-dashed border-slate-800 rounded-2xl">
               <Building2 size={48} className="text-slate-600 mb-3 animate-bounce" />
               <h3 className="text-base font-bold text-slate-300">Nenhum estudo de edificação encontrado</h3>
@@ -388,22 +407,39 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredStudies.map((study) => (
-                <BuildingTacticalCard
-                  key={study.id}
-                  study={study}
-                  onOpenTacticalView={() => setTacticalViewStudy(study)}
-                  onEdit={() => {
-                    setEditingStudy(study);
-                    setIsFormOpen(true);
-                  }}
-                  onDelete={() => setDeleteConfirmId(study.id)}
-                  onShareWhatsApp={() => handleShareWhatsApp(study)}
-                  onOpenZoom={(imgUrl) => setZoomImage(imgUrl)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {filteredStudies.slice(0, visibleCount).map((study) => (
+                  <BuildingTacticalCard
+                    key={study.id}
+                    study={study}
+                    onOpenTacticalView={() => setTacticalViewStudy(study)}
+                    onEdit={() => {
+                      setEditingStudy(study);
+                      setIsFormOpen(true);
+                    }}
+                    onDelete={() => setDeleteConfirmId(study.id)}
+                    onShareWhatsApp={() => handleShareWhatsApp(study)}
+                    onOpenZoom={(imgUrl) => setZoomImage(imgUrl)}
+                  />
+                ))}
+              </div>
+
+              {visibleCount < filteredStudies.length && (
+                <div className="flex flex-col items-center justify-center py-4 gap-2">
+                  <span className="text-xs text-slate-400">
+                    Exibindo {Math.min(visibleCount, filteredStudies.length)} de {filteredStudies.length} edificações
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount(prev => Math.min(prev + 30, filteredStudies.length))}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/40 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>Carregar mais (+30 edificações)</span>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -411,7 +447,14 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
         <div className="px-4 py-2.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 shrink-0">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Total de Edificações: <strong className="text-slate-200">{filteredStudies.length}</strong></span>
+            <span>
+              Total: <strong className="text-slate-200">{filteredStudies.length}</strong> edificações
+              {visibleCount < filteredStudies.length && (
+                <span className="text-slate-400 font-normal ml-1">
+                  (exibindo {Math.min(visibleCount, filteredStudies.length)})
+                </span>
+              )}
+            </span>
           </div>
           <span className="text-[11px] text-slate-500 hidden sm:inline">
             Netuno CBMDF • Módulo de Pré-Planejamento Operacional
@@ -512,7 +555,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
 // --------------------------------------------------------------------------------------
 // CARD TÁTICO DE RESPOSTA RÁPIDA (ITEM DA LISTA)
 // --------------------------------------------------------------------------------------
-function BuildingTacticalCard({ 
+const BuildingTacticalCard = React.memo(function BuildingTacticalCard({ 
   study, 
   onOpenTacticalView, 
   onEdit, 
@@ -534,7 +577,7 @@ function BuildingTacticalCard({
                 {study.ra || 'DF'}
               </span>
               <span className="px-2 py-0.5 bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-semibold rounded">
-                {study.ocupacao || 'Ocupação N/I'}
+                {study.ocupacao && study.ocupacao !== '-' ? study.ocupacao : 'Ocupação -'}
               </span>
               <span className={`px-2 py-0.5 border text-[10px] font-bold rounded ${hazard.color}`}>
                 Carga {study.cargaIncendio || 'Média'}
@@ -564,11 +607,11 @@ function BuildingTacticalCard({
         {/* Endereço */}
         <div className="flex items-start gap-1.5 text-xs text-slate-300 my-2">
           <MapPin size={14} className="text-red-400 shrink-0 mt-0.5" />
-          <span className="leading-relaxed line-clamp-2">{study.endereco || 'Endereço não informado'}</span>
+          <span className="leading-relaxed line-clamp-2">{study.endereco || '-'}</span>
         </div>
 
         {/* População Crítica / Prioritária */}
-        {study.populacaoPrioritaria && (
+        {study.populacaoPrioritaria && study.populacaoPrioritaria !== '-' && (
           <div className="bg-red-950/40 border border-red-900/40 rounded-lg p-2 my-2 text-xs text-red-200 flex items-start gap-2">
             <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
             <p className="line-clamp-2 leading-relaxed">
@@ -578,7 +621,7 @@ function BuildingTacticalCard({
         )}
 
         {/* Informações Extras no Card */}
-        {study.informacoesExtras && (
+        {study.informacoesExtras && study.informacoesExtras !== '-' && (
           <div className="bg-slate-950/60 border border-slate-800/90 rounded-lg p-2 my-2 text-xs text-slate-300 flex items-start gap-1.5">
             <FileText size={13} className="text-emerald-400 shrink-0 mt-0.5" />
             <p className="line-clamp-2 leading-relaxed">
@@ -595,7 +638,7 @@ function BuildingTacticalCard({
               <span>RTI & Recalque</span>
             </div>
             <p className="text-[11px] text-slate-300 truncate">
-              {study.volumeRTI ? `RTI: ${study.volumeRTI}` : 'RTI: N/I'} | {study.registroRecalqueTipo || 'Recalque N/I'}
+              {study.volumeRTI && study.volumeRTI !== '-' ? `RTI: ${study.volumeRTI}` : 'RTI: -'} | {study.registroRecalqueTipo && study.registroRecalqueTipo !== '-' ? study.registroRecalqueTipo : 'Recalque: -'}
             </p>
           </div>
 
@@ -605,7 +648,7 @@ function BuildingTacticalCard({
               <span>Cortes & Energia</span>
             </div>
             <p className="text-[11px] text-slate-300 truncate">
-              {study.chaveGeralEnergia ? 'Chave cadastrada' : 'Sem info chave'} | {study.valvulaGeralGas ? 'Gás cadastrado' : 'Sem gás'}
+              {study.chaveGeralEnergia && study.chaveGeralEnergia !== '-' ? 'Chave cadastrada' : 'Chave: -'} | {study.valvulaGeralGas && study.valvulaGeralGas !== '-' ? 'Gás cadastrado' : 'Gás: -'}
             </p>
           </div>
         </div>
@@ -614,7 +657,7 @@ function BuildingTacticalCard({
         {study.contatos && study.contatos.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap my-2">
             {study.contatos.slice(0, 3).map((c, idx) => (
-              c.telefone && (
+              c.telefone && c.telefone !== '-' && (
                 <a
                   key={idx}
                   href={`tel:${c.telefone.replace(/\D/g, '')}`}
@@ -637,7 +680,7 @@ function BuildingTacticalCard({
         <button
           type="button"
           onClick={onOpenTacticalView}
-          className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-lg border border-emerald-500/40 shadow-md shadow-emerald-950/60 active:scale-95 transition-all"
+          className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-lg border border-emerald-500/40 shadow-md shadow-emerald-950/60 active:scale-95 transition-all cursor-pointer"
         >
           <Eye size={14} />
           <span>Ficha completa PREPOP</span>
@@ -671,7 +714,7 @@ function BuildingTacticalCard({
         <button
           type="button"
           onClick={onShareWhatsApp}
-          className="p-2 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs transition-all"
+          className="p-2 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs transition-all cursor-pointer"
           title="Compartilhar ficha via WhatsApp"
         >
           <Share2 size={14} />
@@ -682,7 +725,7 @@ function BuildingTacticalCard({
           <button
             type="button"
             onClick={onEdit}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all"
+            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all cursor-pointer"
             title="Editar estudo"
           >
             <Edit size={14} />
@@ -690,7 +733,7 @@ function BuildingTacticalCard({
           <button
             type="button"
             onClick={onDelete}
-            className="p-2 bg-red-950/50 hover:bg-red-900/70 text-red-400 rounded-lg transition-all"
+            className="p-2 bg-red-950/50 hover:bg-red-900/70 text-red-400 rounded-lg transition-all cursor-pointer"
             title="Excluir estudo"
           >
             <Trash2 size={14} />
@@ -701,7 +744,7 @@ function BuildingTacticalCard({
 
     </div>
   );
-}
+});
 
 // --------------------------------------------------------------------------------------
 // MODAL DE VISÃO TÁTICA COMPLETA DE RESPOSTA RÁPIDA (SCI / CBMDF)
@@ -876,19 +919,19 @@ function BuildingTacticalViewModal({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
                 <span className="text-[11px] text-slate-400 block font-semibold">Ocupação (NT/CBMDF)</span>
-                <span className="text-sm font-bold text-slate-100">{study.ocupacao || 'Não especificada'}</span>
+                <span className="text-sm font-bold text-slate-100">{study.ocupacao || '-'}</span>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
                 <span className="text-[11px] text-slate-400 block font-semibold">População Fixa</span>
-                <span className="text-sm font-bold text-slate-100">{study.populacaoFixa || 'Não informada'}</span>
+                <span className="text-sm font-bold text-slate-100">{study.populacaoFixa || '-'}</span>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
                 <span className="text-[11px] text-slate-400 block font-semibold">População Flutuante</span>
-                <span className="text-sm font-bold text-slate-100">{study.populacaoFlutuante || 'Não informada'}</span>
+                <span className="text-sm font-bold text-slate-100">{study.populacaoFlutuante || '-'}</span>
               </div>
             </div>
 
-            {study.populacaoPrioritaria && (
+            {study.populacaoPrioritaria && study.populacaoPrioritaria !== '-' && (
               <div className="bg-red-950/40 border border-red-900/60 rounded-xl p-3.5 text-red-200 text-xs sm:text-sm flex items-start gap-2.5 mb-4">
                 <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
                 <div>
@@ -911,10 +954,10 @@ function BuildingTacticalViewModal({
                     <div key={idx} className="bg-slate-950 border border-slate-800 p-3 rounded-lg flex items-center justify-between gap-2">
                       <div className="min-w-0">
                         <span className="text-[11px] text-emerald-400 font-bold block uppercase">{c.funcao || 'Contato'}</span>
-                        <strong className="text-xs sm:text-sm text-slate-200 truncate block">{c.nome || 'Nome N/I'}</strong>
-                        <span className="text-xs text-slate-400">{c.telefone || 'S/ Tel'}</span>
+                        <strong className="text-xs sm:text-sm text-slate-200 truncate block">{c.nome || '-'}</strong>
+                        <span className="text-xs text-slate-400">{c.telefone || '-'}</span>
                       </div>
-                      {c.telefone && (
+                      {c.telefone && c.telefone !== '-' && (
                         <a
                           href={`tel:${c.telefone.replace(/\D/g, '')}`}
                           className="flex items-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow transition-all active:scale-95 shrink-0"
@@ -940,15 +983,15 @@ function BuildingTacticalViewModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                 <span className="text-[11px] text-emerald-400 font-bold block mb-1">🛣️ Via de Acesso Principal</span>
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.viaPrincipal || 'Não cadastrada'}</p>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.viaPrincipal || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                 <span className="text-[11px] text-emerald-400 font-bold block mb-1">🔄 Via de Acesso Alternativa</span>
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.viaAlternativa || 'Não cadastrada'}</p>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.viaAlternativa || '-'}</p>
               </div>
             </div>
 
-            {study.restricoesViarias && (
+            {study.restricoesViarias && study.restricoesViarias !== '-' && (
               <div className="bg-amber-950/40 border border-amber-900/50 rounded-xl p-3 text-amber-200 text-xs sm:text-sm flex items-start gap-2.5 mb-4">
                 <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
                 <div>
@@ -961,19 +1004,19 @@ function BuildingTacticalViewModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                 <span className="text-[11px] text-cyan-400 font-bold block mb-1">🚒 Estacionamento ABT (Combate)</span>
-                <p className="text-xs text-slate-300">{study.posicionamentoABT || 'Não definido'}</p>
+                <p className="text-xs text-slate-300">{study.posicionamentoABT || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                 <span className="text-[11px] text-cyan-400 font-bold block mb-1">🪜 Armação AET / Plataforma Aérea</span>
-                <p className="text-xs text-slate-300">{study.posicionamentoAET || 'Não definido'}</p>
+                <p className="text-xs text-slate-300">{study.posicionamentoAET || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                 <span className="text-[11px] text-emerald-400 font-bold block mb-1">🚩 Posto de Comando (PC) do SCI</span>
-                <p className="text-xs text-slate-300">{study.postoComando || 'Não definido'}</p>
+                <p className="text-xs text-slate-300">{study.postoComando || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                 <span className="text-[11px] text-red-400 font-bold block mb-1">🏥 Ponto ACV / Triagem START</span>
-                <p className="text-xs text-slate-300">{study.acvStart || 'Não definido'}</p>
+                <p className="text-xs text-slate-300">{study.acvStart || '-'}</p>
               </div>
             </div>
           </div>
@@ -988,13 +1031,13 @@ function BuildingTacticalViewModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                 <span className="text-[11px] text-cyan-400 font-bold block mb-1">💧 Reserva Técnica de Incêndio (RTI)</span>
-                <p className="text-sm font-bold text-slate-100">{study.volumeRTI || 'Não informado'}</p>
+                <p className="text-sm font-bold text-slate-100">{study.volumeRTI || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                 <span className="text-[11px] text-cyan-400 font-bold block mb-1">
-                  🔌 Registro de Recalque ({study.registroRecalqueTipo || 'Passeio/Fachada'})
+                  🔌 Registro de Recalque ({study.registroRecalqueTipo && study.registroRecalqueTipo !== '-' ? study.registroRecalqueTipo : 'Passeio/Fachada'})
                 </span>
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.registroRecalqueLocal || 'Local não cadastrado'}</p>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.registroRecalqueLocal || '-'}</p>
               </div>
             </div>
 
@@ -1020,7 +1063,7 @@ function BuildingTacticalViewModal({
                             </span>
                           </div>
                           <span className="text-[11px] font-bold text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30 shrink-0">
-                            {h.distancia || 'Próx.'}
+                            {h.distancia || '-'}
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-300 leading-snug line-clamp-2" title={h.endereco}>
@@ -1040,19 +1083,19 @@ function BuildingTacticalViewModal({
                           <span>Navegar no Waze</span>
                         </a>
                       ) : (
-                        <span className="text-[10px] text-slate-500 italic text-center py-1">Coordenada não informada</span>
+                        <span className="text-[10px] text-slate-500 italic text-center py-1">-</span>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
                 <p className="text-xs text-slate-500 italic bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  Nenhum hidrante urbano específico associado.
+                  -
                 </p>
               )}
             </div>
 
-            {study.mananciaisAlternativos && (
+            {study.mananciaisAlternativos && study.mananciaisAlternativos !== '-' && (
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs">
                 <span className="text-cyan-300 font-bold block mb-0.5">🏊 Mananciais / Fontes Alternativas:</span>
                 <p className="text-slate-300">{study.mananciaisAlternativos}</p>
@@ -1070,23 +1113,23 @@ function BuildingTacticalViewModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-slate-950 p-3 rounded-lg border border-amber-900/40">
                 <span className="text-[11px] text-amber-400 font-bold block mb-1">⚡ Chave Geral de Energia Elétrica</span>
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.chaveGeralEnergia || 'Não informada'}</p>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.chaveGeralEnergia || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-amber-900/40">
                 <span className="text-[11px] text-amber-400 font-bold block mb-1">🔥 Válvula Geral de Gás (GLP / GN)</span>
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.valvulaGeralGas || 'Não informada'}</p>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.valvulaGeralGas || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                 <span className="text-[11px] text-cyan-400 font-bold block mb-1">🚿 Sprinklers & Válvula de Governo (VGA)</span>
-                <p className="text-xs text-slate-300">{study.sprinklersVGA || 'Não informado'}</p>
+                <p className="text-xs text-slate-300">{study.sprinklersVGA || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                 <span className="text-[11px] text-slate-400 font-bold block mb-1">🚪 Escadas de Emergência & Pressurização</span>
-                <p className="text-xs text-slate-300">{study.escadasPressurizacao || 'Não informado'}</p>
+                <p className="text-xs text-slate-300">{study.escadasPressurizacao || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 sm:col-span-2">
                 <span className="text-[11px] text-slate-400 font-bold block mb-1">🔋 Grupo Gerador de Emergência</span>
-                <p className="text-xs text-slate-300">{study.geradorEmergencia || 'Não informado'}</p>
+                <p className="text-xs text-slate-300">{study.geradorEmergencia || '-'}</p>
               </div>
             </div>
           </div>
@@ -1101,15 +1144,15 @@ function BuildingTacticalViewModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-slate-950 p-3 rounded-lg border border-red-900/40">
                 <span className="text-[11px] text-red-400 font-bold block mb-1">☣️ Produtos Perigosos / Químicos (ONU)</span>
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.produtosPerigosos || 'Nenhum cadastrado'}</p>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.produtosPerigosos || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-red-900/40">
                 <span className="text-[11px] text-amber-400 font-bold block mb-1">⚠️ Áreas Críticas Internas</span>
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.areasCriticas || 'Nenhuma informada'}</p>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.areasCriticas || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 sm:col-span-2">
                 <span className="text-[11px] text-slate-400 font-bold block mb-1">🏗️ Risco de Colapso Estrutural & Tipo Construtivo</span>
-                <p className="text-xs text-slate-200 leading-relaxed">{study.riscoColapso || 'Estrutura não informada'}</p>
+                <p className="text-xs text-slate-200 leading-relaxed">{study.riscoColapso || '-'}</p>
               </div>
             </div>
           </div>
