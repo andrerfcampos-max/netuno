@@ -469,3 +469,14 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Nas tabelas e relatórios (Relatório Geral CBMDF, Relatório CAESB, PDF, SEI, CSV e WhatsApp), os hidrantes com vistoria realizada são ordenados da mais recente para a mais antiga (`parseDate(b.datHoraUltimaVistoria) - parseDate(a.datHoraUltimaVistoria)`).
 - **2. Preservação da Sequência de Vistorias Pendentes:**
   - Hidrantes pendentes mantêm a sequência lógica de execução conforme a proximidade da rota de missão.
+
+### [31/08/2026] Etapa 63 Concluída: Otimização de Rota Viária em Lotes (Chunking OSRM) para Cidades Grandes e Macro-Rotas (Taguatinga/Brasília)
+- **1. Roteamento Viário em 2 Etapas para Grandes Volumes (`MissionRoutePanel.jsx`):**
+  - Eliminada a trava rígida de 50 hidrantes. O sistema agora processa rotas com centenas ou milhares de hidrantes (ex: Taguatinga com ~400 hidrantes e Brasília com ~1.000 hidrantes) utilizando roteamento viário em 2 etapas.
+  - **Passo 1 (Macro-Ordenação Espacial):** Executa pré-ordenação contínua por TSP Geodésico (Haversine) criando a espinha dorsal do trajeto a partir do GPS/ponto inicial sem saltos espaciais bruscos.
+  - **Passo 2 (Micro-Otimização e Métricas em Lotes OSRM):** Segmenta a rota em blocos contíguos de 20 hidrantes, consultando a matriz viária OSRM (`/table/v1/driving/`) para cada lote com encadeamento contínuo do último ponto do lote para o início do seguinte.
+- **2. Resiliência por Lote e Indicador Visual de Progresso (`MissionRoutePanel.jsx`):**
+  - Caso algum lote individual sofra timeout ou rate limit, o sistema aplica fallback geodésico apenas para aquele lote específico, sem abortar a rota inteira nem os demais lotes calculados com sucesso.
+  - Adicionado badge de progresso tático reativo no cabeçalho durante a otimização de grandes cidades (`Otimizando vias (X/Y)...`).
+  - Todas as métricas de distância real (`km via trânsito`) e tempo de deslocamento (`~X min`) são preservadas e exibidas para todos os hidrantes calculados.
+

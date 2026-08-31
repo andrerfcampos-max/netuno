@@ -46,17 +46,17 @@ const optimizeRouteTSP = (hidrantes, startLat, startLng) => {
   return route;
 };
 
-// Algoritmo Vizinho Mais Próximo via Matriz OSRM (Trânsito Viário de Veículos) com Distâncias Reais
-const optimizeRouteTrafficDriving = async (hidrantes, startLat, startLng) => {
-  if (!hidrantes || hidrantes.length === 0) return { route: [], drivingMetrics: {}, isTrafficMode: false };
-  
+// Algoritmo Vizinho Mais Próximo via Matriz OSRM (Trânsito Viário de Veículos) com Distâncias Reais para 1 Lote (até 25 pontos)
+const fetchOSRMChunk = async (chunkHydrants, startLat, startLng) => {
+  if (!chunkHydrants || chunkHydrants.length === 0) {
+    return { route: [], drivingMetrics: {}, isTrafficMode: false };
+  }
+
   try {
-    const coords = [[startLng, startLat], ...hidrantes.map(h => [h.numLongitude, h.numLatitude])];
-    if (coords.length > 50) throw new Error("Muitos pontos para OSRM público. Forçando fallback geodésico.");
-    
+    const coords = [[startLng, startLat], ...chunkHydrants.map(h => [h.numLongitude, h.numLatitude])];
     const coordsString = coords.map(c => `${c[0]},${c[1]}`).join(';');
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000); 
+    const timeoutId = setTimeout(() => controller.abort(), 4500); 
 
     const response = await fetch(`https://router.project-osrm.org/table/v1/driving/${coordsString}?annotations=duration,distance`, { signal: controller.signal });
     clearTimeout(timeoutId);
@@ -67,7 +67,7 @@ const optimizeRouteTrafficDriving = async (hidrantes, startLat, startLng) => {
 
     const durations = data.durations;
     const distances = data.distances || [];
-    let unvisited = hidrantes.map((h, i) => ({ hydrant: h, matrixIndex: i + 1 }));
+    let unvisited = chunkHydrants.map((h, i) => ({ hydrant: h, matrixIndex: i + 1 }));
     let route = [];
     let currentIndex = 0;
     const drivingMetrics = {};
@@ -108,10 +108,81 @@ const optimizeRouteTrafficDriving = async (hidrantes, startLat, startLng) => {
     
     return { route, drivingMetrics, isTrafficMode: true };
   } catch (error) {
-    console.warn("Falha/Timeout no cálculo de trânsito viário OSRM. Utilizando fallback geodésico:", error);
-    const fallbackRoute = optimizeRouteTSP(hidrantes, startLat, startLng);
-    return { route: fallbackRoute, drivingMetrics: {}, isTrafficMode: false };
+    console.warn("Falha/Timeout no lote OSRM. Utilizando ordenação TSP geodésica para o lote:", error);
+    const fallbackRoute = optimizeRouteTSP(chunkHydrants, startLat, startLng);
+    const fallbackMetrics = {};
+    let prevLat = startLat;
+    let prevLng = startLng;
+    fallbackRoute.forEach((h, idx) => {
+      const distKm = calculateDistance(prevLat, prevLng, h.numLatitude, h.numLongitude);
+      const key = h.codHidrante || h._internalId || h.nomHidrante;
+      fallbackMetrics[key] = {
+        distanceMeters: Math.round(distKm * 1000),
+        durationSeconds: Math.round((distKm / 35) * 3600), // Estimativa de condução urbana a 35km/h
+        legFromPrevious: idx !== 0,
+        isEstimated: true
+      };
+      prevLat = h.numLatitude;
+      prevLng = h.numLongitude;
+    });
+    return { route: fallbackRoute, drivingMetrics: fallbackMetrics, isTrafficMode: false };
   }
+};
+
+// Algoritmo de Otimização Viária Global em 2 Etapas (Macro-Ordenação Espacial + Micro-Otimização OSRM em Lotes)
+const optimizeRouteTrafficDriving = async (hidrantes, startLat, startLng, onProgress) => {
+  if (!hidrantes || hidrantes.length === 0) return { route: [], drivingMetrics: {}, isTrafficMode: false };
+
+  // Se a rota for pequena (até 25 pontos), executa diretamente 1 único lote OSRM
+  if (hidrantes.length <= 25) {
+    return await fetchOSRMChunk(hidrantes, startLat, startLng);
+  }
+
+  // Para volumes médios e grandes (> 25 até centenas/milhares de hidrantes, ex: Taguatinga / Brasília):
+  // PASSO 1: Macro-Ordenação Espacial por TSP Geodésico (Haversine) para criar a espinha dorsal contínua
+  const macroRoute = optimizeRouteTSP(hidrantes, startLat, startLng);
+
+  // PASSO 2: Micro-Otimização em Lotes Encadeados de 20 hidrantes via OSRM Driving
+  const CHUNK_SIZE = 20;
+  const chunks = [];
+  for (let i = 0; i < macroRoute.length; i += CHUNK_SIZE) {
+    chunks.push(macroRoute.slice(i, i + CHUNK_SIZE));
+  }
+
+  let fullRoute = [];
+  let fullMetrics = {};
+  let anyTrafficSuccess = false;
+  let currentStartLat = startLat;
+  let currentStartLng = startLng;
+
+  for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
+    const currentChunk = chunks[chunkIdx];
+    if (onProgress) {
+      onProgress({ current: chunkIdx + 1, total: chunks.length, percent: Math.round(((chunkIdx + 1) / chunks.length) * 100) });
+    }
+
+    const chunkResult = await fetchOSRMChunk(currentChunk, currentStartLat, currentStartLng);
+    if (chunkResult.isTrafficMode) {
+      anyTrafficSuccess = true;
+    }
+
+    fullRoute.push(...chunkResult.route);
+    Object.assign(fullMetrics, chunkResult.drivingMetrics);
+
+    // O ponto de partida do próximo lote é o último hidrante ordenado do lote atual
+    if (chunkResult.route.length > 0) {
+      const lastHydrant = chunkResult.route[chunkResult.route.length - 1];
+      currentStartLat = lastHydrant.numLatitude;
+      currentStartLng = lastHydrant.numLongitude;
+    }
+
+    // Pequeno intervalo de 60ms entre requisições consecutivas para proteger contra rate limit
+    if (chunkIdx < chunks.length - 1) {
+      await new Promise(r => setTimeout(r, 60));
+    }
+  }
+
+  return { route: fullRoute, drivingMetrics: fullMetrics, isTrafficMode: anyTrafficSuccess };
 };
 
 const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds = [], currentMission, onUpdateMission, onClose, onBackToManager, onClearMission, onRemoveFromMission, lastInspectedCoords, onInspect, onEdit, onCenterMap, currentUser, folders, onSaveRouteToFolder, onGenerateReport }) => {
@@ -119,6 +190,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
   const [drivingMetrics, setDrivingMetrics] = useState({});
   const [isTrafficOptimized, setIsTrafficOptimized] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optProgress, setOptProgress] = useState(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [isEditingAtribuicao, setIsEditingAtribuicao] = useState(false);
@@ -190,21 +262,26 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
       setPendingRoute([]);
       setDrivingMetrics({});
       setIsTrafficOptimized(false);
+      setOptProgress(null);
       return;
     }
 
     let isCancelled = false;
     const computeRoute = async () => {
       setIsOptimizing(true);
+      setOptProgress(null);
       const startLat = userLocation ? userLocation.lat : pendingHydrants[0].numLatitude;
       const startLng = userLocation ? userLocation.lng : pendingHydrants[0].numLongitude;
 
-      const result = await optimizeRouteTrafficDriving(pendingHydrants, startLat, startLng);
+      const result = await optimizeRouteTrafficDriving(pendingHydrants, startLat, startLng, (p) => {
+        if (!isCancelled) setOptProgress(p);
+      });
       if (!isCancelled) {
         setPendingRoute(result.route);
         setDrivingMetrics(result.drivingMetrics);
         setIsTrafficOptimized(result.isTrafficMode);
         setIsOptimizing(false);
+        setOptProgress(null);
       }
     };
 
@@ -220,16 +297,18 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
 
   const handleOptimizeRoute = async () => {
     setIsOptimizing(true);
+    setOptProgress(null);
     if (pendingHydrants && pendingHydrants.length > 0) {
       const startLat = userLocation ? userLocation.lat : pendingHydrants[0].numLatitude;
       const startLng = userLocation ? userLocation.lng : pendingHydrants[0].numLongitude;
 
-      const result = await optimizeRouteTrafficDriving(pendingHydrants, startLat, startLng);
+      const result = await optimizeRouteTrafficDriving(pendingHydrants, startLat, startLng, (p) => setOptProgress(p));
       setPendingRoute(result.route);
       setDrivingMetrics(result.drivingMetrics);
       setIsTrafficOptimized(result.isTrafficMode);
     }
     setIsOptimizing(false);
+    setOptProgress(null);
   };
 
   const handleShareWhatsApp = () => {
@@ -504,6 +583,34 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
                       <FolderOpen size={12} /> {folders?.find(f => f.id === currentMission.parentFolderId)?.name || 'Central'}
                     </span>
                   )}
+                  {isOptimizing ? (
+                    <span className="bg-amber-950/70 border border-amber-500/50 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full shadow flex items-center gap-1.5 animate-pulse">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                      <span>{optProgress ? `Otimizando vias (${optProgress.current}/${optProgress.total})...` : 'Calculando trânsito...'}</span>
+                    </span>
+                  ) : (
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
+                      isTrafficOptimized 
+                        ? 'bg-blue-950/60 border-blue-500/40 text-blue-300 shadow-[0_0_8px_rgba(59,130,246,0.3)]' 
+                        : 'bg-slate-800 border-slate-700 text-slate-400'
+                    }`} title={isTrafficOptimized ? "Sequência calculada de acordo com as vias do trânsito de carro (OSRM)" : "Distância geodésica"}>
+                      <span>🚗</span>
+                      <span>{isTrafficOptimized ? 'Vias de Trânsito' : 'Linha Reta'}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <h2 className="text-lg font-bold text-emerald-400 flex items-center gap-2 drop-shadow-sm">
+                  <GitMerge size={20} /> Rota de Missão
+                </h2>
+                {isOptimizing ? (
+                  <span className="bg-amber-950/70 border border-amber-500/50 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full shadow flex items-center gap-1.5 animate-pulse">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                    <span>{optProgress ? `Otimizando vias (${optProgress.current}/${optProgress.total})...` : 'Calculando trânsito...'}</span>
+                  </span>
+                ) : (
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
                     isTrafficOptimized 
                       ? 'bg-blue-950/60 border-blue-500/40 text-blue-300' 
@@ -512,12 +619,8 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
                     <span>🚗</span>
                     <span>{isTrafficOptimized ? 'Vias de Trânsito' : 'Linha Reta'}</span>
                   </span>
-                </div>
+                )}
               </div>
-            ) : (
-              <h2 className="text-lg font-bold text-emerald-400 flex items-center gap-2 drop-shadow-sm">
-                <GitMerge size={20} /> Rota de Missão
-              </h2>
             )}
           </div>
         </div>
