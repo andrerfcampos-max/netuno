@@ -225,6 +225,8 @@ function App() {
   const [editingHydrante, setEditingHydrante] = useState(null);
   const [lastInspectedCoords, setLastInspectedCoords] = useState(null);
   const [mapCenterPosition, setMapCenterPosition] = useState(null);
+  const [cartSelectionIds, setCartSelectionIds] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
   // Controle de Missões Persistentes
@@ -562,16 +564,29 @@ function App() {
     }
   };
 
+
+  const toggleCartSelection = (id) => {
+    setCartSelectionIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const selectAllCart = (isChecked, currentFilteredData) => {
+    const filteredIds = currentFilteredData.map(h => h.codHidrante || h.nomHidrante || h._internalId);
+    if (isChecked) {
+      setCartSelectionIds(prev => [...new Set([...prev, ...filteredIds])]);
+    } else {
+      setCartSelectionIds(prev => prev.filter(id => !filteredIds.includes(id)));
+    }
+  };
+
+  const removeHydrantFromMission = (id) => {
+    if (window.confirm('Deseja realmente remover o hidrante desta missão?')) {
+      toggleMissionSelection(id);
+    }
+  };
+
   const toggleMissionSelection = (id) => {
     let currentM = missions.find(m => m.id === activeMissionId);
-    let createdMission = null;
-
-    if (!currentM) {
-      createdMission = createNewMission("Rascunho de Hoje", null, currentUser);
-      createdMission.createdBy = currentUser?.matricula;
-      createdMission.createdByName = currentUser?.nome;
-      currentM = createdMission;
-    }
+    if (!currentM) return;
 
     const currentSel = currentM.selectedIds || [];
     const currentComp = currentM.completedIds || [];
@@ -591,27 +606,16 @@ function App() {
       updatedAt: new Date().toISOString()
     };
 
-    if (createdMission) {
-      setMissions(prev => [...prev.filter(m => m.id !== target.id), target]);
-      setOpenMissionIds(prev => prev.includes(target.id) ? prev : [...prev, target.id]);
-      setActiveMissionId(target.id);
-    } else {
+    
       setMissions(prev => prev.map(m => m.id === target.id ? target : m));
-    }
+    
 
     syncMissionToCloud(target);
   };
 
   const selectAllFiltered = (isChecked, currentFilteredData) => {
     let currentM = missions.find(m => m.id === activeMissionId);
-    let createdMission = null;
-
-    if (!currentM) {
-      createdMission = createNewMission("Rascunho de Hoje", null, currentUser);
-      createdMission.createdBy = currentUser?.matricula;
-      createdMission.createdByName = currentUser?.nome;
-      currentM = createdMission;
-    }
+    if (!currentM) return;
 
     const currentSel = currentM.selectedIds || [];
     const currentComp = currentM.completedIds || [];
@@ -635,13 +639,9 @@ function App() {
       updatedAt: new Date().toISOString()
     };
 
-    if (createdMission) {
-      setMissions(prev => [...prev.filter(m => m.id !== target.id), target]);
-      setOpenMissionIds(prev => prev.includes(target.id) ? prev : [...prev, target.id]);
-      setActiveMissionId(target.id);
-    } else {
+    
       setMissions(prev => prev.map(m => m.id === target.id ? target : m));
-    }
+    
 
     syncMissionToCloud(target);
   };
@@ -1427,7 +1427,7 @@ function App() {
               onClose={() => setActiveView('map')}
               onBackToManager={() => setIsMissionManagerOpen(true)}
               onClearMission={() => updateCurrentMission({ selectedIds: [], completedIds: [] })}
-              onRemoveFromMission={toggleMissionSelection}
+              onRemoveFromMission={removeHydrantFromMission}
               lastInspectedCoords={lastInspectedCoords} 
               onInspect={handleInspect}
               onEdit={(h) => setEditingHydrante(h)}
