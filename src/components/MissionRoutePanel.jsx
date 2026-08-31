@@ -282,82 +282,125 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
       distText = dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
     }
 
-    // Degradê de opacidade
+    // Degradê de opacidade e estilo de card
     let itemClasses = "";
     if (isCompleted) {
-      itemClasses = "bg-slate-900/50 border-l-4 border-slate-700 rounded-r-lg p-2 flex flex-col lg:flex-row gap-2 items-start lg:items-center justify-between opacity-70 grayscale";
+      itemClasses = "bg-slate-900/60 border-l-4 border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col lg:flex-row gap-2.5 items-start lg:items-center justify-between opacity-70 grayscale transition-all";
     } else {
       if (index === 0) {
         // 1º Lugar (Mais Próximo): Cor sólida destacada (ciano/verde pulsante com fundo de alto contraste).
-        itemClasses = "bg-slate-800/90 border-l-4 border-emerald-400 rounded-r-lg p-3 shadow-[0_0_10px_rgba(52,211,153,0.3)] flex flex-col lg:flex-row gap-2 items-start lg:items-center justify-between animate-pulse-border relative overflow-hidden";
+        itemClasses = "bg-slate-800/95 border-l-4 border-emerald-400 rounded-xl p-2.5 sm:p-3 shadow-[0_0_14px_rgba(52,211,153,0.25)] flex flex-col lg:flex-row gap-2.5 items-start lg:items-center justify-between animate-pulse-border relative overflow-hidden transition-all";
       } else if (index > 0 && index <= 3) {
         // 2º ao 4º Lugar: opacidade gradual
-        const opacity = 1 - (index * 0.15); // 0.85, 0.70, 0.55
-        itemClasses = `bg-slate-800 border-l-4 border-emerald-600/50 rounded-r-lg p-2 flex flex-col lg:flex-row gap-2 items-start lg:items-center justify-between transition-all` ;
+        itemClasses = "bg-slate-800/90 border-l-4 border-emerald-600/60 rounded-xl p-2.5 sm:p-3 flex flex-col lg:flex-row gap-2.5 items-start lg:items-center justify-between transition-all";
       } else {
         // Demais Hidrantes: fundo com maior transparência
-        itemClasses = "bg-slate-800/40 border-l-4 border-slate-600 rounded-r-lg p-2 shadow-sm flex flex-col lg:flex-row gap-2 items-start lg:items-center justify-between";
+        itemClasses = "bg-slate-800/60 border-l-4 border-slate-600 rounded-xl p-2.5 sm:p-3 shadow-sm flex flex-col lg:flex-row gap-2.5 items-start lg:items-center justify-between transition-all";
       }
     }
 
     return (
       <div key={id || index} className={itemClasses} style={!isCompleted && index > 0 && index <= 3 ? { opacity: 1 - (index * 0.15) } : {}}>
-        <div className="flex items-start lg:items-center gap-2 flex-1 overflow-hidden w-full">
-          <div className={isCompleted ? "bg-slate-700 text-slate-400 font-bold text-sm rounded-full w-7 h-7 flex items-center justify-center flex-shrink-0" : (index === 0 ? "bg-emerald-500 text-white font-bold text-base rounded-full w-8 h-8 flex items-center justify-center shadow-md flex-shrink-0" : "bg-emerald-900/50 text-emerald-400 font-bold text-sm rounded-full w-7 h-7 flex items-center justify-center shadow-inner flex-shrink-0")}>
+        <div className="flex items-center gap-3 flex-1 min-w-0 w-full">
+          {/* Sequência / Número */}
+          <div className={
+            isCompleted 
+              ? "bg-slate-700 text-slate-400 font-bold text-xs rounded-full w-7 h-7 flex items-center justify-center shrink-0" 
+              : (index === 0 
+                  ? "bg-emerald-500 text-white font-black text-sm rounded-full w-8 h-8 flex items-center justify-center shadow-md shrink-0 ring-2 ring-emerald-400/30" 
+                  : "bg-emerald-950 text-emerald-400 border border-emerald-500/30 font-bold text-xs rounded-full w-7 h-7 flex items-center justify-center shrink-0")
+          }>
             {isCompleted ? "✓" : index + 1}
           </div>
           
           {/* FOTO DE PERFIL DO HIDRANTE (Thumbnail) */}
           {!isCompleted && h.fotoPerfil && (
-            <img src={h.fotoPerfil} alt="Perfil" className="w-8 h-8 object-cover rounded-md border border-slate-600 flex-shrink-0 cursor-pointer hover:scale-105 transition-transform" />
+            <img src={h.fotoPerfil} alt="Perfil" className="w-9 h-9 object-cover rounded-md border border-slate-600 shrink-0 cursor-pointer hover:scale-105 transition-transform" />
           )}
           
-          <div className="flex flex-col gap-0.5 flex-1 min-w-0 text-xs">
-            <div className="flex items-center justify-between gap-1">
-              <span className="font-bold text-slate-100 truncate text-xs sm:text-sm">
-                {h.nomHidrante || h.codHidrante} <span className="text-slate-400 font-normal">({h.dscLocalidade || 'N/A'})</span>
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            {/* Linha 1: Identificador + RA + Distância + Alerta Inline no Desktop */}
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
+              <span className="font-bold text-slate-100 text-sm tracking-wide shrink-0">
+                {h.nomHidrante || h.codHidrante}
               </span>
-              <span className={`font-bold font-mono text-[11px] shrink-0 ${index === 0 ? 'text-emerald-400 font-black' : 'text-slate-300'}`}>
-                📍 {distText || '-'}
-              </span>
+              
+              {h.dscLocalidade && (
+                <span className="bg-slate-700/80 border border-slate-600/60 text-cyan-300 text-[11px] font-semibold px-2 py-0.5 rounded shadow-sm shrink-0">
+                  {h.dscLocalidade}
+                </span>
+              )}
+
+              {distText && (
+                <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border flex items-center gap-1 shrink-0 ${
+                  index === 0 
+                    ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.3)]' 
+                    : 'bg-slate-800 border-slate-700 text-slate-300'
+                }`}>
+                  <span>📍</span> {distText}
+                </span>
+              )}
+
+              {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (
+                <span className="hidden xl:inline-flex items-center gap-1 bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[11px] font-semibold px-2 py-0.5 rounded truncate max-w-sm">
+                  ⚠️ {sanitizeProblem(h.problemasHidrante)}
+                </span>
+              )}
             </div>
             
-            <div className="text-slate-400 text-[11px] truncate">
-              {h.dscEndereco || 'Endereço não informado'}
-            </div>
+            {/* Linha 2: Endereço & Alerta para Telas Menores */}
+            <div className="flex flex-col xl:flex-row xl:items-center gap-1 text-slate-300 text-xs">
+              <span className="text-slate-400 text-xs truncate max-w-2xl" title={h.dscEndereco || ''}>
+                {h.dscEndereco || 'Endereço não informado'}
+              </span>
 
-            {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (
-              <div className="text-red-400 text-[10px] font-bold truncate">
-                ⚠️ {sanitizeProblem(h.problemasHidrante)}
-              </div>
-            )}
+              {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (
+                <span className="xl:hidden inline-flex items-center gap-1 bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded truncate w-fit mt-0.5">
+                  ⚠️ {sanitizeProblem(h.problemasHidrante)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         
-        <div className="flex flex-wrap items-center justify-end gap-1 flex-shrink-0 w-full lg:w-auto mt-1 lg:mt-0 border-t lg:border-t-0 border-slate-700/60 pt-1 lg:pt-0">
-          <button onClick={() => { onCenterMap && onCenterMap(h); onClose(); }} title="Ver no Mapa" className="p-1 px-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs active:scale-95 transition-transform flex items-center gap-1 font-semibold">
-            <LocateFixed size={13} className="text-cyan-400" />
-            <span className="lg:hidden text-[10px]">Mapa</span>
+        {/* Bloco de Ações do Item */}
+        <div className="flex items-center justify-end gap-1.5 shrink-0 w-full lg:w-auto mt-1 lg:mt-0 border-t lg:border-t-0 border-slate-700/60 pt-1.5 lg:pt-0">
+          <button 
+            onClick={() => { onCenterMap && onCenterMap(h); onClose(); }} 
+            title="Localizar no Mapa" 
+            className="h-8 px-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs active:scale-95 transition-all flex items-center gap-1 font-semibold border border-slate-600/60 shadow-sm"
+          >
+            <LocateFixed size={14} className="text-cyan-400" />
+            <span className="hidden sm:inline text-xs">Mapa</span>
           </button>
           {!isCompleted && (
             <button 
               onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')} 
-              title="Waze" 
-              className="p-1 px-2 bg-blue-600/80 hover:bg-blue-600 text-white rounded text-xs active:scale-95 transition-transform flex items-center gap-1 font-semibold"
+              title="Navegar no Waze" 
+              className="h-8 px-2.5 bg-blue-600/90 hover:bg-blue-600 text-white rounded-lg text-xs active:scale-95 transition-all flex items-center gap-1 font-semibold shadow-sm"
             >
-              <Navigation size={13} />
-              <span className="lg:hidden text-[10px]">Waze</span>
+              <Navigation size={14} />
+              <span className="hidden sm:inline text-xs">Waze</span>
             </button>
           )}
           {!isCompleted && (
-            <button onClick={() => onInspect && onInspect(h)} title="Cadastrar Vistoria" className={`flex items-center gap-1 p-1 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded active:scale-95 transition-transform font-bold text-xs shadow-sm`}>
-               <Plus size={15} strokeWidth={3}/> VISTORIA
+            <button 
+              onClick={() => onInspect && onInspect(h)} 
+              title="Cadastrar Vistoria" 
+              className="h-8 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg active:scale-95 transition-all font-bold text-xs flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+            >
+              <Plus size={15} strokeWidth={3}/>
+              <span>VISTORIA</span>
             </button>
           )}
 
           {(!isCompleted && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) && (
-            <button onClick={() => onEdit && onEdit(h)} title="Editar Hidrante" className="p-1 px-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded active:scale-95 transition-transform">
-              <Edit size={13}/>
+            <button 
+              onClick={() => onEdit && onEdit(h)} 
+              title="Editar Hidrante" 
+              className="h-8 w-8 flex items-center justify-center bg-amber-700 hover:bg-amber-600 text-white rounded-lg active:scale-95 transition-all shadow-sm"
+            >
+              <Edit size={14}/>
             </button>
           )}
           
@@ -370,9 +413,9 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
                 }
               }} 
               title="Remover da Missão" 
-              className="p-1 px-1.5 bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white rounded active:scale-95 transition-transform ml-0.5"
+              className="h-8 w-8 flex items-center justify-center bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white border border-rose-800/40 rounded-lg active:scale-95 transition-all ml-0.5"
             >
-              <X size={13}/>
+              <X size={14}/>
             </button>
           )}
         </div>
@@ -386,42 +429,41 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
   return (
     <div className="flex flex-col p-2.5 sm:p-4 w-full h-full bg-slate-900 relative">
 
-      <div className="flex justify-between items-start mb-2 pb-2 border-b border-slate-700 relative">
-        <div className="flex items-center gap-2 flex-1 min-w-0 mr-1.5">
+      <div className="flex justify-between items-center mb-2.5 pb-2.5 border-b border-slate-700 relative">
+        <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
           {onBackToManager && (
             <button 
               type="button" 
               onClick={onBackToManager}
-              className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded font-semibold transition-colors flex items-center gap-1 shrink-0"
+              className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg font-semibold transition-colors flex items-center gap-1.5 shrink-0 shadow-sm"
               title="Voltar para a Central de Missões"
             >
               ← Voltar
             </button>
           )}
-          <div className="flex flex-col gap-1 flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {currentMission ? (
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <GitMerge size={20} className="text-emerald-400 flex-shrink-0" />
-                  <div className="flex flex-col flex-1 min-w-0 relative">
-                    <div className="flex items-center gap-1.5 text-slate-300 w-full flex-wrap sm:flex-nowrap">
-                      <span className="font-bold text-sm sm:text-lg drop-shadow-sm truncate min-w-0 max-w-[200px] sm:max-w-none">{currentMission.name}</span>
-                      <span className="bg-emerald-900/80 border border-emerald-500 text-emerald-300 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full shadow shrink-0">
-                        Hoje: {vistoriasHoje}
-                      </span>
-                      {currentMission.isDraft && (
-                        <span className="bg-amber-900/50 text-amber-400 text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border border-amber-800 shrink-0">
-                          Não Salvo
-                        </span>
-                      )}
-                    </div>
-                    {/* Exibir Caminho da Pasta */}
-                    {!currentMission.isDraft && currentMission.parentFolderId && (
-                      <div className="text-[11px] font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
-                        <FolderOpen size={11} /> Pasta: {folders?.find(f => f.id === currentMission.parentFolderId)?.name || 'Central'}
-                      </div>
-                    )}
-                  </div>
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <GitMerge size={20} className="text-emerald-400 shrink-0" />
+                  <span className="font-bold text-base sm:text-lg text-slate-100 drop-shadow-sm truncate">
+                    {currentMission.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="bg-emerald-900/80 border border-emerald-500 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                    Hoje: {vistoriasHoje}
+                  </span>
+                  {currentMission.isDraft && (
+                    <span className="bg-amber-900/50 text-amber-400 text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border border-amber-800">
+                      Não Salvo
+                    </span>
+                  )}
+                  {!currentMission.isDraft && currentMission.parentFolderId && (
+                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded flex items-center gap-1">
+                      <FolderOpen size={12} /> {folders?.find(f => f.id === currentMission.parentFolderId)?.name || 'Central'}
+                    </span>
+                  )}
                 </div>
               </div>
             ) : (
@@ -439,17 +481,18 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
 
       {/* BOTÃO NAVEGAR PRÓXIMO COMPACTO */}
       {pendingRoute.length > 0 && (
-        <div className="mb-2">
+        <div className="mb-2.5">
           <button 
             onClick={handleWazeRoute}
-            className="w-full flex items-center justify-between gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-3 rounded-xl shadow-[0_0_12px_rgba(37,99,235,0.4)] active:scale-95 transition-all relative overflow-hidden group"
+            className="w-full flex items-center justify-between gap-3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-3.5 rounded-xl shadow-[0_0_14px_rgba(37,99,235,0.4)] active:scale-[0.99] transition-all relative overflow-hidden group cursor-pointer"
           >
-            <div className="flex items-center gap-2 text-xs sm:text-sm drop-shadow-md truncate">
-              <Navigation size={18} className="animate-bounce shrink-0" />
-              <span className="truncate">🚀 NAVEGAR PARA PRÓXIMO ALVO (WAZE)</span>
+            <div className="flex items-center gap-2.5 text-xs sm:text-sm drop-shadow-md truncate">
+              <Navigation size={18} className="animate-bounce shrink-0 text-cyan-300" />
+              <span className="truncate tracking-wide">🚀 NAVEGAR PARA PRÓXIMO ALVO (WAZE)</span>
             </div>
-            <div className="text-xs font-mono font-bold bg-blue-800/80 px-2 py-0.5 rounded border border-blue-400/40 shrink-0">
-              {pendingRoute[0]?.nomHidrante || pendingRoute[0]?.codHidrante || 'Alvo'}
+            <div className="text-xs font-mono font-bold bg-blue-900/80 px-2.5 py-1 rounded-lg border border-blue-400/50 text-cyan-200 shrink-0 shadow-inner flex items-center gap-1.5">
+              <span>🎯</span>
+              <span>{pendingRoute[0]?.nomHidrante || pendingRoute[0]?.codHidrante || 'Alvo'}</span>
             </div>
             <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] skew-x-12"></div>
           </button>
