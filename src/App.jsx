@@ -1380,8 +1380,8 @@ function App() {
               onInspect={handleInspect}
               onEdit={(h) => setEditingHydrante(h)}
               centerPosition={mapCenterPosition}
-              selectedMissionIds={selectedMissionIds}
-              onToggleMission={toggleMissionSelection}
+              selectedMissionIds={cartSelectionIds}
+              onToggleMission={toggleCartSelection}
               currentUser={currentUser}
               isMapFullscreen={isMapFullscreen}
               onMapClick={() => setIsMapFullscreen(prev => !prev)}
@@ -1407,9 +1407,9 @@ function App() {
                 setMapCenterPosition({...h, _ts: Date.now()});
                 setActiveView('map');
               }} 
-              selectedMissionIds={selectedMissionIds}
-              onToggleMission={toggleMissionSelection}
-              onSelectAllMission={selectAllFiltered}
+              selectedMissionIds={cartSelectionIds}
+              onToggleMission={toggleCartSelection}
+              onSelectAllMission={selectAllCart}
               currentUser={currentUser}
             />
           </div>
