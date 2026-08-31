@@ -763,13 +763,13 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           </div>
         </div>
         
-        <div className="flex bg-slate-800 rounded-lg p-1 w-full lg:w-auto shadow-inner border border-slate-700">
+        <div className="flex bg-slate-900/80 rounded-xl p-1 w-full lg:w-auto shadow-inner border border-slate-700/80">
           <button 
             onClick={() => {
               setReportType('interno');
               setIsExportMenuOpen(false);
             }}
-            className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-1.5 sm:py-2 rounded-md font-bold text-xs sm:text-sm transition-all ${reportType === 'interno' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${reportType === 'interno' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
           >
             <ShieldHalf size={15} /> Relatório Geral (CBMDF)
           </button>
@@ -778,7 +778,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
               setReportType('caesb');
               setIsExportMenuOpen(false);
             }}
-            className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-1.5 sm:py-2 rounded-md font-bold text-xs sm:text-sm transition-all ${reportType === 'caesb' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${reportType === 'caesb' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
           >
             <Building2 size={15} /> Relatório de Alterações (CAESB)
           </button>

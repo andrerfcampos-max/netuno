@@ -16,25 +16,38 @@ const UserManagerModal = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-800 w-full max-w-2xl rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-600">
+    <div className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fadeIn">
+      <div className="bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-700/80 text-slate-100">
         
-        <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900">
-          <div className="flex items-center gap-3">
+        {/* CABEÇALHO PADRONIZADO */}
+        <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
             <button 
               type="button"
               onClick={onClose} 
-              className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded font-semibold transition-colors"
+              className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
             >
               ← Voltar
             </button>
-            <h2 className="text-xl font-bold text-red-400 flex items-center gap-2">
-              <Shield size={24} />
-              Gerenciamento de Acesso (RBAC)
-            </h2>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-rose-700 flex items-center justify-center text-white shadow-md shadow-red-950/50 shrink-0">
+              <Shield size={20} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+                Painel Administrativo (RBAC)
+              </h2>
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+                Gestão de papéis de usuários, permissões e segurança operacional
+              </p>
+            </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-red-400 transition-colors">
-            <X size={24} />
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+            title="Fechar"
+          >
+            <X size={20} />
           </button>
         </div>
 

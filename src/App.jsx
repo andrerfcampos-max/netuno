@@ -1214,7 +1214,7 @@ function App() {
                     className="fixed inset-0 z-[110]" 
                     onClick={() => setIsMenuOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl flex flex-col gap-1.5 p-2 z-[120] animate-scaleUp">
+                  <div className="absolute right-0 mt-2 w-72 sm:w-84 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col gap-1.5 p-2 z-[120] animate-scaleUp">
                     {currentUser.role === 'admin' && (
                       <a 
                         href="?modal=admin"
@@ -1225,12 +1225,22 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-left bg-red-900/30 text-red-400 font-semibold rounded-lg hover:bg-red-900/50 transition-all text-sm"
+                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
                       >
-                        <ShieldAlert size={18} className="text-red-400 shrink-0" />
-                        Painel Admin
+                        <div className="w-8 h-8 rounded-lg bg-red-950/40 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0 mt-0.5 group-hover:border-red-500/60 transition-colors">
+                          <ShieldAlert size={17} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                            Painel Administrativo
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                            Gestão de usuários, acessos e permissões
+                          </span>
+                        </div>
                       </a>
                     )}
+
                     {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
                       <a 
                         href="?modal=novo-hidrante"
@@ -1241,12 +1251,22 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-left bg-blue-900/30 text-blue-400 font-semibold rounded-lg hover:bg-blue-900/50 transition-all text-sm"
+                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
                       >
-                        <PlusCircle size={18} className="text-blue-400 shrink-0" />
-                        Novo Hidrante
+                        <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
+                          <PlusCircle size={17} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                            Cadastrar Novo Hidrante
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                            Cadastro rápido georreferenciado no mapa
+                          </span>
+                        </div>
                       </a>
                     )}
+
                     {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
                       <a 
                         href="?modal=estudo-edificacoes"
@@ -1257,19 +1277,22 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-start gap-2.5 w-full px-3 py-2.5 text-left bg-gradient-to-r from-emerald-950/60 to-teal-950/50 border border-emerald-500/30 text-emerald-300 font-semibold rounded-lg hover:from-emerald-900/70 hover:to-teal-900/60 transition-all group"
+                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
                       >
-                        <Building2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
+                        <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
+                          <Building2 size={17} />
+                        </div>
                         <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-semibold text-emerald-300 group-hover:text-white transition-colors">
-                            Estudos PREPOP das edificações
+                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                            Estudos PREPOP das Edificações
                           </span>
                           <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                            Informações importantes para operações de incêndio
+                            Fichas operacionais para combate a incêndio
                           </span>
                         </div>
                       </a>
                     )}
+
                     {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
                       <a 
                         href="?modal=estudo-tecnico"
@@ -1280,12 +1303,22 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-left bg-purple-900/30 text-purple-400 font-semibold rounded-lg hover:bg-purple-900/50 transition-all text-sm"
+                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
                       >
-                        <Calculator size={18} className="text-purple-400 shrink-0" />
-                        Parecer técnico de Hidrante
+                        <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
+                          <Calculator size={17} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                            Parecer Técnico de Hidrante
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                            Dimensionamento e viabilidade espacial NBR 12.218
+                          </span>
+                        </div>
                       </a>
                     )}
+
                     {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
                       <a 
                         href="?modal=inconsistentes"
@@ -1296,19 +1329,29 @@ function App() {
                             setIsMenuOpen(false);
                           }
                         }}
-                        className="flex items-center justify-between w-full px-3 py-2.5 text-left bg-amber-900/30 text-amber-300 font-semibold rounded-lg hover:bg-amber-900/50 transition-all text-sm"
+                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
                       >
-                        <span className="flex items-center gap-2.5">
-                          <ShieldAlert size={18} className="text-amber-400 shrink-0" />
-                          Hidrantes Inconsistentes
-                        </span>
-                        {inconsistentCount > 0 && (
-                          <span className="bg-amber-500/30 text-amber-300 text-[10px] px-1.5 py-0.5 rounded-full border border-amber-500/50 font-bold">
-                            {inconsistentCount}
+                        <div className="w-8 h-8 rounded-lg bg-amber-950/40 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 mt-0.5 group-hover:border-amber-500/60 transition-colors">
+                          <ShieldAlert size={17} />
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                              Hidrantes Inconsistentes
+                            </span>
+                            {inconsistentCount > 0 && (
+                              <span className="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/40 font-bold">
+                                {inconsistentCount}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                            Ajuste de coordenadas anômalas ou fora do DF
                           </span>
-                        )}
+                        </div>
                       </a>
                     )}
+
                     <a 
                       href="?modal=central-missoes"
                       onClick={(e) => {
@@ -1318,15 +1361,17 @@ function App() {
                           setIsMenuOpen(false);
                         }
                       }}
-                      className="flex items-start gap-2.5 w-full px-3 py-2.5 text-left bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 font-semibold rounded-lg hover:bg-emerald-900/60 transition-all group"
+                      className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
                     >
-                      <FolderOpen size={18} className="text-emerald-400 shrink-0 mt-0.5" />
+                      <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
+                        <FolderOpen size={17} />
+                      </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-semibold text-emerald-300 group-hover:text-white transition-colors">
-                          Central de missões
+                        <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                          Central de Missões
                         </span>
                         <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                          Acesse as missões de vistoria de hidrante de cada quartel
+                          Ordens de vistoria e roteirização por quartel
                         </span>
                       </div>
                     </a>
@@ -1352,10 +1397,19 @@ function App() {
                           window.location.reload();
                         }, 400);
                       }}
-                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-left bg-slate-800 border border-slate-600 text-cyan-300 font-semibold rounded-lg hover:bg-slate-700 active:scale-95 transition-all text-sm"
+                      className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl active:scale-[0.98] transition-all group cursor-pointer"
                     >
-                      <RefreshCw size={18} className="text-cyan-400 shrink-0" />
-                      Atualizar Sistema (Limpar Cache)
+                      <div className="w-8 h-8 rounded-lg bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 mt-0.5 group-hover:border-cyan-500/60 transition-colors">
+                        <RefreshCw size={17} />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                          Atualizar Sistema (Limpar Cache)
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                          Recarrega dados e service worker da aplicação
+                        </span>
+                      </div>
                     </button>
 
                     <div className="pt-2 mt-1 border-t border-slate-700/60 text-center text-[10px] text-slate-500 font-medium select-none">

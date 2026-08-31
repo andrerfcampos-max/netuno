@@ -220,16 +220,26 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
     <div className="fixed inset-0 z-[150] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-1 sm:p-4 overflow-hidden animate-fadeIn">
       <div className="bg-slate-900 border border-slate-700/80 rounded-xl sm:rounded-2xl w-full max-w-6xl h-[98dvh] sm:h-[94vh] flex flex-col shadow-2xl overflow-hidden text-slate-100">
         
-        {/* CABEÇALHO PRINCIPAL */}
-        <div className="px-4 py-3 sm:px-6 sm:py-4 bg-slate-800/90 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+        {/* CABEÇALHO PADRONIZADO */}
+        <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-950/50 shrink-0">
-              <Building2 size={22} className="animate-pulse" />
+            <button 
+              type="button"
+              onClick={onClose} 
+              className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+            >
+              ← Voltar
+            </button>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/50 shrink-0">
+              <Building2 size={20} />
             </div>
             <div className="min-w-0">
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight">
-                Estudo de edificações - PREPOP
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+                Estudos PREPOP das Edificações
               </h2>
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+                Fichas táticas e planejamento prévio de combate a incêndio
+              </p>
             </div>
           </div>
 
@@ -240,20 +250,20 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
                 setEditingStudy(null);
                 setIsFormOpen(true);
               }}
-              className="h-9 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              className="h-9 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
               title="Cadastrar novo estudo de edificação"
             >
               <PlusCircle size={17} />
-              <span className="hidden sm:inline">Novo estudo</span>
+              <span className="hidden sm:inline">Novo Estudo</span>
             </button>
             
             <button
               type="button"
               onClick={onClose}
-              className="h-9 w-9 flex items-center justify-center text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700/80 active:scale-95 transition-all"
+              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
               title="Fechar (Esc)"
             >
-              <X size={18} />
+              <X size={20} />
             </button>
           </div>
         </div>

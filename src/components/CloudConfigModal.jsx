@@ -47,19 +47,29 @@ const CloudConfigModal = ({ onClose, onSyncNow }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col animate-scaleUp">
+    <div className="fixed inset-0 z-[120] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col animate-scaleUp text-slate-100">
         
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-950/60">
-          <div className="flex items-center gap-2.5 text-cyan-400">
-            <Database size={22} />
-            <h3 className="font-bold text-lg text-white">Banco de Dados em Nuvem (Cloud DB)</h3>
+        {/* CABEÇALHO PADRONIZADO */}
+        <div className="px-4 py-3 sm:px-5 sm:py-3.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center text-white shadow-md shadow-cyan-950/50 shrink-0">
+              <Database size={20} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-bold text-base sm:text-lg text-white tracking-tight truncate">
+                Banco de Dados em Nuvem (Cloud DB)
+              </h3>
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+                Sincronização multi-dispositivo em tempo real
+              </p>
+            </div>
           </div>
           <button 
             type="button"
             onClick={onClose} 
-            className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+            title="Fechar"
           >
             <X size={20} />
           </button>

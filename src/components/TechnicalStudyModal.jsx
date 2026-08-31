@@ -590,7 +590,20 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
     <div className="fixed inset-0 z-[9999] bg-slate-950/95 overflow-y-auto print:bg-white print:text-black flex flex-col">
       {/* CABEÇALHO PRINCIPAL ULTRA-RESPONSIVO COM ISOLAMENTO DE Z-INDEX */}
       <div className="sticky top-0 bg-slate-900 border-b border-slate-700/80 px-3 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 shadow-xl z-[1050] print:hidden">
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <button 
+            type="button"
+            onClick={() => {
+              if (currentView !== 'list') {
+                setCurrentView('list');
+              } else {
+                onClose();
+              }
+            }} 
+            className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+          >
+            ← Voltar
+          </button>
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/50 shrink-0">
             <Calculator size={20} className="text-white" />
           </div>
@@ -598,7 +611,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
             <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
               Parecer Técnico de Hidrante
             </h2>
-            <span className="text-[11px] text-slate-400 hidden sm:inline">
+            <span className="text-[11px] text-slate-400 hidden sm:inline truncate">
               Dimensionamento e Viabilidade Espacial • ABNT NBR 12.218/2017
             </span>
           </div>

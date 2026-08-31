@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Camera, Image as ImageIcon, Trash2, ClipboardCheck, X } from 'lucide-react';
 import { fixEncoding } from '../utils/textUtils';
 import { calculateDistanceMeters } from '../utils/geoUtils';
 
@@ -268,16 +268,38 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4">
-      <div className="bg-slate-800 sm:rounded-xl shadow-2xl w-full max-w-md border-0 sm:border border-slate-700 overflow-hidden flex flex-col h-[100dvh] sm:h-auto sm:max-h-[90dvh]">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-0 sm:p-4 animate-fadeIn">
+      <div className="bg-slate-900 sm:rounded-2xl shadow-2xl w-full max-w-lg border-0 sm:border border-slate-700/80 overflow-hidden flex flex-col h-[100dvh] sm:h-auto sm:max-h-[92dvh] text-slate-100">
         
-        <div className="bg-slate-900 p-4 border-b border-slate-700 flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-bold text-white">Vistoria Rápida</h2>
-            <p className="text-sm text-slate-400">Hidrante: {fixEncoding(hidrante.nomHidrante) || hidrante.codHidrante}</p>
+        {/* CABEÇALHO PADRONIZADO */}
+        <div className="px-4 py-3 sm:px-5 sm:py-3.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <button 
+              type="button"
+              onClick={onClose} 
+              className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+            >
+              ← Voltar
+            </button>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/50 shrink-0">
+              <ClipboardCheck size={20} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+                Vistoria Técnica Rápida
+              </h2>
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+                Hidrante: <span className="font-semibold text-emerald-400">{fixEncoding(hidrante.nomHidrante) || hidrante.codHidrante}</span>
+              </p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
-            ✕
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+            title="Fechar"
+          >
+            <X size={20} />
           </button>
         </div>
 
@@ -444,18 +466,18 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
         </div>
 
-        <div className="p-3 bg-slate-900 border-t border-slate-700 flex gap-3 sticky bottom-0 z-10 shrink-0">
+        <div className="p-3.5 bg-slate-900 border-t border-slate-700/80 flex gap-3 sticky bottom-0 z-10 shrink-0">
           <button 
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 rounded font-bold bg-slate-700 text-white hover:bg-slate-600 active:scale-95 transition-all"
+            className="flex-1 py-2.5 rounded-lg font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white active:scale-95 transition-all cursor-pointer"
           >
             Cancelar
           </button>
           <button 
             type="button"
             onClick={handleSave}
-            className="flex-[2] py-2.5 rounded font-bold bg-emerald-600 text-white hover:bg-emerald-500 active:scale-95 transition-all shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+            className="flex-[2] py-2.5 rounded-lg font-bold bg-emerald-600 text-white hover:bg-emerald-500 active:scale-95 transition-all shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 cursor-pointer"
           >
             Salvar Vistoria
           </button>

@@ -437,24 +437,38 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4">
-      <div className="bg-slate-800 w-full max-w-3xl sm:rounded-xl shadow-2xl flex flex-col overflow-hidden border-0 sm:border border-slate-600 h-[100dvh] sm:h-auto sm:max-h-[90dvh]">
+    <div className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 animate-fadeIn">
+      <div className="bg-slate-900 w-full max-w-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border-0 sm:border border-slate-700/80 h-[100dvh] sm:h-auto sm:max-h-[92dvh] text-slate-100">
         
-        <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900">
-          <div className="flex items-center gap-3">
+        {/* CABEÇALHO PADRONIZADO */}
+        <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
             <button 
               type="button"
               onClick={onClose} 
-              className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded font-semibold transition-colors"
+              className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
             >
               ← Voltar
             </button>
-            <h2 className="text-xl font-bold text-amber-400">
-              {isNew ? 'Cadastrar Novo Hidrante' : `Editar Hidrante: ${formData.codHidrante || initialCode}`}
-            </h2>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/50 shrink-0">
+              <MapPin size={20} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+                {isNew ? 'Cadastrar Novo Hidrante' : `Editar Hidrante: ${formData.codHidrante || initialCode}`}
+              </h2>
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+                {isNew ? 'Georreferenciamento e dados cadastrais no DF' : 'Atualização de dados cadastrais e posição no mapa'}
+              </p>
+            </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-red-400 transition-colors">
-            <X size={24} />
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+            title="Fechar"
+          >
+            <X size={20} />
           </button>
         </div>
 
@@ -758,29 +772,29 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
           </div>
 
           {/* Footer Fixo sempre visível e nunca sobreposto */}
-          <div className="p-4 bg-slate-900 border-t border-slate-700 flex gap-3 shrink-0 z-30">
+          <div className="p-4 bg-slate-900 border-t border-slate-700/80 flex gap-3 shrink-0 z-30">
             <button 
               type="button" 
               onClick={onClose} 
-              className="w-1/2 py-2.5 bg-slate-700 text-slate-300 font-bold rounded-lg hover:bg-slate-600 transition-colors active:scale-95 text-sm"
+              className="w-1/2 py-2.5 bg-slate-800 text-slate-300 border border-slate-700 font-bold rounded-lg hover:bg-slate-700 hover:text-white transition-colors active:scale-95 text-sm cursor-pointer"
             >
               Cancelar
             </button>
             <button 
               type="submit" 
-              className="w-1/2 py-2.5 bg-amber-600 text-white font-bold rounded-lg shadow-lg shadow-amber-900/50 hover:bg-amber-500 transition-colors flex items-center justify-center gap-2 active:scale-95 text-sm"
+              className="w-1/2 py-2.5 bg-emerald-600 text-white font-bold rounded-lg shadow-lg shadow-emerald-950/50 hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 active:scale-95 text-sm cursor-pointer"
             >
               <Save size={18} />
-              Salvar Alterações
+              {isNew ? 'Salvar Hidrante' : 'Salvar Alterações'}
             </button>
           </div>
         </form>
 
         {/* Modal de Confirmação: Salvar ou Descartar */}
         {showConfirmSave && (
-          <div className="fixed inset-0 z-[9999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-amber-500/50 rounded-2xl p-5 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-scaleUp">
-              <div className="flex items-center gap-2.5 text-amber-400 border-b border-slate-800 pb-3">
+          <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl p-5 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-scaleUp">
+              <div className="flex items-center gap-2.5 text-emerald-400 border-b border-slate-800 pb-3">
                 <Save size={22} />
                 <h3 className="text-base font-bold text-white">Salvar Alterações do Hidrante</h3>
               </div>
@@ -791,21 +805,21 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-3.5 py-2 bg-slate-800 hover:bg-red-950/60 text-red-400 hover:text-red-300 font-semibold rounded-lg text-xs transition-colors border border-slate-700 hover:border-red-850"
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-red-950/60 text-red-400 hover:text-red-300 font-semibold rounded-lg text-xs transition-colors border border-slate-700 hover:border-red-850 cursor-pointer"
                 >
                   Descartar Alterações
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowConfirmSave(false)}
-                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg text-xs transition-colors border border-slate-700"
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg text-xs transition-colors border border-slate-700 cursor-pointer"
                 >
                   Continuar Editando
                 </button>
                 <button
                   type="button"
                   onClick={executeSave}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg text-xs transition-colors shadow-lg shadow-amber-900/50 flex items-center justify-center gap-1.5"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition-colors shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Save size={14} /> Salvar Alterações
                 </button>

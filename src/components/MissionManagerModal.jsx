@@ -333,12 +333,12 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-800 w-full max-w-4xl rounded-xl border border-slate-600 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fadeIn">
+      <div className="bg-slate-900 w-full max-w-4xl rounded-2xl border border-slate-700/80 shadow-2xl flex flex-col overflow-hidden max-h-[92vh] text-slate-100">
         
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900/50">
-          <div className="flex items-center gap-3">
+        {/* CABEÇALHO PADRONIZADO */}
+        <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
             <button 
               type="button"
               onClick={() => {
@@ -349,38 +349,50 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
                   onClose();
                 }
               }} 
-              className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded font-semibold transition-colors"
+              className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
             >
               ← Voltar
             </button>
-            <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-              <FolderOpen className="text-emerald-400" />
-              Central de Missões
-            </h2>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/50 shrink-0">
+              <FolderOpen size={20} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+                Central de Missões
+              </h2>
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+                Organização por quartel (GBM), roteirização e produtividade operacional
+              </p>
+            </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-red-400 transition-colors">
-            <X size={24} />
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+            title="Fechar"
+          >
+            <X size={20} />
           </button>
         </div>
 
         {/* Breadcrumbs */}
-        <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-800 border-b border-slate-700 text-sm font-semibold">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 bg-slate-900/60 border-b border-slate-700/60 text-xs sm:text-sm font-semibold">
           <button 
             onClick={() => {
               setCurrentFolderId(null);
               setSearchTerm('');
             }}
-            className="flex items-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors"
+            className="flex items-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer"
           >
-            <Home size={16} /> Início
+            <Home size={15} /> Início
           </button>
           
           {breadcrumbs.map((crumb, idx) => (
             <React.Fragment key={crumb.id}>
-              <ChevronRight size={16} className="text-slate-600" />
+              <ChevronRight size={14} className="text-slate-600" />
               <button 
                 onClick={() => setCurrentFolderId(crumb.id)}
-                className={`flex items-center gap-1 transition-colors ${idx === breadcrumbs.length - 1 ? 'text-emerald-400' : 'text-slate-400 hover:text-emerald-400'}`}
+                className={`flex items-center gap-1 transition-colors cursor-pointer ${idx === breadcrumbs.length - 1 ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-emerald-400'}`}
               >
                 {crumb.name}
               </button>
@@ -392,7 +404,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
             <div className="ml-auto flex items-center gap-2">
               <button 
                 onClick={handleSetDefaultFolder}
-                className={`text-xs px-2 py-1 rounded border transition-colors ${currentFolderId === defaultFolderId ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500' : 'bg-slate-700 text-slate-400 border-slate-600 hover:text-emerald-400'}`}
+                className={`text-xs px-2.5 py-1 rounded-lg border font-semibold transition-colors cursor-pointer ${currentFolderId === defaultFolderId ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/50' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-emerald-300'}`}
                 title="Definir pasta atual para abrir automaticamente"
               >
                 {currentFolderId === defaultFolderId ? '★ Quartel Padrão' : '☆ Definir como Padrão'}
@@ -403,27 +415,47 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
 
         {/* Move Mode Banner */}
         {isMoveMode && (
-          <div className="bg-amber-900/40 border-b border-amber-600 p-3 flex justify-between items-center text-amber-400 text-sm font-bold">
+          <div className="bg-amber-950/40 border-b border-amber-600/50 p-3 px-4 flex justify-between items-center text-amber-300 text-xs sm:text-sm font-semibold">
             <div className="flex items-center gap-2">
-              <FolderInput size={18} />
-              Navegue até a pasta destino e confirme para mover: "{missionToMove?.name}"
+              <FolderInput size={18} className="text-amber-400" />
+              <span>Navegue até a pasta destino e confirme para mover: "{missionToMove?.name}"</span>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => confirmMove(currentFolderId)} className="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 rounded shadow-sm">Mover para Aqui</button>
-              <button onClick={() => {setIsMoveMode(false); setMissionToMove(null);}} className="bg-slate-700 text-slate-300 px-3 py-1 rounded hover:bg-slate-600">Cancelar</button>
+              <button onClick={() => confirmMove(currentFolderId)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md cursor-pointer">Mover para Aqui</button>
+              <button onClick={() => {setIsMoveMode(false); setMissionToMove(null);}} className="bg-slate-800 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-slate-700 cursor-pointer">Cancelar</button>
             </div>
           </div>
         )}
 
-        {/* Tabs Principais */}
-        <div className="flex border-b border-slate-700 bg-slate-900/40">
-          <button onClick={() => setActiveTab('todas')} className={`flex-1 py-3 text-sm font-bold ${activeTab === 'todas' ? 'text-emerald-400 border-b-2 border-emerald-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'}`}>Pastas & Missões</button>
-          {/* RBAC: Apenas Gestores e Admins acessam o Dashboard de Comando */}
-          {isGestor && (
-            <button onClick={() => setActiveTab('dashboard_comando')} className={`flex-1 py-3 text-sm font-bold flex justify-center items-center gap-2 ${activeTab === 'dashboard_comando' ? 'text-blue-400 border-b-2 border-blue-400 bg-slate-800' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'}`}>
-               <Target size={16} /> Dashboard de Comando
+        {/* Tabs Principais - Segmented Control Padronizado */}
+        <div className="p-2.5 bg-slate-900/40 border-b border-slate-700/60">
+          <div className="flex p-1 bg-slate-900/80 rounded-xl border border-slate-700/80 max-w-md mx-auto">
+            <button 
+              type="button"
+              onClick={() => setActiveTab('todas')} 
+              className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'todas' 
+                  ? 'bg-emerald-600 text-white shadow-md' 
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Pastas & Missões
             </button>
-          )}
+            {/* RBAC: Apenas Gestores e Admins acessam o Dashboard de Comando */}
+            {isGestor && (
+              <button 
+                type="button"
+                onClick={() => setActiveTab('dashboard_comando')} 
+                className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg flex justify-center items-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'dashboard_comando' 
+                    ? 'bg-emerald-600 text-white shadow-md' 
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                 <Target size={15} /> Dashboard de Comando
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Search Bar (Visível apenas na pasta raiz) */}

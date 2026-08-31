@@ -450,7 +450,19 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **3. Padronização da Base Limpa Oficial em CSV (`scripts/export_clean_database.cjs`, `xlsxParser.js`):**
   - Gerados os arquivos oficiais limpos e leves `public/hidrantes_df_oficial.csv` e `public/hidrantes_df_oficial.json` (3.400 hidrantes do DF).
   - O parser do Netuno agora carrega prioritariamente a base limpa oficial, mantendo compatibilidade de fallback com `base-de-dados.xlsx` para transição segura em produção.
-- **4. Anexo Fotográfico de Evidências no Relatório CAESB (`MissionReportPanel.jsx`):**
-  - Adicionado painel de evidências fotográficas com identificação do hidrante, RA, data da vistoria, problema constatado e visualizador com zoom em tela cheia.
+### [31/08/2026] Etapa 61 Concluída: Padronização e Unificação da Identidade Visual (Netuno Design System) de Todos os Modais, Menus e Telas
+- **1. Menu Principal Desacoplado do "Efeito Arco-Íris" (`App.jsx`):**
+  - Padronizados todos os itens do menu dropdown suspenso em uma base escura elegante e tática (`bg-slate-900/95 backdrop-blur-md border-slate-700/80 rounded-2xl`).
+  - Cada item agora possui estrutura uniforme em 2 linhas (Título semibold em branco e Subtítulo descritivo em slate-400), com ícone temático em caixa tonal suave e badges de alerta integrados.
+- **2. Cabeçalho Universal de Modais e Telas Secundárias (`ModalHeader` Pattern):**
+  - Implementado padrão de cabeçalho unificado em todos os 7 modais do sistema (`BuildingStudiesModal`, `TechnicalStudyModal`, `InconsistentHydrantsModal`, `MissionManagerModal`, `EditHydrantModal`, `InspectionModal`, `UserManagerModal`, `CloudConfigModal`):
+    - Lado Esquerdo: Botão `← Voltar` (em `bg-slate-800 border-slate-700`) + Caixa de ícone gradiente esmeralda (`w-9 h-9 rounded-xl`) + Título hierárquico em branco com subtítulo e badges de contagem.
+    - Lado Direito: Ações rápidas contextuais + Botão de fechar `X` do Lucide.
+- **3. Unificação de Abas de Navegação (Segmented Control em `MissionReportPanel.jsx` e `MissionManagerModal.jsx`):**
+  - Corrigida a discrepância no painel de relatórios onde a aba CBMDF ficava azul e a aba CAESB ficava verde: ambas as abas agora utilizam o Verde Netuno (`bg-emerald-600 text-white shadow-md font-bold`) quando ativas e tons neutros quando inativas.
+- **4. Padronização de Botões de Ação Primária e Formulários (`EditHydrantModal.jsx`, `InspectionModal.jsx`):**
+  - Substituídos botões laranjas e genéricos de salvamento pelo padrão Verde Esmeralda (`bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg`).
+  - Inputs e selects harmonizados com anel de foco esmeralda (`focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500`).
+
 
 

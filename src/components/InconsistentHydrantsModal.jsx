@@ -37,41 +37,46 @@ const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydr
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-800 w-full max-w-4xl rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-amber-600/50">
+    <div className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fadeIn">
+      <div className="bg-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden border border-slate-700/80 text-slate-100">
         
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900">
-          <div className="flex items-center gap-3">
+        {/* CABEÇALHO PADRONIZADO */}
+        <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
             <button 
               type="button"
               onClick={onClose} 
-              className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded font-semibold transition-colors"
+              className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
             >
               ← Voltar
             </button>
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="text-amber-400" size={24} />
-              <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  Hidrantes com Coordenadas Inconsistentes
-                  <span className="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full border border-amber-500/40">
-                    {inconsistentList.length} encontrados
-                  </span>
-                </h2>
-                <p className="text-xs text-slate-400">
-                  Pré-tratamento geográfico: Estes hidrantes são ocultados do mapa para não quebrar a visualização.
-                </p>
-              </div>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-600 to-amber-700 flex items-center justify-center text-white shadow-md shadow-amber-950/50 shrink-0">
+              <ShieldAlert size={20} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate flex items-center gap-2">
+                <span>Hidrantes com Coordenadas Inconsistentes</span>
+                <span className="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full border border-amber-500/40 font-semibold">
+                  {inconsistentList.length} encontrados
+                </span>
+              </h2>
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+                Pré-tratamento geográfico: hidrantes ocultados do mapa para preservar o enquadramento do DF
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-red-400 transition-colors">
-            <X size={24} />
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+            title="Fechar"
+          >
+            <X size={20} />
           </button>
         </div>
 
         {/* Informative Banner */}
-        <div className="bg-amber-950/40 border-b border-amber-800/40 p-3 px-4 flex items-center justify-between text-xs text-amber-200">
+        <div className="bg-amber-950/40 border-b border-amber-800/40 p-3 sm:px-6 flex flex-col sm:flex-row gap-2.5 items-start sm:items-center justify-between text-xs text-amber-200">
           <div className="flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-400 shrink-0" />
             <span>
@@ -83,7 +88,7 @@ const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydr
             placeholder="Buscar por código, RA..." 
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="bg-slate-900 border border-slate-700 text-slate-200 px-3 py-1 rounded text-xs focus:ring-1 focus:ring-amber-500 outline-none w-48"
+            className="bg-slate-900 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none w-full sm:w-56 shrink-0"
           />
         </div>
 
@@ -96,39 +101,39 @@ const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydr
               <p className="text-xs text-slate-400 mt-1">Todos os hidrantes da base de dados possuem coordenadas válidas no Distrito Federal.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto border border-slate-700 rounded-lg shadow-sm">
+            <div className="overflow-x-auto border border-slate-700/80 rounded-xl shadow-sm">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-900/80 text-slate-300 font-semibold border-b border-slate-700">
+                <thead className="bg-slate-900/90 text-slate-300 font-semibold border-b border-slate-700/80">
                   <tr>
-                    <th className="p-2.5">Código / Nome</th>
-                    <th className="p-2.5">Região (RA)</th>
-                    <th className="p-2.5">Latitude</th>
-                    <th className="p-2.5">Longitude</th>
-                    <th className="p-2.5">Motivo do Alerta</th>
-                    <th className="p-2.5 text-center">Ações</th>
+                    <th className="p-3">Código / Nome</th>
+                    <th className="p-3">Região (RA)</th>
+                    <th className="p-3">Latitude</th>
+                    <th className="p-3">Longitude</th>
+                    <th className="p-3">Motivo do Alerta</th>
+                    <th className="p-3 text-center">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/60 bg-slate-800/60">
+                <tbody className="divide-y divide-slate-700/60 bg-slate-800/40">
                   {filteredInconsistent.map((h, idx) => (
-                    <tr key={h._internalId || h.codHidrante || idx} className="hover:bg-slate-700/40 transition-colors">
-                      <td className="p-2.5 font-bold text-amber-300 font-mono">
+                    <tr key={h._internalId || h.codHidrante || idx} className="hover:bg-slate-800/80 transition-colors">
+                      <td className="p-3 font-bold text-amber-300 font-mono">
                         {fixEncoding(h.nomHidrante || h.codHidrante || '-')}
                       </td>
-                      <td className="p-2.5 text-slate-300">
+                      <td className="p-3 text-slate-300">
                         {fixEncoding(h.dscLocalidade || 'Não informada')}
                       </td>
-                      <td className="p-2.5 font-mono text-red-300">
+                      <td className="p-3 font-mono text-red-300">
                         {h.numLatitude !== undefined && h.numLatitude !== null && !isNaN(h.numLatitude) ? Number(h.numLatitude).toFixed(6) : 'Inválida'}
                       </td>
-                      <td className="p-2.5 font-mono text-red-300">
+                      <td className="p-3 font-mono text-red-300">
                         {h.numLongitude !== undefined && h.numLongitude !== null && !isNaN(h.numLongitude) ? Number(h.numLongitude).toFixed(6) : 'Inválida'}
                       </td>
-                      <td className="p-2.5">
+                      <td className="p-3">
                         <span className="inline-block bg-red-950/80 text-red-300 border border-red-800/80 px-2 py-0.5 rounded text-[11px] font-medium">
                           {getInconsistencyReason(h)}
                         </span>
                       </td>
-                      <td className="p-2.5 text-center">
+                      <td className="p-3 text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             type="button"
@@ -136,7 +141,7 @@ const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydr
                               onClose();
                               onEditHydrant(h);
                             }}
-                            className="p-1.5 bg-blue-600/80 hover:bg-blue-500 text-white rounded transition-colors flex items-center gap-1 text-[11px] font-semibold"
+                            className="px-2 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
                             title="Editar Coordenadas / Dados"
                           >
                             <Edit size={13} />
@@ -145,7 +150,7 @@ const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydr
                           <button
                             type="button"
                             onClick={() => handleDelete(h)}
-                            className="p-1.5 bg-red-600/80 hover:bg-red-500 text-white rounded transition-colors flex items-center gap-1 text-[11px] font-semibold"
+                            className="px-2 py-1.5 bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
                             title="Excluir Hidrante"
                           >
                             <Trash2 size={13} />
@@ -162,12 +167,12 @@ const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydr
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-slate-700 bg-slate-900 flex justify-between items-center text-xs text-slate-400">
+        <div className="p-3 sm:px-6 border-t border-slate-700/80 bg-slate-900 flex justify-between items-center text-xs text-slate-400">
           <span>Exclusivo para Gestores e Administradores</span>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded font-semibold transition-colors"
+            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg font-semibold transition-colors cursor-pointer"
           >
             Fechar
           </button>
