@@ -9,6 +9,7 @@ import DataTable from './components/DataTable';
 import MissionRoutePanel from './components/MissionRoutePanel';
 import MissionReportPanel from './components/MissionReportPanel';
 import ErrorBoundary from './components/ErrorBoundary';
+import SelectionCart from './components/SelectionCart';
 
 const InspectionModal = lazy(() => import('./components/InspectionModal'));
 const EditHydrantModal = lazy(() => import('./components/EditHydrantModal'));
@@ -576,6 +577,56 @@ function App() {
     } else {
       setCartSelectionIds(prev => prev.filter(id => !filteredIds.includes(id)));
     }
+  };
+
+  const handleCreateMissionFromCart = () => {
+    if (cartSelectionIds.length === 0) return;
+    const dateStr = new Date().toLocaleDateString('pt-BR');
+    const newMissionName = `Missão ${dateStr} (${cartSelectionIds.length})`;
+    const newMission = createNewMission(newMissionName, null, currentUser);
+    newMission.selectedIds = [...cartSelectionIds];
+    newMission.completedIds = [];
+    newMission.createdBy = currentUser?.matricula;
+    newMission.createdByName = currentUser?.nome;
+    newMission.updatedAt = new Date().toISOString();
+    
+    setMissions(prev => {
+      const updated = [...prev, newMission];
+      saveMissions(updated);
+      return updated;
+    });
+    setOpenMissionIds(prev => prev.includes(newMission.id) ? prev : [...prev, newMission.id]);
+    setActiveMissionId(newMission.id);
+    syncMissionToCloud(newMission);
+    setCartSelectionIds([]);
+    setIsCartOpen(false);
+    setActiveView('route');
+    toast.success(`Nova Missão criada com ${newMission.selectedIds.length} hidrantes!`);
+  };
+
+  const handleAddToActiveMissionFromCart = () => {
+    if (cartSelectionIds.length === 0) return;
+    const currentM = missions.find(m => m.id === activeMissionId);
+    if (!currentM) {
+      toast.warn('Nenhuma missão aberta no momento. Clique em "CRIAR NOVA MISSÃO" ou abra uma na Central.');
+      return;
+    }
+    const merged = [...new Set([...(currentM.selectedIds || []), ...cartSelectionIds])];
+    const updatedMission = {
+      ...currentM,
+      selectedIds: merged,
+      updatedAt: new Date().toISOString()
+    };
+    setMissions(prev => {
+      const updated = prev.map(m => m.id === updatedMission.id ? updatedMission : m);
+      saveMissions(updated);
+      return updated;
+    });
+    syncMissionToCloud(updatedMission);
+    setCartSelectionIds([]);
+    setIsCartOpen(false);
+    setActiveView('route');
+    toast.success(`${cartSelectionIds.length} hidrante(s) adicionado(s) à rota "${currentM.name}"!`);
   };
 
   const removeHydrantFromMission = (id) => {
@@ -1617,6 +1668,29 @@ function App() {
           />
         </Suspense>
       )}
+
+      {/* Carrinho / Balão Flutuante de Seleção Desacoplado */}
+      <SelectionCart 
+        selectedIds={cartSelectionIds}
+        hidrantes={hidrantes}
+        isOpen={isCartOpen}
+        onToggleOpen={setIsCartOpen}
+        onRemoveItem={toggleCartSelection}
+        onClearAll={() => {
+          setCartSelectionIds([]);
+          setIsCartOpen(false);
+          toast.info('Seleção temporária limpa.');
+        }}
+        onFocusHydrant={(h) => {
+          setMapCenterPosition({...h, _ts: Date.now()});
+          setActiveView('map');
+        }}
+        onCreateMission={handleCreateMissionFromCart}
+        onAddToActiveMission={handleAddToActiveMissionFromCart}
+        activeMission={currentMission}
+        currentUser={currentUser}
+        isMapFullscreen={isMapFullscreen}
+      />
 
       {/* Toasts */}
       <ToastContainer theme="dark" position="bottom-center" />
