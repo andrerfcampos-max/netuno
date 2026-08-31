@@ -46,19 +46,19 @@ const optimizeRouteTSP = (hidrantes, startLat, startLng) => {
   return route;
 };
 
-// Algoritmo Vizinho Mais Próximo via Matriz OSRM com Fallback para Haversine
-const optimizeRouteMultiMode = async (hidrantes, startLat, startLng) => {
-  if (!hidrantes || hidrantes.length === 0) return [];
+// Algoritmo Vizinho Mais Próximo via Matriz OSRM (Trânsito Viário de Veículos) com Distâncias Reais
+const optimizeRouteTrafficDriving = async (hidrantes, startLat, startLng) => {
+  if (!hidrantes || hidrantes.length === 0) return { route: [], drivingMetrics: {}, isTrafficMode: false };
   
   try {
     const coords = [[startLng, startLat], ...hidrantes.map(h => [h.numLongitude, h.numLatitude])];
-    if (coords.length > 50) throw new Error("Muitos pontos para OSRM público. Forçando Haversine.");
+    if (coords.length > 50) throw new Error("Muitos pontos para OSRM público. Forçando fallback geodésico.");
     
     const coordsString = coords.map(c => `${c[0]},${c[1]}`).join(';');
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500); 
+    const timeoutId = setTimeout(() => controller.abort(), 4000); 
 
-    const response = await fetch(`https://router.project-osrm.org/table/v1/driving/${coordsString}?annotations=duration`, { signal: controller.signal });
+    const response = await fetch(`https://router.project-osrm.org/table/v1/driving/${coordsString}?annotations=duration,distance`, { signal: controller.signal });
     clearTimeout(timeoutId);
 
     if (!response.ok) throw new Error("OSRM API respondeu com erro");
@@ -66,9 +66,11 @@ const optimizeRouteMultiMode = async (hidrantes, startLat, startLng) => {
     if (data.code !== 'Ok' || !data.durations) throw new Error("OSRM API retornou payload inválido");
 
     const durations = data.durations;
+    const distances = data.distances || [];
     let unvisited = hidrantes.map((h, i) => ({ hydrant: h, matrixIndex: i + 1 }));
     let route = [];
     let currentIndex = 0;
+    const drivingMetrics = {};
 
     while (unvisited.length > 0) {
       let nearestIdx = 0;
@@ -87,19 +89,35 @@ const optimizeRouteMultiMode = async (hidrantes, startLat, startLng) => {
       if (minDuration === Infinity) nearestIdx = 0;
 
       const nextNode = unvisited.splice(nearestIdx, 1)[0];
-      route.push(nextNode.hydrant);
+      const targetHydrant = nextNode.hydrant;
+      const targetIdx = nextNode.matrixIndex;
+      
+      const distMeters = distances[currentIndex] ? distances[currentIndex][targetIdx] : null;
+      const durSec = durations[currentIndex] ? durations[currentIndex][targetIdx] : null;
+      
+      const key = targetHydrant.codHidrante || targetHydrant._internalId || targetHydrant.nomHidrante;
+      drivingMetrics[key] = {
+        distanceMeters: distMeters,
+        durationSeconds: durSec,
+        legFromPrevious: currentIndex !== 0
+      };
+
+      route.push(targetHydrant);
       currentIndex = nextNode.matrixIndex;
     }
     
-    return route;
+    return { route, drivingMetrics, isTrafficMode: true };
   } catch (error) {
-    console.warn("Falha/Timeout no OSRM. Acionando Fallback para Haversine Euclidiano:", error);
-    return optimizeRouteTSP(hidrantes, startLat, startLng);
+    console.warn("Falha/Timeout no cálculo de trânsito viário OSRM. Utilizando fallback geodésico:", error);
+    const fallbackRoute = optimizeRouteTSP(hidrantes, startLat, startLng);
+    return { route: fallbackRoute, drivingMetrics: {}, isTrafficMode: false };
   }
 };
 
 const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds = [], currentMission, onUpdateMission, onClose, onBackToManager, onClearMission, onRemoveFromMission, lastInspectedCoords, onInspect, onEdit, onCenterMap, currentUser, folders, onSaveRouteToFolder, onGenerateReport }) => {
   const [pendingRoute, setPendingRoute] = useState([]);
+  const [drivingMetrics, setDrivingMetrics] = useState({});
+  const [isTrafficOptimized, setIsTrafficOptimized] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
@@ -166,36 +184,50 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     );
   }, [missionHydrants, completedMissionIds]);
 
-  // Atualiza e Reordena automaticamente com o GPS
+  // Otimização Automática da Rota por Trânsito Viário de Veículos (OSRM Driving)
   useEffect(() => {
-    let currentPending = pendingHydrants;
-    if (userLocation && currentPending.length > 0) {
-      // Reordena por proximidade direta se temos GPS
-      currentPending = [...currentPending].sort((a, b) => {
-        const distA = calculateDistance(userLocation.lat, userLocation.lng, a.numLatitude, a.numLongitude);
-        const distB = calculateDistance(userLocation.lat, userLocation.lng, b.numLatitude, b.numLongitude);
-        return distA - distB;
-      });
+    if (!pendingHydrants || pendingHydrants.length === 0) {
+      setPendingRoute([]);
+      setDrivingMetrics({});
+      setIsTrafficOptimized(false);
+      return;
     }
-    
-    setPendingRoute(prev => {
-      const orderChanged = currentPending.some((h, i) => h !== prev[i]);
-      if (orderChanged || prev.length !== currentPending.length) {
-        return currentPending;
+
+    let isCancelled = false;
+    const computeRoute = async () => {
+      setIsOptimizing(true);
+      const startLat = userLocation ? userLocation.lat : pendingHydrants[0].numLatitude;
+      const startLng = userLocation ? userLocation.lng : pendingHydrants[0].numLongitude;
+
+      const result = await optimizeRouteTrafficDriving(pendingHydrants, startLat, startLng);
+      if (!isCancelled) {
+        setPendingRoute(result.route);
+        setDrivingMetrics(result.drivingMetrics);
+        setIsTrafficOptimized(result.isTrafficMode);
+        setIsOptimizing(false);
       }
-      return prev;
-    });
-  }, [pendingHydrants, userLocation]);
+    };
+
+    const timer = setTimeout(() => {
+      computeRoute();
+    }, 450);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [pendingHydrants, userLocation?.lat, userLocation?.lng]);
 
   const handleOptimizeRoute = async () => {
     setIsOptimizing(true);
-    if (pendingRoute && pendingRoute.length > 0 && pendingRoute[0]) {
-      const start = pendingRoute[0]; // TODO startLat startLng
-      const startLat = userLocation ? userLocation.lat : start.numLatitude;
-      const startLng = userLocation ? userLocation.lng : start.numLongitude;
+    if (pendingHydrants && pendingHydrants.length > 0) {
+      const startLat = userLocation ? userLocation.lat : pendingHydrants[0].numLatitude;
+      const startLng = userLocation ? userLocation.lng : pendingHydrants[0].numLongitude;
 
-      const newRoute = await optimizeRouteMultiMode(pendingHydrants, startLat, startLng);
-      setPendingRoute(newRoute);
+      const result = await optimizeRouteTrafficDriving(pendingHydrants, startLat, startLng);
+      setPendingRoute(result.route);
+      setDrivingMetrics(result.drivingMetrics);
+      setIsTrafficOptimized(result.isTrafficMode);
     }
     setIsOptimizing(false);
   };
@@ -275,11 +307,19 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     const id = h.codHidrante || h.nomHidrante;
     const canEditRoute = !currentMission?.createdBy || currentMission.createdBy === currentUser?.matricula;
     
-    // Distância métrica
+    // Distância métrica (Prioriza distância real de condução por vias de trânsito de carro)
     let distText = '';
-    if (userLocation) {
+    const key = h.codHidrante || h._internalId || h.nomHidrante;
+    const metric = drivingMetrics[key];
+
+    if (metric && metric.distanceMeters !== null && metric.distanceMeters !== undefined) {
+      const dMeters = metric.distanceMeters;
+      const dText = dMeters < 1000 ? `${Math.round(dMeters)}m` : `${(dMeters / 1000).toFixed(1)}km`;
+      const durMin = metric.durationSeconds ? ` • ~${Math.max(1, Math.ceil(metric.durationSeconds / 60))}min` : '';
+      distText = `${dText} via trânsito${durMin}`;
+    } else if (userLocation) {
       const dist = calculateDistance(userLocation.lat, userLocation.lng, h.numLatitude, h.numLongitude);
-      distText = dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
+      distText = dist < 1 ? `${Math.round(dist * 1000)}m (reta)` : `${dist.toFixed(1)}km (reta)`;
     }
 
     // Degradê de opacidade e estilo de card
@@ -464,6 +504,14 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
                       <FolderOpen size={12} /> {folders?.find(f => f.id === currentMission.parentFolderId)?.name || 'Central'}
                     </span>
                   )}
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
+                    isTrafficOptimized 
+                      ? 'bg-blue-950/60 border-blue-500/40 text-blue-300' 
+                      : 'bg-slate-800 border-slate-700 text-slate-400'
+                  }`} title={isTrafficOptimized ? "Sequência calculada de acordo com as vias do trânsito de carro (OSRM)" : "Distância geodésica"}>
+                    <span>🚗</span>
+                    <span>{isTrafficOptimized ? 'Vias de Trânsito' : 'Linha Reta'}</span>
+                  </span>
                 </div>
               </div>
             ) : (

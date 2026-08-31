@@ -74,8 +74,18 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   };
 
   const sortedHidrantesGeral = useMemo(() => {
-    return [...hidrantes]
-      .sort((a, b) => parseDate(a.datHoraUltimaVistoria) - parseDate(b.datHoraUltimaVistoria));
+    return [...hidrantes].sort((a, b) => {
+      const dateA = parseDate(a.datHoraUltimaVistoria || a.datHoraVistoria);
+      const dateB = parseDate(b.datHoraUltimaVistoria || b.datHoraVistoria);
+      
+      // Se ambos tiverem data, ordena do mais recente para o mais antigo
+      if (dateA && dateB) return dateB - dateA;
+      // Se apenas um tiver data, o que foi vistoriado vem primeiro
+      if (dateA && !dateB) return -1;
+      if (!dateA && dateB) return 1;
+      // Se nenhum tiver data, mantém a ordem da lista/rota
+      return 0;
+    });
   }, [hidrantes]);
 
   const sortedHidrantesCaesb = useMemo(() => {

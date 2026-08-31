@@ -1376,44 +1376,37 @@ function App() {
                       </div>
                     </a>
 
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setIsMenuOpen(false);
-                        toast.info('Atualizando aplicação e limpando cache...');
-                        try {
-                          if ('serviceWorker' in navigator) {
-                            const regs = await navigator.serviceWorker.getRegistrations();
-                            for (const r of regs) await r.unregister();
+                    <div className="pt-2 mt-2 border-t border-slate-700/60 flex flex-col gap-1.5 items-center select-none">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setIsMenuOpen(false);
+                          toast.info('Atualizando aplicação e limpando cache...');
+                          try {
+                            if ('serviceWorker' in navigator) {
+                              const regs = await navigator.serviceWorker.getRegistrations();
+                              for (const r of regs) await r.unregister();
+                            }
+                            if ('caches' in window) {
+                              const keys = await caches.keys();
+                              for (const k of keys) await caches.delete(k);
+                            }
+                          } catch (e) {
+                            console.warn(e);
                           }
-                          if ('caches' in window) {
-                            const keys = await caches.keys();
-                            for (const k of keys) await caches.delete(k);
-                          }
-                        } catch (e) {
-                          console.warn(e);
-                        }
-                        setTimeout(() => {
-                          window.location.reload();
-                        }, 400);
-                      }}
-                      className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl active:scale-[0.98] transition-all group cursor-pointer"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 mt-0.5 group-hover:border-cyan-500/60 transition-colors">
-                        <RefreshCw size={17} />
+                          setTimeout(() => {
+                            window.location.reload();
+                          }, 400);
+                        }}
+                        className="flex items-center justify-center gap-1.5 w-full py-1 px-2 text-[11px] font-medium text-slate-400 hover:text-cyan-300 hover:bg-slate-800/60 rounded-md transition-colors cursor-pointer"
+                        title="Atalho para testes: força recarregamento e limpa cache do service worker"
+                      >
+                        <RefreshCw size={12} className="text-slate-400 group-hover:text-cyan-300" />
+                        <span>Atualizar versão / limpar cache</span>
+                      </button>
+                      <div className="text-[10px] text-slate-500 font-medium">
+                        Desenvolvido por Sgt Roméro
                       </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                          Atualizar Sistema (Limpar Cache)
-                        </span>
-                        <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                          Recarrega dados e service worker da aplicação
-                        </span>
-                      </div>
-                    </button>
-
-                    <div className="pt-2 mt-1 border-t border-slate-700/60 text-center text-[10px] text-slate-500 font-medium select-none">
-                      Desenvolvido por Sgt Roméro
                     </div>
                   </div>
                 </>
