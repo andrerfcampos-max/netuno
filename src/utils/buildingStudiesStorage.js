@@ -165,6 +165,21 @@ export const INITIAL_BUILDING_STUDIES = [
   }
 ];
 
+export const loadPrepopBuildingStudies = async () => {
+  try {
+    const res = await fetch('/prepop_estabelecimentos.json');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return data;
+      }
+    }
+  } catch (e) {
+    console.warn('Fallback para estudos de edificação embutidos:', e);
+  }
+  return INITIAL_BUILDING_STUDIES;
+};
+
 /**
  * Obtém todos os estudos de edificações salvos no localStorage (com fallback para os dados iniciais)
  */
@@ -177,7 +192,10 @@ export const getBuildingStudies = () => {
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
+      return parsed.map(s => ({
+        ...s,
+        nomeEstabelecimento: s.nomeEstabelecimento || s.nomeFantasia || s.razaoSocial || 'Edificação Sem Nome'
+      }));
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_BUILDING_STUDIES));
     return INITIAL_BUILDING_STUDIES;

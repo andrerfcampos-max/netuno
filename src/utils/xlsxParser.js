@@ -5,6 +5,21 @@ import { fixEncoding } from './textUtils';
 
 export const loadPreloadedDatabase = async (onComplete) => {
   try {
+    // 1. Tenta carregar a base limpa oficial (JSON/CSV) diretamente
+    try {
+      const cleanResp = await fetch('/hidrantes_df_oficial.json');
+      if (cleanResp.ok) {
+        const cleanData = await cleanResp.json();
+        if (Array.isArray(cleanData) && cleanData.length > 0) {
+          if (onComplete) onComplete(cleanData);
+          return cleanData;
+        }
+      }
+    } catch (eClean) {
+      console.info('Base limpa JSON não encontrada, carregando fallback XLSX...', eClean);
+    }
+
+    // 2. Fallback: Base legada XLSX
     const response = await fetch('/base-de-dados.xlsx');
     const arrayBuffer = await response.arrayBuffer();
     

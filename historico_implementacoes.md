@@ -438,3 +438,19 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Ao clicar no botão **"Relatório da Missão"** na tela de Rota de Missão, o sistema valida se a missão atual foi iniciada (`completedIds.length > 0`).
   - Se a missão ainda não foi iniciada (0 vistorias concluídas), o sistema bloqueia o redirecionamento e dispara um alerta Toast claro e nítido: *"Esta missão ainda não foi iniciada. Realize ao menos uma vistoria para gerar o relatório."*
 
+### [31/08/2026] Etapa 60 Concluída: Normalização de Base PREPOP, Confirmação de Relatório Parcial, Base Limpa CSV e Evidências Fotográficas CAESB
+- **1. Processamento e Higienização da Base PREPOP (`scripts/process_prepop.cjs`, `public/prepop_estabelecimentos.json`):**
+  - Processados 1.781 registros do levantamento operacional PREPOP (`oPERACIONALPREPOP-20260827032950.xlsx`).
+  - Recuperados e higienizados 730 registros que não continham o nome do estabelecimento separado, extraindo nomes comerciais e residenciais dos endereços e expandindo siglas educacionais (EC, CEF, CEM, CAIC, UBS, Hospitais).
+  - Unificada a nomenclatura operacional para **"Nome do estabelecimento"** (`nomeEstabelecimento`), eliminando a segregação desnecessária de razão social na operação.
+  - Sanitizadas coordenadas geográficas e normalizadas RAs para o padrão do Netuno com compatibilidade offline e carregamento assíncrono em `BuildingStudiesModal.jsx`.
+- **2. Confirmação de Relatório Parcial para Missão em Andamento (`App.jsx`):**
+  - Ao clicar no botão "Relatório da Missão" quando a missão possuir vistorias concluídas mas ainda tiver hidrantes faltantes (`compIds.length < totalIds.length`), o sistema exibe diálogo de confirmação: *"Missão não concluída (x/y). Deseja gerar o relatório parcial dos x hidrantes vistoriados?"*.
+  - Se o militar cancelar, permanece na rota; se confirmar, abre a visualização de relatório da missão.
+- **3. Padronização da Base Limpa Oficial em CSV (`scripts/export_clean_database.cjs`, `xlsxParser.js`):**
+  - Gerados os arquivos oficiais limpos e leves `public/hidrantes_df_oficial.csv` e `public/hidrantes_df_oficial.json` (3.400 hidrantes do DF).
+  - O parser do Netuno agora carrega prioritariamente a base limpa oficial, mantendo compatibilidade de fallback com `base-de-dados.xlsx` para transição segura em produção.
+- **4. Anexo Fotográfico de Evidências no Relatório CAESB (`MissionReportPanel.jsx`):**
+  - Adicionado painel de evidências fotográficas com identificação do hidrante, RA, data da vistoria, problema constatado e visualizador com zoom em tela cheia.
+
+

@@ -32,6 +32,7 @@ import {
 import { RA_LIST, normalizeRAName } from '../utils/raList';
 import { 
   getBuildingStudies, 
+  loadPrepopBuildingStudies,
   saveBuildingStudy, 
   deleteBuildingStudy, 
   findNearestHydrantsForBuilding 
@@ -75,8 +76,18 @@ export default function BuildingStudiesModal({
   // Recarregar estudos
   useEffect(() => {
     if (isOpen) {
-      const loaded = getBuildingStudies();
-      setStudies(loaded);
+      const local = getBuildingStudies();
+      if (local && local.length > 3) {
+        setStudies(local);
+      } else {
+        loadPrepopBuildingStudies().then(prepop => {
+          if (prepop && prepop.length > 0) {
+            setStudies(prepop);
+          } else {
+            setStudies(local);
+          }
+        });
+      }
     }
   }, [isOpen]);
 
@@ -95,7 +106,7 @@ export default function BuildingStudiesModal({
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       result = result.filter(s => {
-        const searchStr = `${s.nomeFantasia || ''} ${s.razaoSocial || ''} ${s.endereco || ''} ${s.ra || ''} ${s.ocupacao || ''} ${s.produtosPerigosos || ''} ${s.areasCriticas || ''} ${s.informacoesExtras || ''}`
+        const searchStr = `${s.nomeEstabelecimento || ''} ${s.nomeFantasia || ''} ${s.razaoSocial || ''} ${s.endereco || ''} ${s.ra || ''} ${s.ocupacao || ''} ${s.produtosPerigosos || ''} ${s.areasCriticas || ''} ${s.informacoesExtras || ''}`
           .toLowerCase()
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '');
@@ -519,14 +530,9 @@ function BuildingTacticalCard({
                 Carga {study.cargaIncendio || 'Média'}
               </span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug truncate" title={study.nomeFantasia}>
-              {study.nomeFantasia || 'Edificação Sem Nome'}
+            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug truncate" title={study.nomeEstabelecimento || study.nomeFantasia || study.razaoSocial}>
+              {study.nomeEstabelecimento || study.nomeFantasia || study.razaoSocial || 'Edificação Sem Nome'}
             </h3>
-            {study.razaoSocial && (
-              <p className="text-xs text-slate-400 truncate" title={study.razaoSocial}>
-                {study.razaoSocial}
-              </p>
-            )}
           </div>
 
           {/* Miniatura da Fachada se houver */}
@@ -1377,8 +1383,9 @@ function BuildingStudyFormModal({
 
   // Salvar rascunho / alterações e continuar na tela de edição
   const handleQuickSave = () => {
-    if (!formData.nomeFantasia.trim()) {
-      setFormError('O Nome Fantasia / Popular da edificação é obrigatório para salvar.');
+    const nome = (formData.nomeEstabelecimento || formData.nomeFantasia || '').trim();
+    if (!nome) {
+      setFormError('O Nome do estabelecimento é obrigatório para salvar.');
       scrollToFormSection('form-sec-A');
       return;
     }
@@ -1442,8 +1449,9 @@ function BuildingStudyFormModal({
   // Validação e envio
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.nomeFantasia.trim()) {
-      setFormError('O Nome Fantasia / Popular da edificação é obrigatório.');
+    const nome = (formData.nomeEstabelecimento || formData.nomeFantasia || '').trim();
+    if (!nome) {
+      setFormError('O Nome do estabelecimento é obrigatório.');
       scrollToFormSection('form-sec-A');
       return;
     }
@@ -1572,27 +1580,20 @@ function BuildingStudyFormModal({
               <span>A. Identificação, Ocupação e Contatos</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">
-                  Nome Fantasia / Popular da Edificação <span className="text-red-400">*</span>
+                  Nome do estabelecimento <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  value={formData.nomeFantasia}
-                  onChange={(e) => handleChange('nomeFantasia', e.target.value)}
-                  placeholder="Ex: Hospital de Base do DF, JK Shopping, Ed. Venâncio"
-                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 rounded-xl text-slate-100 placeholder-slate-500 outline-none transition-all text-xs sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Razão Social / Condomínio</label>
-                <input
-                  type="text"
-                  value={formData.razaoSocial}
-                  onChange={(e) => handleChange('razaoSocial', e.target.value)}
-                  placeholder="Ex: Instituto de Gestão Estratégica de Saúde"
+                  value={formData.nomeEstabelecimento || formData.nomeFantasia}
+                  onChange={(e) => {
+                    handleChange('nomeEstabelecimento', e.target.value);
+                    handleChange('nomeFantasia', e.target.value);
+                  }}
+                  placeholder="Ex: Hospital de Base do DF, JK Shopping, Ed. Venâncio, Escola Classe 04"
                   className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 rounded-xl text-slate-100 placeholder-slate-500 outline-none transition-all text-xs sm:text-sm"
                 />
               </div>

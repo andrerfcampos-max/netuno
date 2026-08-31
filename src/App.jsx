@@ -1506,12 +1506,21 @@ function App() {
               folders={folders}
               onGenerateReport={() => {
                 const currentM = missions.find(m => m.id === activeMissionId);
+                const totalIds = currentM?.selectedIds || selectedMissionIds || [];
                 const compIds = (currentM?.completedIds || completedMissionIds || []).filter(id => 
-                  (currentM?.selectedIds || selectedMissionIds || []).includes(id)
+                  totalIds.includes(id)
                 );
                 if (compIds.length === 0) {
                   toast.warn('Esta missão ainda não foi iniciada. Realize ao menos uma vistoria para gerar o relatório.');
                   return;
+                }
+                if (compIds.length < totalIds.length) {
+                  const confirmPartial = window.confirm(
+                    `Missão não concluída (${compIds.length}/${totalIds.length}). Deseja gerar o relatório parcial dos ${compIds.length} hidrantes vistoriados?`
+                  );
+                  if (!confirmPartial) {
+                    return;
+                  }
                 }
                 setReportMode('mission');
                 setActiveView('report');

@@ -1287,34 +1287,64 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           </div>
         </div>
 
-        {/* ANEXO FOTOGRÁFICO */}
+        {/* ANEXO FOTOGRÁFICO DE EVIDÊNCIAS (CAESB / LAUDO) */}
         {(() => {
-          const hidrantesComFoto = currentData.filter(h => h.fotoVistoria);
+          const hidrantesComFoto = currentData.filter(h => h.fotoVistoria || h.fotoPerfil || h.foto);
           if (hidrantesComFoto.length === 0) return null;
           
           return (
             <div className="mt-12 pt-8 border-t border-slate-700 print-border-gray print-page-break-before">
-              <h3 className="text-xl font-bold text-slate-200 mb-6 print-text-black border-b border-slate-700 print-border-gray pb-2 uppercase text-center flex items-center justify-center gap-2">
-                Anexo Fotográfico - Registro de Defeitos
-              </h3>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mb-6 border-b border-slate-700 print-border-gray pb-3">
+                <h3 className="text-xl font-bold text-slate-100 print-text-black uppercase flex items-center gap-2">
+                  📷 Anexo Fotográfico - Evidências das Vistorias
+                </h3>
+                <span className="text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-3 py-1 rounded-full print-border-gray print-text-black">
+                  {hidrantesComFoto.length} {hidrantesComFoto.length === 1 ? 'registro fotográfico' : 'registros fotográficos'}
+                </span>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {hidrantesComFoto.map((h, i) => (
-                  <div key={`foto-${h.codHidrante || i}`} className="bg-slate-700/30 p-4 rounded-xl border border-slate-600 print-border-gray print-bg-white page-break-inside-avoid shadow-lg hover:shadow-xl transition-shadow">
-                    <div className="font-black text-slate-100 print-text-black mb-1 text-lg border-b border-slate-600 print-border-gray pb-1">
-                      {h.nomHidrante || h.codHidrante}
+                {hidrantesComFoto.map((h, i) => {
+                  const fotoSrc = h.fotoVistoria || h.fotoPerfil || h.foto;
+                  const cod = h.nomHidrante || h.codHidrante;
+                  const dataVis = formatDateOnly(h.datHoraUltimaVistoria || h.datHoraVistoria);
+                  const defeito = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'Inoperante (necessita manutenção)' : 'Sem alteração');
+                  
+                  return (
+                    <div key={`foto-${cod || i}`} className="bg-slate-800/80 p-4 rounded-xl border border-slate-700 print-border-gray print-bg-white page-break-inside-avoid shadow-lg flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between gap-2 border-b border-slate-700 print-border-gray pb-2 mb-2">
+                          <span className="font-black text-slate-100 print-text-black text-base">
+                            {cod}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-400 print-text-black bg-slate-900/60 px-2 py-0.5 rounded border border-slate-700/60">
+                            {h.dscLocalidade || 'DF'} • {dataVis}
+                          </span>
+                        </div>
+                        
+                        <p className="text-xs text-slate-300 print-text-black mb-1 truncate" title={h.dscEndereco}>
+                          📍 {h.dscEndereco || 'Endereço não informado'}
+                        </p>
+
+                        <div className="text-xs text-red-400 print-text-black font-bold mb-3 line-clamp-2" title={defeito}>
+                          ⚠️ {defeito}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-center bg-black/50 print-bg-transparent p-1.5 rounded-lg overflow-hidden border border-slate-700/60 group">
+                        <img 
+                          src={fotoSrc} 
+                          alt={`Registro de vistoria do hidrante ${cod}`} 
+                          className="w-full h-52 object-cover rounded shadow-inner group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                          onClick={() => {
+                            const w = window.open('');
+                            w?.document.write(`<title>Foto ${cod}</title><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${fotoSrc}" style="max-width:95%;max-height:95%;border-radius:8px;box-shadow:0 0 20px rgba(0,0,0,0.8);" /></body>`);
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="text-sm text-red-400 print-text-black font-bold mb-3 mt-2 line-clamp-2" title={sanitizeProblem(h.problemasHidrante)}>
-                      Defeito: {sanitizeProblem(h.problemasHidrante)}
-                    </div>
-                    <div className="flex justify-center bg-black/40 print-bg-transparent p-2 rounded-lg overflow-hidden">
-                      <img 
-                        src={h.fotoVistoria} 
-                        alt={`Defeito no hidrante ${h.nomHidrante || h.codHidrante}`} 
-                        className="w-full h-48 object-cover rounded shadow-inner hover:scale-105 transition-transform duration-300 cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           );
