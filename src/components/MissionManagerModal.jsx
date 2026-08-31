@@ -159,16 +159,6 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
     };
   }, [availableMissions, folders]);
 
-  const folderStatsMap = useMemo(() => {
-    const map = {};
-    if (dashboardStats && dashboardStats.quartelStats) {
-      dashboardStats.quartelStats.forEach(qs => {
-        map[qs.folder.id] = qs;
-      });
-    }
-    return map;
-  }, [dashboardStats]);
-
   // Utilitário de ordenação alfabética com pasta favorita no topo
   const sortFoldersWithFavorite = (folderList, favId) => {
     return [...folderList].sort((a, b) => {
@@ -497,17 +487,20 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
             >
               Pastas & Missões
             </button>
-            <button 
-              type="button"
-              onClick={() => setActiveTab('dashboard_comando')} 
-              className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg flex justify-center items-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === 'dashboard_comando' 
-                  ? 'bg-emerald-600 text-white shadow-md' 
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-               <Target size={15} /> Dashboard de Comando
-            </button>
+            {/* RBAC: Apenas Gestores e Admins acessam o Dashboard de Comando */}
+            {isGestor && (
+              <button 
+                type="button"
+                onClick={() => setActiveTab('dashboard_comando')} 
+                className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg flex justify-center items-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'dashboard_comando' 
+                    ? 'bg-emerald-600 text-white shadow-md' 
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                 <Target size={15} /> Dashboard de Comando
+              </button>
+            )}
           </div>
         </div>
 
@@ -892,122 +885,53 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
 
           {activeTab !== 'dashboard_comando' && displayFolders.map(folder => {
             const isFav = folder.id === defaultFolderId;
-            const fStat = folderStatsMap[folder.id] || {
-              totalMissions: 0,
-              totalHidrantes: 0,
-              totalConcluidos: 0,
-              progGeral: 0,
-              naoIniciadas: 0,
-              emAndamento: 0,
-              concluidas: 0
-            };
             return (
               <div 
                 key={folder.id} 
                 onClick={() => setCurrentFolderId(folder.id)}
-                className={`border rounded-xl p-3 sm:p-4 flex flex-col gap-2.5 cursor-pointer transition-all group shadow-sm ${
+                className={`border rounded-xl p-3 sm:p-3.5 flex items-center gap-3 cursor-pointer transition-all group ${
                   isFav 
-                    ? 'bg-slate-800/95 border-amber-500/60 hover:border-amber-400 hover:bg-slate-800 shadow-md shadow-amber-950/20 ring-1 ring-amber-500/20' 
-                    : 'bg-slate-800/70 border-slate-700/80 hover:border-emerald-500 hover:bg-slate-800'
+                    ? 'bg-amber-950/20 border-amber-500/50 hover:border-amber-400 hover:bg-amber-950/30 shadow-md shadow-amber-950/30' 
+                    : 'bg-slate-700/30 border-slate-600 hover:border-emerald-500 hover:bg-slate-700'
                 }`}
               >
-                {/* Linha 1: Ícone + Nome da Pasta + Badges + Botões de Ação */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="relative shrink-0">
-                      <Folder size={22} className={isFav ? 'text-amber-400 group-hover:scale-110 transition-transform' : 'text-emerald-400 group-hover:scale-110 transition-transform'} />
-                      {isFav && (
-                        <span className="absolute -top-1.5 -right-1.5 text-[10px] text-amber-300 font-bold drop-shadow">★</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap min-w-0">
-                      <h3 className={`font-bold text-sm sm:text-base truncate ${isFav ? 'text-amber-200' : 'text-slate-100'}`}>
-                        {folder.name}
-                      </h3>
-                      {isFav && (
-                        <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                          ★ Favorita
-                        </span>
-                      )}
-                      <span className="text-[11px] bg-slate-700/80 text-cyan-300 px-2 py-0.5 rounded-full font-semibold border border-slate-600">
-                        {fStat.totalMissions} {fStat.totalMissions === 1 ? 'Missão' : 'Missões'}
+                <div className="relative shrink-0">
+                  <Folder size={24} className={isFav ? 'text-amber-400 group-hover:scale-110 transition-transform' : 'text-emerald-500 group-hover:scale-110 transition-transform'} />
+                  {isFav && (
+                    <span className="absolute -top-1.5 -right-1.5 text-[10px] text-amber-300 font-bold drop-shadow">★</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className={`font-bold text-base sm:text-lg truncate ${isFav ? 'text-amber-200' : 'text-slate-200'}`}>
+                      {folder.name}
+                    </h3>
+                    {isFav && (
+                      <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        ★ Favorita
                       </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isFav) {
-                          localStorage.removeItem('netuno_default_folder');
-                          setDefaultFolderId(null);
-                        } else {
-                          localStorage.setItem('netuno_default_folder', folder.id);
-                          setDefaultFolderId(folder.id);
-                        }
-                      }}
-                      className={`p-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                        isFav 
-                          ? 'text-amber-300 bg-amber-950/40 hover:bg-amber-900/50' 
-                          : 'text-slate-400 hover:text-amber-300 hover:bg-slate-700'
-                      }`}
-                      title={isFav ? "Remover dos favoritos" : "Definir como pasta favorita do seu quartel"}
-                    >
-                      ★
-                    </button>
-                    {isGestor && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleRenameFolder(folder, e)}
-                        className="p-1.5 text-slate-400 hover:text-cyan-300 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
-                        title="Editar nome da pasta"
-                      >
-                        <Edit size={15} />
-                      </button>
                     )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+                  {isGestor && (
                     <button
                       type="button"
-                      onClick={() => setCurrentFolderId(folder.id)}
-                      className="p-1 text-slate-400 group-hover:text-emerald-400 transition-colors flex items-center gap-0.5 text-xs font-semibold"
-                      title="Abrir pasta"
+                      onClick={(e) => handleRenameFolder(folder, e)}
+                      className="p-2 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      title="Editar nome da pasta"
                     >
-                      <span className="hidden sm:inline">Acessar</span>
-                      <ChevronRight size={18} />
+                      <Edit size={16} />
                     </button>
-                  </div>
-                </div>
-
-                {/* Linha 2: Barra de Progresso do Quartel */}
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400">
-                    <span>Progresso de Vistorias:</span>
-                    <span className="font-mono font-bold text-slate-200">
-                      <span className="text-emerald-400">{fStat.totalConcluidos}</span> / {fStat.totalHidrantes} ({fStat.progGeral}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-700">
-                    <div 
-                      className={`h-full transition-all duration-500 ${fStat.progGeral === 100 ? 'bg-emerald-500' : fStat.progGeral > 0 ? 'bg-cyan-500' : 'bg-transparent'}`}
-                      style={{ width: `${Math.min(100, Math.max(0, fStat.progGeral))}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Linha 3: Mini Badges de Status das Missões */}
-                <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
-                  <div className="bg-slate-900/60 py-1 px-1 rounded border border-slate-700 flex items-center justify-center gap-1">
-                    <span className="text-[10px] text-slate-400">⏳ Plan:</span>
-                    <span className="text-xs font-bold text-slate-200">{fStat.naoIniciadas}</span>
-                  </div>
-                  <div className="bg-amber-950/30 py-1 px-1 rounded border border-amber-800/40 flex items-center justify-center gap-1">
-                    <span className="text-[10px] text-amber-400">🔄 And:</span>
-                    <span className="text-xs font-bold text-amber-300">{fStat.emAndamento}</span>
-                  </div>
-                  <div className="bg-emerald-950/30 py-1 px-1 rounded border border-emerald-800/40 flex items-center justify-center gap-1">
-                    <span className="text-[10px] text-emerald-400">✅ Conc:</span>
-                    <span className="text-xs font-bold text-emerald-300">{fStat.concluidas}</span>
-                  </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentFolderId(folder.id)}
+                    className="p-1 text-slate-500 group-hover:text-slate-300 transition-colors"
+                    title="Abrir pasta"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
                 </div>
               </div>
             );
