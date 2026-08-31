@@ -724,7 +724,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
               >
                 <option value="">Todas as Cidades / RAs</option>
                 {RA_LIST.map(ra => (
-                  <option key={ra} value={ra}>{ra}</option>
+                  <option key={ra.name} value={ra.name}>{ra.name}</option>
                 ))}
               </select>
             </div>
@@ -927,7 +927,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                   >
                     <option value="">Selecione a RA...</option>
                     {RA_LIST.map(ra => (
-                      <option key={ra} value={ra}>{ra}</option>
+                      <option key={ra.name} value={ra.name}>{ra.name}</option>
                     ))}
                   </select>
                 </div>
