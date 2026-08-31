@@ -905,6 +905,18 @@ function BuildingTacticalViewModal({
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {isValidDFCoordinate(study.numLatitude, study.numLongitude) && (
+              <a
+                href={`https://maps.google.com/?q=${study.numLatitude},${study.numLongitude}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow-md transition-all active:scale-95"
+                title="Abrir no Google Maps (Coordenadas Reais)"
+              >
+                <MapPin size={15} />
+                <span className="hidden sm:inline">Google Maps</span>
+              </a>
+            )}
             <button
               type="button"
               onClick={onShareWhatsApp}
@@ -983,6 +995,48 @@ function BuildingTacticalViewModal({
                 <span className="text-sm font-bold text-slate-100">{study.populacaoFlutuante || '-'}</span>
               </div>
             </div>
+
+            {/* Bloco de Coordenadas Geográficas e Verificação no Google Maps / Waze */}
+            {isValidDFCoordinate(study.numLatitude, study.numLongitude) && (
+              <div className="bg-slate-950 border border-blue-500/30 rounded-xl p-3.5 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-inner">
+                <div className="min-w-0">
+                  <span className="text-[11px] text-blue-400 font-bold uppercase tracking-wider block mb-0.5 flex items-center gap-1">
+                    <MapPin size={13} />
+                    <span>Localização Geográfica do Levantamento</span>
+                  </span>
+                  <div className="text-xs text-slate-200 font-medium truncate">
+                    <span>{study.endereco || '-'}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                    Lat: <strong className="text-slate-300">{study.numLatitude}</strong> | Lng: <strong className="text-slate-300">{study.numLongitude}</strong>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                  <a
+                    href={`https://maps.google.com/?q=${study.numLatitude},${study.numLongitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg shadow-md transition-all active:scale-95"
+                    title="Conferir fachada e satélite no Google Maps"
+                  >
+                    <MapPin size={14} />
+                    <span>Ver no Google Maps</span>
+                    <ExternalLink size={12} />
+                  </a>
+                  <a
+                    href={`https://waze.com/ul?ll=${study.numLatitude},${study.numLongitude}&navigate=yes`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-700 hover:bg-sky-600 text-white font-bold text-xs rounded-lg shadow-md transition-all active:scale-95"
+                    title="Navegar com viatura via Waze"
+                  >
+                    <Navigation size={14} />
+                    <span>Waze</span>
+                  </a>
+                </div>
+              </div>
+            )}
 
             {/* Destaque do Reconhecimento Preventivo Realizado pelo CBMDF */}
             {study.responsavelVistoria && study.responsavelVistoria !== '-' && (
