@@ -113,9 +113,17 @@ export const loadFolders = () => {
     if (data) {
       folders = JSON.parse(data);
     }
-    const fixedIds = DEFAULT_FOLDERS.map(f => f.id);
-    const customFolders = folders.filter(f => !fixedIds.includes(f.id));
-    return [...DEFAULT_FOLDERS, ...customFolders];
+    const map = new Map();
+    DEFAULT_FOLDERS.forEach(f => map.set(f.id, { ...f }));
+    if (Array.isArray(folders)) {
+      folders.forEach(f => {
+        if (f && f.id) {
+          const existing = map.get(f.id);
+          map.set(f.id, existing ? { ...existing, ...f } : f);
+        }
+      });
+    }
+    return Array.from(map.values());
   } catch (error) {
     console.error("Erro ao ler pastas do localStorage", error);
   }
@@ -302,19 +310,21 @@ export const mergeFolders = (localFolders = [], cloudFolders = []) => {
   const combinedMap = new Map();
 
   // 1. Pastas fixas padrão
-  DEFAULT_FOLDERS.forEach(f => combinedMap.set(f.id, f));
+  DEFAULT_FOLDERS.forEach(f => combinedMap.set(f.id, { ...f }));
 
-  // 2. Pastas locais customizadas
+  // 2. Pastas locais
   (localFolders || []).forEach(f => {
-    if (f && f.id && !combinedMap.has(f.id)) {
-      combinedMap.set(f.id, f);
+    if (f && f.id) {
+      const existing = combinedMap.get(f.id);
+      combinedMap.set(f.id, existing ? { ...existing, ...f } : f);
     }
   });
 
-  // 3. Pastas da nuvem customizadas
+  // 3. Pastas da nuvem
   (cloudFolders || []).forEach(f => {
-    if (f && f.id && !combinedMap.has(f.id)) {
-      combinedMap.set(f.id, f);
+    if (f && f.id) {
+      const existing = combinedMap.get(f.id);
+      combinedMap.set(f.id, existing ? { ...existing, ...f } : f);
     }
   });
 

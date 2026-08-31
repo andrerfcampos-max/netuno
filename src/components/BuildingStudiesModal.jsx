@@ -96,15 +96,17 @@ export default function BuildingStudiesModal({
 
   // Filtragem
   const filteredStudies = useMemo(() => {
+    if (!selectedCity) {
+      return [];
+    }
+
     let result = [...studies];
 
-    if (selectedCity) {
-      const normCity = normalizeRAName(selectedCity).toLowerCase();
-      result = result.filter(s => {
-        const sCity = normalizeRAName(s.ra || '').toLowerCase();
-        return sCity === normCity;
-      });
-    }
+    const normCity = normalizeRAName(selectedCity).toLowerCase();
+    result = result.filter(s => {
+      const sCity = normalizeRAName(s.ra || '').toLowerCase();
+      return sCity === normCity;
+    });
 
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -295,7 +297,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
                   onChange={(e) => setSelectedCity(e.target.value)}
                   className="w-full pl-3 pr-8 py-2 bg-slate-800 border border-slate-700 focus:border-cyan-500 rounded-lg text-xs sm:text-sm text-slate-100 font-medium appearance-none cursor-pointer outline-none transition-all"
                 >
-                  <option value="">Todas as Cidades ({studies.length} cadastradas)</option>
+                  <option value="">Selecione uma Cidade (Obrigatório)...</option>
                   {RA_LIST.map(ra => {
                     const count = studies.filter(s => normalizeRAName(s.ra || '').toLowerCase() === ra.name.toLowerCase()).length;
                     return (
@@ -341,13 +343,20 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
           {/* MENSAGEM CONTADOR DE EDIFICAÇÕES ENCONTRADAS PELO FILTRO (Estilo Filtro Avançado do Mapa) */}
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between flex-wrap gap-2 text-xs">
             <div className="flex items-center gap-2">
-              <span className={`font-bold flex items-center gap-1.5 ${filteredStudies.length > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                <span className={`w-2 h-2 rounded-full ${filteredStudies.length > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
-                {filteredStudies.length > 0 
-                  ? `${filteredStudies.length} edificação(ões) encontrada(s)${selectedCity ? ` em ${selectedCity}` : ' no DF'}`
-                  : 'Nenhuma edificação encontrada com os filtros aplicados'}
-              </span>
-              {searchTerm && (
+              {!selectedCity ? (
+                <span className="font-bold flex items-center gap-1.5 text-cyan-300">
+                  <MapPin size={14} className="text-emerald-400 shrink-0 animate-pulse" />
+                  Escolha a cidade para mostrar a lista de estabelecimentos visitados.
+                </span>
+              ) : (
+                <span className={`font-bold flex items-center gap-1.5 ${filteredStudies.length > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  <span className={`w-2 h-2 rounded-full ${filteredStudies.length > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                  {filteredStudies.length > 0 
+                    ? `${filteredStudies.length} edificação(ões) encontrada(s) em ${selectedCity}`
+                    : `Nenhuma edificação encontrada em ${selectedCity}`}
+                </span>
+              )}
+              {searchTerm && selectedCity && (
                 <span className="text-[11px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
                   Termo: <strong className="text-slate-200">"{searchTerm}"</strong>
                 </span>
@@ -387,14 +396,26 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
               <p className="text-sm font-semibold text-slate-300">Carregando base PREPOP do DF...</p>
               <p className="text-xs text-slate-500 mt-1">Carregando estabelecimentos e fichas táticas</p>
             </div>
+          ) : !selectedCity ? (
+            <div className="h-full min-h-[360px] flex flex-col items-center justify-center text-center p-6 bg-slate-900/40 border border-dashed border-slate-800 rounded-2xl relative">
+              <div 
+                className="bg-slate-900/95 text-cyan-300 px-6 py-3 rounded-full border border-cyan-500/50 shadow-2xl text-xs sm:text-sm font-semibold backdrop-blur-md flex items-center gap-2.5 text-center max-w-[92vw] transition-all"
+              >
+                <MapPin size={16} className="text-emerald-400 shrink-0 animate-pulse" />
+                <span>Escolha a cidade para mostrar a lista de estabelecimentos visitados.</span>
+              </div>
+              <p className="text-xs text-slate-400 max-w-md mt-4 leading-relaxed">
+                Selecione uma Região Administrativa no seletor de cidade acima para visualizar a lista de estabelecimentos cadastrados e acessar as fichas completas PREPOP.
+              </p>
+            </div>
           ) : filteredStudies.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-slate-900/40 border border-dashed border-slate-800 rounded-2xl">
               <Building2 size={48} className="text-slate-600 mb-3 animate-bounce" />
               <h3 className="text-base font-bold text-slate-300">Nenhum estudo de edificação encontrado</h3>
               <p className="text-xs text-slate-500 max-w-md mt-1 mb-4">
-                {selectedCity || searchTerm 
-                  ? 'Nenhum resultado corresponde aos filtros selecionados. Tente limpar os filtros ou cadastrar um novo estudo.'
-                  : 'Nenhum estudo tático de edificação cadastrado ainda.'}
+                {searchTerm 
+                  ? `Nenhum resultado corresponde ao termo "${searchTerm}" em ${selectedCity}.`
+                  : `Nenhum estudo tático de edificação cadastrado para ${selectedCity}.`}
               </p>
               <button
                 type="button"
@@ -402,7 +423,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
                   setEditingStudy(null);
                   setIsFormOpen(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm rounded-lg shadow-lg shadow-emerald-950/50 transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm rounded-lg shadow-lg shadow-emerald-950/50 transition-all cursor-pointer"
               >
                 <PlusCircle size={16} />
                 Cadastrar primeiro estudo

@@ -42,9 +42,23 @@ const SelectionCart = ({
   // ==========================================
   const [modalView, setModalView] = useState('list'); // 'list' | 'create' | 'add'
   const [newMissionName, setNewMissionName] = useState('');
-  const [selectedFolderId, setSelectedFolderId] = useState('');
+  const [selectedFolderId, setSelectedFolderId] = useState(() => {
+    return localStorage.getItem('netuno_default_folder') || '';
+  });
   const [missionSearchTerm, setMissionSearchTerm] = useState('');
   const [selectedTargetMissionId, setSelectedTargetMissionId] = useState(activeMission?.id || '');
+
+  const defaultFolderId = localStorage.getItem('netuno_default_folder') || '';
+
+  const sortedFolders = useMemo(() => {
+    return [...folders].sort((a, b) => {
+      const aIsFav = defaultFolderId && a.id === defaultFolderId;
+      const bIsFav = defaultFolderId && b.id === defaultFolderId;
+      if (aIsFav && !bIsFav) return -1;
+      if (!aIsFav && bIsFav) return 1;
+      return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base', numeric: true });
+    });
+  }, [folders, defaultFolderId]);
 
   // Atualiza sugestão de nome ao mudar hidrantes ou abrir
   useEffect(() => {
@@ -66,6 +80,8 @@ const SelectionCart = ({
       if (activeMission?.id) {
         setSelectedTargetMissionId(activeMission.id);
       }
+      const favFolder = localStorage.getItem('netuno_default_folder') || '';
+      setSelectedFolderId(favFolder);
     }
   }, [isOpen, activeMission?.id]);
 
@@ -549,9 +565,9 @@ const SelectionCart = ({
                     className="w-full bg-slate-800/90 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3 py-2.5 text-sm text-slate-100 font-medium focus:outline-none transition-all"
                   >
                     <option value="">📁 Central / Raiz (Sem pasta fixa)</option>
-                    {folders.map(f => (
+                    {sortedFolders.map(f => (
                       <option key={f.id} value={f.id}>
-                        🏢 {f.name}
+                        {f.id === defaultFolderId ? '★ ' : '🏢 '}{f.name}{f.id === defaultFolderId ? ' (Favorita)' : ''}
                       </option>
                     ))}
                   </select>

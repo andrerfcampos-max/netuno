@@ -905,7 +905,9 @@ function App() {
 
   // ---- Controle de Missões ----
   const handleNewMission = (parentFolderId = null) => {
-    const newMission = createNewMission("Rascunho de Hoje", parentFolderId, currentUser);
+    const defaultFolder = localStorage.getItem('netuno_default_folder') || null;
+    const targetFolderId = parentFolderId !== null ? parentFolderId : defaultFolder;
+    const newMission = createNewMission("Rascunho de Hoje", targetFolderId, currentUser);
     newMission.createdBy = currentUser?.matricula;
     newMission.createdByName = currentUser?.nome;
     setMissions(prev => [...prev, newMission]);

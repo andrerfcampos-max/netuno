@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput, FileSpreadsheet, Printer, BarChart3, Activity, Clock, CheckCircle2, Search, ArrowRight, Shield, Layers, Filter } from 'lucide-react';
+import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput, FileSpreadsheet, Printer, BarChart3, Activity, Clock, CheckCircle2, Search, ArrowRight, Shield, Layers, Filter, Edit } from 'lucide-react';
 import { createNewFolder } from '../utils/storage';
-import { syncMissionToCloud } from '../services/syncService';
+import { syncMissionToCloud, syncFolderToCloud } from '../services/syncService';
 
 const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
@@ -22,7 +22,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
   const [dashboardSearch, setDashboardSearch] = useState('');
   const [dashboardOnlyWithMissions, setDashboardOnlyWithMissions] = useState(false);
 
-  // Set default folder
+  // Set default (favorite) folder
   const handleSetDefaultFolder = () => {
     if (currentFolderId === defaultFolderId) {
       localStorage.removeItem('netuno_default_folder');
@@ -30,6 +30,25 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
     } else {
       localStorage.setItem('netuno_default_folder', currentFolderId || '');
       setDefaultFolderId(currentFolderId);
+    }
+  };
+
+  // Renomear pasta
+  const handleRenameFolder = (folder, e) => {
+    if (e) e.stopPropagation();
+    const newName = prompt("Editar nome da pasta:", folder.name);
+    if (newName && newName.trim() && newName.trim() !== folder.name) {
+      const updatedFolder = { ...folder, name: newName.trim(), updatedAt: new Date().toISOString() };
+      const updatedList = folders.map(f => f.id === folder.id ? updatedFolder : f);
+      onFoldersChange(updatedList);
+      syncFolderToCloud(updatedFolder);
+    }
+  };
+
+  const handleRenameCurrentFolder = () => {
+    const currentFolder = folders.find(f => f.id === currentFolderId);
+    if (currentFolder) {
+      handleRenameFolder(currentFolder);
     }
   };
 
@@ -140,6 +159,17 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
     };
   }, [availableMissions, folders]);
 
+  // Utilitário de ordenação alfabética com pasta favorita no topo
+  const sortFoldersWithFavorite = (folderList, favId) => {
+    return [...folderList].sort((a, b) => {
+      const aIsFav = favId && a.id === favId;
+      const bIsFav = favId && b.id === favId;
+      if (aIsFav && !bIsFav) return -1;
+      if (!aIsFav && bIsFav) return 1;
+      return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base', numeric: true });
+    });
+  };
+
   // Filtra as pastas e missões
   let displayMissions = [];
   let displayFolders = [];
@@ -159,6 +189,9 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
     displayFolders = folders.filter(f => f.parentFolderId === currentFolderId);
     displayMissions = availableMissions.filter(m => m.parentFolderId === currentFolderId);
   }
+
+  // Ordena as pastas em ordem alfabética com a pasta favorita no topo
+  displayFolders = sortFoldersWithFavorite(displayFolders, defaultFolderId);
 
   const filteredMissions = displayMissions.filter(m => {
     const total = (m.selectedIds || []).length;
@@ -298,7 +331,8 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
   };
 
   const handleCreateMission = () => {
-    onNewMission(currentFolderId);
+    const targetFolderId = currentFolderId !== null ? currentFolderId : (defaultFolderId || null);
+    onNewMission(targetFolderId);
   };
 
   const handleMoveMission = (mission) => {
@@ -399,15 +433,27 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
             </React.Fragment>
           ))}
 
-          {/* Botão de Quartel Padrão */}
+          {/* Botão de Pasta Favorita e Renomear */}
           {currentFolderId && (
             <div className="ml-auto flex items-center gap-2">
+              {isGestor && (
+                <button
+                  type="button"
+                  onClick={handleRenameCurrentFolder}
+                  className="text-xs px-2.5 py-1 rounded-lg border font-semibold bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500 hover:text-white transition-colors cursor-pointer flex items-center gap-1"
+                  title="Editar nome desta pasta"
+                >
+                  <Edit size={13} className="text-cyan-400" />
+                  <span>Renomear Pasta</span>
+                </button>
+              )}
               <button 
+                type="button"
                 onClick={handleSetDefaultFolder}
-                className={`text-xs px-2.5 py-1 rounded-lg border font-semibold transition-colors cursor-pointer ${currentFolderId === defaultFolderId ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/50' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-emerald-300'}`}
-                title="Definir pasta atual para abrir automaticamente"
+                className={`text-xs px-2.5 py-1 rounded-lg border font-semibold transition-colors cursor-pointer flex items-center gap-1 ${currentFolderId === defaultFolderId ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-amber-300'}`}
+                title={currentFolderId === defaultFolderId ? 'Pasta favorita selecionada para abertura e salvamento padrão' : 'Definir como pasta favorita padrão'}
               >
-                {currentFolderId === defaultFolderId ? '★ Quartel Padrão' : '☆ Definir como Padrão'}
+                {currentFolderId === defaultFolderId ? '★ Pasta Favorita' : '☆ Definir como Favorita'}
               </button>
             </div>
           )}
@@ -740,46 +786,71 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
                   🏢 Mosaico de Pastas dos Quartéis
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
-                  {dashboardStats.quartelStats.map(qs => (
-                    <div 
-                      key={qs.folder.id} 
-                      onClick={() => {
-                        setCurrentFolderId(qs.folder.id);
-                        setActiveTab('todas');
-                      }}
-                      className="bg-slate-800 border border-slate-700 hover:border-emerald-500 rounded-xl p-3.5 flex flex-col gap-2.5 shadow-md cursor-pointer hover:scale-[1.01] transition-all group"
-                      title="Clique para abrir as missões deste quartel"
-                    >
-                       <h5 className="font-bold text-emerald-400 group-hover:text-emerald-300 text-base border-b border-slate-700 pb-2 flex justify-between items-center">
-                          <span className="truncate">{qs.folder.name}</span>
-                          <span className="text-xs bg-emerald-950/80 text-emerald-300 px-2 py-0.5 rounded-full shrink-0 border border-emerald-800/60">
-                            {qs.totalMissions} Missões
-                          </span>
-                       </h5>
-                       
-                       <div className="w-full bg-slate-700 rounded-full h-3.5 overflow-hidden border border-slate-600 relative">
-                         <div className={`h-full ${qs.progGeral === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${qs.progGeral}%` }}></div>
-                         <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-                           {qs.progGeral}% ({qs.totalConcluidos}/{qs.totalHidrantes})
-                         </div>
-                       </div>
-                       
-                       <div className="grid grid-cols-3 gap-1.5 text-center text-xs font-bold mt-1">
-                         <div className="bg-slate-700/50 rounded py-1.5 border border-slate-600 flex flex-col">
-                           <span className="text-[10px] text-slate-400">Plan.</span>
-                           <span className="text-sm text-slate-200">{qs.naoIniciadas}</span>
-                         </div>
-                         <div className="bg-amber-900/20 rounded py-1.5 border border-amber-900/50 flex flex-col">
-                           <span className="text-[10px] text-amber-400">Andam.</span>
-                           <span className="text-sm text-amber-400">{qs.emAndamento}</span>
-                         </div>
-                         <div className="bg-emerald-900/20 rounded py-1.5 border border-emerald-900/50 flex flex-col">
-                           <span className="text-[10px] text-emerald-400">Concl.</span>
-                           <span className="text-sm text-emerald-400">{qs.concluidas}</span>
-                         </div>
-                       </div>
-                    </div>
-                  ))}
+                  {[...dashboardStats.quartelStats]
+                    .sort((a, b) => {
+                      const aIsFav = defaultFolderId && a.folder.id === defaultFolderId;
+                      const bIsFav = defaultFolderId && b.folder.id === defaultFolderId;
+                      if (aIsFav && !bIsFav) return -1;
+                      if (!aIsFav && bIsFav) return 1;
+                      return (a.folder.name || '').localeCompare(b.folder.name || '', 'pt-BR', { sensitivity: 'base', numeric: true });
+                    })
+                    .map(qs => {
+                      const isFav = qs.folder.id === defaultFolderId;
+                      return (
+                        <div 
+                          key={qs.folder.id} 
+                          onClick={() => {
+                            setCurrentFolderId(qs.folder.id);
+                            setActiveTab('todas');
+                          }}
+                          className={`border rounded-xl p-3.5 flex flex-col gap-2.5 shadow-md cursor-pointer hover:scale-[1.01] transition-all group ${
+                            isFav 
+                              ? 'bg-slate-800 border-amber-500/60 shadow-amber-950/20 ring-1 ring-amber-500/30' 
+                              : 'bg-slate-800 border-slate-700 hover:border-emerald-500'
+                          }`}
+                          title="Clique para abrir as missões deste quartel"
+                        >
+                           <h5 className="font-bold text-emerald-400 group-hover:text-emerald-300 text-base border-b border-slate-700 pb-2 flex justify-between items-center gap-2">
+                              <span className="truncate flex items-center gap-1.5">
+                                {isFav && <span className="text-amber-400 text-xs font-bold shrink-0">★</span>}
+                                <span className={isFav ? 'text-amber-300' : 'text-emerald-400'}>{qs.folder.name}</span>
+                              </span>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {isFav && (
+                                  <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-500/40 font-bold">
+                                    Favorita
+                                  </span>
+                                )}
+                                <span className="text-xs bg-emerald-950/80 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-800/60 font-semibold">
+                                  {qs.totalMissions} Missões
+                                </span>
+                              </div>
+                           </h5>
+                           
+                           <div className="w-full bg-slate-700 rounded-full h-3.5 overflow-hidden border border-slate-600 relative">
+                             <div className={`h-full ${qs.progGeral === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${qs.progGeral}%` }}></div>
+                             <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+                               {qs.progGeral}% ({qs.totalConcluidos}/{qs.totalHidrantes})
+                             </div>
+                           </div>
+                           
+                           <div className="grid grid-cols-3 gap-1.5 text-center text-xs font-bold mt-1">
+                             <div className="bg-slate-700/50 rounded py-1.5 border border-slate-600 flex flex-col">
+                               <span className="text-[10px] text-slate-400">Plan.</span>
+                               <span className="text-sm text-slate-200">{qs.naoIniciadas}</span>
+                             </div>
+                             <div className="bg-amber-900/20 rounded py-1.5 border border-amber-900/50 flex flex-col">
+                               <span className="text-[10px] text-amber-400">Andam.</span>
+                               <span className="text-sm text-amber-400">{qs.emAndamento}</span>
+                             </div>
+                             <div className="bg-emerald-900/20 rounded py-1.5 border border-emerald-900/50 flex flex-col">
+                               <span className="text-[10px] text-emerald-400">Concl.</span>
+                               <span className="text-sm text-emerald-400">{qs.concluidas}</span>
+                             </div>
+                           </div>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
 
@@ -788,33 +859,83 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
 
           {activeTab !== 'dashboard_comando' && isGestor && !isMoveMode && searchTerm === '' && (
             <div className="flex gap-2 mb-2">
-              <button onClick={handleCreateFolder} className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-dashed border-slate-500 hover:border-slate-400 text-slate-400 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold transition-all">
+              <button 
+                type="button"
+                onClick={handleCreateFolder} 
+                className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-dashed border-slate-500 hover:border-slate-400 text-slate-400 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold transition-all cursor-pointer"
+              >
                 <Plus size={18} />
                 NOVA PASTA
               </button>
-              <button onClick={() => {
-                onNewMission(currentFolderId);
-                onClose();
-              }} className="flex-[2] flex items-center justify-center gap-2 py-3 border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 text-emerald-400 bg-emerald-900/10 hover:bg-emerald-900/30 rounded-xl font-bold transition-all">
+              <button 
+                type="button"
+                onClick={() => {
+                  const targetFolderId = currentFolderId !== null ? currentFolderId : (defaultFolderId || null);
+                  onNewMission(targetFolderId);
+                  onClose();
+                }} 
+                className="flex-[2] flex items-center justify-center gap-2 py-3 border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 text-emerald-400 bg-emerald-900/10 hover:bg-emerald-900/30 rounded-xl font-bold transition-all cursor-pointer"
+                title="Criar nova missão (na pasta atual ou na pasta favorita)"
+              >
                 <Plus size={18} />
                 CRIAR MISSÃO
               </button>
             </div>
           )}
 
-          {activeTab !== 'dashboard_comando' && displayFolders.map(folder => (
-            <div 
-              key={folder.id} 
-              onClick={() => setCurrentFolderId(folder.id)}
-              className="bg-slate-700/30 border border-slate-600 hover:border-emerald-500 rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:bg-slate-700 transition-colors group"
-            >
-              <Folder size={24} className="text-emerald-500 group-hover:scale-110 transition-transform" />
-              <div className="flex-1">
-                <h3 className="font-bold text-lg text-slate-200">{folder.name}</h3>
+          {activeTab !== 'dashboard_comando' && displayFolders.map(folder => {
+            const isFav = folder.id === defaultFolderId;
+            return (
+              <div 
+                key={folder.id} 
+                onClick={() => setCurrentFolderId(folder.id)}
+                className={`border rounded-xl p-3 sm:p-3.5 flex items-center gap-3 cursor-pointer transition-all group ${
+                  isFav 
+                    ? 'bg-amber-950/20 border-amber-500/50 hover:border-amber-400 hover:bg-amber-950/30 shadow-md shadow-amber-950/30' 
+                    : 'bg-slate-700/30 border-slate-600 hover:border-emerald-500 hover:bg-slate-700'
+                }`}
+              >
+                <div className="relative shrink-0">
+                  <Folder size={24} className={isFav ? 'text-amber-400 group-hover:scale-110 transition-transform' : 'text-emerald-500 group-hover:scale-110 transition-transform'} />
+                  {isFav && (
+                    <span className="absolute -top-1.5 -right-1.5 text-[10px] text-amber-300 font-bold drop-shadow">★</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className={`font-bold text-base sm:text-lg truncate ${isFav ? 'text-amber-200' : 'text-slate-200'}`}>
+                      {folder.name}
+                    </h3>
+                    {isFav && (
+                      <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        ★ Favorita
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+                  {isGestor && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleRenameFolder(folder, e)}
+                      className="p-2 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      title="Editar nome da pasta"
+                    >
+                      <Edit size={16} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentFolderId(folder.id)}
+                    className="p-1 text-slate-500 group-hover:text-slate-300 transition-colors"
+                    title="Abrir pasta"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
               </div>
-              <ChevronRight size={20} className="text-slate-500" />
-            </div>
-          ))}
+            );
+          })}
 
           {activeTab !== 'dashboard_comando' && filteredMissions.map(mission => {
             const isOpen = (mission.id === activeMissionId) || (Array.isArray(openMissionIds) && openMissionIds.includes(mission.id));
