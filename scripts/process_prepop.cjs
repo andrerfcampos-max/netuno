@@ -202,7 +202,9 @@ const MANUAL_OVERRIDES = {
   671: 'Ginásio de Esportes do Paranoá',
   1265: 'Comércio SHIN CA 1 (Lago Norte)',
   196: 'Indusplan (ADE Águas Claras)',
-  830: 'Quartel 21º GBM (Riacho Fundo)',
+  830: 'Du Pneus',
+  633: 'CAIC UNESCO (São Sebastião)',
+  1528: 'Localiza (SIA Trecho 2)',
   1106: 'Galpão ADE Ceilândia Q 1 Cj C Lt 30',
   815: 'Condomínio AOS 08 (Octogonal)',
   312: 'Posto de Combustíveis Avenida Central (Núcleo Bandeirante)',
@@ -519,6 +521,16 @@ function extractEstablishmentName(row, ra) {
     const isAddr = /^(Q[A-Z0-9]|CL[A-Z]|EQ[A-Z]|SH[A-Z]|SM[A-Z]|AE|ÁREA|LOT[E|ES]|RUA|\d+ª?\s*AVENIDA|VIA|SETOR|TRECHO|CONJUNTO|CHÁCARA|SMPW|SCS|SBS|SBN|SRTV|SIG|SAAN|SIA|SMAS|VILA|AV|AOS|SQS|SQN|CLN|CLS|SHCS|SHCN|QI|QN|QR|QS|QNL|QNM|QNN|QNO|QNJ|QNA|QNB|QNC|QND|QNE|QNF|QNG|QNH|\d+)/i.test(first);
     if (!isAddr && first.length > 3 && !first.startsWith('-15') && !first.startsWith('-16')) {
       return expandSchoolName(cleanExtractedName(first), ra);
+    }
+  }
+
+  // 8. Check melhoracesso for trade names e.g. "ENTRADA PRINCIPAL DU PNEUS"
+  if (row.melhoracesso) {
+    const cleanMelhor = String(row.melhoracesso)
+      .replace(/^(ENTRADA\s+PRINCIPAL|ACESSO\s+PRINCIPAL|ENTRADA|PORTA\s+DE\s+ENTRADA|PORTAO\s+PRINCIPAL|PORTÃO\s+PRINCIPAL)\s+(?:DA|DO|DE|NA|NO)?\s*/i, '')
+      .trim();
+    if (cleanMelhor.length > 2 && !/^(frente|fundos|lateral|principal|rua|avenida|garagem|estacionamento|nao\s+se\s+aplica|não\s+se\s+aplica|única|unica|\d+)/i.test(cleanMelhor)) {
+      return expandSchoolName(cleanExtractedName(cleanMelhor), ra);
     }
   }
 
