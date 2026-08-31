@@ -1,5 +1,3 @@
-import { MOCK_TEST_MISSIONS } from './mockMissions';
-
 const MISSIONS_STORAGE_KEY = 'netuno_missions';
 const LEGACY_MISSIONS_STORAGE_KEY = 'argos_missions';
 const FOLDERS_STORAGE_KEY = 'netuno_folders';
@@ -8,13 +6,12 @@ const LEGACY_FOLDERS_STORAGE_KEY = 'argos_folders';
 export const loadMissions = () => {
   try {
     const data = localStorage.getItem(MISSIONS_STORAGE_KEY) || localStorage.getItem(LEGACY_MISSIONS_STORAGE_KEY);
-    let storedMissions = [];
     if (data !== null) {
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed)) {
         // Limpeza automática de rascunhos antigos (de dias anteriores)
         const todayString = new Date().toDateString();
-        storedMissions = parsed.filter(m => {
+        return parsed.filter(m => {
           if (m.isDraft) {
             const createdString = new Date(m.createdAt).toDateString();
             return createdString === todayString;
@@ -23,34 +20,11 @@ export const loadMissions = () => {
         });
       }
     }
-    
-    // Mescla missões salvas com o catálogo de MOCK_TEST_MISSIONS
-    const map = new Map();
-    MOCK_TEST_MISSIONS.forEach(m => {
-      if (m && m.id) map.set(String(m.id), m);
-    });
-
-    storedMissions.forEach(m => {
-      if (m && m.id) {
-        const idKey = String(m.id);
-        const mockItem = map.get(idKey);
-        if (mockItem) {
-          map.set(idKey, {
-            ...mockItem,
-            ...m,
-            selectedIds: Array.isArray(m.selectedIds) && m.selectedIds.length > 0 ? m.selectedIds : mockItem.selectedIds,
-            completedIds: Array.isArray(m.completedIds) ? m.completedIds : mockItem.completedIds
-          });
-        } else {
-          map.set(idKey, m);
-        }
-      }
-    });
-
-    return Array.from(map.values());
+    // Primeira inicialização sem dados: retorna lista vazia dinâmica para produção
+    return [];
   } catch (error) {
     console.error("Erro ao ler missões do localStorage", error);
-    return MOCK_TEST_MISSIONS;
+    return [];
   }
 };
 

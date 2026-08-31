@@ -398,6 +398,7 @@ function runPipeline() {
     };
 
     processedData.push({
+      _internalId: `hid_${i}`,
       ...row,
       nomHidrante: fixEncoding(rawNom || code),
       codHidrante: fixEncoding(rawCod || code),
@@ -421,9 +422,15 @@ function runPipeline() {
 
   const publicDest = path.join(__dirname, '../public/base-de-dados.xlsx');
   const rootDest = path.join(__dirname, '../base-de-dados.xlsx');
+  const jsonDest = path.join(__dirname, '../public/hidrantes_df_oficial.json');
+  const csvDest = path.join(__dirname, '../public/hidrantes_df_oficial.csv');
 
   XLSX.writeFile(outWb, publicDest);
   XLSX.writeFile(outWb, rootDest);
+  fs.writeFileSync(jsonDest, JSON.stringify(processedData, null, 2), 'utf8');
+  
+  const csvContent = '\uFEFF' + XLSX.utils.sheet_to_csv(outWs, { FS: ';' });
+  fs.writeFileSync(csvDest, csvContent, 'utf8');
 
   console.log('----------------------------------------------------');
   console.log('✅ BASE DE DADOS ATUALIZADA COM SUCESSO:');
@@ -432,7 +439,10 @@ function runPipeline() {
   console.log(`   🔴 Inoperantes: ${countInoperantes}`);
   console.log(`   🔧 Com Diagnóstico de Defeito: ${countWithDefects}`);
   console.log(`   🗺️  Coordenadas Válidas no DF: ${validCoords} (Inconsistentes: ${invalidCoords})`);
-  console.log(`   💾 Arquivo Salvo em: ${publicDest}`);
+  console.log(`   💾 Arquivos Salvos em:`);
+  console.log(`      - ${publicDest}`);
+  console.log(`      - ${jsonDest}`);
+  console.log(`      - ${csvDest}`);
   console.log('====================================================');
 }
 

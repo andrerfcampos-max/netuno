@@ -1631,7 +1631,21 @@ function App() {
         {activeView === 'report' && (
           <div id="modulo-relatorio" className="w-full h-full max-w-5xl mx-auto flex-1 min-h-0 border border-slate-700 rounded-xl overflow-y-auto bg-slate-800/90 flex flex-col">
             <MissionReportPanel 
-              hidrantes={reportMode === 'mission' ? hidrantes.filter(h => selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h._internalId)) : filteredList}
+              hidrantes={reportMode === 'mission' ? (() => {
+                const ids = currentMission?.selectedIds || selectedMissionIds || [];
+                const map = new Map();
+                hidrantes.forEach(h => {
+                  if (h._internalId) map.set(h._internalId, h);
+                  if (h.codHidrante) map.set(h.codHidrante, h);
+                  if (h.nomHidrante) map.set(h.nomHidrante, h);
+                });
+                const list = [];
+                ids.forEach(id => {
+                  const item = map.get(id);
+                  if (item && !list.includes(item)) list.push(item);
+                });
+                return list.length > 0 ? list : hidrantes.filter(h => ids.includes(h.codHidrante) || ids.includes(h.nomHidrante) || ids.includes(h._internalId));
+              })() : filteredList}
               currentMission={reportMode === 'mission' ? currentMission : null}
               onClose={() => { setActiveView('map'); setReportMode('global'); }}
               currentUser={currentUser}

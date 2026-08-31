@@ -74,19 +74,32 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   };
 
   const sortedHidrantesGeral = useMemo(() => {
-    return [...hidrantes].sort((a, b) => {
+    const completedIds = currentMission?.completedIds || [];
+    const inspected = [];
+    const uninspected = [];
+
+    hidrantes.forEach(h => {
+      const isCompleted = completedIds.includes(h.codHidrante) || 
+                          completedIds.includes(h.nomHidrante) || 
+                          completedIds.includes(h._internalId);
+      const date = parseDate(h.datHoraUltimaVistoria || h.datHoraVistoria);
+      if (isCompleted || date > 0) {
+        inspected.push(h);
+      } else {
+        uninspected.push(h);
+      }
+    });
+
+    // 1. Vistorias realizadas: ordenadas rigorosamente da MAIS RECENTE para a MAIS ANTIGA
+    inspected.sort((a, b) => {
       const dateA = parseDate(a.datHoraUltimaVistoria || a.datHoraVistoria);
       const dateB = parseDate(b.datHoraUltimaVistoria || b.datHoraVistoria);
-      
-      // Se ambos tiverem data, ordena do mais recente para o mais antigo
-      if (dateA && dateB) return dateB - dateA;
-      // Se apenas um tiver data, o que foi vistoriado vem primeiro
-      if (dateA && !dateB) return -1;
-      if (!dateA && dateB) return 1;
-      // Se nenhum tiver data, mantém a ordem da lista/rota
-      return 0;
+      return dateB - dateA;
     });
-  }, [hidrantes]);
+
+    // 2. Vistorias não realizadas (pendentes): preserva a sequência da rota de missão (do mais próximo ao mais distante)
+    return [...inspected, ...uninspected];
+  }, [hidrantes, currentMission]);
 
   const sortedHidrantesCaesb = useMemo(() => {
     return sortedHidrantesGeral.filter(h => 
