@@ -205,8 +205,14 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     if (totalCount === 0) return;
     
     const baseUrl = window.location.origin + window.location.pathname;
-    const allIds = [...(pendingRoute || []), ...(completedHydrants || [])].map(h => h.nomHidrante || h.codHidrante).filter(Boolean);
-    const magicLink = `${baseUrl}?ds=${allIds.join(',')}`;
+    const missionId = currentMission?.id;
+    let magicLink = '';
+    if (missionId) {
+      magicLink = `${baseUrl}?m=${encodeURIComponent(missionId)}`;
+    } else {
+      const allIds = [...(pendingRoute || []), ...(completedHydrants || [])].map(h => h.nomHidrante || h.codHidrante).filter(Boolean);
+      magicLink = `${baseUrl}?ds=${allIds.slice(0, 30).join(',')}`;
+    }
     
     const missionName = currentMission?.name || "Rascunho de Hoje";
     

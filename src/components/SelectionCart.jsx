@@ -72,23 +72,22 @@ const SelectionCart = ({
   // ==========================================
   // ESTADOS DE ARRASTO DO BALÃO FLUTUANTE (DRAG & DROP)
   // ==========================================
-  const [pillPosition, setPillPosition] = useState(null); // { x, y }
+  const [pillPosition, setPillPosition] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const defaultRight = 16;
+      const defaultBottom = 84;
+      const defaultX = Math.max(12, window.innerWidth - 190 - defaultRight);
+      const defaultY = Math.max(60, window.innerHeight - 56 - defaultBottom);
+      return { x: defaultX, y: defaultY };
+    }
+    return null;
+  });
+
   const [isDraggingPill, setIsDraggingPill] = useState(false);
   const [isOverTrash, setIsOverTrash] = useState(false);
   const dragStartRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
   const hasMovedRef = useRef(false);
   const pillBtnRef = useRef(null);
-
-  // Inicializar posição padrão caso ainda não tenha sido arrastado
-  useEffect(() => {
-    if (!pillPosition && typeof window !== 'undefined') {
-      const defaultRight = 16;
-      const defaultBottom = 84;
-      const defaultX = Math.max(12, window.innerWidth - 180 - defaultRight);
-      const defaultY = Math.max(60, window.innerHeight - 56 - defaultBottom);
-      setPillPosition({ x: defaultX, y: defaultY });
-    }
-  }, [pillPosition]);
 
   // Handler de Início de Arrasto do Balão
   const handlePillStart = (clientX, clientY) => {
@@ -111,7 +110,7 @@ const SelectionCart = ({
     const deltaY = clientY - dragStartRef.current.startY;
     const distance = Math.hypot(deltaX, deltaY);
 
-    if (distance > 6) {
+    if (distance > 10) {
       if (!isDraggingPill) setIsDraggingPill(true);
       hasMovedRef.current = true;
 
@@ -127,11 +126,12 @@ const SelectionCart = ({
   };
 
   // Handler de Fim de Arrasto do Balão
-  const handlePillEnd = () => {
+  const handlePillEnd = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
     if (isDraggingPill) {
       if (isOverTrash) {
         if (navigator.vibrate) {
-          try { navigator.vibrate(60); } catch (e) {}
+          try { navigator.vibrate(60); } catch (err) {}
         }
         if (onClearAll) onClearAll();
       }
@@ -143,23 +143,28 @@ const SelectionCart = ({
         onToggleOpen(true);
       }
     }
-    hasMovedRef.current = false;
+    setTimeout(() => {
+      hasMovedRef.current = false;
+    }, 50);
   };
 
   // Listeners globais de toque e mouse para arrasto suave do balão
   const onTouchStartPill = (e) => {
+    e.stopPropagation();
     if (e.touches.length > 0) {
       handlePillStart(e.touches[0].clientX, e.touches[0].clientY);
     }
   };
 
   const onTouchMovePill = (e) => {
+    e.stopPropagation();
     if (e.touches.length > 0) {
       handlePillMove(e.touches[0].clientX, e.touches[0].clientY);
     }
   };
 
   const onMouseDownPill = (e) => {
+    e.stopPropagation();
     if (e.button !== 0) return; // Apenas botão esquerdo
     handlePillStart(e.clientX, e.clientY);
 
@@ -167,8 +172,9 @@ const SelectionCart = ({
       handlePillMove(moveEvent.clientX, moveEvent.clientY);
     };
 
-    const onMouseUpWindow = () => {
-      handlePillEnd();
+    const onMouseUpWindow = (upEvent) => {
+      if (upEvent && upEvent.stopPropagation) upEvent.stopPropagation();
+      handlePillEnd(upEvent);
       window.removeEventListener('mousemove', onMouseMoveWindow);
       window.removeEventListener('mouseup', onMouseUpWindow);
     };
@@ -282,6 +288,12 @@ const SelectionCart = ({
           onTouchMove={onTouchMovePill}
           onTouchEnd={handlePillEnd}
           onMouseDown={onMouseDownPill}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!isDraggingPill && !hasMovedRef.current && onToggleOpen) {
+              onToggleOpen(true);
+            }
+          }}
           style={{
             position: 'fixed',
             left: pillPosition ? `${pillPosition.x}px` : undefined,
@@ -297,6 +309,12 @@ const SelectionCart = ({
         >
           <button
             type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isDraggingPill && !hasMovedRef.current && onToggleOpen) {
+                onToggleOpen(true);
+              }
+            }}
             title="Arraste para mover ou até a lixeira para excluir. Toque para abrir seleção."
             className={`group flex items-center gap-2.5 bg-slate-900/95 hover:bg-slate-800 text-slate-100 px-4 py-3 rounded-full border-2 shadow-[0_0_25px_rgba(16,185,129,0.45)] hover:shadow-[0_0_30px_rgba(16,185,129,0.65)] backdrop-blur-xl transition-all active:scale-95 select-none ${
               isOverTrash ? 'border-red-500 ring-2 ring-red-400' : 'border-emerald-500/80'

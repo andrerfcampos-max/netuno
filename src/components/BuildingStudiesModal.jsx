@@ -143,7 +143,8 @@ export default function BuildingStudiesModal({
 
   // Compartilhar via WhatsApp estruturado para SCI / CBMDF
   const handleShareWhatsApp = (study) => {
-    const text = `🚨 *NETUNO - PRÉ-PLANEJAMENTO OPERACIONAL (PREPOP / CBMDF)* 🚒
+    const nomeEdificacao = (study.nomeFantasia || study.razaoSocial || 'ESTUDO DE EDIFICAÇÃO').toUpperCase();
+    const text = `🚨 *NETUNO - ${nomeEdificacao} (CBMDF)* 🚒
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏢 *EDIFICAÇÃO:* ${study.nomeFantasia || 'S/N'}
 🏛️ *Razão Social:* ${study.razaoSocial || 'N/I'}

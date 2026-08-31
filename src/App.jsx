@@ -528,8 +528,19 @@ function App() {
       });
     }
 
-    // 2. Link Mágico
+    // 2. Link Mágico e Links Curtos de Missão (?m=ID ou ?ds=ID1,ID2)
     const params = new URLSearchParams(window.location.search);
+    const missionIdParam = params.get('m') || params.get('mission') || params.get('rota');
+    if (missionIdParam) {
+      const existingM = missions.find(m => String(m.id) === String(missionIdParam));
+      if (existingM) {
+        setOpenMissionIds(prev => prev.includes(existingM.id) ? prev : [...prev, existingM.id]);
+        setActiveMissionId(existingM.id);
+        setActiveView('route');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
     const ds = params.get('ds');
     if (ds) {
       const ids = ds.split(',').filter(Boolean);
@@ -548,7 +559,7 @@ function App() {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
-  }, [hidrantes.length]);
+  }, [hidrantes.length, missions.length]);
 
   const updateCurrentMission = (updates) => {
     if (!activeMissionId) return;
