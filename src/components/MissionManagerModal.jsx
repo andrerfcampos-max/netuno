@@ -3,7 +3,7 @@ import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight,
 import { createNewFolder } from '../utils/storage';
 import { syncMissionToCloud } from '../services/syncService';
 
-const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser }) => {
+const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [activeTab, setActiveTab] = useState('todas'); // todas, nao_iniciadas, em_andamento, finalizadas, dashboard_comando
   const [searchTerm, setSearchTerm] = useState('');
@@ -785,7 +785,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds, onClose, 
           ))}
 
           {activeTab !== 'dashboard_comando' && filteredMissions.map(mission => {
-            const isOpen = openMissionIds.includes(mission.id);
+            const isOpen = (mission.id === activeMissionId) || (Array.isArray(openMissionIds) && openMissionIds.includes(mission.id));
             const total = (mission.selectedIds || []).length;
             const completed = (mission.completedIds || []).filter(id => (mission.selectedIds || []).includes(id)).length;
             const progress = total === 0 ? 0 : Math.round((completed / total) * 100);

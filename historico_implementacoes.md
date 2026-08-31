@@ -423,3 +423,18 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - O militar pode salvar as alterações preenchidas no `localStorage` a qualquer momento durante a digitação **sem fechar a tela** e sem perder a rolagem ou a seção ativa, com feedback visual em banner toast esmeralda (*"✅ Alterações salvas com sucesso!"*).
 - **4. Auto-Scroll e Foco ao Adicionar Novo Contato (`BuildingStudiesModal.jsx`):**
   - No formulário de preenchimento (Seção A: Identificação e Contatos), ao clicar no botão **"+ Adicionar Contato"**, a tela realiza uma rolagem suave (`scrollIntoView`) até a nova linha criada e posiciona automaticamente o cursor/foco no primeiro campo de digitação, fornecendo feedback tátil imediato ao usuário.
+
+### [31/08/2026] Etapa 58 Concluída: Novo Sistema de Seleção (Carrinho Flutuante) e Desacoplamento de Missões
+- **1. Desacoplamento de Seleção e Missões:** A seleção avulsa de hidrantes no mapa e na tabela não altera as missões salvas e extingue a criação involuntária de rascunhos.
+- **2. Balão Flutuante Móvel (Carrinho de Seleção):** Adicionado elemento flutuante móvel/arrastável com suporte a descarte (lixeira) e Bottom Sheet responsivo para criar nova missão, adicionar a existente ou limpar seleção.
+- **3. Foco no Mapa e Ações Padronizadas:** Abertura fluida da dialog do hidrante a partir dos itens do carrinho e controle de acesso restrito a gestores e administradores.
+
+### [31/08/2026] Etapa 59 Concluída: Regra de Missão Única Aberta e Validação com Aviso em Relatório de Missão Não Iniciada
+- **1. Regra de Missão Única Aberta (Exclusividade de Rota Ativa) (`App.jsx`, `MissionManagerModal.jsx`):**
+  - Em todo o sistema, apenas **1 única missão** permanece com status aberta por vez.
+  - Ao criar uma nova missão (pelo carrinho de seleção, atalhos, importação de URL) ou ao clicar em "Abrir" na Central de Missões (`MissionManagerModal`), a nova missão assume como a única aberta (`setOpenMissionIds([mission.id])` e `activeMissionId = mission.id`), desmarcando as missões abertas anteriormente.
+  - Na Central de Missões (`MissionManagerModal`), apenas a missão ativa exibe o status `"Já Aberta"`, enquanto todas as outras exibem normalmente o botão `"Abrir"`.
+- **2. Validação com Aviso ao Gerar Relatório de Missão Não Iniciada (`App.jsx`, `MissionRoutePanel.jsx`):**
+  - Ao clicar no botão **"Relatório da Missão"** na tela de Rota de Missão, o sistema valida se a missão atual foi iniciada (`completedIds.length > 0`).
+  - Se a missão ainda não foi iniciada (0 vistorias concluídas), o sistema bloqueia o redirecionamento e dispara um alerta Toast claro e nítido: *"Esta missão ainda não foi iniciada. Realize ao menos uma vistoria para gerar o relatório."*
+

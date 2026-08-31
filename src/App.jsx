@@ -234,8 +234,9 @@ function App() {
   const [missions, setMissions] = useState(loadMissions());
   const [folders, setFolders] = useState(loadFolders());
   const savedMissionState = useMemo(() => loadActiveMissionState(), []);
-  const [openMissionIds, setOpenMissionIds] = useState(savedMissionState.openMissionIds || []);
-  const [activeMissionId, setActiveMissionId] = useState(savedMissionState.activeMissionId || null);
+  const initialActiveId = savedMissionState.activeMissionId || (savedMissionState.openMissionIds && savedMissionState.openMissionIds[0]) || null;
+  const [openMissionIds, setOpenMissionIds] = useState(initialActiveId ? [initialActiveId] : []);
+  const [activeMissionId, setActiveMissionId] = useState(initialActiveId);
   const [isMissionManagerOpen, setIsMissionManagerOpen] = useState(false);
   const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
   const [isTechnicalStudyOpen, setIsTechnicalStudyOpen] = useState(false);
@@ -530,7 +531,7 @@ function App() {
     if (missionIdParam) {
       const existingM = missions.find(m => String(m.id) === String(missionIdParam));
       if (existingM) {
-        setOpenMissionIds(prev => prev.includes(existingM.id) ? prev : [...prev, existingM.id]);
+        setOpenMissionIds([existingM.id]);
         setActiveMissionId(existingM.id);
         setActiveView('route');
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -547,7 +548,7 @@ function App() {
         newMission.createdBy = currentUser?.matricula;
         newMission.createdByName = currentUser?.nome;
         setMissions(prev => [...prev, newMission]);
-        setOpenMissionIds(prev => [...prev, newMission.id]);
+        setOpenMissionIds([newMission.id]);
         setActiveMissionId(newMission.id);
         setActiveView('route');
         syncMissionToCloud(newMission);
@@ -607,7 +608,7 @@ function App() {
       saveMissions(updated);
       return updated;
     });
-    setOpenMissionIds(prev => prev.includes(newMission.id) ? prev : [...prev, newMission.id]);
+    setOpenMissionIds([newMission.id]);
     setActiveMissionId(newMission.id);
     syncMissionToCloud(newMission);
     setCartSelectionIds([]);
@@ -636,7 +637,7 @@ function App() {
       saveMissions(updated);
       return updated;
     });
-    setOpenMissionIds(prev => prev.includes(updatedMission.id) ? prev : [...prev, updatedMission.id]);
+    setOpenMissionIds([updatedMission.id]);
     setActiveMissionId(updatedMission.id);
     syncMissionToCloud(updatedMission);
     setCartSelectionIds([]);
@@ -910,24 +911,21 @@ function App() {
     newMission.createdBy = currentUser?.matricula;
     newMission.createdByName = currentUser?.nome;
     setMissions(prev => [...prev, newMission]);
-    setOpenMissionIds(prev => [...prev, newMission.id]);
+    setOpenMissionIds([newMission.id]);
     setActiveMissionId(newMission.id);
     syncMissionToCloud(newMission);
   };
 
   const handleOpenMission = (id) => {
-    if (!openMissionIds.includes(id)) {
-      setOpenMissionIds(prev => [...prev, id]);
-    }
+    setOpenMissionIds([id]);
     setActiveMissionId(id);
     setActiveView('route');
   };
 
   const handleCloseTab = (id) => {
-    const newOpen = openMissionIds.filter(mid => mid !== id);
-    setOpenMissionIds(newOpen);
+    setOpenMissionIds([]);
     if (activeMissionId === id) {
-      setActiveMissionId(newOpen.length > 0 ? newOpen[0] : null);
+      setActiveMissionId(null);
     }
   };
 
@@ -1507,6 +1505,14 @@ function App() {
               currentUser={currentUser}
               folders={folders}
               onGenerateReport={() => {
+                const currentM = missions.find(m => m.id === activeMissionId);
+                const compIds = (currentM?.completedIds || completedMissionIds || []).filter(id => 
+                  (currentM?.selectedIds || selectedMissionIds || []).includes(id)
+                );
+                if (compIds.length === 0) {
+                  toast.warn('Esta missão ainda não foi iniciada. Realize ao menos uma vistoria para gerar o relatório.');
+                  return;
+                }
                 setReportMode('mission');
                 setActiveView('report');
               }}
@@ -1539,7 +1545,7 @@ function App() {
                     saveMissions(updated);
                     return updated;
                   });
-                  setOpenMissionIds(prev => prev.includes(created.id) ? prev : [...prev, created.id]);
+                  setOpenMissionIds([created.id]);
                   setActiveMissionId(created.id);
                   syncMissionToCloud(created);
                 } else {
@@ -1654,6 +1660,7 @@ function App() {
             missions={missions}
             folders={folders}
             openMissionIds={openMissionIds}
+            activeMissionId={activeMissionId}
             onClose={() => setIsMissionManagerOpen(false)}
             onOpenMission={handleOpenMission}
             onNewMission={handleNewMission}
