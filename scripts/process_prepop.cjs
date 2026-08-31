@@ -442,13 +442,7 @@ function processPrepopFile() {
       populacaoFixa: '-',
       populacaoFlutuante: '-',
       populacaoPrioritaria: vulnerabilidades !== '-' && (vulnerabilidades.toUpperCase().includes('CRIANÇA') || vulnerabilidades.toUpperCase().includes('IDOSO') || vulnerabilidades.toUpperCase().includes('HOSP') || vulnerabilidades.toUpperCase().includes('ALTO')) ? vulnerabilidades : '-',
-      contatos: [
-        {
-          nome: respVistoria !== '-' ? respVistoria : 'Vistoriador CBMDF',
-          funcao: obm !== '-' ? `Vistoriador CBMDF (${obm})` : 'Vistoriador CBMDF',
-          telefone: '-'
-        }
-      ],
+      contatos: [],
       viaPrincipal: melhorAcesso !== '-' ? melhorAcesso : (enderecoLimpo !== '-' ? enderecoLimpo : '-'),
       viaAlternativa: '-',
       restricoesViarias: pontoImpedimento,
@@ -475,10 +469,10 @@ function processPrepopFile() {
       escadasPressurizacao: row.qtdpavimentos ? `${row.qtdpavimentos} pavimento(s)` : '-',
       geradorEmergencia: '-',
       cargaIncendio: cargaIncendio,
-      produtosPerigosos: materialInflamavel,
+      produtosPerigosos: '-',
       areasCriticas: vulnerabilidades,
       riscoColapso: `Estrutura: ${cleanVal(row.construcao)}, ${row.qtdpavimentos || 1} pavimento(s)${cleanVal(row.corpredominante) !== '-' ? ', cor ' + cleanVal(row.corpredominante) : ''}`,
-      informacoesExtras: `Levantamento PREPOP realizado em ${dataVistoria} por ${respVistoria} (${obm}). Acessos: ${row.qtddeacessos || '-'}. Hidrante mais próximo: ${hidranteProxDesc}. Subsolo: ${possuiSubsolo ? 'Sim' : 'Não'}. Central de gás: ${centralGas ? (locGas !== '-' ? locGas : 'Sim') : 'Não'}. Sistemas: ${sistemasExistentes}.`,
+      informacoesExtras: `Reconhecimento PREPOP realizado em ${dataVistoria} por ${respVistoria} (${obm}). Acessos: ${row.qtddeacessos || '-'}. Hidrante mais próximo: ${hidranteProxDesc}. Central de gás: ${centralGas ? (locGas !== '-' ? locGas : 'Sim') : 'Não'}. Combustíveis armazenados: ${materialInflamavel}.`,
       dataCadastro: dataVistoria !== '-' ? dataVistoria : '2026-08-27',
       ultimaAtualizacao: dataVistoria !== '-' ? dataVistoria : '2026-08-27'
     };

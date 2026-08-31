@@ -165,6 +165,7 @@ export default function BuildingStudiesModal({
 📍 *Endereço:* ${study.ra ? `${study.ra} - ` : ''}${study.endereco || '-'}
 🏷️ *Ocupação:* ${study.ocupacao || '-'} | *Carga de Incêndio:* ${study.cargaIncendio || 'Média'}
 👥 *População Prioritária:* ${study.populacaoPrioritaria || '-'}
+👨‍🚒 *Reconhecimento CBMDF:* ${study.responsavelVistoria || '-'} (${study.obmResponsavel || '-'}) - ${study.dataLevantamento || '-'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚒 *TREM DE SOCORRO E ACESSOS:*
@@ -195,15 +196,16 @@ ${study.hidrantesProximos && study.hidrantesProximos.length > 0
 • *Gerador:* ${study.geradorEmergencia || '-'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ *RISCOS ESPECÍFICOS & COLAPSO:*
-• *Produtos Perigosos:* ${study.produtosPerigosos || '-'}
+⚠️ *RISCOS ESPECÍFICOS & CARGA DE INCÊNDIO:*
+• *Combustíveis Armazenados:* ${study.materialInflamavel || '-'}
+• *Produtos Perigosos (ONU):* ${study.produtosPerigosos || '-'}
 • *Áreas Críticas:* ${study.areasCriticas || '-'}
 • *Risco de Colapso:* ${study.riscoColapso || '-'}
 ${study.informacoesExtras ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📝 *INFORMAÇÕES EXTRAS & OBSERVAÇÕES:*\n${study.informacoesExtras}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-📞 *CONTATOS DE EMERGÊNCIA:*
-${study.contatos && study.contatos.length > 0 
+📞 *CONTATOS DE EMERGÊNCIA DA EDIFICAÇÃO:*
+${study.contatos && study.contatos.length > 0 && study.contatos.some(c => c.telefone && c.telefone !== '-')
   ? study.contatos.map(c => `• ${c.funcao || 'Contato'}: ${c.nome || '-'} - Tel: ${c.telefone || '-'}`).join('\n')
   : '• Sem contatos pré-cadastrados'}
 
@@ -620,6 +622,16 @@ const BuildingTacticalCard = React.memo(function BuildingTacticalCard({
           </div>
         )}
 
+        {/* Materiais Combustíveis e Inflamáveis Armazenados no Card */}
+        {study.materialInflamavel && study.materialInflamavel !== '-' && study.materialInflamavel.toLowerCase() !== 'nenhum' && (
+          <div className="bg-amber-950/30 border border-amber-900/40 rounded-lg p-2 my-2 text-xs text-amber-200 flex items-start gap-1.5">
+            <Flame size={13} className="text-amber-400 shrink-0 mt-0.5" />
+            <p className="line-clamp-2 leading-relaxed">
+              <strong className="text-amber-300">Combustíveis Armazenados:</strong> {study.materialInflamavel}
+            </p>
+          </div>
+        )}
+
         {/* Informações Extras no Card */}
         {study.informacoesExtras && study.informacoesExtras !== '-' && (
           <div className="bg-slate-950/60 border border-slate-800/90 rounded-lg p-2 my-2 text-xs text-slate-300 flex items-start gap-1.5">
@@ -627,6 +639,16 @@ const BuildingTacticalCard = React.memo(function BuildingTacticalCard({
             <p className="line-clamp-2 leading-relaxed">
               <strong className="text-emerald-300">Obs / Extras:</strong> {study.informacoesExtras}
             </p>
+          </div>
+        )}
+
+        {/* Reconhecimento CBMDF / Vistoriador */}
+        {study.responsavelVistoria && study.responsavelVistoria !== '-' && (
+          <div className="text-[11px] text-slate-400 flex items-center gap-1.5 my-1.5 px-2 py-1 bg-slate-950/40 rounded border border-slate-800/60">
+            <span className="text-cyan-400 font-semibold shrink-0">👨‍🚒 Reconhecimento CBMDF:</span>
+            <span className="truncate text-slate-300" title={`${study.responsavelVistoria} (${study.obmResponsavel || '-'})`}>
+              {study.responsavelVistoria} {study.obmResponsavel && study.obmResponsavel !== '-' ? `• ${study.obmResponsavel}` : ''}
+            </span>
           </div>
         )}
 
@@ -653,8 +675,8 @@ const BuildingTacticalCard = React.memo(function BuildingTacticalCard({
           </div>
         </div>
 
-        {/* Botões Rápidos de Contatos de Emergência (Discagem) */}
-        {study.contatos && study.contatos.length > 0 && (
+        {/* Botões Rápidos de Contatos de Emergência da Edificação (Discagem) */}
+        {study.contatos && study.contatos.length > 0 && study.contatos.some(c => c.telefone && c.telefone !== '-') && (
           <div className="flex items-center gap-1.5 flex-wrap my-2">
             {study.contatos.slice(0, 3).map((c, idx) => (
               c.telefone && c.telefone !== '-' && (
@@ -931,6 +953,29 @@ function BuildingTacticalViewModal({
               </div>
             </div>
 
+            {/* Destaque do Reconhecimento Preventivo Realizado pelo CBMDF */}
+            {study.responsavelVistoria && study.responsavelVistoria !== '-' && (
+              <div className="bg-cyan-950/40 border border-cyan-700/50 rounded-xl p-3.5 mb-4 text-xs">
+                <span className="text-cyan-300 font-bold text-xs uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                  <span>👨‍🚒 Reconhecimento Preventivo Operacional (CBMDF)</span>
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-slate-200">
+                  <div>
+                    <span className="text-[11px] text-slate-400 block">Militar Reconhecedor / Vistoriador:</span>
+                    <strong className="text-white text-xs block leading-snug mt-0.5">{study.responsavelVistoria}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-slate-400 block">OBM Responsável:</span>
+                    <strong className="text-cyan-300 text-xs block leading-snug mt-0.5">{study.obmResponsavel || '-'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-slate-400 block">Data do Reconhecimento:</span>
+                    <strong className="text-slate-200 text-xs block leading-snug mt-0.5">{study.dataLevantamento || '-'}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {study.populacaoPrioritaria && study.populacaoPrioritaria !== '-' && (
               <div className="bg-red-950/40 border border-red-900/60 rounded-xl p-3.5 text-red-200 text-xs sm:text-sm flex items-start gap-2.5 mb-4">
                 <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
@@ -943,21 +988,21 @@ function BuildingTacticalViewModal({
               </div>
             )}
 
-            {/* Contatos com Discagem Rápida */}
-            {study.contatos && study.contatos.length > 0 && (
+            {/* Contatos de Emergência da Edificação (Síndico, Brigada Predial, Administração) */}
+            {study.contatos && study.contatos.length > 0 && study.contatos.some(c => c.telefone && c.telefone !== '-') && (
               <div>
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                  Contatos de Emergência (Discagem Direta):
+                  Contatos de Emergência da Edificação (Discagem Direta):
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {study.contatos.map((c, idx) => (
-                    <div key={idx} className="bg-slate-950 border border-slate-800 p-3 rounded-lg flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <span className="text-[11px] text-emerald-400 font-bold block uppercase">{c.funcao || 'Contato'}</span>
-                        <strong className="text-xs sm:text-sm text-slate-200 truncate block">{c.nome || '-'}</strong>
-                        <span className="text-xs text-slate-400">{c.telefone || '-'}</span>
-                      </div>
-                      {c.telefone && c.telefone !== '-' && (
+                    c.telefone && c.telefone !== '-' && (
+                      <div key={idx} className="bg-slate-950 border border-slate-800 p-3 rounded-lg flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="text-[11px] text-emerald-400 font-bold block uppercase">{c.funcao || 'Contato'}</span>
+                          <strong className="text-xs sm:text-sm text-slate-200 truncate block">{c.nome || '-'}</strong>
+                          <span className="text-xs text-slate-400">{c.telefone || '-'}</span>
+                        </div>
                         <a
                           href={`tel:${c.telefone.replace(/\D/g, '')}`}
                           className="flex items-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow transition-all active:scale-95 shrink-0"
@@ -965,8 +1010,8 @@ function BuildingTacticalViewModal({
                           <Phone size={14} />
                           <span>Ligar</span>
                         </a>
-                      )}
-                    </div>
+                      </div>
+                    )
                   ))}
                 </div>
               </div>
@@ -1142,16 +1187,20 @@ function BuildingTacticalViewModal({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-slate-950 p-3 rounded-lg border border-red-900/40">
-                <span className="text-[11px] text-red-400 font-bold block mb-1">☣️ Produtos Perigosos / Químicos (ONU)</span>
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.produtosPerigosos || '-'}</p>
+              <div className="bg-slate-950 p-3 rounded-lg border border-amber-900/40">
+                <span className="text-[11px] text-amber-400 font-bold block mb-1">📦 Materiais Combustíveis e Inflamáveis Armazenados</span>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.materialInflamavel || '-'}</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-lg border border-red-900/40">
+                <span className="text-[11px] text-red-400 font-bold block mb-1">☣️ Produtos Perigosos / Químicos (ONU - 9 Classes)</span>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.produtosPerigosos || '-'}</p>
+              </div>
+              <div className="bg-slate-950 p-3 rounded-lg border border-amber-900/40">
                 <span className="text-[11px] text-amber-400 font-bold block mb-1">⚠️ Áreas Críticas Internas</span>
                 <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{study.areasCriticas || '-'}</p>
               </div>
-              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 sm:col-span-2">
-                <span className="text-[11px] text-slate-400 font-bold block mb-1">🏗️ Risco de Colapso Estrutural & Tipo Construtivo</span>
+              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                <span className="text-[11px] text-slate-400 font-bold block mb-1">🏗️ Risco de Colapso Estrutural & Tipologia Construtiva</span>
                 <p className="text-xs text-slate-200 leading-relaxed">{study.riscoColapso || '-'}</p>
               </div>
             </div>
@@ -1293,9 +1342,13 @@ function BuildingStudyFormModal({
     escadasPressurizacao: studyData?.escadasPressurizacao || '',
     geradorEmergencia: studyData?.geradorEmergencia || '',
     cargaIncendio: studyData?.cargaIncendio || 'Média',
+    materialInflamavel: studyData?.materialInflamavel || '',
     produtosPerigosos: studyData?.produtosPerigosos || '',
     areasCriticas: studyData?.areasCriticas || '',
     riscoColapso: studyData?.riscoColapso || '',
+    responsavelVistoria: studyData?.responsavelVistoria || '',
+    obmResponsavel: studyData?.obmResponsavel || '',
+    dataLevantamento: studyData?.dataLevantamento || '',
     fotoFachada: studyData?.fotoFachada || '',
     croquiPlanta: studyData?.croquiPlanta || '',
     informacoesExtras: studyData?.informacoesExtras || ''
@@ -2123,12 +2176,23 @@ function BuildingStudyFormModal({
             </div>
 
             <div>
-              <label className="block text-red-400 font-bold mb-1">☣️ Presença de Produtos Perigosos / Químicos (ONU)</label>
+              <label className="block text-amber-400 font-bold mb-1">📦 Materiais Combustíveis e Inflamáveis Armazenados</label>
+              <textarea
+                rows={2}
+                value={formData.materialInflamavel}
+                onChange={(e) => handleChange('materialInflamavel', e.target.value)}
+                placeholder="Ex: Madeira, colchões, depósito de papel, caixas de papelão, móveis estocados"
+                className="w-full p-3 bg-slate-800 border border-amber-900/60 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 rounded-xl text-slate-100 placeholder-slate-500 outline-none text-xs sm:text-sm min-h-[85px] focus:min-h-[130px] transition-all duration-200 resize-y leading-relaxed"
+              />
+            </div>
+
+            <div>
+              <label className="block text-red-400 font-bold mb-1">☣️ Presença de Produtos Perigosos / Químicos (ONU - 9 Classes)</label>
               <textarea
                 rows={2}
                 value={formData.produtosPerigosos}
                 onChange={(e) => handleChange('produtosPerigosos', e.target.value)}
-                placeholder="Ex: Tanque criogênico de Oxigênio Líquido (10.000m³), Depósito de Álcool 70% no Almoxarifado"
+                placeholder="Ex: Tanque criogênico de Oxigênio Líquido (10.000m³), Depósito de Álcool 70% no Almoxarifado (ONU 1170)"
                 className="w-full p-3 bg-slate-800 border border-red-900/60 focus:border-red-500 focus:ring-2 focus:ring-red-500/30 rounded-xl text-slate-100 placeholder-slate-500 outline-none text-xs sm:text-sm min-h-[85px] focus:min-h-[130px] transition-all duration-200 resize-y leading-relaxed"
               />
             </div>
