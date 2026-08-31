@@ -269,10 +269,26 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, onDeselect
     isDragging.current = false;
   };
 
+  // Fecha imediatamente a dialog/bottom sheet de hidrante quando o filtro ou lista de hidrantes é alterada
+  const prevHidrantesRef = useRef(hidrantes);
+  useEffect(() => {
+    if (prevHidrantesRef.current !== hidrantes) {
+      prevHidrantesRef.current = hidrantes;
+      if (selectedHydrant) {
+        setSelectedHydrant(null);
+        if (onDeselectHydrant) {
+          onDeselectHydrant();
+        }
+      }
+    }
+  }, [hidrantes, selectedHydrant, onDeselectHydrant]);
+
   // Sincronizar com centerPosition externo quando recebido (ex: da Tabela ou Rota)
   useEffect(() => {
     if (centerPosition) {
       setSelectedHydrant(centerPosition);
+    } else if (centerPosition === null && selectedHydrant) {
+      setSelectedHydrant(null);
     }
   }, [centerPosition]);
 

@@ -1484,7 +1484,7 @@ function App() {
 
         {/* MÓDULO ROTA DE MISSÃO */}
         {activeView === 'route' && (
-          <div id="modulo-rota" className="w-full h-full flex-1 min-h-0 border border-slate-700 rounded-xl overflow-hidden flex flex-col">
+          <div id="modulo-rota" className="w-full h-full max-w-5xl mx-auto flex-1 min-h-0 border border-slate-700 rounded-xl overflow-hidden flex flex-col">
             <MissionRoutePanel 
               hidrantes={hidrantes}
               selectedMissionIds={selectedMissionIds}
@@ -1573,7 +1573,7 @@ function App() {
 
         {/* MÓDULO RELATÓRIO TÁTICO */}
         {activeView === 'report' && (
-          <div id="modulo-relatorio" className="w-full h-full flex-1 min-h-0 border border-slate-700 rounded-xl overflow-y-auto bg-slate-800/90 flex flex-col">
+          <div id="modulo-relatorio" className="w-full h-full max-w-5xl mx-auto flex-1 min-h-0 border border-slate-700 rounded-xl overflow-y-auto bg-slate-800/90 flex flex-col">
             <MissionReportPanel 
               hidrantes={reportMode === 'mission' ? hidrantes.filter(h => selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h._internalId)) : filteredList}
               currentMission={reportMode === 'mission' ? currentMission : null}

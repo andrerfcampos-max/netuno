@@ -329,17 +329,29 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        const scaleSize = MAX_WIDTH / img.width;
-        
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        
+        const MAX_WIDTH = 600;
+        const MAX_HEIGHT = 600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, width, height);
         
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-        setFormData(prev => ({ ...prev, fotoPerfil: dataUrl }));
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+        setFormData(prev => ({ ...prev, fotoPerfil: compressedBase64 }));
       };
       img.src = event.target.result;
     };
@@ -454,47 +466,47 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
               <div className="w-full md:w-1/2 flex flex-col gap-3">
                 
                 {/* Foto de Perfil */}
-                <div className="flex items-center gap-3 bg-slate-900/50 p-2.5 rounded-lg border border-slate-700">
-                  <div className="w-16 h-20 bg-slate-800 border border-slate-600 rounded-lg flex items-center justify-center overflow-hidden shrink-0 relative">
-                    {formData.fotoPerfil ? (
-                      <img src={formData.fotoPerfil} alt="Perfil" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-[10px] text-slate-500 text-center px-1">Sem Foto</span>
-                    )}
+                <div className="flex flex-col gap-2 bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                  <div className="flex flex-col">
+                    <label className="font-bold text-slate-300 text-xs sm:text-sm flex items-center justify-between">
+                      <span>Foto de Perfil do Hidrante</span>
+                    </label>
+                    <p className="text-[11px] text-amber-300/90 font-medium mt-0.5">
+                      Registre uma foto vertical de perfil do hidrante.
+                    </p>
                   </div>
-                  <div className="flex-1 flex flex-col gap-1.5">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <button 
-                        type="button" 
+                  {!formData.fotoPerfil ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        type="button"
                         onClick={() => cameraInputRef.current?.click()}
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-700/80 hover:bg-emerald-600 text-white text-xs font-bold rounded-md transition-colors active:scale-95 shadow-sm"
-                        title="Tirar foto com a câmera"
+                        className="p-2.5 rounded-lg bg-emerald-700/80 hover:bg-emerald-600 border border-emerald-500/60 text-white font-bold text-xs sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
                       >
-                        <Camera size={13} />
-                        <span>Câmera</span>
+                        <Camera size={16} />
+                        <span>Tirar Foto (Câmera)</span>
                       </button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => galleryInputRef.current?.click()}
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold rounded-md transition-colors active:scale-95 shadow-sm"
-                        title="Escolher foto da galeria"
+                        className="p-2.5 rounded-lg bg-slate-750 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
                       >
-                        <ImageIcon size={13} className="text-cyan-400" />
-                        <span>Galeria</span>
+                        <ImageIcon size={16} className="text-cyan-400" />
+                        <span>Escolher da Galeria</span>
                       </button>
-                      {formData.fotoPerfil && (
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, fotoPerfil: '' }))}
-                          className="p-1.5 bg-red-900/60 hover:bg-red-800 text-red-300 rounded-md transition-colors active:scale-95"
-                          title="Remover foto"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      )}
                     </div>
-                    <span className="text-[10px] text-slate-400">Foto vertical de perfil do hidrante</span>
-                  </div>
+                  ) : (
+                    <div className="relative">
+                      <img src={formData.fotoPerfil} alt="Preview do Hidrante" className="w-full h-36 object-cover rounded border border-slate-600" />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, fotoPerfil: '' }))}
+                        className="absolute top-2 right-2 bg-red-600 text-white p-1 px-3 rounded-full font-bold text-xs shadow hover:bg-red-700 transition-colors flex items-center gap-1"
+                      >
+                        <Trash2 size={12} />
+                        Remover Foto
+                      </button>
+                    </div>
+                  )}
                   <input 
                     type="file" 
                     accept="image/*" 
