@@ -225,7 +225,7 @@ const GpsControl = ({ userLocation, isSheetOpen }) => {
   );
 };
 
-const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '', hasFilter = false }) => {
+const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, onDeselectHydrant, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '', hasFilter = false }) => {
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const validHidrantes = useMemo(() => {
@@ -238,6 +238,13 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
   const touchStartY = useRef(0);
   const isDragging = useRef(false);
   const markerRefs = useRef({});
+
+  const handleCloseHydrant = () => {
+    setSelectedHydrant(null);
+    if (onDeselectHydrant) {
+      onDeselectHydrant();
+    }
+  };
 
   // Suporte a arrastar / deslizar para baixo para fechar o Bottom Sheet
   const handleTouchStart = (e) => {
@@ -256,7 +263,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
 
   const handleTouchEnd = () => {
     if (dragOffsetY > 65) {
-      setSelectedHydrant(null);
+      handleCloseHydrant();
     }
     setDragOffsetY(0);
     isDragging.current = false;
@@ -434,7 +441,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
         <AutoFitFilteredBounds hidrantes={hidrantes} centerPosition={centerPosition} selectedHydrant={selectedHydrant} />
         <MapMemory />
         <ScrollBehavior />
-        <MapClickHandler selectedHydrant={selectedHydrant} onSelectHydrant={setSelectedHydrant} />
+        <MapClickHandler selectedHydrant={selectedHydrant} onSelectHydrant={handleCloseHydrant} />
         <MapResizer isMapFullscreen={isMapFullscreen} activeView={activeView} />
         <UserLocationTracker userLocation={userLocation} centerPosition={centerPosition} selectedHydrant={selectedHydrant} hasFilter={hasFilter || isCitySelected} />
 
@@ -533,7 +540,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                   {selectedHydrant.flgAtivo ? '● OPERANTE' : '● INOPERANTE'}
                 </span>
                 <button 
-                  onClick={() => setSelectedHydrant(null)}
+                  onClick={handleCloseHydrant}
                   className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 text-sm font-bold border border-slate-700 shadow-sm"
                   title="Fechar Detalhes"
                 >
@@ -696,7 +703,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, selectedMi
                   {selectedHydrant.flgAtivo ? '● OPERANTE' : '● INOPERANTE'}
                 </span>
                 <button 
-                  onClick={() => setSelectedHydrant(null)}
+                  onClick={handleCloseHydrant}
                   className="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors active:scale-95 text-xs font-bold border border-slate-700"
                   title="Fechar painel"
                 >

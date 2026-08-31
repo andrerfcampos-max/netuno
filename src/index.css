@@ -24,6 +24,7 @@
   /* Habilitar seleção e cópia de textos */
   .leaflet-popup,
   .leaflet-popup-content,
+  .netuno-popup,
   .argos-popup,
   .select-text,
   table,

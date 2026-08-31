@@ -281,17 +281,13 @@ function App() {
   }, [activeFilters?.ra]);
 
   const mapHidrantes = useMemo(() => {
+    if (isCitySelected) {
+      return filteredList;
+    }
     if (mapCenterPosition) {
-      const exists = filteredList.some(h => (h.codHidrante === mapCenterPosition.codHidrante && h.nomHidrante === mapCenterPosition.nomHidrante) || (h._internalId && h._internalId === mapCenterPosition._internalId));
-      if (isCitySelected) {
-        return exists ? filteredList : [...filteredList, mapCenterPosition];
-      }
       return [mapCenterPosition];
     }
-    if (!isCitySelected) {
-      return [];
-    }
-    return filteredList;
+    return [];
   }, [isCitySelected, mapCenterPosition, filteredList]);
 
   // Suporte a abertura direta de modais e deep links de hidrante (?hid=...) via URL parameter
@@ -805,6 +801,7 @@ function App() {
   }, [hidrantes, activeFilters.ra, activeFilters.periodo, activeFilters.dataInicio, activeFilters.dataFim, activeFilters.status]);
 
   const handleFilterChange = (filters) => {
+    setMapCenterPosition(null);
     setActiveFilters(filters);
     try {
       localStorage.setItem('netuno_saved_filters', JSON.stringify(filters));
@@ -1451,6 +1448,7 @@ function App() {
               onInspect={handleInspect}
               onEdit={(h) => setEditingHydrante(h)}
               centerPosition={mapCenterPosition}
+              onDeselectHydrant={() => setMapCenterPosition(null)}
               selectedMissionIds={cartSelectionIds}
               onToggleMission={toggleCartSelection}
               currentUser={currentUser}

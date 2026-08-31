@@ -473,7 +473,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         : (currentUser?.nome || 'Equipe CBMDF');
     }
 
-    let text = `🚒 *NETUNO - STATUS DE VISTORIA*\n\n`;
+    let text = `🚒 *NETUNO - STATUS DE MISSÃO*\n\n`;
     text += `📋 *Missão:* ${reportName}\n`;
     text += `👤 *Vistoriador:* ${vistoriadorText}\n`;
     text += `📊 *Progresso:* ${completedList.length} Concluídos / ${pendingList.length} Faltantes (Total: ${currentData.length})\n\n`;

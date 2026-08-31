@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
+import { Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { fixEncoding } from '../utils/textUtils';
 import { calculateDistanceMeters } from '../utils/geoUtils';
 
@@ -54,7 +55,8 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
   const [q7, setQ7] = useState(''); // Observações
   
   const [fotoBase64, setFotoBase64] = useState(null);
-  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
 
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
 
@@ -390,30 +392,51 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
               </p>
             </div>
             {!fotoBase64 ? (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="p-2.5 rounded bg-slate-700 border border-slate-600 text-white font-bold text-sm hover:bg-slate-600 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
-              >
-                📸 Tirar Foto / Anexar Imagem
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="p-2.5 rounded-lg bg-emerald-700/80 hover:bg-emerald-600 border border-emerald-500/60 text-white font-bold text-xs sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Camera size={16} />
+                  <span>Tirar Foto (Câmera)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="p-2.5 rounded-lg bg-slate-750 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <ImageIcon size={16} className="text-cyan-400" />
+                  <span>Escolher da Galeria</span>
+                </button>
+              </div>
             ) : (
               <div className="relative">
                 <img src={fotoBase64} alt="Preview da Vistoria" className="w-full h-36 object-cover rounded border border-slate-600" />
                 <button
                   type="button"
                   onClick={() => setFotoBase64(null)}
-                  className="absolute top-2 right-2 bg-red-600 text-white p-1 px-3 rounded-full font-bold text-xs shadow hover:bg-red-700 transition-colors"
+                  className="absolute top-2 right-2 bg-red-600 text-white p-1 px-3 rounded-full font-bold text-xs shadow hover:bg-red-700 transition-colors flex items-center gap-1"
                 >
+                  <Trash2 size={12} />
                   Remover Foto
                 </button>
               </div>
             )}
+            {/* Input Câmera (capture environment) */}
             <input
               type="file"
               accept="image/*"
               capture="environment"
-              ref={fileInputRef}
+              ref={cameraInputRef}
+              className="hidden"
+              onChange={handleImageCapture}
+            />
+            {/* Input Galeria (sem capture, abre seletor de arquivos/galeria) */}
+            <input
+              type="file"
+              accept="image/*"
+              ref={galleryInputRef}
               className="hidden"
               onChange={handleImageCapture}
             />

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { X, ImagePlus, Save, MapPin, LocateFixed, Loader2, Sparkles, Navigation, Check } from 'lucide-react';
+import { X, ImagePlus, Save, MapPin, LocateFixed, Loader2, Sparkles, Navigation, Check, Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { RA_LIST, normalizeRAName, generateNextHydrantCode } from '../utils/raList';
@@ -75,7 +75,8 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [mapSuggestedAddress, setMapSuggestedAddress] = useState(null);
 
-  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
   const addressInputRef = useRef(null);
   const searchTimeoutRef = useRef(null);
 
@@ -445,284 +446,317 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 flex flex-col gap-4 overflow-y-auto max-h-[80vh]">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
           
-          <div className="flex flex-col md:flex-row gap-4">
-            
-            <div className="w-full md:w-1/2 flex flex-col gap-3">
+          <div className="p-4 flex-1 overflow-y-auto flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               
-              {/* Foto de Perfil */}
-              <div className="flex items-center gap-3 bg-slate-900/50 p-2 rounded border border-slate-700">
-                <div className="w-16 h-20 bg-slate-800 border border-slate-600 rounded flex items-center justify-center overflow-hidden shrink-0">
-                  {formData.fotoPerfil ? (
-                    <img src={formData.fotoPerfil} alt="Perfil" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-[10px] text-slate-500 text-center px-1">Sem Foto</span>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <button 
-                    type="button" 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold rounded transition-colors"
-                  >
-                    <ImagePlus size={14} />
-                    {formData.fotoPerfil ? 'Alterar Foto' : 'Adicionar Foto'}
-                  </button>
-                  <span className="text-[10px] text-slate-400">Foto vertical de perfil</span>
-                </div>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                />
-              </div>
-
-              {/* Região Administrativa (RA) em Ordem Alfabética */}
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs text-slate-400 font-bold uppercase">
-                    Região Administrativa (RA) {isNew && <span className="text-red-400">*</span>}
-                  </label>
-                  <span className="text-[10px] text-slate-400 font-semibold">Ordem Alfabética</span>
-                </div>
-                <select 
-                  name="dscLocalidade" 
-                  value={formData.dscLocalidade} 
-                  onChange={handleRAChange} 
-                  required={isNew}
-                  className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                >
-                  <option value="">Selecione uma RA...</option>
-                  {sortedRAList.map(ra => (
-                    <option key={ra.name} value={ra.name}>{ra.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Código do Hidrante (Sequencial Automático para Novo) */}
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs text-slate-400 font-bold uppercase">Código do Hidrante</label>
-                  {isNew && (
-                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800">
-                      Preenchimento Automático
-                    </span>
-                  )}
-                </div>
-                <input 
-                  name="codHidrante" 
-                  value={formData.codHidrante} 
-                  readOnly
-                  placeholder={isNew ? "Gerado automaticamente ao escolher a RA..." : ""}
-                  className="border border-slate-700 rounded p-2 text-sm font-mono bg-slate-900/70 text-emerald-400 font-bold cursor-not-allowed" 
-                />
-              </div>
-
-              {/* Endereço com Sugestões Inteligentes (estilo iFood) */}
-              <div className="flex flex-col gap-1 relative" ref={addressInputRef}>
-                <div className="flex justify-between items-center">
-                  <label className="text-xs text-slate-400 font-bold uppercase flex items-center gap-1">
-                    Endereço {isNew && <span className="text-red-400">*</span>}
-                  </label>
-                  <span className="text-[10px] text-amber-400 flex items-center gap-1 font-semibold">
-                    <Sparkles size={11} />
-                    Sugestões ao digitar
-                  </span>
-                </div>
-                <div className="relative">
-                  <input 
-                    name="dscEndereco" 
-                    value={formData.dscEndereco} 
-                    onChange={handleChange} 
-                    onFocus={() => setShowAddressDropdown(true)}
-                    required={isNew}
-                    placeholder="Ex: Quadra 02 Conjunto A Lote 15, Av. Central..."
-                    autoComplete="off"
-                    className="w-full bg-slate-900 border border-slate-700 rounded p-2 pr-8 text-sm text-white focus:outline-none focus:border-amber-500" 
-                  />
-                  {isLoadingSuggestions && (
-                    <Loader2 size={15} className="absolute right-2.5 top-3 text-amber-400 animate-spin" />
-                  )}
-                </div>
-
-                {/* Chip de Endereço Sugerido a partir do Pino do Mapa */}
-                {mapSuggestedAddress && mapSuggestedAddress.address !== formData.dscEndereco && (
-                  <div 
-                    onClick={() => {
-                      setFormData(prev => ({
-                        ...prev,
-                        dscEndereco: mapSuggestedAddress.address,
-                        dscPontoReferencia: mapSuggestedAddress.reference || prev.dscPontoReferencia,
-                        dscLocalidade: mapSuggestedAddress.ra || prev.dscLocalidade
-                      }));
-                    }}
-                    className="mt-1 p-1.5 bg-amber-950/40 border border-amber-500/40 rounded-lg text-xs text-amber-300 flex items-center justify-between cursor-pointer hover:bg-amber-900/50 transition-all"
-                  >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <MapPin size={13} className="text-amber-400 shrink-0" />
-                      <span className="truncate"><strong>Ponto no mapa:</strong> {mapSuggestedAddress.address}</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-amber-400 underline shrink-0 ml-2">Usar este</span>
+              <div className="w-full md:w-1/2 flex flex-col gap-3">
+                
+                {/* Foto de Perfil */}
+                <div className="flex items-center gap-3 bg-slate-900/50 p-2.5 rounded-lg border border-slate-700">
+                  <div className="w-16 h-20 bg-slate-800 border border-slate-600 rounded-lg flex items-center justify-center overflow-hidden shrink-0 relative">
+                    {formData.fotoPerfil ? (
+                      <img src={formData.fotoPerfil} alt="Perfil" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] text-slate-500 text-center px-1">Sem Foto</span>
+                    )}
                   </div>
-                )}
-
-                {/* Dropdown de Sugestões de Endereço (iFood Style) */}
-                {showAddressDropdown && (localAddressSuggestions.length > 0 || apiSuggestions.length > 0) && (
-                  <div className="absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[300] max-h-56 overflow-y-auto divide-y divide-slate-800">
-                    <div className="p-1.5 bg-slate-850 text-[10px] font-bold uppercase text-slate-400 flex items-center justify-between">
-                      <span>Sugestões de Endereço</span>
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <button 
                         type="button" 
-                        onClick={() => setShowAddressDropdown(false)}
-                        className="text-slate-400 hover:text-white"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-700/80 hover:bg-emerald-600 text-white text-xs font-bold rounded-md transition-colors active:scale-95 shadow-sm"
+                        title="Tirar foto com a câmera"
                       >
-                        ✕
+                        <Camera size={13} />
+                        <span>Câmera</span>
                       </button>
-                    </div>
-
-                    {/* Sugestões da Base de Dados de Hidrantes */}
-                    {localAddressSuggestions.map((sug, idx) => (
-                      <div
-                        key={`loc_${idx}`}
-                        onClick={() => handleSelectSuggestion(sug)}
-                        className="p-2.5 hover:bg-slate-800 cursor-pointer transition-colors flex items-start gap-2 text-left"
+                      <button 
+                        type="button" 
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold rounded-md transition-colors active:scale-95 shadow-sm"
+                        title="Escolher foto da galeria"
                       >
-                        <MapPin size={15} className="text-emerald-400 shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-bold text-white truncate">{sug.address}</div>
-                          {sug.reference && (
-                            <div className="text-[10px] text-slate-400 truncate">Ref: {sug.reference}</div>
-                          )}
-                          <div className="text-[10px] text-emerald-400 font-semibold">
-                            {sug.ra || 'Distrito Federal'} • Base Netuno
+                        <ImageIcon size={13} className="text-cyan-400" />
+                        <span>Galeria</span>
+                      </button>
+                      {formData.fotoPerfil && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, fotoPerfil: '' }))}
+                          className="p-1.5 bg-red-900/60 hover:bg-red-800 text-red-300 rounded-md transition-colors active:scale-95"
+                          title="Remover foto"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-slate-400">Foto vertical de perfil do hidrante</span>
+                  </div>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    capture="environment"
+                    className="hidden" 
+                    ref={cameraInputRef}
+                    onChange={handleImageUpload}
+                  />
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    ref={galleryInputRef}
+                    onChange={handleImageUpload}
+                  />
+                </div>
+
+                {/* Região Administrativa (RA) em Ordem Alfabética */}
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs text-slate-400 font-bold uppercase">
+                      Região Administrativa (RA) {isNew && <span className="text-red-400">*</span>}
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-semibold">Ordem Alfabética</span>
+                  </div>
+                  <select 
+                    name="dscLocalidade" 
+                    value={formData.dscLocalidade} 
+                    onChange={handleRAChange} 
+                    required={isNew}
+                    className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="">Selecione uma RA...</option>
+                    {sortedRAList.map(ra => (
+                      <option key={ra.name} value={ra.name}>{ra.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Código do Hidrante (Sequencial Automático para Novo) */}
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs text-slate-400 font-bold uppercase">Código do Hidrante</label>
+                    {isNew && (
+                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800">
+                        Preenchimento Automático
+                      </span>
+                    )}
+                  </div>
+                  <input 
+                    name="codHidrante" 
+                    value={formData.codHidrante} 
+                    readOnly
+                    placeholder={isNew ? "Gerado automaticamente ao escolher a RA..." : ""}
+                    className="border border-slate-700 rounded p-2 text-sm font-mono bg-slate-900/70 text-emerald-400 font-bold cursor-not-allowed" 
+                  />
+                </div>
+
+                {/* Endereço com Sugestões Inteligentes (estilo iFood) */}
+                <div className="flex flex-col gap-1 relative" ref={addressInputRef}>
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs text-slate-400 font-bold uppercase flex items-center gap-1">
+                      Endereço {isNew && <span className="text-red-400">*</span>}
+                    </label>
+                    <span className="text-[10px] text-amber-400 flex items-center gap-1 font-semibold">
+                      <Sparkles size={11} />
+                      Sugestões ao digitar
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <input 
+                      name="dscEndereco" 
+                      value={formData.dscEndereco} 
+                      onChange={handleChange} 
+                      onFocus={() => setShowAddressDropdown(true)}
+                      required={isNew}
+                      placeholder="Ex: Quadra 02 Conjunto A Lote 15, Av. Central..."
+                      autoComplete="off"
+                      className="w-full bg-slate-900 border border-slate-700 rounded p-2 pr-8 text-sm text-white focus:outline-none focus:border-amber-500" 
+                    />
+                    {isLoadingSuggestions && (
+                      <Loader2 size={15} className="absolute right-2.5 top-3 text-amber-400 animate-spin" />
+                    )}
+                  </div>
+
+                  {/* Chip de Endereço Sugerido a partir do Pino do Mapa */}
+                  {mapSuggestedAddress && mapSuggestedAddress.address !== formData.dscEndereco && (
+                    <div 
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          dscEndereco: mapSuggestedAddress.address,
+                          dscPontoReferencia: mapSuggestedAddress.reference || prev.dscPontoReferencia,
+                          dscLocalidade: mapSuggestedAddress.ra || prev.dscLocalidade
+                        }));
+                      }}
+                      className="mt-1 p-1.5 bg-amber-950/40 border border-amber-500/40 rounded-lg text-xs text-amber-300 flex items-center justify-between cursor-pointer hover:bg-amber-900/50 transition-all"
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        <MapPin size={13} className="text-amber-400 shrink-0" />
+                        <span className="truncate"><strong>Ponto no mapa:</strong> {mapSuggestedAddress.address}</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-amber-400 underline shrink-0 ml-2">Usar este</span>
+                    </div>
+                  )}
+
+                  {/* Dropdown de Sugestões de Endereço (iFood Style) */}
+                  {showAddressDropdown && (localAddressSuggestions.length > 0 || apiSuggestions.length > 0) && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[300] max-h-56 overflow-y-auto divide-y divide-slate-800">
+                      <div className="p-1.5 bg-slate-850 text-[10px] font-bold uppercase text-slate-400 flex items-center justify-between">
+                        <span>Sugestões de Endereço</span>
+                        <button 
+                          type="button" 
+                          onClick={() => setShowAddressDropdown(false)}
+                          className="text-slate-400 hover:text-white"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {/* Sugestões da Base de Dados de Hidrantes */}
+                      {localAddressSuggestions.map((sug, idx) => (
+                        <div
+                          key={`loc_${idx}`}
+                          onClick={() => handleSelectSuggestion(sug)}
+                          className="p-2.5 hover:bg-slate-800 cursor-pointer transition-colors flex items-start gap-2 text-left"
+                        >
+                          <MapPin size={15} className="text-emerald-400 shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-bold text-white truncate">{sug.address}</div>
+                            {sug.reference && (
+                              <div className="text-[10px] text-slate-400 truncate">Ref: {sug.reference}</div>
+                            )}
+                            <div className="text-[10px] text-emerald-400 font-semibold">
+                              {sug.ra || 'Distrito Federal'} • Base Netuno
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
 
-                    {/* Sugestões OSM / Mapa */}
-                    {apiSuggestions.map((sug, idx) => (
-                      <div
-                        key={`osm_${idx}`}
-                        onClick={() => handleSelectSuggestion(sug)}
-                        className="p-2.5 hover:bg-slate-800 cursor-pointer transition-colors flex items-start gap-2 text-left"
-                      >
-                        <Navigation size={14} className="text-cyan-400 shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-bold text-white truncate">{sug.address}</div>
-                          <div className="text-[10px] text-slate-400 truncate">{sug.fullTitle}</div>
+                      {/* Sugestões OSM / Mapa */}
+                      {apiSuggestions.map((sug, idx) => (
+                        <div
+                          key={`osm_${idx}`}
+                          onClick={() => handleSelectSuggestion(sug)}
+                          className="p-2.5 hover:bg-slate-800 cursor-pointer transition-colors flex items-start gap-2 text-left"
+                        >
+                          <Navigation size={14} className="text-cyan-400 shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-bold text-white truncate">{sug.address}</div>
+                            <div className="text-[10px] text-slate-400 truncate">{sug.fullTitle}</div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Ponto de Referência */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-slate-400 font-bold uppercase">
+                    Ponto de Referência {isNew && <span className="text-red-400">*</span>}
+                  </label>
+                  <input 
+                    name="dscPontoReferencia" 
+                    value={formData.dscPontoReferencia} 
+                    onChange={handleChange} 
+                    required={isNew}
+                    placeholder="Ex: Em frente à farmácia / esquina / portaria"
+                    className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500" 
+                  />
+                </div>
+                
+                {/* Coordenadas */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-400 font-bold uppercase">Latitude (Lat)</label>
+                    <input 
+                      type="text" 
+                      name="numLatitude" 
+                      value={formData.numLatitude} 
+                      onChange={handleChange} 
+                      onBlur={() => handleCoordinateBlur('numLatitude')}
+                      placeholder="-15.820000"
+                      className="bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono focus:border-amber-500 outline-none" 
+                    />
                   </div>
-                )}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-400 font-bold uppercase">Longitude (Lng)</label>
+                    <input 
+                      type="text" 
+                      name="numLongitude" 
+                      value={formData.numLongitude} 
+                      onChange={handleChange} 
+                      onBlur={() => handleCoordinateBlur('numLongitude')}
+                      placeholder="-47.980000"
+                      className="bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono focus:border-amber-500 outline-none" 
+                    />
+                  </div>
+                </div>
+                <span className="text-[11px] text-slate-400 italic">
+                  Dica: Clique no mapa de satélite para reposicionar o pino vermelho nas coordenadas exatas.
+                </span>
               </div>
 
-              {/* Ponto de Referência */}
-              <div className="flex flex-col gap-1">
-                <label className="text-xs text-slate-400 font-bold uppercase">
-                  Ponto de Referência {isNew && <span className="text-red-400">*</span>}
-                </label>
-                <input 
-                  name="dscPontoReferencia" 
-                  value={formData.dscPontoReferencia} 
-                  onChange={handleChange} 
-                  required={isNew}
-                  placeholder="Ex: Em frente à farmácia / esquina / portaria"
-                  className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500" 
-                />
-              </div>
-              
-              {/* Coordenadas */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-slate-400 font-bold uppercase">Latitude (Lat)</label>
-                  <input 
-                    type="text" 
-                    name="numLatitude" 
-                    value={formData.numLatitude} 
-                    onChange={handleChange} 
-                    onBlur={() => handleCoordinateBlur('numLatitude')}
-                    placeholder="-15.820000"
-                    className="bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono focus:border-amber-500 outline-none" 
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-slate-400 font-bold uppercase">Longitude (Lng)</label>
-                  <input 
-                    type="text" 
-                    name="numLongitude" 
-                    value={formData.numLongitude} 
-                    onChange={handleChange} 
-                    onBlur={() => handleCoordinateBlur('numLongitude')}
-                    placeholder="-47.980000"
-                    className="bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono focus:border-amber-500 outline-none" 
-                  />
-                </div>
-              </div>
-              <span className="text-[11px] text-slate-400 italic">
-                Dica: Clique no mapa de satélite para reposicionar o pino vermelho nas coordenadas exatas.
-              </span>
-            </div>
+              {/* Container do Mapa com Satélite e Botão de Localização GPS */}
+              <div className="w-full md:w-1/2 min-h-[260px] h-[280px] md:h-auto md:min-h-[380px] border border-slate-600 rounded-lg overflow-hidden relative shadow-inner z-0">
+                 
+                 {/* Botão de Localização GPS do Usuário */}
+                 <div className="absolute top-3 right-3 z-[1000] flex flex-col items-end gap-1">
+                   <button
+                     type="button"
+                     onClick={() => handleFetchCurrentGPS(false)}
+                     disabled={isLocatingGPS}
+                     className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-xl border backdrop-blur-md flex items-center gap-1.5 transition-all active:scale-95 ${
+                       isLocatingGPS
+                         ? 'bg-slate-900/90 text-amber-300 border-amber-500/50 cursor-wait'
+                         : (gpsObtained
+                             ? 'bg-emerald-950/90 hover:bg-emerald-900 text-emerald-300 border-emerald-500 shadow-emerald-950/50'
+                             : 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-600')
+                     }`}
+                     title="Centralizar e mover o pino para a sua localização atual via GPS"
+                   >
+                     {isLocatingGPS ? (
+                       <Loader2 size={14} className="animate-spin text-amber-400" />
+                     ) : (
+                       <LocateFixed size={14} className={gpsObtained ? 'text-emerald-400' : 'text-slate-300'} />
+                     )}
+                     <span>{isLocatingGPS ? 'Obtendo GPS...' : (gpsObtained ? 'GPS Localizado' : 'Minha Localização')}</span>
+                   </button>
+                 </div>
 
-            {/* Container do Mapa com Satélite e Botão de Localização GPS */}
-            <div className="w-full md:w-1/2 h-[320px] md:h-auto border border-slate-600 rounded-lg overflow-hidden relative shadow-inner">
-               
-               {/* Botão de Localização GPS do Usuário */}
-               <div className="absolute top-3 right-3 z-[1000] flex flex-col items-end gap-1">
-                 <button
-                   type="button"
-                   onClick={() => handleFetchCurrentGPS(false)}
-                   disabled={isLocatingGPS}
-                   className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-xl border backdrop-blur-md flex items-center gap-1.5 transition-all active:scale-95 ${
-                     isLocatingGPS
-                       ? 'bg-slate-900/90 text-amber-300 border-amber-500/50 cursor-wait'
-                       : (gpsObtained
-                           ? 'bg-emerald-950/90 hover:bg-emerald-900 text-emerald-300 border-emerald-500 shadow-emerald-950/50'
-                           : 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-600')
-                   }`}
-                   title="Centralizar e mover o pino para a sua localização atual via GPS"
+                 <MapContainer 
+                   center={[validLat, validLng]} 
+                   zoom={16} 
+                   scrollWheelZoom={true}
+                   style={{ height: '100%', width: '100%' }}
                  >
-                   {isLocatingGPS ? (
-                     <Loader2 size={14} className="animate-spin text-amber-400" />
-                   ) : (
-                     <LocateFixed size={14} className={gpsObtained ? 'text-emerald-400' : 'text-slate-300'} />
-                   )}
-                   <span>{isLocatingGPS ? 'Obtendo GPS...' : (gpsObtained ? 'GPS Localizado' : 'Minha Localização')}</span>
-                 </button>
-               </div>
-
-               <MapContainer 
-                 center={[validLat, validLng]} 
-                 zoom={16} 
-                 scrollWheelZoom={true}
-                 style={{ height: '100%', width: '100%' }}
-               >
-                  {/* Camada Google Satélite Híbrido idêntica à tela principal */}
-                  <TileLayer
-                    attribution='&copy; Google Maps'
-                    url="https://mt0.google.com/vt/lyrs=y&hl=pt-BR&x={x}&y={y}&z={z}"
-                    maxZoom={20}
-                  />
-                  <LocationMarker />
-               </MapContainer>
+                    {/* Camada Google Satélite Híbrido idêntica à tela principal */}
+                    <TileLayer
+                      attribution='&copy; Google Maps'
+                      url="https://mt0.google.com/vt/lyrs=y&hl=pt-BR&x={x}&y={y}&z={z}"
+                      maxZoom={20}
+                    />
+                    <LocationMarker />
+                 </MapContainer>
+              </div>
             </div>
           </div>
 
-          <div className="flex gap-3 mt-auto sticky bottom-[-1rem] bg-slate-800 p-4 border-t border-slate-700 z-10 -mx-4 -mb-4">
+          {/* Footer Fixo sempre visível e nunca sobreposto */}
+          <div className="p-4 bg-slate-900 border-t border-slate-700 flex gap-3 shrink-0 z-30">
             <button 
               type="button" 
               onClick={onClose} 
-              className="w-1/2 py-2 bg-slate-700 text-slate-300 font-bold rounded hover:bg-slate-600 transition-colors"
+              className="w-1/2 py-2.5 bg-slate-700 text-slate-300 font-bold rounded-lg hover:bg-slate-600 transition-colors active:scale-95 text-sm"
             >
               Cancelar
             </button>
             <button 
               type="submit" 
-              className="w-1/2 py-2 bg-amber-600 text-white font-bold rounded shadow-lg shadow-amber-900/50 hover:bg-amber-500 transition-colors flex items-center justify-center gap-2"
+              className="w-1/2 py-2.5 bg-amber-600 text-white font-bold rounded-lg shadow-lg shadow-amber-900/50 hover:bg-amber-500 transition-colors flex items-center justify-center gap-2 active:scale-95 text-sm"
             >
               <Save size={18} />
               Salvar Alterações

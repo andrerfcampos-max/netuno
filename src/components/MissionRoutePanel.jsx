@@ -228,7 +228,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
         : (currentUser?.nome || 'Equipe CBMDF');
     }
     
-    let text = `🚒 *NETUNO - STATUS DE VISTORIA*\n\n`;
+    let text = `🚒 *NETUNO - STATUS DE MISSÃO*\n\n`;
     text += `📋 *Missão:* ${missionName}\n`;
     text += `👤 *Vistoriador:* ${vistoriadorText}\n`;
     text += `📊 *Progresso:* ${completedHydrants.length} Concluídos / ${pendingRoute.length} Faltantes (Total: ${totalCount})\n\n`;

@@ -1,11 +1,13 @@
 import { MOCK_TEST_MISSIONS } from './mockMissions';
 
-const MISSIONS_STORAGE_KEY = 'argos_missions';
-const FOLDERS_STORAGE_KEY = 'argos_folders';
+const MISSIONS_STORAGE_KEY = 'netuno_missions';
+const LEGACY_MISSIONS_STORAGE_KEY = 'argos_missions';
+const FOLDERS_STORAGE_KEY = 'netuno_folders';
+const LEGACY_FOLDERS_STORAGE_KEY = 'argos_folders';
 
 export const loadMissions = () => {
   try {
-    const data = localStorage.getItem(MISSIONS_STORAGE_KEY);
+    const data = localStorage.getItem(MISSIONS_STORAGE_KEY) || localStorage.getItem(LEGACY_MISSIONS_STORAGE_KEY);
     let storedMissions = [];
     if (data !== null) {
       const parsed = JSON.parse(data);
@@ -106,7 +108,7 @@ const DEFAULT_FOLDERS = [
 
 export const loadFolders = () => {
   try {
-    const data = localStorage.getItem(FOLDERS_STORAGE_KEY);
+    const data = localStorage.getItem(FOLDERS_STORAGE_KEY) || localStorage.getItem(LEGACY_FOLDERS_STORAGE_KEY);
     let folders = [];
     if (data) {
       folders = JSON.parse(data);
