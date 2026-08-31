@@ -579,13 +579,18 @@ function App() {
     }
   };
 
-  const handleCreateMissionFromCart = () => {
+  const handleCreateMissionFromCart = (missionParams = {}) => {
     if (cartSelectionIds.length === 0) return;
     const dateStr = new Date().toLocaleDateString('pt-BR');
-    const newMissionName = `Missão ${dateStr} (${cartSelectionIds.length})`;
-    const newMission = createNewMission(newMissionName, null, currentUser);
+    const finalName = (missionParams.name && missionParams.name.trim()) 
+      ? missionParams.name.trim() 
+      : `Missão ${dateStr} (${cartSelectionIds.length})`;
+    const targetFolderId = missionParams.parentFolderId || null;
+
+    const newMission = createNewMission(finalName, targetFolderId, currentUser);
     newMission.selectedIds = [...cartSelectionIds];
     newMission.completedIds = [];
+    newMission.isDraft = false;
     newMission.createdBy = currentUser?.matricula;
     newMission.createdByName = currentUser?.nome;
     newMission.updatedAt = new Date().toISOString();
@@ -601,19 +606,21 @@ function App() {
     setCartSelectionIds([]);
     setIsCartOpen(false);
     setActiveView('route');
-    toast.success(`Nova Missão criada com ${newMission.selectedIds.length} hidrantes!`);
+    toast.success(`Nova Missão "${newMission.name}" criada com ${newMission.selectedIds.length} hidrantes!`);
   };
 
-  const handleAddToActiveMissionFromCart = () => {
+  const handleAddToMissionFromCart = (targetMissionId) => {
     if (cartSelectionIds.length === 0) return;
-    const currentM = missions.find(m => m.id === activeMissionId);
-    if (!currentM) {
-      toast.warn('Nenhuma missão aberta no momento. Clique em "CRIAR NOVA MISSÃO" ou abra uma na Central.');
+    const missionIdToUse = targetMissionId || activeMissionId;
+    const targetM = missions.find(m => m.id === missionIdToUse);
+    if (!targetM) {
+      toast.warn('Nenhuma missão selecionada para adicionar os hidrantes.');
       return;
     }
-    const merged = [...new Set([...(currentM.selectedIds || []), ...cartSelectionIds])];
+    const merged = [...new Set([...(targetM.selectedIds || []), ...cartSelectionIds])];
+    const addedCount = merged.length - (targetM.selectedIds || []).length;
     const updatedMission = {
-      ...currentM,
+      ...targetM,
       selectedIds: merged,
       updatedAt: new Date().toISOString()
     };
@@ -622,11 +629,13 @@ function App() {
       saveMissions(updated);
       return updated;
     });
+    setOpenMissionIds(prev => prev.includes(updatedMission.id) ? prev : [...prev, updatedMission.id]);
+    setActiveMissionId(updatedMission.id);
     syncMissionToCloud(updatedMission);
     setCartSelectionIds([]);
     setIsCartOpen(false);
     setActiveView('route');
-    toast.success(`${cartSelectionIds.length} hidrante(s) adicionado(s) à rota "${currentM.name}"!`);
+    toast.success(`${addedCount > 0 ? addedCount : 'Itens'} hidrante(s) atualizados na missão "${targetM.name}"!`);
   };
 
   const removeHydrantFromMission = (id) => {
@@ -1686,8 +1695,10 @@ function App() {
           setActiveView('map');
         }}
         onCreateMission={handleCreateMissionFromCart}
-        onAddToActiveMission={handleAddToActiveMissionFromCart}
+        onAddToMission={handleAddToMissionFromCart}
         activeMission={currentMission}
+        folders={folders}
+        missions={missions}
         currentUser={currentUser}
         isMapFullscreen={isMapFullscreen}
       />
