@@ -123,6 +123,169 @@ const RA_DEFAULT_COORDS = {
   'Arniqueira': { lat: -15.8583, lng: -48.0167 }
 };
 
+// Curated accurate overrides for records where raw address/empty field needs explicit establishment naming
+const MANUAL_OVERRIDES = {
+  557: 'Churrasquinho do Rodinho',
+  480: 'Restaurante Churrascaria Recanto Gaúcho',
+  562: 'Shopping Conjunto Nacional',
+  450: 'DF Madeira',
+  761: 'Centro de Ensino Fundamental 01 de Planaltina',
+  237: 'Administração Regional de Planaltina',
+  609: 'Feira Central Permanente de Brazlândia',
+  313: 'Fazenda Desterro',
+  486: 'Festejar Embalagens',
+  487: 'Bazar Nossa Senhora Aparecida',
+  527: 'CEPI Bem-te-vi',
+  425: 'Feira Permanente de Samambaia Norte',
+  202: 'Feira do Produtor e Atacadista de Ceilândia',
+  1172: 'Parque Distrital do Gama',
+  1248: 'Parque Ecológico do Gama',
+  495: 'Centro de Ensino Fundamental do Bosque',
+  1071: 'Escola Classe São Bartolomeu',
+  556: 'Escola Classe 01 do Gama',
+  215: 'Edifício Lions',
+  1052: 'Edifício Serrano',
+  87: 'Edifício Everest',
+  8: 'Feira Permanente de São Sebastião',
+  33: 'Feira Permanente do Paranoá',
+  788: 'Edifício Parque das Águas',
+  266: 'Supermercado Nova Rede',
+  547: 'Madefort SIA',
+  1119: 'Jaguar Utilidades',
+  1444: 'Shopping Total Ville Mall',
+  1972: 'Condomínio Crixás IV',
+  413: 'Academia World Gym (Fazendinha)',
+  1262: 'ABC Atacadão Papelaria',
+  1104: 'Residencial Isla Life Style',
+  1100: 'Edifício Via Boulevard',
+  1099: 'Edifício Contemplar',
+  1103: 'Residencial Olympique',
+  1752: 'Qualidade Gráfica e Editora',
+  1749: 'QuimiPlast',
+  2391: 'Academia Smart Fit (Santa Maria)',
+  1947: 'Academia Smart Fit (Sudoeste)',
+  3015: 'Academia Smart Fit (Asa Sul CRS 511)',
+  2376: 'Shopping ID',
+  1286: 'Shopping Asa Sul (EQS 414/415)',
+  2332: 'Shopping Asa Sul (EQS 414/415)',
+  123: 'Shopping Popular de Ceilândia',
+  420: 'Academia No Limite (Gama)',
+  491: 'Escola Normal de Brasília (Gama)',
+  528: 'Escola Classe 01 de Ceilândia',
+  512: 'Escola Classe 01 da Candangolândia',
+  798: 'Escola Classe Boqueirão',
+  659: 'Centro de Ensino Fundamental 106 (Recanto das Emas)',
+  1195: 'Super Shopping Cristo Rei',
+  1108: 'Centro Educacional Darcy Ribeiro (CED Darcy Ribeiro)',
+  1253: 'Clube do Bolo (Sobradinho)',
+  1196: 'Super 10 Confecções (Sobradinho)',
+  429: 'Galpão Comercial AC 419 (Santa Maria)',
+  42: 'Aeroporto Internacional de Brasília (Piso de Embarque)',
+  92: 'Aeroporto Internacional de Brasília (Terminal de Passageiros)',
+  32: 'Aeroporto Internacional de Brasília (Terminal de Passageiros / Check-in)',
+  47: 'Aeroporto Internacional de Brasília (Juscelino Kubitschek)',
+  509: 'Colégio La Salle (Núcleo Bandeirante)',
+  476: 'Centro de Ensino Médio do Núcleo Bandeirante (CEMNB)',
+  589: 'Escola Classe Vila Nova Divinéia (Núcleo Bandeirante)',
+  143: 'Centro Interescolar de Línguas do Núcleo Bandeirante (CIL NB)',
+  652: 'Colégio Olimpo (Taguatinga)',
+  869: 'Templo da Boa Vontade / ParlaMundi LBV',
+  496: 'Edifício Vitrinni Shopping (Águas Claras)',
+  382: 'Colégio Sigma (Águas Claras)',
+  1045: 'Prime Casa e Festa (Núcleo Bandeirante)',
+  1062: 'Quiosque e Lanchonete 2ª Avenida',
+  677: 'Escola Classe 04 do Núcleo Bandeirante',
+  772: 'Comércio 2ª Avenida Lt 359A (Núcleo Bandeirante)',
+  1208: 'Comércio 2ª Avenida Lt 469A (Núcleo Bandeirante)',
+  1246: 'Comércio 3ª Avenida AE 12 Lt D1 (Núcleo Bandeirante)',
+  789: 'Quartel 6º GBM (Núcleo Bandeirante)',
+  671: 'Ginásio de Esportes do Paranoá',
+  1265: 'Comércio SHIN CA 1 (Lago Norte)',
+  196: 'Indusplan (ADE Águas Claras)',
+  830: 'Quartel 21º GBM (Riacho Fundo)',
+  1106: 'Galpão ADE Ceilândia Q 1 Cj C Lt 30',
+  815: 'Condomínio AOS 08 (Octogonal)',
+  312: 'Posto de Combustíveis Avenida Central (Núcleo Bandeirante)',
+  1169: 'Comércio Avenida Central Lt 990 (Núcleo Bandeirante)',
+  447: 'Condomínio Crixás II (São Sebastião)',
+  714: 'Chácara 23 Avenida do Contorno (Núcleo Bandeirante)',
+  371: 'Comércio Avenida Paranoá Quadra 23',
+  902: 'Unidade Escolar Avenida Paranoá Quadra 10',
+  711: 'Unidade Escolar Q 107 Recanto das Emas',
+  913: 'Centro de Ensino Fundamental 113 do Recanto das Emas',
+  333: 'Restaurante e Hotel Recanto das Emas Q 201',
+  119: 'Loja Comercial Q 301 Recanto das Emas',
+  267: 'Comércio Local Q 205 Recanto das Emas',
+  46: 'Supermercado Box R1 e R2 (Núcleo Bandeirante)',
+  863: 'Comércio Bairro São Francisco Rua 17 (São Sebastião)',
+  1190: 'Comércio 2ª Avenida 317 A (Núcleo Bandeirante)',
+  1058: 'Chácara Montes Claros (São Sebastião)',
+  157: 'Chácara Santa Edwiges (Jardim Botânico)',
+  86: 'Depósito de GLP / Combustíveis São Bartolomeu (São Sebastião)',
+  233: 'Comércio Local QN 510 Samambaia Norte',
+  201: 'Comércio Local QS 120 Samambaia Sul',
+  514: 'Centro Interescolar de Línguas de Samambaia (CIL Samambaia)',
+  1266: 'Edifício Comercial SIA AE Lote A',
+  232: 'Depósito SIA AE Lote G',
+  1230: 'Garagem e Pátio SIA Canteiro Central',
+  1212: 'Galpão Comercial SIA Trecho 10 Lt 5',
+  1168: 'Comércio Local Santa Maria QR 210',
+  36: 'Comércio Local Santa Maria QR 210 Cj C',
+  1226: 'Comércio e Serviços QR 211 Santa Maria',
+  1243: 'Serviços Profissionais QR 211 Santa Maria',
+  728: 'Centro Educacional 310 de Santa Maria',
+  1241: 'Complexo Operacional DF-290 KM 03 (Gama)',
+  1178: 'Comércio Ponte Alta Norte (Gama)',
+  19: 'Condomínio Residencial Quadra 2 Cj A1 Bloco A (Sobradinho)',
+  10: 'Área Especial 06 Sobradinho I',
+  88: 'Comércio Vila São José Q 48 (Brazlândia)',
+  558: 'Setor de Indústria QES Área 4 (Ceilândia)',
+  775: 'Setor de Indústria QI 8 Lt 2 (Ceilândia)',
+  168: 'Unidade Escolar QNN 31 AE E (Ceilândia)',
+  148: 'Garagem de Ônibus QNO 14 AE A (Ceilândia)',
+  39: 'Depósito Candangolândia Lote 02',
+  85: 'Restaurante QOF Cj I Lt 2 (Candangolândia)',
+  141: 'Comércio Local QR 1A (Candangolândia)',
+  888: 'Lojas Comerciais QNN 4 Cj O (Ceilândia)',
+  81: 'Comércio Setor M QNM 12 CNM 2 (Ceilândia)',
+  1167: 'Comércio Setor M QNM 16 Lt G (Ceilândia)',
+  554: 'Unidade Escolar EQNN 3/5 Bl E (Ceilândia)',
+  548: 'Unidade Escolar EQNN 7/9 Lt B (Ceilândia)',
+  1046: 'Edifício Comercial Quadra 02 Lote 910/920 (Plano Piloto)',
+  849: 'Edifício Comercial SBS Quadra 1 Bloco L',
+  637: 'Edifício SBS Quadra 1 Bloco E',
+  1147: 'Edifício SCS Quadra 1 Bloco M',
+  238: 'Comércio Local QS 12 Lote C (Riacho Fundo)',
+  1188: 'Supermercado Setor G Sul CSG 20 (Taguatinga)',
+  328: 'Comércio Vila Buritis Q 3 Cj A (Planaltina)',
+  75: 'Setor Recreativo e Esportivo AE 9 (Planaltina)',
+  1256: 'Setor de Hotéis e Diversões PJ 1 (Planaltina)',
+  208: 'Comércio Local SHIS CL QI 5 Bl F (Lago Sul)',
+  442: 'Escola SHIS QI 09 Área Especial (Lago Sul)',
+  465: 'Escola SHIS QI 15 (Lago Sul)',
+  210: 'Clínica / Hospital SHIS QI 15 Lt G (Lago Sul)',
+  564: 'Escola SHIS QI 19 Lt L (Lago Sul)',
+  587: 'Unidade Escolar Setor M EQNM 4/6 (Ceilândia)',
+  1199: 'Edifício Comercial SHCAO EA 6/8 Bloco A (Octogonal)',
+  887: 'Comércio Local SHCES Quadra 303 Bloco C (Cruzeiro)',
+  896: 'Comércio Local SHCES Quadra 303 Bloco C (Cruzeiro)',
+  1072: 'Unidade Escolar SHCES Quadra 807 (Cruzeiro)',
+  1229: 'Comércio Local CLSW 104 Bloco C (Sudoeste)',
+  9: 'Hospital / Clínica SHLN Conjunto G Lote 7 (Asa Norte)',
+  389: 'Escola Classe 614 de Samambaia Sul',
+  1149: 'Unidade Escolar Riacho Fundo II QN 7C',
+  1098: 'Edifício SCS Quadra 2 Bloco D',
+  538: 'Centro de Ensino Especial do Gama',
+  516: 'CEI / Escola EQNP 6/10 Ceilândia',
+  517: 'Unidade Escolar QNP 28 Ceilândia',
+  3030: 'Edifício Residencial CLS 111 Bloco D (Asa Sul)',
+  1779: 'SESC / Igreja SHCS CRS 504 (Asa Sul)',
+  3020: 'Galeria Comercial SHCS CRS 509 (Asa Sul)',
+  1135: 'Comércio e Serviços SHCSW EQRSW 6/7 (Sudoeste)',
+  718: 'Edifício Clínico / Hospitalar SHLS Quadra 716 (Asa Sul)',
+  922: 'Escola Vila Vicentina Quadra 17 (Planaltina)'
+};
+
 function normalizeRA(rawText, obmDescription) {
   if (!rawText && obmDescription && OBM_TO_RA[obmDescription]) {
     return OBM_TO_RA[obmDescription];
@@ -224,13 +387,32 @@ function normalizeOccupancy(tipoDesc) {
   return tipoDesc;
 }
 
+function cleanExtractedName(str) {
+  if (!str) return '';
+  let clean = String(str)
+    .replace(/^["'“]+|["'”]+$/g, '')
+    .replace(/^complemento\s*-\s*/i, '')
+    .replace(/coord\.?\s*\(?[-\d.,º'"\s;SWNE!]+\)?/gi, '')
+    .replace(/-\s*DF,?\s*\d{5}-?\d{3}/gi, '')
+    .replace(/,\s*Brasília\s*-\s*DF/gi, '')
+    .replace(/,\s*Brasília/gi, '')
+    .replace(/,\s*DF/gi, '')
+    .replace(/[;,\-\s]+$/, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  return clean;
+}
+
 function cleanAddress(addr) {
   if (!addr || String(addr).trim() === '') return '-';
   const cleaned = String(addr)
-    .replace(/coord\.?\s*([-\d.,º'"\sSWNE]+)/gi, '')
+    .replace(/coord\.?\s*\(?[-\d.,º'"\s;SWNE!]+\)?/gi, '')
     .replace(/complemento\s*-\s*$/i, '')
     .replace(/-\s*DF,?\s*\d{5}-?\d{3}/gi, '')
     .replace(/,\s*Brasília\s*-\s*DF/gi, '')
+    .replace(/,\s*Brasília/gi, '')
+    .replace(/,\s*DF/gi, '')
+    .replace(/[;,\-\s]+$/, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
   return cleaned || '-';
@@ -239,14 +421,14 @@ function cleanAddress(addr) {
 function expandSchoolName(name, ra) {
   if (!name || String(name).trim() === '') return '';
   let expanded = String(name).trim();
-  expanded = expanded.replace(/\bEC\s*(\d+)\b/gi, 'Escola Classe $1');
-  expanded = expanded.replace(/\bCEF\s*(\d+)\b/gi, 'Centro de Ensino Fundamental $1');
-  expanded = expanded.replace(/\bCEM\s*(\d+)\b/gi, 'Centro de Ensino Médio $1');
-  expanded = expanded.replace(/\bCED\s*(\d+)\b/gi, 'Centro Educacional $1');
+  expanded = expanded.replace(/\bEC\s*0*(\d+)\b/gi, 'Escola Classe $1');
+  expanded = expanded.replace(/\bCEF\s*0*(\d+)\b/gi, 'Centro de Ensino Fundamental $1');
+  expanded = expanded.replace(/\bCEM\s*0*(\d+)\b/gi, 'Centro de Ensino Médio $1');
+  expanded = expanded.replace(/\bCED\s*0*(\d+)\b/gi, 'Centro Educacional $1');
   expanded = expanded.replace(/\bCAIC\b/gi, 'CAIC');
-  expanded = expanded.replace(/\bCEI\s*(\d+)\b/gi, 'Centro de Educação Infantil $1');
-  expanded = expanded.replace(/\bCIL\s*(\d+)?\b/gi, 'Centro Interescolar de Línguas $1');
-  expanded = expanded.replace(/\bUBS\s*(\d+)?\b/gi, 'Unidade Básica de Saúde $1');
+  expanded = expanded.replace(/\bCEI\s*0*(\d+)\b/gi, 'Centro de Educação Infantil $1');
+  expanded = expanded.replace(/\bCIL\s*0*(\d+)?\b/gi, 'Centro Interescolar de Línguas $1');
+  expanded = expanded.replace(/\bUBS\s*0*(\d+)?\b/gi, 'Unidade Básica de Saúde $1');
   expanded = expanded.replace(/\bHRT\b/gi, 'Hospital Regional de Taguatinga');
   expanded = expanded.replace(/\bHRG\b/gi, 'Hospital Regional do Gama');
   expanded = expanded.replace(/\bHRS\b/gi, 'Hospital Regional de Sobradinho');
@@ -255,52 +437,102 @@ function expandSchoolName(name, ra) {
   expanded = expanded.replace(/\bHRP\b/gi, 'Hospital Regional de Planaltina');
   expanded = expanded.replace(/\bHRAN\b/gi, 'Hospital Regional da Asa Norte');
   expanded = expanded.replace(/\bHRAS\b/gi, 'Hospital Regional da Asa Sul (HMIB)');
+  expanded = expanded.replace(/\bHMIB\b/gi, 'Hospital Materno Infantil de Brasília (HMIB)');
+  expanded = expanded.replace(/\bHFA\b/gi, 'Hospital das Forças Armadas (HFA)');
+  expanded = expanded.replace(/\bHUB\b/gi, 'Hospital Universitário de Brasília (HUB)');
   return expanded;
 }
 
 function extractEstablishmentName(row, ra) {
+  const cod = row.cod_levantamento;
+  if (MANUAL_OVERRIDES[cod]) {
+    return MANUAL_OVERRIDES[cod];
+  }
+
+  // 1. Explicit row.estabelecimento
   if (row.estabelecimento && String(row.estabelecimento).trim() !== '') {
-    return expandSchoolName(String(row.estabelecimento).trim(), ra);
-  }
-  if (row.endcompl && String(row.endcompl).trim() !== '' && !String(row.endcompl).toLowerCase().startsWith('lote') && !String(row.endcompl).toLowerCase().startsWith('bloco')) {
-    const compl = String(row.endcompl).trim();
-    if (compl.includes(' - ')) {
-      const parts = compl.split(' - ');
-      if (parts[0].length > 3 && !parts[0].match(/^\d+$/)) {
-        return expandSchoolName(parts[0].trim(), ra);
-      }
-    } else if (compl.length > 3 && !compl.match(/^\d+$/)) {
-      return expandSchoolName(compl, ra);
+    const rawEst = String(row.estabelecimento).trim();
+    if (!/^(Q[A-Z0-9]|CL[A-Z]|EQ[A-Z]|SH[A-Z]|SM[A-Z]|AE|ÁREA|LOT[E|ES]|RUA|\d+ª?\s*AVENIDA|VIA|SETOR|TRECHO|CONJUNTO|CHÁCARA|SMPW|SCS|SBS|SBN|SRTV|SIG|SAAN|SIA|SMAS|VILA|AV|AOS|SQS|SQN|CLN|CLS|SHCS|SHCN|QI|QN|QR|QS|QNL|QNM|QNN|QNO|QNJ|QNA|QNB|QNC|QND|QNE|QNF|QNG|QNH|\d+)/i.test(rawEst)) {
+      return expandSchoolName(rawEst, ra);
     }
   }
-  const rawAddr = row.dsc_endereco || row.enderecofinal || '';
-  if (rawAddr.includes(' - ')) {
-    const parts = rawAddr.split(' - ');
-    const firstPart = parts[0].trim();
-    const isStandardAddress = /^(Q[A-Z0-9]|CL[A-Z]|EQ[A-Z]|SH[A-Z]|SM[A-Z]|AE|ÁREA|LOT[E|ES]|RUA|\d+ª?\s*AVENIDA|VIA|SETOR|TRECHO|CONJUNTO|CHÁCARA|SMPW|SCS|SBS|SBN|SRTV|SIG|SAAN|SIA|SMAS)/i.test(firstPart);
-    if (!isStandardAddress && firstPart.length > 3 && !firstPart.startsWith('-15') && !firstPart.startsWith('-16')) {
-      return expandSchoolName(firstPart, ra);
+
+  const dsc = String(row.dsc_endereco || '').trim();
+  const compl = String(row.endcompl || '').trim();
+  const prox = String(row.enderecomaisproximo || '').trim();
+  const final = String(row.enderecofinal || '').trim();
+  const all = [dsc, compl, prox, final].join(' || ');
+
+  // 2. Quoted trade name
+  const qm = all.match(/["“]([^"”]+)["”]/);
+  if (qm && qm[1].trim().length > 2) {
+    const qName = cleanExtractedName(qm[1]);
+    if (!/^(lote|bloco|casa|loja|apto|sala|conjunto|quadra|cep|df|\d+)/i.test(qName)) {
+      return expandSchoolName(qName, ra);
     }
-    const schoolMatch = firstPart.match(/\b(EC|CEF|CEM|CED|CAIC|CEI|CIL|UBS|HR[A-Z]*)\s*(\d+)?\b/i);
-    if (schoolMatch) {
-      return expandSchoolName(schoolMatch[0], ra) + ' (' + ra + ')';
+  }
+
+  // 3. Name after CEP in dsc / final / prox (e.g. 72737502 CHURRASQUINHO DO RODINHO)
+  const cepMatch = dsc.match(/\b\d{5}-?\d{3}\s+([^coord]+?)(?:\s+coord|\s*$)/i) || dsc.match(/\b\d{8}\s+([^coord]+?)(?:\s+coord|\s*$)/i);
+  if (cepMatch) {
+    let after = cepMatch[1].replace(/^[,\-\s]+/, '').trim();
+    after = cleanExtractedName(after);
+    if (after.length > 2 && !/^(coord|df|brasília|brasilia|\d+)/i.test(after) && !/^(lote|bloco|casa|loja|apto|sala|conjunto|quadra)/i.test(after)) {
+      return expandSchoolName(after, ra);
     }
   }
-  const edMatch = rawAddr.match(/(?:Edifício|Ed\.|Residencial|Condomínio|Cond\.)\s+([^,–\-]+)/i);
-  if (edMatch) {
-    return edMatch[0].trim();
+
+  // 4. Complemento text
+  const cm = dsc.match(/complemento\s*-\s*([^,\-]+)/i);
+  if (cm && cm[1].trim().length > 2) {
+    const cName = cleanExtractedName(cm[1]);
+    if (!/^(lote|bloco|casa|loja|apto|sala|conjunto|quadra|cep|df|\d+)/i.test(cName)) {
+      return expandSchoolName(cName, ra);
+    }
   }
-  const keywordMatch = rawAddr.match(/(?:AEROPORTO|SHOPPING|SUPERMERCADO|ATACADÃO|HOSPITAL|CLÍNICA|HOTEL|ACADEMIA|FACULDADE|COLÉGIO|UNIVERSIDADE|IGREJA|PARÓQUIA|TEMPLO|CENTRO CULTURAL|TEATRO|CONCESSIONÁRIA)\s+[^,\-]+/i);
-  if (keywordMatch) {
-    return keywordMatch[0].trim();
+  if (compl && !/^(lote|bloco|casa|loja|apto|sala|conjunto|quadra|cep|df|\d+)/i.test(compl)) {
+    const cleanCompl = cleanExtractedName(compl.replace(/^complemento\s*-\s*/i, '').split(' - ')[0]);
+    if (cleanCompl.length > 2 && !/^\d+$/.test(cleanCompl) && !/^(lote|bloco|casa|loja|apto|sala|conjunto|quadra|cep|df|\d+)/i.test(cleanCompl)) {
+      return expandSchoolName(cleanCompl, ra);
+    }
   }
-  const cleanAddr = cleanAddress(row.enddescription || row.dsc_endereco || 'Localidade ' + ra);
+
+  // 5. Keyword in text
+  const keyMatch = all.match(/(?:Edifício|Ed\.|Residencial|Condomínio|Cond\.|Restaurante|Churrascaria|Academia|Shopping|Supermercado|Atacadão|Atacado|Hospital|Clínica|Hotel|Faculdade|Colégio|Universidade|Igreja|Paróquia|Templo|Teatro|Galpão|Posto|Drogaria|Farmácia|Padaria|Auto Posto|Lanchonete|Pizzaria|Aeroporto|Feira|Parque|Ginásio|Estádio|Complexo)\s+[^,\-\|\/]+/i);
+  if (keyMatch) {
+    const kName = cleanExtractedName(keyMatch[0]);
+    if (kName.length > 3) {
+      return expandSchoolName(kName, ra);
+    }
+  }
+
+  // 6. School / Health acronym
+  const schMatch = all.match(/\b(EC\s*0*\d+|CEF\s*0*\d+|CEM\s*0*\d+|CED\s*0*\d+|CAIC|CEI\s*0*\d+|CIL\s*0*\d*|UBS\s*0*\d*|HR[A-Z]*)\b/i);
+  if (schMatch) {
+    return expandSchoolName(schMatch[0], ra) + ` (${ra})`;
+  }
+
+  // 7. Prefix before dash if not standard address prefix
+  if (dsc.includes(' - ')) {
+    const parts = dsc.split(' - ');
+    const first = parts[0].trim();
+    const isAddr = /^(Q[A-Z0-9]|CL[A-Z]|EQ[A-Z]|SH[A-Z]|SM[A-Z]|AE|ÁREA|LOT[E|ES]|RUA|\d+ª?\s*AVENIDA|VIA|SETOR|TRECHO|CONJUNTO|CHÁCARA|SMPW|SCS|SBS|SBN|SRTV|SIG|SAAN|SIA|SMAS|VILA|AV|AOS|SQS|SQN|CLN|CLS|SHCS|SHCN|QI|QN|QR|QS|QNL|QNM|QNN|QNO|QNJ|QNA|QNB|QNC|QND|QNE|QNF|QNG|QNH|\d+)/i.test(first);
+    if (!isAddr && first.length > 3 && !first.startsWith('-15') && !first.startsWith('-16')) {
+      return expandSchoolName(cleanExtractedName(first), ra);
+    }
+  }
+
+  // 8. Fallback to row.tipodescription with cleaned address
+  const cleanAddr = cleanAddress(row.enddescription || row.dsc_endereco || row.enderecofinal || 'Edificação ' + ra);
   const tipo = row.tipodescription ? String(row.tipodescription).toUpperCase() : 'ESTABELECIMENTO';
   if (tipo.includes('ESCOL')) return 'Unidade Escolar (' + cleanAddr + ')';
   if (tipo.includes('COMERC')) return 'Estabelecimento Comercial (' + cleanAddr + ')';
   if (tipo.includes('RESID')) return 'Edificação Residencial (' + cleanAddr + ')';
   if (tipo.includes('CONCENTRA')) return 'Local de Reunião de Público (' + cleanAddr + ')';
-  return cleanAddr && cleanAddr !== '-' ? cleanAddr : 'Edificação Cadastrada - ' + ra;
+  if (tipo.includes('HOSP')) return 'Unidade Hospitalar / Saúde (' + cleanAddr + ')';
+  if (tipo.includes('INDUS') || tipo.includes('ARMAZEN')) return 'Galpão / Depósito (' + cleanAddr + ')';
+
+  return cleanAddr || ('Edificação ' + ra);
 }
 
 function cleanVal(v) {

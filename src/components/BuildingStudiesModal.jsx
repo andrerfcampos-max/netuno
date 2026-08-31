@@ -167,7 +167,7 @@ export default function BuildingStudiesModal({
 📍 *Endereço:* ${study.ra ? `${study.ra} - ` : ''}${study.endereco || '-'}
 🏷️ *Ocupação:* ${study.ocupacao || '-'} | *Carga de Incêndio:* ${study.cargaIncendio || 'Média'}
 👥 *População Prioritária:* ${study.populacaoPrioritaria || '-'}
-👨‍🚒 *Reconhecimento CBMDF:* ${study.responsavelVistoria || '-'} (${study.obmResponsavel || '-'}) - ${study.dataLevantamento || '-'}
+👨‍🚒 *Militar vistoriador:* ${study.responsavelVistoria || '-'} (${study.obmResponsavel || '-'}) - ${study.dataLevantamento || '-'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚒 *TREM DE SOCORRO E ACESSOS:*
@@ -663,10 +663,10 @@ const BuildingTacticalCard = React.memo(function BuildingTacticalCard({
           </div>
         )}
 
-        {/* Reconhecimento CBMDF / Vistoriador */}
+        {/* Militar vistoriador */}
         {study.responsavelVistoria && study.responsavelVistoria !== '-' && (
           <div className="text-[11px] text-slate-400 flex items-center gap-1.5 my-1.5 px-2 py-1 bg-slate-950/40 rounded border border-slate-800/60">
-            <span className="text-cyan-400 font-semibold shrink-0">👨‍🚒 Reconhecimento CBMDF:</span>
+            <span className="text-cyan-400 font-semibold shrink-0">👨‍🚒 Militar vistoriador:</span>
             <span className="truncate text-slate-300" title={`${study.responsavelVistoria} (${study.obmResponsavel || '-'})`}>
               {study.responsavelVistoria} {study.obmResponsavel && study.obmResponsavel !== '-' ? `• ${study.obmResponsavel}` : ''}
             </span>
@@ -874,24 +874,34 @@ function BuildingTacticalViewModal({
         
         {/* Cabeçalho Ficha Tática */}
         <div className="px-3 py-2 sm:px-6 sm:py-4 bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-950/80 border-b border-emerald-500/30 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
-          <div className="min-w-0 flex-1">
-            <div className="hidden sm:flex items-center gap-2 flex-wrap mb-1">
-              <span className="px-2.5 py-0.5 bg-emerald-600 text-white font-extrabold text-[11px] rounded uppercase tracking-wider shadow">
-                SCI / CBMDF • RESPOSTA RÁPIDA
-              </span>
-              <span className="px-2 py-0.5 bg-blue-950 text-cyan-300 border border-cyan-500/30 text-xs font-bold rounded">
-                {study.ra}
-              </span>
-              <span className={`px-2 py-0.5 border text-xs font-bold rounded ${hazard.color}`}>
-                Carga {study.cargaIncendio || 'Média'}
-              </span>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <button 
+              type="button"
+              onClick={onClose} 
+              className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-emerald-500/40 rounded-lg font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer shadow active:scale-95"
+              title="Voltar para a lista de estabelecimentos"
+            >
+              ← Voltar
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="hidden sm:flex items-center gap-2 flex-wrap mb-1">
+                <span className="px-2.5 py-0.5 bg-emerald-600 text-white font-extrabold text-[11px] rounded uppercase tracking-wider shadow">
+                  SCI / CBMDF • RESPOSTA RÁPIDA
+                </span>
+                <span className="px-2 py-0.5 bg-blue-950 text-cyan-300 border border-cyan-500/30 text-xs font-bold rounded">
+                  {study.ra}
+                </span>
+                <span className={`px-2 py-0.5 border text-xs font-bold rounded ${hazard.color}`}>
+                  Carga {study.cargaIncendio || 'Média'}
+                </span>
+              </div>
+              <h2 className="text-sm sm:text-2xl font-black text-white tracking-tight leading-tight truncate sm:whitespace-normal">
+                {study.nomeFantasia}
+              </h2>
+              <p className="hidden sm:block text-xs text-slate-300 leading-snug mt-0.5 truncate">
+                {study.razaoSocial ? `${study.razaoSocial} • ` : ''}{study.endereco}
+              </p>
             </div>
-            <h2 className="text-sm sm:text-2xl font-black text-white tracking-tight leading-tight truncate sm:whitespace-normal">
-              {study.nomeFantasia}
-            </h2>
-            <p className="hidden sm:block text-xs text-slate-300 leading-snug mt-0.5">
-              {study.razaoSocial ? `${study.razaoSocial} • ` : ''}{study.endereco}
-            </p>
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
@@ -1304,9 +1314,10 @@ function BuildingTacticalViewModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow-lg shadow-emerald-950/50 active:scale-95 transition-all"
+            className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow-lg shadow-emerald-950/50 active:scale-95 transition-all flex items-center gap-1.5"
           >
-            Fechar ficha PREPOP
+            <span>←</span>
+            <span>Voltar para lista de estabelecimentos</span>
           </button>
         </div>
 
