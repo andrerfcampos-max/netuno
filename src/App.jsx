@@ -1486,8 +1486,8 @@ function App() {
 
 
 
-      {/* MÓDULO 1: BARRA DE FILTROS FIXA NO TOPO (OCULTA EM ROTAS E RELATÓRIOS PARA GANHO DE ESPAÇO) */}
-      {!isMapFullscreen && activeView !== 'route' && activeView !== 'report' && (
+      {/* MÓDULO 1: BARRA DE FILTROS FIXA NO TOPO (OCULTA APENAS NA TELA DE ROTA PARA GANHO DE ESPAÇO) */}
+      {!isMapFullscreen && activeView !== 'route' && (
         <div className="flex-shrink-0 px-2 pt-1.5 z-20 w-full">
           <FilterBar 
             activeFilters={activeFilters}

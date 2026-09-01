@@ -501,26 +501,26 @@ const MissionRoutePanel = ({
             )}
           </div>
 
-          {/* BOTÕES DE AÇÃO TÁTICA LADO A LADO (GRID 2 COLUNAS) */}
-          <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-            {/* BOTÃO 1: NAVEGAR COM WAZE */}
+          {/* BOTÕES DE AÇÃO TÁTICA DO PRÓXIMO ALVO (WAZE LARGO + VISTORIA COMPACTO) */}
+          <div className="flex items-center gap-1.5 pt-0.5">
+            {/* BOTÃO 1: NAVEGAR COM WAZE (MAIS LARGO) */}
             <button 
               onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')} 
-              className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-2.5 rounded-xl shadow-[0_0_12px_rgba(37,99,235,0.35)] active:scale-[0.98] transition-all text-xs cursor-pointer truncate"
-              title="Navegar no Waze"
+              className="flex-[1.6] min-w-0 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-2 px-2 rounded-xl shadow-[0_0_12px_rgba(37,99,235,0.35)] active:scale-[0.98] transition-all text-xs cursor-pointer truncate"
+              title="Navegar no Waze para o Próximo Alvo"
             >
               <Navigation size={15} className="shrink-0 text-cyan-300 animate-bounce" />
-              <span className="truncate">Navegar Waze</span>
+              <span className="truncate tracking-tight">Navegar para o próximo</span>
             </button>
 
-            {/* BOTÃO 2: CADASTRAR VISTORIA */}
+            {/* BOTÃO 2: CADASTRAR VISTORIA (MAIS ESTREITO AO LADO) */}
             <button 
               onClick={() => onInspect && onInspect(h)} 
               title="Cadastrar Vistoria Técnica" 
-              className="py-2 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-950/60 flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer ring-1 ring-emerald-400/40 truncate"
+              className="flex-1 min-w-0 py-2 px-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-950/60 flex items-center justify-center gap-1 transition-all active:scale-[0.98] cursor-pointer ring-1 ring-emerald-400/40 truncate"
             >
               <ClipboardCheck size={16} strokeWidth={2.5} className="shrink-0" />
-              <span className="truncate">+ Vistoriar</span>
+              <span className="truncate">+ VISTORIA</span>
             </button>
           </div>
         </div>

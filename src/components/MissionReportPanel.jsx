@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown, Share2, ChevronDown, Check } from 'lucide-react';
 import { extractProblemsList, sanitizeProblem } from '../utils/problemUtils';
+import { normalizeRAName } from '../utils/raList';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser }) => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -117,7 +118,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   const inoperantesPercent = total > 0 ? ((inoperantes / total) * 100).toFixed(1) : 0;
 
   const rasPresentes = useMemo(() => {
-    const r = new Set(currentData.map(h => h.dscLocalidade).filter(Boolean));
+    const r = new Set(currentData.map(h => normalizeRAName(h.dscLocalidade)).filter(Boolean));
     return Array.from(r).sort().join(', ');
   }, [currentData]);
 
@@ -152,7 +153,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   const cityOperabilityStats = useMemo(() => {
     const statsByCity = {};
     currentData.forEach(h => {
-      const city = h.dscLocalidade || 'Não informada';
+      const city = normalizeRAName(h.dscLocalidade) || 'Não informada';
       if (!statsByCity[city]) {
         statsByCity[city] = { nome: city, total: 0, operantes: 0, inoperantes: 0 };
       }
@@ -188,7 +189,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     const defeitosMap = {};
     let totalDefeitos = 0;
     currentData.forEach(h => {
-      const city = h.dscLocalidade || 'Não informada';
+      const city = normalizeRAName(h.dscLocalidade) || 'Não informada';
       const countDefect = (p) => {
         if (!defeitosMap[p]) {
           defeitosMap[p] = { nome: p, total: 0, cidades: {} };
@@ -229,7 +230,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   const raStats = useMemo(() => {
     const counts = {};
     currentData.forEach(h => {
-      const ra = h.dscLocalidade || 'N/A';
+      const ra = normalizeRAName(h.dscLocalidade) || 'N/A';
       counts[ra] = (counts[ra] || 0) + 1;
     });
     const max = Math.max(...Object.values(counts), 1);
