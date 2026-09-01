@@ -496,4 +496,19 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
     * Linha Inferior: Endereço completo em linha única truncada e alertas de problemas técnicos destacados (`⚠️ Defeito`).
   - Reduzida a altura vertical dos cards intermediários em ~40%, eliminando espaços vazios mortos e permitindo visualizar múltiplos hidrantes na tela do smartphone sem rolagem excessiva.
 
+### [01/09/2026] Etapa 65 Concluída: Reestruturação Visual da Rota de Missão: 2 Linhas Táticas nos Cards Inferiores, Exibição Integral de Distância/Tempo, Super Card em Grade sem Espaços Vazios e Adequação por Perfil (Vistoriador vs Gestor)
+- **1. Eliminação Definitiva do Truncamento de Distância e Tempo nos Cards Inferiores (`MissionRoutePanel.jsx`):**
+  - Reestruturados os cards intermediários (2º, 3º, etc.) em **2 Linhas Táticas Independentes**:
+    * **Linha 1 (Identificação & Telemetria):** Sequência + Thumbnail (se houver) + Código do hidrante + Sigla da RA alinhados à esquerda; no canto direito, a badge de Distância e Tempo estimada (`📍 232m • ~1min`, `📍 1.8km • ~3min`) com `shrink-0` e `whitespace-nowrap`, 100% visível em telas mobile estritas sem corte lateral.
+    * **Linha 2 (Endereço & Ações Táticas):** Endereço com `line-clamp-1` à esquerda; à direita, a barra de ações touch-friendly contextuais.
+- **2. Super Card Superior (1º Alvo) Estruturado em Grade sem Espaços Vazios:**
+  - Linha 1: [1 (badge)] + Código do Hidrante + RA Curta à esquerda; botões de gestão/mapa (`[Mapa]`, `[Editar]`, `[X]`) alinhados no topo direito.
+  - Linha 2: Faixa destacada de telemetria contendo `🎯 Próximo Alvo` e a badge `📍 Distância • ~Tempo` com alto contraste.
+  - Linha 3: Bloco de endereço e referência legíveis com alerta de defeito destacado.
+  - Linha 4: Botões grandes e ergonômicos de ação tática (`Navegar para o próximo` no Waze + `+ VISTORIA`).
+- **3. Adequação Resiliente de UI para Perfis Vistoriador e Gestor:**
+  - O perfil Vistoriador conta com interface limpa e focada em deslocamento e vistoria rápida.
+  - O perfil Gestor mantém acesso direto a atalhos de edição e exclusão de missão sem quebrar a proporção do layout ou empurrar textos para fora da tela.
+
+
 

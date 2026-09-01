@@ -453,7 +453,7 @@ const MissionRoutePanel = ({
           key={h._internalId || h.codHidrante || h.nomHidrante || index}
           className="w-full rounded-xl p-2.5 sm:p-3 bg-gradient-to-b from-slate-800/98 via-slate-850/95 to-slate-900 border-2 border-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.25)] flex flex-col gap-2 transition-all overflow-hidden relative"
         >
-          {/* Cabeçalho do Super Card com layout protegido anti-sobreposição */}
+          {/* LINHA 1: IDENTIFICAÇÃO E AÇÕES RÁPIDAS DE TOPO */}
           <div className="flex items-center justify-between gap-1.5 w-full">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="w-7 h-7 rounded-full bg-emerald-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-md shrink-0 ring-2 ring-emerald-300/60">
@@ -464,41 +464,30 @@ const MissionRoutePanel = ({
                 <img src={h.fotoPerfil} alt="Perfil" className="w-8 h-8 object-cover rounded-lg border border-slate-600 shrink-0 cursor-pointer hover:scale-105 transition-transform shadow-sm" />
               )}
 
-              <div className="flex flex-col min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 min-w-0 flex-wrap sm:flex-nowrap">
-                  <span className="font-extrabold text-slate-100 text-sm sm:text-base tracking-wide truncate shrink-0">
-                    {fixEncoding(h.nomHidrante) || h.codHidrante}
-                  </span>
-                  {h.dscLocalidade && (
-                    <span 
-                      className="bg-slate-700/90 border border-slate-600/70 text-cyan-300 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm shrink-0 max-w-[110px] sm:max-w-[150px] truncate"
-                      title={fixEncoding(h.dscLocalidade)}
-                    >
-                      {getShortRaName(h.dscLocalidade)}
-                    </span>
-                  )}
-                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-0.5">
-                    <span>🎯</span> Próximo
-                  </span>
-                </div>
-
-                {distText && (
-                  <span className="text-[10px] font-mono font-bold text-emerald-300 flex items-center gap-1 mt-0.5">
-                    <span>📍</span> {distText}
+              <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                <span className="font-extrabold text-slate-100 text-sm sm:text-base tracking-wide truncate">
+                  {fixEncoding(h.nomHidrante) || h.codHidrante}
+                </span>
+                {h.dscLocalidade && (
+                  <span 
+                    className="bg-slate-700/90 border border-slate-600/70 text-cyan-300 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm shrink-0 truncate max-w-[120px]"
+                    title={fixEncoding(h.dscLocalidade)}
+                  >
+                    {getShortRaName(h.dscLocalidade)}
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Ações Rápidas de Topo (Mapa, Editar, X) */}
-            <div className="flex items-center gap-1 shrink-0 ml-1">
+            {/* Ações de Topo: Mapa, Editar (Gestor) e X (Remover) */}
+            <div className="flex items-center gap-1 shrink-0">
               <button 
                 onClick={() => { onCenterMap && onCenterMap(h); onClose(); }} 
                 title="Localizar no Mapa" 
                 className="h-7 px-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-[11px] active:scale-95 transition-all flex items-center gap-1 font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
               >
                 <LocateFixed size={13} className="text-cyan-400" />
-                <span className="hidden sm:inline">Mapa</span>
+                <span className="text-[10px]">Mapa</span>
               </button>
 
               {(!isCompleted && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) && (
@@ -523,7 +512,19 @@ const MissionRoutePanel = ({
             </div>
           </div>
 
-          {/* Endereço Completo e Alertas */}
+          {/* LINHA 2: TELEMETRIA TÁTICA DE PRÓXIMO ALVO (DISTÂNCIA E TEMPO INTEGRAL) */}
+          <div className="flex items-center justify-between gap-1.5 bg-emerald-950/40 border border-emerald-500/40 px-2.5 py-1 rounded-lg">
+            <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-1">
+              <span>🎯</span> Próximo Alvo
+            </span>
+            {distText && (
+              <span className="text-[11px] font-mono font-bold text-emerald-300 flex items-center gap-1 shrink-0">
+                <span>📍</span> {distText}
+              </span>
+            )}
+          </div>
+
+          {/* LINHA 3: ENDEREÇO, REFERÊNCIA E ALERTAS */}
           <div className="flex flex-col gap-1 bg-slate-950/70 p-2 rounded-lg border border-slate-700/80 text-[11px] sm:text-xs">
             <div className="text-slate-300 break-words leading-tight">
               <strong className="text-slate-400">Endereço: </strong>
@@ -541,7 +542,7 @@ const MissionRoutePanel = ({
             )}
           </div>
 
-          {/* BOTÕES DE AÇÃO TÁTICA DO PRÓXIMO ALVO (WAZE LARGO + VISTORIA COMPACTO) */}
+          {/* LINHA 4: BOTÕES DE AÇÃO TÁTICA */}
           <div className="flex items-center gap-1.5 pt-0.5">
             <button 
               onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')} 
@@ -566,7 +567,7 @@ const MissionRoutePanel = ({
     }
 
     // ========================================================
-    // DEMAIS LUGARES (2º, 3º, etc. e Concluídos): CARD COMPACTO ALTA DENSIDADE
+    // DEMAIS LUGARES (2º, 3º, etc. e Concluídos): ESTRUTURA TÁTICA DE 2 LINHAS
     // ========================================================
     let itemClasses = "w-full rounded-xl p-2 sm:p-2.5 flex flex-col gap-1.5 transition-all overflow-hidden border-l-4 ";
     if (isCompleted) {
@@ -581,9 +582,9 @@ const MissionRoutePanel = ({
 
     return (
       <div key={h._internalId || h.codHidrante || h.nomHidrante || index} className={itemClasses}>
-        {/* Linha Superior: Sequência + Código + Distância + Ações Rápidas Alinhadas */}
+        {/* LINHA 1: IDENTIFICAÇÃO (ESQUERDA) + TELEMETRIA/DISTÂNCIA INTEGRAL (DIREITA) */}
         <div className="flex items-center justify-between gap-1.5 w-full">
-          <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
             {/* Sequência / Número */}
             <div className={
               isCompleted 
@@ -602,79 +603,104 @@ const MissionRoutePanel = ({
               {fixEncoding(h.nomHidrante) || h.codHidrante}
             </span>
 
-            {distText && (
-              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-0.5 shrink-0 bg-slate-850 border-slate-700 text-slate-300">
-                <span>📍</span> {distText}
+            {h.dscLocalidade && (
+              <span 
+                className="bg-slate-700/80 border border-slate-600/60 text-cyan-300 text-[9px] font-bold px-1 py-0.5 rounded shrink-0 truncate max-w-[90px]"
+                title={fixEncoding(h.dscLocalidade)}
+              >
+                {getShortRaName(h.dscLocalidade)}
               </span>
             )}
           </div>
 
-          {/* Botões de Ação Compactos Alinhados na Direita */}
+          {/* Distância e Tempo Sem Truncamento na Direita */}
+          {distText && (
+            <span className="text-[9.5px] sm:text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 shrink-0 bg-slate-850 border-slate-700 text-emerald-300 shadow-sm whitespace-nowrap">
+              <span>📍</span> {distText}
+            </span>
+          )}
+        </div>
+
+        {/* LINHA 2: ENDEREÇO (ESQUERDA) + BOTÕES DE AÇÃO (DIREITA) */}
+        <div className="flex items-center justify-between gap-1.5 w-full pt-0.5">
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="text-slate-400 text-[10px] sm:text-[11px] truncate leading-tight" title={h.dscEndereco || ''}>
+              {fixEncoding(h.dscEndereco) || 'Endereço não informado'}
+            </span>
+            {h.dscPontoReferencia && (
+              <span className="text-slate-500 italic text-[9px] truncate" title={h.dscPontoReferencia}>
+                Ref: {fixEncoding(h.dscPontoReferencia)}
+              </span>
+            )}
+          </div>
+
+          {/* Botões de Ação Dinâmicos por Perfil */}
           <div className="flex items-center gap-1 shrink-0">
+            {/* Botão Mapa */}
             <button 
               onClick={() => { onCenterMap && onCenterMap(h); onClose(); }} 
               title="Localizar no Mapa" 
-              className="h-6 w-6 sm:h-7 sm:px-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-[11px] active:scale-95 transition-all flex items-center justify-center gap-1 font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
+              className="h-6 w-6 sm:h-6 sm:px-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-md text-[10px] active:scale-95 transition-all flex items-center justify-center gap-0.5 font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
             >
-              <LocateFixed size={12} className="text-cyan-400" />
-              <span className="hidden sm:inline text-[10px]">Mapa</span>
+              <LocateFixed size={11} className="text-cyan-400" />
+              <span className="hidden sm:inline text-[9px]">Mapa</span>
             </button>
 
+            {/* Botão Waze */}
             {!isCompleted && (
               <button 
                 onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')} 
                 title="Navegar no Waze" 
-                className="h-6 px-1.5 sm:h-7 sm:px-2 bg-blue-600/90 hover:bg-blue-600 text-white rounded-lg text-[10px] active:scale-95 transition-all flex items-center gap-1 font-semibold shadow-sm cursor-pointer"
+                className="h-6 px-1.5 sm:px-2 bg-blue-600/90 hover:bg-blue-600 text-white rounded-md text-[10px] active:scale-95 transition-all flex items-center gap-1 font-semibold shadow-sm cursor-pointer"
               >
-                <Navigation size={12} />
-                <span className="hidden sm:inline text-[10px]">Waze</span>
+                <Navigation size={11} />
+                <span className="hidden sm:inline text-[9px]">Waze</span>
               </button>
             )}
 
+            {/* Botão Editar (Apenas Gestor/Admin) */}
+            {(!isCompleted && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) && (
+              <button 
+                onClick={() => onEdit && onEdit(h)} 
+                title="Editar Hidrante" 
+                className="h-6 w-6 flex items-center justify-center bg-amber-700/90 hover:bg-amber-600 text-white rounded-md active:scale-95 transition-all shadow-sm cursor-pointer"
+              >
+                <Edit size={11}/>
+              </button>
+            )}
+
+            {/* Botão Vistoria */}
             {!isCompleted && (
               <button 
                 onClick={() => onInspect && onInspect(h)} 
                 title="Cadastrar Vistoria Técnica" 
-                className="h-6 px-2 sm:h-7 sm:px-2.5 text-white rounded-lg active:scale-95 transition-all font-bold text-[10px] sm:text-[11px] flex items-center gap-1 shadow-md cursor-pointer bg-emerald-600 hover:bg-emerald-500"
+                className="h-6 px-2 text-white rounded-md active:scale-95 transition-all font-bold text-[10px] flex items-center gap-1 shadow-md cursor-pointer bg-emerald-600 hover:bg-emerald-500 shrink-0"
               >
-                <Plus size={12} strokeWidth={3}/>
+                <Plus size={11} strokeWidth={3}/>
                 <span>VISTORIA</span>
               </button>
             )}
             
+            {/* Botão Excluir / Remover da Missão (Se Gestor/Criador) */}
             {canEditRoute && (
               <button 
                 onClick={() => handleRemoveItem(h)} 
                 title="Remover da Missão" 
-                className="h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white border border-rose-800/40 rounded-lg active:scale-95 transition-all cursor-pointer"
+                className="h-6 w-6 flex items-center justify-center bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white border border-rose-800/40 rounded-md active:scale-95 transition-all cursor-pointer"
               >
-                <X size={12}/>
+                <X size={11}/>
               </button>
             )}
           </div>
         </div>
 
-        {/* Linha Inferior: Endereço & Alertas de Defeito */}
-        <div className="flex flex-col gap-0.5 text-slate-300 text-xs w-full pl-0.5">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-slate-400 text-[10.5px] sm:text-[11px] break-words line-clamp-1 leading-tight flex-1 min-w-0" title={h.dscEndereco || ''}>
-              {fixEncoding(h.dscEndereco) || 'Endereço não informado'}
-            </span>
-            
-            {h.dscPontoReferencia && (
-              <span className="text-slate-500 italic text-[10px] truncate max-w-[150px] hidden sm:inline" title={h.dscPontoReferencia}>
-                (Ref: {fixEncoding(h.dscPontoReferencia)})
-              </span>
-            )}
+        {/* ALERTA DE DEFEITO (Se existir) */}
+        {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (
+          <div className="inline-flex items-center gap-1 bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[9px] font-bold px-1.5 py-0.5 rounded truncate w-fit mt-0.5">
+            <AlertTriangle size={11} className="shrink-0 text-amber-400" />
+            <span>{fixEncoding(sanitizeProblem(h.problemasHidrante))}</span>
           </div>
-
-          {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (
-            <div className="inline-flex items-center gap-1 bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[9px] font-bold px-1.5 py-0.5 rounded truncate w-fit mt-0.5">
-              <AlertTriangle size={11} className="shrink-0 text-amber-400" />
-              <span>{fixEncoding(sanitizeProblem(h.problemasHidrante))}</span>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     );
   };
