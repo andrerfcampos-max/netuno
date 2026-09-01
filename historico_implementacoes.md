@@ -480,3 +480,20 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Adicionado badge de progresso tático reativo no cabeçalho durante a otimização de grandes cidades (`Otimizando vias (X/Y)...`).
   - Todas as métricas de distância real (`km via trânsito`) e tempo de deslocamento (`~X min`) são preservadas e exibidas para todos os hidrantes calculados.
 
+### [01/09/2026] Etapa 64 Concluída: Reformulação Tática da Rota de Missão: Eliminação de Sobreposições, Layout Compacto e Feedback Visual de Cálculo no Mobile
+- **1. Feedback Visual de Status de Rota no Mobile (`MissionRoutePanel.jsx`):**
+  - Removida a classe `hidden sm:inline-flex` que ocultava o status de cálculo de rotas em dispositivos móveis.
+  - Adicionado badge de status dinâmico em tempo real visível no topo:
+    * `🔄 Calculando...` com animação pulsante em âmbar enquanto o algoritmo TSP/OSRM processa em segundo plano.
+    * `🚗 Trânsito` ou `⚡ Rota Pronta` quando a rota estiver calculada e pronta para navegação.
+  - Adicionado botão compacto de 'Recalcular' (`RotateCcw`) no cabeçalho para forçar atualização instantânea da rota a partir da posição GPS atual do militar.
+- **2. Eliminação de Sobreposições de Texto e Botões (`MissionRoutePanel.jsx`):**
+  - Implementado helper `getShortRaName` para simplificar nomes institucionais longos de Regiões Administrativas (ex: `SCIA (SETOR COMPLEMENTAR DE INDUSTRIA E ABASTECIMENTO)` reduzido para `SCIA` no badge, com nome completo preservado no tooltip).
+  - Reestruturado o cabeçalho do Super Card (1º Alvo) com alinhamento estrito `justify-between` e `min-w-0 / truncate`, impedindo qualquer colisão visual com os botões de ação (`[Mapa]`, `[Editar]`, `[X]`).
+- **3. Reorganização e Compactação dos Cards Intermediários da Sequência:**
+  - Reformulados os cards dos hidrantes 2, 3 em diante para um formato compacto de alta densidade:
+    * Linha Superior: Sequência + Código + RA Curta + Distância/Tempo no lado esquerdo, e botões de atalho táticos (`[Mapa]`, `[Waze]`, `[+ VISTORIA]`, `[Editar]`, `[X]`) perfeitamente alinhados à direita.
+    * Linha Inferior: Endereço completo em linha única truncada e alertas de problemas técnicos destacados (`⚠️ Defeito`).
+  - Reduzida a altura vertical dos cards intermediários em ~40%, eliminando espaços vazios mortos e permitindo visualizar múltiplos hidrantes na tela do smartphone sem rolagem excessiva.
+
+
