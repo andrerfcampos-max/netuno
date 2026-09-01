@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { X, Navigation, LocateFixed, GitMerge, Share2, MapPin, Map as MapIcon, RotateCcw, Plus, Save, Edit, CheckCircle, FolderOpen } from 'lucide-react';
+import { X, Navigation, LocateFixed, GitMerge, Share2, MapPin, Map as MapIcon, RotateCcw, Plus, Save, Edit, CheckCircle, FolderOpen, CheckCircle2, ClipboardCheck, AlertTriangle } from 'lucide-react';
 import { sanitizeProblem, extractProblemsList } from '../utils/problemUtils';
+import { fixEncoding } from '../utils/textUtils';
 
-// Fórmula de Haversine para cálculo de distância (retorna km)
+// Fórmula de Haversine para cálculo de distância geodésica ultra-rápida (retorna km)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return 999;
   const R = 6371; // Raio da Terra em km
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -15,7 +17,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
-// Algoritmo Vizinho Mais Próximo (Nearest Neighbor - TSP Aproximado)
+// Algoritmo Vizinho Mais Próximo (Nearest Neighbor - TSP Instantâneo - 0ms de latência)
 const optimizeRouteTSP = (hidrantes, startLat, startLng) => {
   if (!hidrantes || hidrantes.length === 0) return [];
   
@@ -46,8 +48,8 @@ const optimizeRouteTSP = (hidrantes, startLat, startLng) => {
   return route;
 };
 
-// Algoritmo Vizinho Mais Próximo via Matriz OSRM (Trânsito Viário de Veículos) com Distâncias Reais para 1 Lote (até 25 pontos)
-const fetchOSRMChunk = async (chunkHydrants, startLat, startLng) => {
+// Refinamento Viário OSRM em Segundo Plano (Apenas para o lote inicial de até 15 hidrantes imediatos)
+const fetchOSRMInitialChunk = async (chunkHydrants, startLat, startLng) => {
   if (!chunkHydrants || chunkHydrants.length === 0) {
     return { route: [], drivingMetrics: {}, isTrafficMode: false };
   }
@@ -56,7 +58,7 @@ const fetchOSRMChunk = async (chunkHydrants, startLat, startLng) => {
     const coords = [[startLng, startLat], ...chunkHydrants.map(h => [h.numLongitude, h.numLatitude])];
     const coordsString = coords.map(c => `${c[0]},${c[1]}`).join(';');
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4500); 
+    const timeoutId = setTimeout(() => controller.abort(), 3500); 
 
     const response = await fetch(`https://router.project-osrm.org/table/v1/driving/${coordsString}?annotations=duration,distance`, { signal: controller.signal });
     clearTimeout(timeoutId);
@@ -95,12 +97,14 @@ const fetchOSRMChunk = async (chunkHydrants, startLat, startLng) => {
       const distMeters = distances[currentIndex] ? distances[currentIndex][targetIdx] : null;
       const durSec = durations[currentIndex] ? durations[currentIndex][targetIdx] : null;
       
-      const key = targetHydrant.codHidrante || targetHydrant._internalId || targetHydrant.nomHidrante;
-      drivingMetrics[key] = {
-        distanceMeters: distMeters,
-        durationSeconds: durSec,
-        legFromPrevious: currentIndex !== 0
-      };
+      const keys = [targetHydrant.codHidrante, targetHydrant._internalId, targetHydrant.nomHidrante].filter(Boolean);
+      keys.forEach(k => {
+        drivingMetrics[String(k)] = {
+          distanceMeters: distMeters,
+          durationSeconds: durSec,
+          legFromPrevious: currentIndex !== 0
+        };
+      });
 
       route.push(targetHydrant);
       currentIndex = nextNode.matrixIndex;
@@ -108,103 +112,47 @@ const fetchOSRMChunk = async (chunkHydrants, startLat, startLng) => {
     
     return { route, drivingMetrics, isTrafficMode: true };
   } catch (error) {
-    console.warn("Falha/Timeout no lote OSRM. Utilizando ordenação TSP geodésica para o lote:", error);
-    const fallbackRoute = optimizeRouteTSP(chunkHydrants, startLat, startLng);
-    const fallbackMetrics = {};
-    let prevLat = startLat;
-    let prevLng = startLng;
-    fallbackRoute.forEach((h, idx) => {
-      const distKm = calculateDistance(prevLat, prevLng, h.numLatitude, h.numLongitude);
-      const key = h.codHidrante || h._internalId || h.nomHidrante;
-      fallbackMetrics[key] = {
-        distanceMeters: Math.round(distKm * 1000),
-        durationSeconds: Math.round((distKm / 35) * 3600), // Estimativa de condução urbana a 35km/h
-        legFromPrevious: idx !== 0,
-        isEstimated: true
-      };
-      prevLat = h.numLatitude;
-      prevLng = h.numLongitude;
-    });
-    return { route: fallbackRoute, drivingMetrics: fallbackMetrics, isTrafficMode: false };
+    return { route: chunkHydrants, drivingMetrics: {}, isTrafficMode: false };
   }
 };
 
-// Algoritmo de Otimização Viária Global em 2 Etapas (Macro-Ordenação Espacial + Micro-Otimização OSRM em Lotes)
-const optimizeRouteTrafficDriving = async (hidrantes, startLat, startLng, onProgress) => {
-  if (!hidrantes || hidrantes.length === 0) return { route: [], drivingMetrics: {}, isTrafficMode: false };
-
-  // Se a rota for pequena (até 25 pontos), executa diretamente 1 único lote OSRM
-  if (hidrantes.length <= 25) {
-    return await fetchOSRMChunk(hidrantes, startLat, startLng);
-  }
-
-  // Para volumes médios e grandes (> 25 até centenas/milhares de hidrantes, ex: Taguatinga / Brasília):
-  // PASSO 1: Macro-Ordenação Espacial por TSP Geodésico (Haversine) para criar a espinha dorsal contínua
-  const macroRoute = optimizeRouteTSP(hidrantes, startLat, startLng);
-
-  // PASSO 2: Micro-Otimização em Lotes Encadeados de 20 hidrantes via OSRM Driving
-  const CHUNK_SIZE = 20;
-  const chunks = [];
-  for (let i = 0; i < macroRoute.length; i += CHUNK_SIZE) {
-    chunks.push(macroRoute.slice(i, i + CHUNK_SIZE));
-  }
-
-  let fullRoute = [];
-  let fullMetrics = {};
-  let anyTrafficSuccess = false;
-  let currentStartLat = startLat;
-  let currentStartLng = startLng;
-
-  for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
-    const currentChunk = chunks[chunkIdx];
-    if (onProgress) {
-      onProgress({ current: chunkIdx + 1, total: chunks.length, percent: Math.round(((chunkIdx + 1) / chunks.length) * 100) });
-    }
-
-    const chunkResult = await fetchOSRMChunk(currentChunk, currentStartLat, currentStartLng);
-    if (chunkResult.isTrafficMode) {
-      anyTrafficSuccess = true;
-    }
-
-    fullRoute.push(...chunkResult.route);
-    Object.assign(fullMetrics, chunkResult.drivingMetrics);
-
-    // O ponto de partida do próximo lote é o último hidrante ordenado do lote atual
-    if (chunkResult.route.length > 0) {
-      const lastHydrant = chunkResult.route[chunkResult.route.length - 1];
-      currentStartLat = lastHydrant.numLatitude;
-      currentStartLng = lastHydrant.numLongitude;
-    }
-
-    // Pequeno intervalo de 60ms entre requisições consecutivas para proteger contra rate limit
-    if (chunkIdx < chunks.length - 1) {
-      await new Promise(r => setTimeout(r, 60));
-    }
-  }
-
-  return { route: fullRoute, drivingMetrics: fullMetrics, isTrafficMode: anyTrafficSuccess };
-};
-
-const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds = [], currentMission, onUpdateMission, onClose, onBackToManager, onClearMission, onRemoveFromMission, lastInspectedCoords, onInspect, onEdit, onCenterMap, currentUser, folders, onSaveRouteToFolder, onGenerateReport }) => {
+const MissionRoutePanel = ({ 
+  hidrantes = [], 
+  selectedMissionIds = [], 
+  completedMissionIds = [], 
+  currentMission = null, 
+  onUpdateMission, 
+  onClose, 
+  onBackToManager, 
+  onClearMission, 
+  onRemoveFromMission, 
+  lastInspectedCoords, 
+  onInspect, 
+  onEdit, 
+  onCenterMap, 
+  currentUser, 
+  folders = [], 
+  onSaveRouteToFolder, 
+  onGenerateReport 
+}) => {
   const [pendingRoute, setPendingRoute] = useState([]);
   const [drivingMetrics, setDrivingMetrics] = useState({});
   const [isTrafficOptimized, setIsTrafficOptimized] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [optProgress, setOptProgress] = useState(null);
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editedName, setEditedName] = useState('');
-  const [isEditingAtribuicao, setIsEditingAtribuicao] = useState(false);
-  const [editedAtribuicao, setEditedAtribuicao] = useState('');
-  
   const [userLocation, setUserLocation] = useState(null);
+  const lastOptimizedIdsRef = useRef('');
 
-  // Throttling GPS Ativo (Apenas enquanto o painel está aberto)
+  // Sincronização GPS Ativa
   useEffect(() => {
     let watchId;
     const startWatching = () => {
       if ('geolocation' in navigator) {
         watchId = navigator.geolocation.watchPosition(
-          (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          (pos) => {
+            if (pos?.coords) {
+              setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            }
+          },
           (err) => console.warn('Erro no GPS', err),
           { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
         );
@@ -213,12 +161,17 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     
     startWatching();
     
-    // Gatilho Inteligente de Recálculo (Evento de Foco da Janela - Troca Waze/Netuno)
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         if ('geolocation' in navigator) {
           navigator.geolocation.getCurrentPosition(
-            (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+            (pos) => {
+              if (pos?.coords) {
+                setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+              }
+            },
+            () => {},
+            { enableHighAccuracy: true, timeout: 4000 }
           );
         }
       }
@@ -231,88 +184,124 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     };
   }, []);
 
+  // Conjunto de IDs selecionados normalizados em string
+  const selectedIdsSet = useMemo(() => {
+    return new Set((selectedMissionIds || []).map(id => String(id)));
+  }, [selectedMissionIds]);
+
+  // Conjunto de IDs concluídos normalizados em string
+  const completedIdsSet = useMemo(() => {
+    return new Set((completedMissionIds || []).map(id => String(id)));
+  }, [completedMissionIds]);
+
+  // Hidrantes que pertencem à missão
   const missionHydrants = useMemo(() => {
     if (!selectedMissionIds || selectedMissionIds.length === 0) return [];
-    return hidrantes.filter(h => 
-      selectedMissionIds.includes(h.codHidrante) || 
-      selectedMissionIds.includes(h.nomHidrante) || 
-      selectedMissionIds.includes(h._internalId)
-    );
-  }, [hidrantes, selectedMissionIds]);
+    return hidrantes.filter(h => {
+      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
+      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+      const k3 = h._internalId ? String(h._internalId) : null;
+      return (k1 && selectedIdsSet.has(k1)) || (k2 && selectedIdsSet.has(k2)) || (k3 && selectedIdsSet.has(k3));
+    });
+  }, [hidrantes, selectedIdsSet]);
 
-  const pendingHydrants = useMemo(() => {
-    return missionHydrants.filter(h => 
-      !completedMissionIds.includes(h.codHidrante) && 
-      !completedMissionIds.includes(h.nomHidrante) && 
-      !completedMissionIds.includes(h._internalId)
-    );
-  }, [missionHydrants, completedMissionIds]);
-
+  // Hidrantes concluídos na missão
   const completedHydrants = useMemo(() => {
-    return missionHydrants.filter(h => 
-      completedMissionIds.includes(h.codHidrante) || 
-      completedMissionIds.includes(h.nomHidrante) || 
-      completedMissionIds.includes(h._internalId)
-    );
-  }, [missionHydrants, completedMissionIds]);
+    return missionHydrants.filter(h => {
+      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
+      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+      const k3 = h._internalId ? String(h._internalId) : null;
+      return (k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3));
+    });
+  }, [missionHydrants, completedIdsSet]);
 
-  // Otimização Automática da Rota por Trânsito Viário de Veículos (OSRM Driving)
+  // Hidrantes faltantes / pendentes
+  const pendingHydrants = useMemo(() => {
+    return missionHydrants.filter(h => {
+      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
+      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+      const k3 = h._internalId ? String(h._internalId) : null;
+      const isDone = (k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3));
+      return !isDone;
+    });
+  }, [missionHydrants, completedIdsSet]);
+
+  // Algoritmo Híbrido de Alta Performance (Instantâneo TSP + OSRM para o lote imediato)
   useEffect(() => {
-    if (!pendingHydrants || pendingHydrants.length === 0) {
+    if (pendingHydrants.length === 0) {
       setPendingRoute([]);
       setDrivingMetrics({});
       setIsTrafficOptimized(false);
-      setOptProgress(null);
+      setIsOptimizing(false);
+      return;
+    }
+
+    const startLat = userLocation?.lat || pendingHydrants[0].numLatitude;
+    const startLng = userLocation?.lng || pendingHydrants[0].numLongitude;
+
+    // 1. ORDENAÇÃO INSTANTÂNEA ESPACIAL (0ms): Rota pronta imediatamente
+    const fastOrdered = optimizeRouteTSP(pendingHydrants, startLat, startLng);
+    setPendingRoute(fastOrdered);
+
+    // 2. MICRO-OTIMIZAÇÃO OSRM EM BACKGROUND (Apenas para os primeiros 15 hidrantes)
+    const pendingSignature = pendingHydrants.map(h => h.codHidrante || h._internalId || h.nomHidrante).join(',');
+    if (lastOptimizedIdsRef.current === pendingSignature) {
       return;
     }
 
     let isCancelled = false;
-    const computeRoute = async () => {
+    const refineWithOSRM = async () => {
       setIsOptimizing(true);
-      setOptProgress(null);
-      const startLat = userLocation ? userLocation.lat : pendingHydrants[0].numLatitude;
-      const startLng = userLocation ? userLocation.lng : pendingHydrants[0].numLongitude;
+      const CHUNK_LIMIT = 15;
+      const immediateBatch = fastOrdered.slice(0, CHUNK_LIMIT);
+      const remainingBatch = fastOrdered.slice(CHUNK_LIMIT);
 
-      const result = await optimizeRouteTrafficDriving(pendingHydrants, startLat, startLng, (p) => {
-        if (!isCancelled) setOptProgress(p);
-      });
+      const osrmResult = await fetchOSRMInitialChunk(immediateBatch, startLat, startLng);
+      
       if (!isCancelled) {
-        setPendingRoute(result.route);
-        setDrivingMetrics(result.drivingMetrics);
-        setIsTrafficOptimized(result.isTrafficMode);
+        lastOptimizedIdsRef.current = pendingSignature;
+        if (osrmResult.isTrafficMode && osrmResult.route.length > 0) {
+          setPendingRoute([...osrmResult.route, ...remainingBatch]);
+          setDrivingMetrics(osrmResult.drivingMetrics);
+          setIsTrafficOptimized(true);
+        } else {
+          // Preenche métricas estimadas geodésicas instantâneas
+          const estimatedMetrics = {};
+          let prevLat = startLat;
+          let prevLng = startLng;
+          fastOrdered.forEach((h, idx) => {
+            const distKm = calculateDistance(prevLat, prevLng, h.numLatitude, h.numLongitude);
+            const k1 = String(h.codHidrante || '');
+            const k2 = String(h.nomHidrante || '');
+            const k3 = String(h._internalId || '');
+            const metric = {
+              distanceMeters: Math.round(distKm * 1000),
+              durationSeconds: Math.round((distKm / 35) * 3600),
+              legFromPrevious: idx !== 0,
+              isEstimated: true
+            };
+            if (k1) estimatedMetrics[k1] = metric;
+            if (k2) estimatedMetrics[k2] = metric;
+            if (k3) estimatedMetrics[k3] = metric;
+            prevLat = h.numLatitude;
+            prevLng = h.numLongitude;
+          });
+          setDrivingMetrics(estimatedMetrics);
+          setIsTrafficOptimized(false);
+        }
         setIsOptimizing(false);
-        setOptProgress(null);
       }
     };
 
-    const timer = setTimeout(() => {
-      computeRoute();
-    }, 450);
-
+    const timer = setTimeout(refineWithOSRM, 250);
     return () => {
       isCancelled = true;
       clearTimeout(timer);
     };
   }, [pendingHydrants, userLocation?.lat, userLocation?.lng]);
 
-  const handleOptimizeRoute = async () => {
-    setIsOptimizing(true);
-    setOptProgress(null);
-    if (pendingHydrants && pendingHydrants.length > 0) {
-      const startLat = userLocation ? userLocation.lat : pendingHydrants[0].numLatitude;
-      const startLng = userLocation ? userLocation.lng : pendingHydrants[0].numLongitude;
-
-      const result = await optimizeRouteTrafficDriving(pendingHydrants, startLat, startLng, (p) => setOptProgress(p));
-      setPendingRoute(result.route);
-      setDrivingMetrics(result.drivingMetrics);
-      setIsTrafficOptimized(result.isTrafficMode);
-    }
-    setIsOptimizing(false);
-    setOptProgress(null);
-  };
-
   const handleShareWhatsApp = () => {
-    const totalCount = (completedHydrants?.length || 0) + (pendingRoute?.length || 0);
+    const totalCount = completedHydrants.length + pendingRoute.length;
     if (totalCount === 0) return;
     
     const baseUrl = window.location.origin + window.location.pathname;
@@ -321,13 +310,11 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     if (missionId) {
       magicLink = `${baseUrl}?m=${encodeURIComponent(missionId)}`;
     } else {
-      const allIds = [...(pendingRoute || []), ...(completedHydrants || [])].map(h => h.nomHidrante || h.codHidrante).filter(Boolean);
+      const allIds = [...pendingRoute, ...completedHydrants].map(h => h.nomHidrante || h.codHidrante).filter(Boolean);
       magicLink = `${baseUrl}?ds=${allIds.slice(0, 30).join(',')}`;
     }
     
     const missionName = currentMission?.name || "Rascunho de Hoje";
-    
-    // Identificar vistoriadores únicos que realizaram as vistorias
     const vistoriadoresUnicos = Array.from(
       new Set(completedHydrants.map(h => h.vistoriadorNome || h.nomVistoriador).filter(Boolean))
     );
@@ -342,7 +329,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     let text = `🚒 *NETUNO - STATUS DE MISSÃO*\n\n`;
     text += `📋 *Missão:* ${missionName}\n`;
     text += `👤 *Vistoriador:* ${vistoriadorText}\n`;
-    text += `📊 *Progresso:* ${completedHydrants.length} Concluídos / ${pendingRoute.length} Faltantes (Total: ${totalCount})\n\n`;
+    text += `📊 *Progresso:* ${completedHydrants.length}/${totalCount} Concluídos (${Math.round((completedHydrants.length / totalCount) * 100)}%)\n\n`;
     
     if (completedHydrants.length > 0) {
       text += `✅ *CONCLUÍDOS (${completedHydrants.length}):*\n`;
@@ -382,51 +369,65 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     window.open(url, '_blank');
   };
 
+  const handleRemoveItem = (h) => {
+    const name = fixEncoding(h.nomHidrante) || h.codHidrante || 'Hidrante';
+    if (window.confirm(`Deseja realmente remover "${name}" da rota de missão?`)) {
+      // Atualização otimista imediata na UI
+      const idKey = h._internalId || h.codHidrante || h.nomHidrante;
+      setPendingRoute(prev => prev.filter(item => 
+        (item._internalId || item.codHidrante || item.nomHidrante) !== idKey
+      ));
+      if (onRemoveFromMission) {
+        onRemoveFromMission(h);
+      }
+    }
+  };
+
+  const totalCount = completedHydrants.length + pendingRoute.length;
+  const completedCount = completedHydrants.length;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const currentTarget = pendingRoute.length > 0 ? pendingRoute[0] : null;
+
   const renderHydrantItem = (h, index, isCompleted) => {
     const id = h.codHidrante || h.nomHidrante;
     const canEditRoute = !currentMission?.createdBy || currentMission.createdBy === currentUser?.matricula;
     
-    // Distância métrica (Prioriza distância real de condução por vias de trânsito de carro)
     let distText = '';
-    const key = h.codHidrante || h._internalId || h.nomHidrante;
+    const key = String(h.codHidrante || h._internalId || h.nomHidrante || '');
     const metric = drivingMetrics[key];
 
     if (metric && metric.distanceMeters !== null && metric.distanceMeters !== undefined) {
       const dMeters = metric.distanceMeters;
       const dText = dMeters < 1000 ? `${Math.round(dMeters)}m` : `${(dMeters / 1000).toFixed(1)}km`;
       const durMin = metric.durationSeconds ? ` • ~${Math.max(1, Math.ceil(metric.durationSeconds / 60))}min` : '';
-      distText = `${dText} via trânsito${durMin}`;
+      distText = metric.isEstimated ? `${dText} (estimado)` : `${dText} via trânsito${durMin}`;
     } else if (userLocation) {
       const dist = calculateDistance(userLocation.lat, userLocation.lng, h.numLatitude, h.numLongitude);
       distText = dist < 1 ? `${Math.round(dist * 1000)}m (reta)` : `${dist.toFixed(1)}km (reta)`;
     }
 
-    // Degradê de opacidade e estilo de card
-    let itemClasses = "";
+    let itemClasses = "w-full rounded-xl p-2.5 sm:p-3 flex flex-col lg:flex-row gap-2.5 items-start lg:items-center justify-between transition-all overflow-hidden border-l-4 ";
     if (isCompleted) {
-      itemClasses = "bg-slate-900/60 border-l-4 border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col lg:flex-row gap-2.5 items-start lg:items-center justify-between opacity-70 grayscale transition-all";
+      itemClasses += "bg-slate-900/60 border-slate-700 opacity-70 grayscale";
     } else {
       if (index === 0) {
-        // 1º Lugar (Mais Próximo): Cor sólida destacada (ciano/verde pulsante com fundo de alto contraste).
-        itemClasses = "bg-slate-800/95 border-l-4 border-emerald-400 rounded-xl p-2.5 sm:p-3 shadow-[0_0_14px_rgba(52,211,153,0.25)] flex flex-col lg:flex-row gap-2.5 items-start lg:items-center justify-between animate-pulse-border relative overflow-hidden transition-all";
+        itemClasses += "bg-slate-800/98 border-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.3)] ring-1 ring-emerald-500/40 relative";
       } else if (index > 0 && index <= 3) {
-        // 2º ao 4º Lugar: opacidade gradual
-        itemClasses = "bg-slate-800/90 border-l-4 border-emerald-600/60 rounded-xl p-2.5 sm:p-3 flex flex-col lg:flex-row gap-2.5 items-start lg:items-center justify-between transition-all";
+        itemClasses += "bg-slate-800/90 border-emerald-600/60";
       } else {
-        // Demais Hidrantes: fundo com maior transparência
-        itemClasses = "bg-slate-800/60 border-l-4 border-slate-600 rounded-xl p-2.5 sm:p-3 shadow-sm flex flex-col lg:flex-row gap-2.5 items-start lg:items-center justify-between transition-all";
+        itemClasses += "bg-slate-800/60 border-slate-600 shadow-sm";
       }
     }
 
     return (
-      <div key={id || index} className={itemClasses} style={!isCompleted && index > 0 && index <= 3 ? { opacity: 1 - (index * 0.15) } : {}}>
-        <div className="flex items-center gap-3 flex-1 min-w-0 w-full">
+      <div key={h._internalId || h.codHidrante || h.nomHidrante || index} className={itemClasses}>
+        <div className="flex items-center gap-3 flex-1 min-w-0 w-full overflow-hidden">
           {/* Sequência / Número */}
           <div className={
             isCompleted 
               ? "bg-slate-700 text-slate-400 font-bold text-xs rounded-full w-7 h-7 flex items-center justify-center shrink-0" 
               : (index === 0 
-                  ? "bg-emerald-500 text-white font-black text-sm rounded-full w-8 h-8 flex items-center justify-center shadow-md shrink-0 ring-2 ring-emerald-400/30" 
+                  ? "bg-emerald-500 text-white font-black text-sm rounded-full w-8 h-8 flex items-center justify-center shadow-md shrink-0 ring-2 ring-emerald-400/50" 
                   : "bg-emerald-950 text-emerald-400 border border-emerald-500/30 font-bold text-xs rounded-full w-7 h-7 flex items-center justify-center shrink-0")
           }>
             {isCompleted ? "✓" : index + 1}
@@ -437,23 +438,29 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
             <img src={h.fotoPerfil} alt="Perfil" className="w-9 h-9 object-cover rounded-md border border-slate-600 shrink-0 cursor-pointer hover:scale-105 transition-transform" />
           )}
           
-          <div className="flex flex-col gap-1 flex-1 min-w-0">
-            {/* Linha 1: Identificador + RA + Distância + Alerta Inline no Desktop */}
-            <div className="flex items-center gap-2 flex-wrap min-w-0">
-              <span className="font-bold text-slate-100 text-sm tracking-wide shrink-0">
-                {h.nomHidrante || h.codHidrante}
+          <div className="flex flex-col gap-1 flex-1 min-w-0 overflow-hidden">
+            {/* Linha 1: Identificador + RA + Distância + Selo Alvo Atual */}
+            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+              <span className="font-black text-slate-100 text-sm tracking-wide shrink-0">
+                {fixEncoding(h.nomHidrante) || h.codHidrante}
               </span>
               
               {h.dscLocalidade && (
-                <span className="bg-slate-700/80 border border-slate-600/60 text-cyan-300 text-[11px] font-semibold px-2 py-0.5 rounded shadow-sm shrink-0">
-                  {h.dscLocalidade}
+                <span className="bg-slate-700/80 border border-slate-600/60 text-cyan-300 text-[10px] font-semibold px-2 py-0.5 rounded shrink-0">
+                  {fixEncoding(h.dscLocalidade)}
+                </span>
+              )}
+
+              {index === 0 && !isCompleted && (
+                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 animate-pulse">
+                  <span>🎯</span> Alvo Atual
                 </span>
               )}
 
               {distText && (
-                <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border flex items-center gap-1 shrink-0 ${
+                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border flex items-center gap-1 shrink-0 ${
                   index === 0 
-                    ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.3)]' 
+                    ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300 shadow-sm' 
                     : 'bg-slate-800 border-slate-700 text-slate-300'
                 }`}>
                   <span>📍</span> {distText}
@@ -461,21 +468,21 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
               )}
 
               {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (
-                <span className="hidden xl:inline-flex items-center gap-1 bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[11px] font-semibold px-2 py-0.5 rounded truncate max-w-sm">
-                  ⚠️ {sanitizeProblem(h.problemasHidrante)}
+                <span className="hidden xl:inline-flex items-center gap-1 bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[10px] font-semibold px-2 py-0.5 rounded truncate max-w-xs">
+                  ⚠️ {fixEncoding(sanitizeProblem(h.problemasHidrante))}
                 </span>
               )}
             </div>
             
-            {/* Linha 2: Endereço & Alerta para Telas Menores */}
-            <div className="flex flex-col xl:flex-row xl:items-center gap-1 text-slate-300 text-xs">
-              <span className="text-slate-400 text-xs truncate max-w-2xl" title={h.dscEndereco || ''}>
-                {h.dscEndereco || 'Endereço não informado'}
+            {/* Linha 2: Endereço responsivo (sem overflow) */}
+            <div className="flex flex-col gap-0.5 text-slate-300 text-xs min-w-0 w-full">
+              <span className="text-slate-400 text-xs break-words line-clamp-2 leading-tight" title={h.dscEndereco || ''}>
+                {fixEncoding(h.dscEndereco) || 'Endereço não informado'}
               </span>
 
               {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (
                 <span className="xl:hidden inline-flex items-center gap-1 bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded truncate w-fit mt-0.5">
-                  ⚠️ {sanitizeProblem(h.problemasHidrante)}
+                  ⚠️ {fixEncoding(sanitizeProblem(h.problemasHidrante))}
                 </span>
               )}
             </div>
@@ -487,26 +494,30 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
           <button 
             onClick={() => { onCenterMap && onCenterMap(h); onClose(); }} 
             title="Localizar no Mapa" 
-            className="h-8 px-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs active:scale-95 transition-all flex items-center gap-1 font-semibold border border-slate-600/60 shadow-sm"
+            className="h-8 px-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs active:scale-95 transition-all flex items-center gap-1 font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
           >
             <LocateFixed size={14} className="text-cyan-400" />
             <span className="hidden sm:inline text-xs">Mapa</span>
           </button>
+
           {!isCompleted && (
             <button 
               onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')} 
               title="Navegar no Waze" 
-              className="h-8 px-2.5 bg-blue-600/90 hover:bg-blue-600 text-white rounded-lg text-xs active:scale-95 transition-all flex items-center gap-1 font-semibold shadow-sm"
+              className="h-8 px-2.5 bg-blue-600/90 hover:bg-blue-600 text-white rounded-lg text-xs active:scale-95 transition-all flex items-center gap-1 font-semibold shadow-sm cursor-pointer"
             >
               <Navigation size={14} />
               <span className="hidden sm:inline text-xs">Waze</span>
             </button>
           )}
+
           {!isCompleted && (
             <button 
               onClick={() => onInspect && onInspect(h)} 
-              title="Cadastrar Vistoria" 
-              className="h-8 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg active:scale-95 transition-all font-bold text-xs flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+              title="Cadastrar Vistoria Técnica" 
+              className={`h-8 px-3 text-white rounded-lg active:scale-95 transition-all font-black text-xs flex items-center gap-1.5 shadow-md cursor-pointer ${
+                index === 0 ? 'bg-emerald-500 hover:bg-emerald-400 ring-2 ring-emerald-300/40 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-emerald-600 hover:bg-emerald-500'
+              }`}
             >
               <Plus size={15} strokeWidth={3}/>
               <span>VISTORIA</span>
@@ -517,7 +528,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
             <button 
               onClick={() => onEdit && onEdit(h)} 
               title="Editar Hidrante" 
-              className="h-8 w-8 flex items-center justify-center bg-amber-700 hover:bg-amber-600 text-white rounded-lg active:scale-95 transition-all shadow-sm"
+              className="h-8 w-8 flex items-center justify-center bg-amber-700 hover:bg-amber-600 text-white rounded-lg active:scale-95 transition-all shadow-sm cursor-pointer"
             >
               <Edit size={14}/>
             </button>
@@ -525,14 +536,9 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
           
           {canEditRoute && (
             <button 
-              onClick={() => {
-                const name = h.nomHidrante || h.codHidrante || id;
-                if (window.confirm(`Deseja realmente remover o hidrante "${name}" da rota de missão?`)) {
-                  onRemoveFromMission(id);
-                }
-              }} 
+              onClick={() => handleRemoveItem(h)} 
               title="Remover da Missão" 
-              className="h-8 w-8 flex items-center justify-center bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white border border-rose-800/40 rounded-lg active:scale-95 transition-all ml-0.5"
+              className="h-8 w-8 flex items-center justify-center bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white border border-rose-800/40 rounded-lg active:scale-95 transition-all ml-0.5 cursor-pointer"
             >
               <X size={14}/>
             </button>
@@ -542,127 +548,133 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
     );
   };
 
-  // Badge Contador Diário
-  const vistoriasHoje = completedHydrants.length; // Assumindo que os concluídos da missão são de hoje
-
   return (
-    <div className="flex flex-col p-2.5 sm:p-4 w-full h-full bg-slate-900 relative">
+    <div className="flex flex-col p-2.5 sm:p-4 w-full h-full bg-slate-900 relative overflow-hidden">
 
-      <div className="flex justify-between items-center mb-2.5 pb-2.5 border-b border-slate-700 relative">
-        <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
+      {/* CABEÇALHO DA ROTA */}
+      <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-700/80 relative shrink-0">
+        <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
           {onBackToManager && (
             <button 
               type="button" 
               onClick={onBackToManager}
-              className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg font-semibold transition-colors flex items-center gap-1.5 shrink-0 shadow-sm"
+              className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 shadow-sm cursor-pointer"
               title="Voltar para a Central de Missões"
             >
               ← Voltar
             </button>
           )}
+          
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            {currentMission ? (
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <GitMerge size={20} className="text-emerald-400 shrink-0" />
-                  <span className="font-bold text-base sm:text-lg text-slate-100 drop-shadow-sm truncate">
-                    {currentMission.name}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="bg-emerald-900/80 border border-emerald-500 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
-                    Hoje: {vistoriasHoje}
-                  </span>
-                  {currentMission.isDraft && (
-                    <span className="bg-amber-900/50 text-amber-400 text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border border-amber-800">
-                      Não Salvo
-                    </span>
-                  )}
-                  {!currentMission.isDraft && currentMission.parentFolderId && (
-                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded flex items-center gap-1">
-                      <FolderOpen size={12} /> {folders?.find(f => f.id === currentMission.parentFolderId)?.name || 'Central'}
-                    </span>
-                  )}
-                  {isOptimizing ? (
-                    <span className="bg-amber-950/70 border border-amber-500/50 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full shadow flex items-center gap-1.5 animate-pulse">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-                      <span>{optProgress ? `Otimizando vias (${optProgress.current}/${optProgress.total})...` : 'Calculando trânsito...'}</span>
-                    </span>
-                  ) : (
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
-                      isTrafficOptimized 
-                        ? 'bg-blue-950/60 border-blue-500/40 text-blue-300 shadow-[0_0_8px_rgba(59,130,246,0.3)]' 
-                        : 'bg-slate-800 border-slate-700 text-slate-400'
-                    }`} title={isTrafficOptimized ? "Sequência calculada de acordo com as vias do trânsito de carro (OSRM)" : "Distância geodésica"}>
-                      <span>🚗</span>
-                      <span>{isTrafficOptimized ? 'Vias de Trânsito' : 'Linha Reta'}</span>
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <h2 className="text-lg font-bold text-emerald-400 flex items-center gap-2 drop-shadow-sm">
-                  <GitMerge size={20} /> Rota de Missão
-                </h2>
-                {isOptimizing ? (
-                  <span className="bg-amber-950/70 border border-amber-500/50 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full shadow flex items-center gap-1.5 animate-pulse">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-                    <span>{optProgress ? `Otimizando vias (${optProgress.current}/${optProgress.total})...` : 'Calculando trânsito...'}</span>
-                  </span>
-                ) : (
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
-                    isTrafficOptimized 
-                      ? 'bg-blue-950/60 border-blue-500/40 text-blue-300' 
-                      : 'bg-slate-800 border-slate-700 text-slate-400'
-                  }`} title={isTrafficOptimized ? "Sequência calculada de acordo com as vias do trânsito de carro (OSRM)" : "Distância geodésica"}>
-                    <span>🚗</span>
-                    <span>{isTrafficOptimized ? 'Vias de Trânsito' : 'Linha Reta'}</span>
-                  </span>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 min-w-0">
+              <GitMerge size={19} className="text-emerald-400 shrink-0" />
+              <span className="font-black text-base sm:text-lg text-slate-100 drop-shadow-sm truncate">
+                {currentMission?.name || "Rota de Missão"}
+              </span>
+            </div>
+
+            {/* BADGE DE EXECUÇÃO RATIO X/TOTAL (Ex: 1/18, 2/18) */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="bg-emerald-950/90 border border-emerald-500/80 text-emerald-300 font-mono font-extrabold text-xs px-2.5 py-0.5 rounded-full shadow-md flex items-center gap-1" title="Hidrantes concluídos / Total">
+                <span>📊</span>
+                <span>{completedCount}/{totalCount}</span>
+                <span className="text-[10px] text-emerald-400 font-normal">({progressPercent}%)</span>
+              </span>
+
+              {isOptimizing ? (
+                <span className="hidden sm:inline-flex bg-amber-950/70 border border-amber-500/50 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full shadow items-center gap-1 animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                  <span>Calculando vias...</span>
+                </span>
+              ) : (
+                <span className={`hidden sm:inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full border items-center gap-1 shrink-0 ${
+                  isTrafficOptimized 
+                    ? 'bg-blue-950/60 border-blue-500/40 text-blue-300' 
+                    : 'bg-slate-800 border-slate-700 text-slate-400'
+                }`}>
+                  <span>{isTrafficOptimized ? '🚗 Trânsito' : '📏 Reta'}</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
         
-        <button onClick={onClose} className="p-1.5 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 rounded-full transition-colors shrink-0 z-10" title="Fechar Rota">
-          <X size={20} />
+        <button onClick={onClose} className="p-1.5 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 rounded-full transition-colors shrink-0 cursor-pointer" title="Fechar Rota">
+          <X size={18} />
         </button>
       </div>
 
-      {/* BOTÃO NAVEGAR PRÓXIMO COMPACTO */}
-      {pendingRoute.length > 0 && (
-        <div className="mb-2.5">
-          <button 
-            onClick={handleWazeRoute}
-            className="w-full flex items-center justify-between gap-3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-3.5 rounded-xl shadow-[0_0_14px_rgba(37,99,235,0.4)] active:scale-[0.99] transition-all relative overflow-hidden group cursor-pointer"
+      {/* BARRA DE PROGRESSO VISUAL DA MISSÃO */}
+      {totalCount > 0 && (
+        <div className="w-full bg-slate-950 h-2 rounded-full mb-2.5 overflow-hidden border border-slate-700/80 relative shrink-0">
+          <div 
+            className={`h-full transition-all duration-500 ${
+              progressPercent === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-emerald-600 to-cyan-500'
+            }`}
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      )}
+
+      {/* BANNER TÁTICO DE CHEGADA AO HIDRANTE / CONFIRMAÇÃO DE VISTORIA (AO VOLTAR DO WAZE) */}
+      {currentTarget && (
+        <div className="mb-2.5 p-3 rounded-2xl bg-gradient-to-r from-slate-900 via-emerald-950/40 to-slate-900 border-2 border-emerald-500/80 shadow-[0_0_20px_rgba(16,185,129,0.25)] flex flex-col gap-2.5 shrink-0 animate-fadeIn">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-emerald-500 text-slate-950 font-black flex items-center justify-center text-sm shadow-md shrink-0 animate-bounce">
+                🎯
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                  Você chegou ao hidrante?
+                </span>
+                <span className="text-sm font-black text-white truncate">
+                  {fixEncoding(currentTarget.nomHidrante) || currentTarget.codHidrante} {currentTarget.dscLocalidade && `• ${fixEncoding(currentTarget.dscLocalidade)}`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={handleWazeRoute}
+                className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg flex items-center gap-1 shadow-sm transition-transform active:scale-95 cursor-pointer"
+                title="Abrir no Waze"
+              >
+                <Navigation size={13} />
+                <span>Waze</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="text-[11px] text-slate-300 break-words line-clamp-1 bg-slate-950/60 px-2.5 py-1 rounded-lg border border-slate-800">
+            📍 <strong className="text-slate-200">Local:</strong> {fixEncoding(currentTarget.dscEndereco) || 'Endereço não informado'}
+          </div>
+
+          {/* BOTÃO PRINCIPAL DE AÇÃO DIRETA COM DESTAQUE MÁXIMO */}
+          <button
+            onClick={() => onInspect && onInspect(currentTarget)}
+            className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-950/60 flex items-center justify-center gap-2 transition-all active:scale-[0.98] tracking-wide cursor-pointer ring-2 ring-emerald-400/40"
           >
-            <div className="flex items-center gap-2.5 text-xs sm:text-sm drop-shadow-md truncate">
-              <Navigation size={18} className="animate-bounce shrink-0 text-cyan-300" />
-              <span className="truncate tracking-wide">🚀 NAVEGAR PARA PRÓXIMO ALVO (WAZE)</span>
-            </div>
-            <div className="text-xs font-mono font-bold bg-blue-900/80 px-2.5 py-1 rounded-lg border border-blue-400/50 text-cyan-200 shrink-0 shadow-inner flex items-center gap-1.5">
-              <span>🎯</span>
-              <span>{pendingRoute[0]?.nomHidrante || pendingRoute[0]?.codHidrante || 'Alvo'}</span>
-            </div>
-            <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] skew-x-12"></div>
+            <ClipboardCheck size={18} strokeWidth={2.5} />
+            <span>+ CADASTRAR VISTORIA NESTE HIDRANTE</span>
           </button>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto mb-1.5 bg-slate-800/50 rounded-xl p-2 border border-slate-700 scroll-pt-2">
+      {/* LISTA SCROLLÁVEL DE HIDRANTES DA ROTA */}
+      <div className="flex-1 overflow-y-auto mb-1.5 bg-slate-800/40 rounded-xl p-2 border border-slate-700/80 scroll-pt-2 custom-scrollbar">
         {missionHydrants.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3 p-6 text-center">
             <MapPin size={48} className="text-emerald-400/40 animate-pulse" />
             <p className="text-sm font-semibold text-slate-300 max-w-sm">
-              Para criar uma nova rota de missão, selecione os hidrantes no mapa ou no bloco de lista.
+              Para criar uma nova rota de missão, selecione os hidrantes no mapa ou na lista.
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
             {pendingRoute.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <h3 className="text-slate-300 font-bold uppercase tracking-wider text-xs flex items-center gap-1.5 border-b border-slate-700 pb-1">
+                <h3 className="text-slate-300 font-bold uppercase tracking-wider text-xs flex items-center gap-1.5 border-b border-slate-700/80 pb-1">
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                   Faltantes ({pendingRoute.length})
                 </h3>
@@ -672,7 +684,7 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
 
             {completedHydrants.length > 0 && (
               <div className="flex flex-col gap-1.5 mt-1">
-                <h3 className="text-slate-400 font-bold uppercase tracking-wider text-xs flex items-center gap-1.5 border-b border-slate-700 pb-1">
+                <h3 className="text-slate-400 font-bold uppercase tracking-wider text-xs flex items-center gap-1.5 border-b border-slate-700/80 pb-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                   Concluídos na Missão ({completedHydrants.length})
                 </h3>
@@ -681,20 +693,21 @@ const MissionRoutePanel = ({ hidrantes, selectedMissionIds, completedMissionIds 
             )}
             
             {pendingRoute.length === 0 && completedHydrants.length > 0 && (
-               <div className="p-3 text-center text-emerald-400 font-bold bg-emerald-900/30 rounded-lg border border-emerald-900 mt-2 text-xs">
-                 🎉 Missão totalmente concluída!
+               <div className="p-4 text-center text-emerald-300 font-black bg-emerald-950/60 rounded-xl border border-emerald-500/60 mt-2 text-sm shadow-lg flex flex-col items-center gap-1 animate-fadeIn">
+                 <CheckCircle2 size={32} className="text-emerald-400 animate-bounce" />
+                 <span>🎉 Missão 100% Concluída!</span>
+                 <span className="text-xs font-normal text-slate-300">Todos os {completedHydrants.length} hidrantes foram vistoriados com sucesso.</span>
                </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Ações do Rodapé da Rota (WhatsApp e Relatório da Missão) */}
-      <div className={`grid ${((currentUser?.role === 'gestor' || currentUser?.role === 'admin') && onGenerateReport) ? 'grid-cols-2' : 'grid-cols-1'} gap-2 pb-1 pt-1.5 border-t border-slate-700 relative flex-shrink-0`}>
-
+      {/* AÇÕES DO RODAPÉ (WhatsApp e Relatório) */}
+      <div className={`grid ${((currentUser?.role === 'gestor' || currentUser?.role === 'admin') && onGenerateReport) ? 'grid-cols-2' : 'grid-cols-1'} gap-2 pb-0.5 pt-1.5 border-t border-slate-700/80 relative flex-shrink-0`}>
         <button 
           onClick={handleShareWhatsApp}
-          disabled={pendingRoute.length === 0 && completedHydrants.length === 0}
+          disabled={missionHydrants.length === 0}
           className="h-9 flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#20bd5a] disabled:opacity-50 text-white font-bold px-3 rounded-xl shadow-md active:scale-95 transition-all text-xs truncate cursor-pointer"
           title="Compartilhar Rota no WhatsApp"
         >

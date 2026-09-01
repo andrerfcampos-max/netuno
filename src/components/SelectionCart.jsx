@@ -142,8 +142,14 @@ const SelectionCart = ({
   };
 
   // Handler de Fim de Arrasto do Balão
+  const suppressClickRef = useRef(false);
+
   const handlePillEnd = (e) => {
-    if (e && e.stopPropagation) e.stopPropagation();
+    if (e) {
+      if (e.stopPropagation) e.stopPropagation();
+      if (e.cancelable && e.preventDefault) e.preventDefault();
+    }
+
     if (isDraggingPill) {
       if (isOverTrash) {
         if (navigator.vibrate) {
@@ -153,34 +159,36 @@ const SelectionCart = ({
       }
       setIsDraggingPill(false);
       setIsOverTrash(false);
+      suppressClickRef.current = true;
+      setTimeout(() => { suppressClickRef.current = false; }, 300);
     } else {
       // Se não houve arraste expressivo, interpreta como clique/toque para abrir o carrinho
       if (!hasMovedRef.current && onToggleOpen) {
+        suppressClickRef.current = true;
         onToggleOpen(true);
+        setTimeout(() => { suppressClickRef.current = false; }, 300);
       }
     }
-    setTimeout(() => {
-      hasMovedRef.current = false;
-    }, 50);
+    hasMovedRef.current = false;
   };
 
   // Listeners globais de toque e mouse para arrasto suave do balão
   const onTouchStartPill = (e) => {
-    e.stopPropagation();
+    if (e.stopPropagation) e.stopPropagation();
     if (e.touches.length > 0) {
       handlePillStart(e.touches[0].clientX, e.touches[0].clientY);
     }
   };
 
   const onTouchMovePill = (e) => {
-    e.stopPropagation();
+    if (e.stopPropagation) e.stopPropagation();
     if (e.touches.length > 0) {
       handlePillMove(e.touches[0].clientX, e.touches[0].clientY);
     }
   };
 
   const onMouseDownPill = (e) => {
-    e.stopPropagation();
+    if (e.stopPropagation) e.stopPropagation();
     if (e.button !== 0) return; // Apenas botão esquerdo
     handlePillStart(e.clientX, e.clientY);
 
@@ -306,6 +314,7 @@ const SelectionCart = ({
           onMouseDown={onMouseDownPill}
           onClick={(e) => {
             e.stopPropagation();
+            if (suppressClickRef.current) return;
             if (!isDraggingPill && !hasMovedRef.current && onToggleOpen) {
               onToggleOpen(true);
             }
@@ -323,16 +332,9 @@ const SelectionCart = ({
             isDraggingPill ? 'scale-105 opacity-90 cursor-grabbing' : 'cursor-grab'
           }`}
         >
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isDraggingPill && !hasMovedRef.current && onToggleOpen) {
-                onToggleOpen(true);
-              }
-            }}
+          <div
             title="Arraste para mover ou até a lixeira para excluir. Toque para abrir seleção."
-            className={`group flex items-center gap-2.5 bg-slate-900/95 hover:bg-slate-800 text-slate-100 px-4 py-3 rounded-full border-2 shadow-[0_0_25px_rgba(16,185,129,0.45)] hover:shadow-[0_0_30px_rgba(16,185,129,0.65)] backdrop-blur-xl transition-all active:scale-95 select-none ${
+            className={`group flex items-center gap-2.5 bg-slate-900/95 hover:bg-slate-800 text-slate-100 px-4 py-3 rounded-full border-2 shadow-[0_0_25px_rgba(16,185,129,0.45)] hover:shadow-[0_0_30px_rgba(16,185,129,0.65)] backdrop-blur-xl transition-all active:scale-95 select-none cursor-pointer ${
               isOverTrash ? 'border-red-500 ring-2 ring-red-400' : 'border-emerald-500/80'
             }`}
           >
@@ -345,7 +347,7 @@ const SelectionCart = ({
             <span className="text-xs font-black tracking-wide text-emerald-300 pr-0.5 pointer-events-none">
               {selectedIds.length === 1 ? '1 Selecionado' : `${selectedIds.length} Selecionados`}
             </span>
-          </button>
+          </div>
         </div>
       )}
 

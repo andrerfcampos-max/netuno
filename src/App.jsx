@@ -646,23 +646,66 @@ function App() {
     toast.success(`${addedCount > 0 ? addedCount : 'Itens'} hidrante(s) atualizados na missão "${targetM.name}"!`);
   };
 
-  const removeHydrantFromMission = (id) => {
-    toggleMissionSelection(id);
+  const removeHydrantFromMission = (hydrantOrId) => {
+    let currentM = missions.find(m => m.id === activeMissionId);
+    if (!currentM) return;
+
+    let candidateKeys = [];
+    if (typeof hydrantOrId === 'object' && hydrantOrId !== null) {
+      candidateKeys = [
+        hydrantOrId._internalId ? String(hydrantOrId._internalId) : null,
+        hydrantOrId.codHidrante !== undefined && hydrantOrId.codHidrante !== null ? String(hydrantOrId.codHidrante) : null,
+        hydrantOrId.nomHidrante ? String(hydrantOrId.nomHidrante) : null
+      ].filter(Boolean);
+    } else if (hydrantOrId) {
+      const strId = String(hydrantOrId);
+      candidateKeys = [strId];
+      const found = hidrantes.find(h => 
+        String(h._internalId) === strId || 
+        String(h.codHidrante) === strId || 
+        String(h.nomHidrante) === strId
+      );
+      if (found) {
+        if (found._internalId) candidateKeys.push(String(found._internalId));
+        if (found.codHidrante) candidateKeys.push(String(found.codHidrante));
+        if (found.nomHidrante) candidateKeys.push(String(found.nomHidrante));
+      }
+    }
+
+    const currentSel = currentM.selectedIds || [];
+    const currentComp = currentM.completedIds || [];
+
+    const newSelected = currentSel.filter(selId => !candidateKeys.includes(String(selId)));
+    const newCompleted = currentComp.filter(compId => !candidateKeys.includes(String(compId)));
+
+    const target = {
+      ...currentM,
+      selectedIds: newSelected,
+      completedIds: newCompleted,
+      updatedAt: new Date().toISOString()
+    };
+
+    setMissions(prev => prev.map(m => m.id === target.id ? target : m));
+    syncMissionToCloud(target);
+    toast.info('Hidrante removido da rota de missão.');
   };
 
   const toggleMissionSelection = (id) => {
     let currentM = missions.find(m => m.id === activeMissionId);
     if (!currentM) return;
 
+    const strId = String(id);
     const currentSel = currentM.selectedIds || [];
     const currentComp = currentM.completedIds || [];
 
-    const newSelected = currentSel.includes(id) 
-      ? currentSel.filter(missionId => missionId !== id) 
+    const isAlreadySelected = currentSel.some(x => String(x) === strId);
+
+    const newSelected = isAlreadySelected 
+      ? currentSel.filter(missionId => String(missionId) !== strId) 
       : [...currentSel, id];
     
-    const newCompleted = currentSel.includes(id)
-      ? currentComp.filter(cId => cId !== id)
+    const newCompleted = isAlreadySelected
+      ? currentComp.filter(cId => String(cId) !== strId)
       : currentComp;
 
     const target = {
@@ -672,10 +715,7 @@ function App() {
       updatedAt: new Date().toISOString()
     };
 
-    
-      setMissions(prev => prev.map(m => m.id === target.id ? target : m));
-    
-
+    setMissions(prev => prev.map(m => m.id === target.id ? target : m));
     syncMissionToCloud(target);
   };
 
@@ -827,9 +867,37 @@ function App() {
     changes.updated[idKey] = sanitized;
     saveHydrantChanges(changes);
 
-    const id = sanitized.codHidrante || sanitized.nomHidrante;
-    if (activeMissionId && selectedMissionIds.includes(id) && !completedMissionIds.includes(id)) {
-      updateCurrentMission({ completedIds: [...completedMissionIds, id] });
+    if (activeMissionId) {
+      const currentM = missions.find(m => m.id === activeMissionId);
+      if (currentM) {
+        const curSel = (currentM.selectedIds || []).map(x => String(x));
+        const curComp = (currentM.completedIds || []).map(x => String(x));
+        
+        const candidateKeys = [
+          sanitized._internalId ? String(sanitized._internalId) : null,
+          sanitized.codHidrante !== undefined && sanitized.codHidrante !== null ? String(sanitized.codHidrante) : null,
+          sanitized.nomHidrante ? String(sanitized.nomHidrante) : null
+        ].filter(Boolean);
+
+        const matchedInMission = candidateKeys.some(k => curSel.includes(k));
+        if (matchedInMission || curSel.length > 0) {
+          const idsToAdd = candidateKeys.filter(k => curSel.includes(k));
+          const finalIdToAdd = idsToAdd.length > 0 ? idsToAdd : [candidateKeys[0]];
+          
+          const newCompleted = Array.from(new Set([...curComp, ...finalIdToAdd]));
+          const updatedMission = {
+            ...currentM,
+            completedIds: newCompleted,
+            updatedAt: new Date().toISOString()
+          };
+          setMissions(prev => {
+            const updated = prev.map(m => m.id === updatedMission.id ? updatedMission : m);
+            saveMissions(updated);
+            return updated;
+          });
+          syncMissionToCloud(updatedMission);
+        }
+      }
     }
 
     setLastInspectedCoords({ lat: sanitized.numLatitude, lng: sanitized.numLongitude });
@@ -1496,6 +1564,7 @@ function App() {
               onDeselectHydrant={() => setMapCenterPosition(null)}
               selectedMissionIds={cartSelectionIds}
               onToggleMission={toggleCartSelection}
+              isCartOpen={isCartOpen}
               currentUser={currentUser}
               isMapFullscreen={isMapFullscreen}
               onMapClick={() => setIsMapFullscreen(prev => !prev)}

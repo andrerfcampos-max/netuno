@@ -225,7 +225,7 @@ const GpsControl = ({ userLocation, isSheetOpen }) => {
   );
 };
 
-const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, onDeselectHydrant, selectedMissionIds = [], onToggleMission, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '', hasFilter = false }) => {
+const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, onDeselectHydrant, selectedMissionIds = [], onToggleMission, isCartOpen = false, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '', hasFilter = false }) => {
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const validHidrantes = useMemo(() => {
@@ -245,6 +245,16 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, onDeselect
       onDeselectHydrant();
     }
   };
+
+  // Fecha imediatamente a dialog/bottom sheet de hidrante quando o carrinho é aberto
+  useEffect(() => {
+    if (isCartOpen && selectedHydrant) {
+      setSelectedHydrant(null);
+      if (onDeselectHydrant) {
+        onDeselectHydrant();
+      }
+    }
+  }, [isCartOpen]);
 
   // Suporte a arrastar / deslizar para baixo para fechar o Bottom Sheet
   const handleTouchStart = (e) => {
