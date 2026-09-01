@@ -399,11 +399,12 @@ const MissionRoutePanel = ({
     if (metric && metric.distanceMeters !== null && metric.distanceMeters !== undefined) {
       const dMeters = metric.distanceMeters;
       const dText = dMeters < 1000 ? `${Math.round(dMeters)}m` : `${(dMeters / 1000).toFixed(1)}km`;
-      const durMin = metric.durationSeconds ? ` • ~${Math.max(1, Math.ceil(metric.durationSeconds / 60))}min` : '';
-      distText = metric.isEstimated ? `${dText} (estimado)` : `${dText} via trânsito${durMin}`;
+      const durMin = metric.durationSeconds ? `~${Math.max(1, Math.ceil(metric.durationSeconds / 60))}min` : '';
+      distText = durMin ? `${dText} • ${durMin}` : dText;
     } else if (userLocation) {
       const dist = calculateDistance(userLocation.lat, userLocation.lng, h.numLatitude, h.numLongitude);
-      distText = dist < 1 ? `${Math.round(dist * 1000)}m (reta)` : `${dist.toFixed(1)}km (reta)`;
+      const dText = dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
+      distText = `${dText} (reta)`;
     }
 
     // ========================================================
@@ -413,36 +414,36 @@ const MissionRoutePanel = ({
       return (
         <div 
           key={h._internalId || h.codHidrante || h.nomHidrante || index}
-          className="w-full rounded-2xl p-3 sm:p-4 bg-gradient-to-b from-slate-800/98 via-slate-850/95 to-slate-900 border-2 border-emerald-400 shadow-[0_0_24px_rgba(52,211,153,0.3)] flex flex-col gap-3 transition-all overflow-hidden relative"
+          className="w-full rounded-xl p-2.5 sm:p-3.5 bg-gradient-to-b from-slate-800/98 via-slate-850/95 to-slate-900 border-2 border-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.25)] flex flex-col gap-2 transition-all overflow-hidden relative"
         >
           {/* Cabeçalho do Super Card */}
-          <div className="flex items-start justify-between gap-2.5">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-emerald-500 text-slate-950 font-black text-base flex items-center justify-center shadow-md shrink-0 ring-2 ring-emerald-300/60 animate-bounce-short">
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-emerald-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-md shrink-0 ring-2 ring-emerald-300/60">
                 1
               </div>
 
               {h.fotoPerfil && (
-                <img src={h.fotoPerfil} alt="Perfil" className="w-10 h-10 object-cover rounded-xl border border-slate-600 shrink-0 cursor-pointer hover:scale-105 transition-transform shadow-sm" />
+                <img src={h.fotoPerfil} alt="Perfil" className="w-8 h-8 object-cover rounded-lg border border-slate-600 shrink-0 cursor-pointer hover:scale-105 transition-transform shadow-sm" />
               )}
 
               <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-black text-slate-100 text-base sm:text-lg tracking-wide truncate">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-extrabold text-slate-100 text-sm sm:text-base tracking-wide truncate">
                     {fixEncoding(h.nomHidrante) || h.codHidrante}
                   </span>
                   {h.dscLocalidade && (
-                    <span className="bg-slate-700/80 border border-slate-600/60 text-cyan-300 text-[11px] font-bold px-2 py-0.5 rounded shadow-sm shrink-0">
+                    <span className="bg-slate-700/80 border border-slate-600/60 text-cyan-300 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm shrink-0">
                       {fixEncoding(h.dscLocalidade)}
                     </span>
                   )}
-                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 animate-pulse">
-                    <span>🎯</span> Próximo Alvo
+                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-0.5">
+                    <span>🎯</span> Próximo
                   </span>
                 </div>
 
                 {distText && (
-                  <span className="text-[11px] font-mono font-bold text-emerald-300 flex items-center gap-1 mt-0.5">
+                  <span className="text-[10px] font-mono font-bold text-emerald-300 flex items-center gap-1 mt-0.5">
                     <span>📍</span> {distText}
                   </span>
                 )}
@@ -454,19 +455,19 @@ const MissionRoutePanel = ({
               <button 
                 onClick={() => { onCenterMap && onCenterMap(h); onClose(); }} 
                 title="Localizar no Mapa" 
-                className="h-8 px-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs active:scale-95 transition-all flex items-center gap-1 font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
+                className="h-7 px-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-[11px] active:scale-95 transition-all flex items-center gap-1 font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
               >
-                <LocateFixed size={14} className="text-cyan-400" />
-                <span className="hidden sm:inline text-xs">Mapa</span>
+                <LocateFixed size={13} className="text-cyan-400" />
+                <span className="hidden sm:inline">Mapa</span>
               </button>
 
               {(!isCompleted && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) && (
                 <button 
                   onClick={() => onEdit && onEdit(h)} 
                   title="Editar Hidrante" 
-                  className="h-8 w-8 flex items-center justify-center bg-amber-700 hover:bg-amber-600 text-white rounded-lg active:scale-95 transition-all shadow-sm cursor-pointer"
+                  className="h-7 w-7 flex items-center justify-center bg-amber-700 hover:bg-amber-600 text-white rounded-lg active:scale-95 transition-all shadow-sm cursor-pointer"
                 >
-                  <Edit size={14}/>
+                  <Edit size={13}/>
                 </button>
               )}
 
@@ -474,58 +475,52 @@ const MissionRoutePanel = ({
                 <button 
                   onClick={() => handleRemoveItem(h)} 
                   title="Remover da Missão" 
-                  className="h-8 w-8 flex items-center justify-center bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white border border-rose-800/40 rounded-lg active:scale-95 transition-all cursor-pointer"
+                  className="h-7 w-7 flex items-center justify-center bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white border border-rose-800/40 rounded-lg active:scale-95 transition-all cursor-pointer"
                 >
-                  <X size={14}/>
+                  <X size={13}/>
                 </button>
               )}
             </div>
           </div>
 
           {/* Endereço Completo e Alertas */}
-          <div className="flex flex-col gap-1.5 bg-slate-950/70 p-2.5 rounded-xl border border-slate-700/80 text-xs">
-            <div className="text-slate-300 break-words leading-snug">
+          <div className="flex flex-col gap-1 bg-slate-950/70 p-2 rounded-lg border border-slate-700/80 text-[11px] sm:text-xs">
+            <div className="text-slate-300 break-words leading-tight">
               <strong className="text-slate-400">Endereço: </strong>
               <span className="text-slate-100 font-medium">{fixEncoding(h.dscEndereco) || 'Endereço não informado'}</span>
               {h.dscPontoReferencia && (
-                <span className="text-slate-400 italic block mt-0.5">Ref: {fixEncoding(h.dscPontoReferencia)}</span>
+                <span className="text-slate-400 italic block mt-0.5 text-[10px]">Ref: {fixEncoding(h.dscPontoReferencia)}</span>
               )}
             </div>
 
             {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (
-              <div className="p-2 rounded-lg bg-red-950/70 border border-red-500/50 text-red-200 font-bold text-[11px] flex items-center gap-2">
-                <AlertTriangle size={15} className="text-red-400 shrink-0" />
-                <span className="leading-tight">{fixEncoding(sanitizeProblem(h.problemasHidrante))}</span>
+              <div className="p-1.5 rounded-md bg-red-950/70 border border-red-500/50 text-red-200 font-bold text-[10px] sm:text-[11px] flex items-center gap-1.5">
+                <AlertTriangle size={14} className="text-red-400 shrink-0" />
+                <span className="leading-tight break-words">{fixEncoding(sanitizeProblem(h.problemasHidrante))}</span>
               </div>
             )}
           </div>
 
-          {/* BOTÕES LARGOS DE AÇÃO TÁTICA DO ALVO */}
-          <div className="flex flex-col gap-2 pt-0.5">
-            {/* BOTÃO 1: NAVEGAR COM WAZE LARGO EM AZUL */}
+          {/* BOTÕES DE AÇÃO TÁTICA LADO A LADO (GRID 2 COLUNAS) */}
+          <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+            {/* BOTÃO 1: NAVEGAR COM WAZE */}
             <button 
               onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')} 
-              className="w-full flex items-center justify-between gap-3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-3.5 rounded-xl shadow-[0_0_14px_rgba(37,99,235,0.4)] active:scale-[0.99] transition-all relative overflow-hidden group cursor-pointer"
+              className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-2.5 rounded-xl shadow-[0_0_12px_rgba(37,99,235,0.35)] active:scale-[0.98] transition-all text-xs cursor-pointer truncate"
+              title="Navegar no Waze"
             >
-              <div className="flex items-center gap-2.5 text-xs sm:text-sm drop-shadow-md truncate">
-                <Navigation size={18} className="animate-bounce shrink-0 text-cyan-300" />
-                <span className="truncate tracking-wide">🚀 NAVEGAR PARA PRÓXIMO ALVO (WAZE)</span>
-              </div>
-              <div className="text-xs font-mono font-bold bg-blue-900/80 px-2.5 py-1 rounded-lg border border-blue-400/50 text-cyan-200 shrink-0 shadow-inner flex items-center gap-1.5">
-                <span>🎯</span>
-                <span>{fixEncoding(h.nomHidrante) || h.codHidrante || 'Alvo'}</span>
-              </div>
-              <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] skew-x-12"></div>
+              <Navigation size={15} className="shrink-0 text-cyan-300 animate-bounce" />
+              <span className="truncate">Navegar Waze</span>
             </button>
 
-            {/* BOTÃO 2: CADASTRAR VISTORIA LARGO EM VERDE ESMERALDA */}
+            {/* BOTÃO 2: CADASTRAR VISTORIA */}
             <button 
               onClick={() => onInspect && onInspect(h)} 
               title="Cadastrar Vistoria Técnica" 
-              className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-950/60 flex items-center justify-center gap-2 transition-all active:scale-[0.99] tracking-wide cursor-pointer ring-2 ring-emerald-400/40"
+              className="py-2 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-950/60 flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer ring-1 ring-emerald-400/40 truncate"
             >
-              <ClipboardCheck size={18} strokeWidth={2.5} />
-              <span>+ CADASTRAR VISTORIA NESTE HIDRANTE</span>
+              <ClipboardCheck size={16} strokeWidth={2.5} className="shrink-0" />
+              <span className="truncate">+ Vistoriar</span>
             </button>
           </div>
         </div>
@@ -535,7 +530,7 @@ const MissionRoutePanel = ({
     // ========================================================
     // DEMAIS LUGARES (2º, 3º, etc. e Concluídos): CARD COMPACTO
     // ========================================================
-    let itemClasses = "w-full rounded-xl p-2.5 sm:p-3 flex flex-col lg:flex-row gap-2.5 items-start lg:items-center justify-between transition-all overflow-hidden border-l-4 ";
+    let itemClasses = "w-full rounded-xl p-2 sm:p-2.5 flex flex-col sm:flex-row gap-1.5 sm:gap-2 items-start sm:items-center justify-between transition-all overflow-hidden border-l-4 ";
     if (isCompleted) {
       itemClasses += "bg-slate-900/60 border-slate-700 opacity-70 grayscale";
     } else {
@@ -548,55 +543,49 @@ const MissionRoutePanel = ({
 
     return (
       <div key={h._internalId || h.codHidrante || h.nomHidrante || index} className={itemClasses}>
-        <div className="flex items-center gap-3 flex-1 min-w-0 w-full overflow-hidden">
+        <div className="flex items-center gap-2 flex-1 min-w-0 w-full overflow-hidden">
           {/* Sequência / Número */}
           <div className={
             isCompleted 
-              ? "bg-slate-700 text-slate-400 font-bold text-xs rounded-full w-7 h-7 flex items-center justify-center shrink-0" 
-              : "bg-emerald-950 text-emerald-400 border border-emerald-500/30 font-bold text-xs rounded-full w-7 h-7 flex items-center justify-center shrink-0"
+              ? "bg-slate-700 text-slate-400 font-bold text-[11px] rounded-full w-6 h-6 flex items-center justify-center shrink-0" 
+              : "bg-emerald-950 text-emerald-400 border border-emerald-500/30 font-bold text-[11px] rounded-full w-6 h-6 flex items-center justify-center shrink-0"
           }>
             {isCompleted ? "✓" : index + 1}
           </div>
           
           {/* FOTO DE PERFIL DO HIDRANTE (Thumbnail) */}
           {!isCompleted && h.fotoPerfil && (
-            <img src={h.fotoPerfil} alt="Perfil" className="w-9 h-9 object-cover rounded-md border border-slate-600 shrink-0 cursor-pointer hover:scale-105 transition-transform" />
+            <img src={h.fotoPerfil} alt="Perfil" className="w-7 h-7 object-cover rounded-md border border-slate-600 shrink-0 cursor-pointer hover:scale-105 transition-transform" />
           )}
           
-          <div className="flex flex-col gap-1 flex-1 min-w-0 overflow-hidden">
+          <div className="flex flex-col gap-0.5 flex-1 min-w-0 overflow-hidden">
             {/* Linha 1: Identificador + RA + Distância */}
             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-              <span className="font-bold text-slate-100 text-sm tracking-wide shrink-0">
+              <span className="font-bold text-slate-100 text-xs sm:text-sm tracking-wide shrink-0">
                 {fixEncoding(h.nomHidrante) || h.codHidrante}
               </span>
               
               {h.dscLocalidade && (
-                <span className="bg-slate-700/80 border border-slate-600/60 text-cyan-300 text-[10px] font-semibold px-2 py-0.5 rounded shrink-0">
+                <span className="bg-slate-700/80 border border-slate-600/60 text-cyan-300 text-[9px] font-semibold px-1.5 py-0.2 rounded shrink-0">
                   {fixEncoding(h.dscLocalidade)}
                 </span>
               )}
 
               {distText && (
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border flex items-center gap-1 shrink-0 bg-slate-800 border-slate-700 text-slate-300">
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border flex items-center gap-0.5 shrink-0 bg-slate-800 border-slate-700 text-slate-300">
                   <span>📍</span> {distText}
-                </span>
-              )}
-
-              {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (
-                <span className="hidden xl:inline-flex items-center gap-1 bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[10px] font-semibold px-2 py-0.5 rounded truncate max-w-xs">
-                  ⚠️ {fixEncoding(sanitizeProblem(h.problemasHidrante))}
                 </span>
               )}
             </div>
             
             {/* Linha 2: Endereço responsivo (sem overflow) */}
             <div className="flex flex-col gap-0.5 text-slate-300 text-xs min-w-0 w-full">
-              <span className="text-slate-400 text-xs break-words line-clamp-2 leading-tight" title={h.dscEndereco || ''}>
+              <span className="text-slate-400 text-[11px] break-words line-clamp-1 leading-tight" title={h.dscEndereco || ''}>
                 {fixEncoding(h.dscEndereco) || 'Endereço não informado'}
               </span>
 
               {h.problemasHidrante && h.problemasHidrante.trim() !== '' && (
-                <span className="xl:hidden inline-flex items-center gap-1 bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded truncate w-fit mt-0.5">
+                <span className="inline-flex items-center gap-1 bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[9px] font-bold px-1.5 py-0.5 rounded truncate w-fit">
                   ⚠️ {fixEncoding(sanitizeProblem(h.problemasHidrante))}
                 </span>
               )}
@@ -605,13 +594,13 @@ const MissionRoutePanel = ({
         </div>
         
         {/* Bloco de Ações do Item */}
-        <div className="flex items-center justify-end gap-1.5 shrink-0 w-full lg:w-auto mt-1 lg:mt-0 border-t lg:border-t-0 border-slate-700/60 pt-1.5 lg:pt-0">
+        <div className="flex items-center justify-end gap-1 shrink-0 w-full sm:w-auto mt-0.5 sm:mt-0 border-t sm:border-t-0 border-slate-700/60 pt-1 sm:pt-0">
           <button 
             onClick={() => { onCenterMap && onCenterMap(h); onClose(); }} 
             title="Localizar no Mapa" 
-            className="h-8 px-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs active:scale-95 transition-all flex items-center gap-1 font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
+            className="h-7 px-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-[11px] active:scale-95 transition-all flex items-center gap-1 font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
           >
-            <LocateFixed size={14} className="text-cyan-400" />
+            <LocateFixed size={13} className="text-cyan-400" />
             <span className="hidden sm:inline text-xs">Mapa</span>
           </button>
 
@@ -619,9 +608,9 @@ const MissionRoutePanel = ({
             <button 
               onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')} 
               title="Navegar no Waze" 
-              className="h-8 px-2.5 bg-blue-600/90 hover:bg-blue-600 text-white rounded-lg text-xs active:scale-95 transition-all flex items-center gap-1 font-semibold shadow-sm cursor-pointer"
+              className="h-7 px-2 bg-blue-600/90 hover:bg-blue-600 text-white rounded-lg text-[11px] active:scale-95 transition-all flex items-center gap-1 font-semibold shadow-sm cursor-pointer"
             >
-              <Navigation size={14} />
+              <Navigation size={13} />
               <span className="hidden sm:inline text-xs">Waze</span>
             </button>
           )}
@@ -630,9 +619,9 @@ const MissionRoutePanel = ({
             <button 
               onClick={() => onInspect && onInspect(h)} 
               title="Cadastrar Vistoria Técnica" 
-              className="h-8 px-3 text-white rounded-lg active:scale-95 transition-all font-bold text-xs flex items-center gap-1.5 shadow-md cursor-pointer bg-emerald-600 hover:bg-emerald-500"
+              className="h-7 px-2.5 text-white rounded-lg active:scale-95 transition-all font-bold text-[11px] flex items-center gap-1 shadow-md cursor-pointer bg-emerald-600 hover:bg-emerald-500"
             >
-              <Plus size={15} strokeWidth={3}/>
+              <Plus size={13} strokeWidth={3}/>
               <span>VISTORIA</span>
             </button>
           )}
@@ -641,9 +630,9 @@ const MissionRoutePanel = ({
             <button 
               onClick={() => onEdit && onEdit(h)} 
               title="Editar Hidrante" 
-              className="h-8 w-8 flex items-center justify-center bg-amber-700 hover:bg-amber-600 text-white rounded-lg active:scale-95 transition-all shadow-sm cursor-pointer"
+              className="h-7 w-7 flex items-center justify-center bg-amber-700 hover:bg-amber-600 text-white rounded-lg active:scale-95 transition-all shadow-sm cursor-pointer"
             >
-              <Edit size={14}/>
+              <Edit size={13}/>
             </button>
           )}
           
@@ -651,9 +640,9 @@ const MissionRoutePanel = ({
             <button 
               onClick={() => handleRemoveItem(h)} 
               title="Remover da Missão" 
-              className="h-8 w-8 flex items-center justify-center bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white border border-rose-800/40 rounded-lg active:scale-95 transition-all ml-0.5 cursor-pointer"
+              className="h-7 w-7 flex items-center justify-center bg-rose-950/80 text-rose-400 hover:bg-rose-800 hover:text-white border border-rose-800/40 rounded-lg active:scale-95 transition-all ml-0.5 cursor-pointer"
             >
-              <X size={14}/>
+              <X size={13}/>
             </button>
           )}
         </div>
@@ -662,64 +651,62 @@ const MissionRoutePanel = ({
   };
 
   return (
-    <div className="flex flex-col p-2.5 sm:p-4 w-full h-full bg-slate-900 relative overflow-hidden">
+    <div className="flex flex-col p-2 sm:p-3 w-full h-full bg-slate-900 relative overflow-hidden">
 
-      {/* CABEÇALHO DA ROTA */}
-      <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-700/80 relative shrink-0">
-        <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
+      {/* CABEÇALHO DA ROTA (OTIMIZADO PARA MOBILE) */}
+      <div className="flex justify-between items-center mb-1.5 pb-1.5 border-b border-slate-700/80 relative shrink-0 gap-1.5">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {onBackToManager && (
             <button 
               type="button" 
               onClick={onBackToManager}
-              className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 shadow-sm cursor-pointer"
+              className="text-xs px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 shadow-sm cursor-pointer"
               title="Voltar para a Central de Missões"
             >
-              ← Voltar
+              <span>←</span>
+              <span className="hidden sm:inline">Voltar</span>
             </button>
           )}
           
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <GitMerge size={19} className="text-emerald-400 shrink-0" />
-              <span className="font-black text-base sm:text-lg text-slate-100 drop-shadow-sm truncate">
-                {currentMission?.name || "Rota de Missão"}
-              </span>
-            </div>
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <GitMerge size={17} className="text-emerald-400 shrink-0" />
+            <span className="font-extrabold text-sm sm:text-base text-slate-100 drop-shadow-sm truncate" title={currentMission?.name || "Rota de Missão"}>
+              {currentMission?.name || "Rota de Missão"}
+            </span>
+          </div>
 
-            {/* BADGE DE EXECUÇÃO RATIO X/TOTAL (Ex: 1/18, 2/18) */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="bg-emerald-950/90 border border-emerald-500/80 text-emerald-300 font-mono font-extrabold text-xs px-2.5 py-0.5 rounded-full shadow-md flex items-center gap-1" title="Hidrantes concluídos / Total">
-                <span>📊</span>
-                <span>{completedCount}/{totalCount}</span>
-                <span className="text-[10px] text-emerald-400 font-normal">({progressPercent}%)</span>
-              </span>
+          {/* BADGE DE EXECUÇÃO RATIO X/TOTAL (Ex: 1/5 (20%)) */}
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="bg-emerald-950/90 border border-emerald-500/80 text-emerald-300 font-mono font-bold text-[11px] sm:text-xs px-2 py-0.5 rounded-full shadow-md flex items-center gap-1" title="Hidrantes concluídos / Total">
+              <span>{completedCount}/{totalCount}</span>
+              <span className="text-[10px] text-emerald-400 font-normal">({progressPercent}%)</span>
+            </span>
 
-              {isOptimizing ? (
-                <span className="hidden sm:inline-flex bg-amber-950/70 border border-amber-500/50 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full shadow items-center gap-1 animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-                  <span>Calculando vias...</span>
-                </span>
-              ) : (
-                <span className={`hidden sm:inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full border items-center gap-1 shrink-0 ${
-                  isTrafficOptimized 
-                    ? 'bg-blue-950/60 border-blue-500/40 text-blue-300' 
-                    : 'bg-slate-800 border-slate-700 text-slate-400'
-                }`}>
-                  <span>{isTrafficOptimized ? '🚗 Trânsito' : '📏 Reta'}</span>
-                </span>
-              )}
-            </div>
+            {isOptimizing ? (
+              <span className="hidden sm:inline-flex bg-amber-950/70 border border-amber-500/50 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full shadow items-center gap-1 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                <span>Calculando vias...</span>
+              </span>
+            ) : (
+              <span className={`hidden sm:inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full border items-center gap-1 shrink-0 ${
+                isTrafficOptimized 
+                  ? 'bg-blue-950/60 border-blue-500/40 text-blue-300' 
+                  : 'bg-slate-800 border-slate-700 text-slate-400'
+              }`}>
+                <span>{isTrafficOptimized ? '🚗 Trânsito' : '📏 Reta'}</span>
+              </span>
+            )}
           </div>
         </div>
         
-        <button onClick={onClose} className="p-1.5 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 rounded-full transition-colors shrink-0 cursor-pointer" title="Fechar Rota">
-          <X size={18} />
+        <button onClick={onClose} className="p-1 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 rounded-full transition-colors shrink-0 cursor-pointer" title="Fechar Rota">
+          <X size={16} />
         </button>
       </div>
 
       {/* BARRA DE PROGRESSO VISUAL DA MISSÃO */}
       {totalCount > 0 && (
-        <div className="w-full bg-slate-950 h-2 rounded-full mb-2.5 overflow-hidden border border-slate-700/80 relative shrink-0">
+        <div className="w-full bg-slate-950 h-1.5 sm:h-2 rounded-full mb-1.5 overflow-hidden border border-slate-700/80 relative shrink-0">
           <div 
             className={`h-full transition-all duration-500 ${
               progressPercent === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-emerald-600 to-cyan-500'
@@ -729,8 +716,8 @@ const MissionRoutePanel = ({
         </div>
       )}
 
-      {/* LISTA SCROLLÁVEL DE HIDRANTES DA ROTA (SEM BANNER FIXO DUPLICADO NO TOPO) */}
-      <div className="flex-1 overflow-y-auto mb-1.5 bg-slate-800/40 rounded-xl p-2 border border-slate-700/80 scroll-pt-2 custom-scrollbar">
+      {/* LISTA SCROLLÁVEL DE HIDRANTES DA ROTA (SEM TÍTULO REDUNDANTE DE FALTANTES) */}
+      <div className="flex-1 overflow-y-auto mb-1.5 bg-slate-800/40 rounded-xl p-1.5 sm:p-2 border border-slate-700/80 scroll-pt-2 custom-scrollbar">
         {missionHydrants.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3 p-6 text-center">
             <MapPin size={48} className="text-emerald-400/40 animate-pulse" />
@@ -739,20 +726,16 @@ const MissionRoutePanel = ({
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2">
             {pendingRoute.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <h3 className="text-slate-300 font-bold uppercase tracking-wider text-xs flex items-center gap-1.5 border-b border-slate-700/80 pb-1">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                  Faltantes ({pendingRoute.length})
-                </h3>
+              <div className="flex flex-col gap-1.5">
                 {pendingRoute.map((h, index) => renderHydrantItem(h, index, false))}
               </div>
             )}
 
             {completedHydrants.length > 0 && (
-              <div className="flex flex-col gap-1.5 mt-1">
-                <h3 className="text-slate-400 font-bold uppercase tracking-wider text-xs flex items-center gap-1.5 border-b border-slate-700/80 pb-1">
+              <div className="flex flex-col gap-1.5 mt-2">
+                <h3 className="text-slate-400 font-bold uppercase tracking-wider text-[11px] sm:text-xs flex items-center gap-1.5 border-b border-slate-700/80 pb-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                   Concluídos na Missão ({completedHydrants.length})
                 </h3>
