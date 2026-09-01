@@ -445,7 +445,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           // Situação / Problemas / Observações
           html += `<td style="padding: 6px;">
             <div style="font-weight: bold; color: ${h.flgAtivo ? '#166534' : '#dc2626'};">${h.flgAtivo ? '● OPERANTE' : '● INOPERANTE'}</div>
-            ${prob ? `<div style="color: #b91c1c; font-size: 10.5px; margin-top: 2px;"><strong>Problemas:</strong> ${prob}</div>` : ''}
+            ${prob ? `<div style="color: #b91c1c; font-size: 10.5px; margin-top: 2px;">${prob}</div>` : ''}
             ${obs ? `<div style="color: #475569; font-size: 10px; margin-top: 2px; font-style: italic;"><strong>Obs:</strong> ${obs}</div>` : ''}
           </td>`;
         } else {
@@ -1327,7 +1327,6 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
                             {prob && (
                               <div className="text-red-300 print-text-black font-semibold text-[11px] leading-tight mt-1">
-                                <span className="text-red-400 font-bold">Problemas: </span>
                                 {prob}
                               </div>
                             )}

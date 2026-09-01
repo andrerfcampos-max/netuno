@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Navigation, LocateFixed, GitMerge, Share2, MapPin, Map as MapIcon, RotateCcw, Plus, Save, Edit, CheckCircle, FolderOpen, CheckCircle2, ClipboardCheck, AlertTriangle } from 'lucide-react';
 import { sanitizeProblem, extractProblemsList } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
+import { normalizeRAName } from '../utils/raList';
 
 // Fórmula de Haversine para cálculo de distância geodésica ultra-rápida (retorna km)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -352,7 +353,8 @@ const MissionRoutePanel = ({
       magicLink = `${baseUrl}?ds=${allIds.slice(0, 30).join(',')}`;
     }
     
-    const missionName = currentMission?.name || "Rascunho de Hoje";
+    const defaultCity = missionHydrants[0]?.dscLocalidade ? (normalizeRAName(missionHydrants[0].dscLocalidade) || missionHydrants[0].dscLocalidade) : 'Brasília';
+    const missionName = currentMission?.name || `${defaultCity} ${new Date().getFullYear()}`;
     const vistoriadoresUnicos = Array.from(
       new Set(completedHydrants.map(h => h.vistoriadorNome || h.nomVistoriador).filter(Boolean))
     );

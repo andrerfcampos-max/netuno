@@ -1,9 +1,6 @@
 import { fixEncoding } from './textUtils';
 import { normalizeRAName } from './raList';
 
-// Ponto de Partida Fixo: Centro do Gama
-export const GAMA_CENTER = { lat: -16.015, lng: -48.065, name: 'Centro do Gama' };
-
 // Cálculo de distância geodésica em km (Haversine)
 export const calculateDistance = (lat1, lon1, lat2, lon2) => {
   if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return 999;
@@ -18,14 +15,18 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
-// Algoritmo Vizinho Mais Próximo saindo do Centro do Gama
-export const optimizeRouteFromGama = (hidrantes) => {
+// Algoritmo Vizinho Mais Próximo para ordenação sequencial da rota
+export const optimizeRoute = (hidrantes) => {
   if (!hidrantes || hidrantes.length === 0) return [];
   
   let unvisited = [...hidrantes];
   let route = [];
-  let currentLat = GAMA_CENTER.lat;
-  let currentLng = GAMA_CENTER.lng;
+  
+  // Inicia a rota pelo primeiro hidrante da lista
+  let current = unvisited.shift();
+  route.push(current);
+  let currentLat = current.numLatitude;
+  let currentLng = current.numLongitude;
 
   while (unvisited.length > 0) {
     let nearestIdx = 0;
@@ -42,16 +43,20 @@ export const optimizeRouteFromGama = (hidrantes) => {
 
     const nextHydrant = unvisited.splice(nearestIdx, 1)[0];
     route.push(nextHydrant);
-    currentLat = nextHydrant.numLatitude;
-    currentLng = nextHydrant.numLongitude;
+    if (nextHydrant.numLatitude !== undefined && nextHydrant.numLongitude !== undefined) {
+      currentLat = nextHydrant.numLatitude;
+      currentLng = nextHydrant.numLongitude;
+    }
   }
 
   return route;
 };
 
+export const optimizeRouteFromGama = optimizeRoute;
+
 /**
  * Dispara diretamente a impressão/geração de PDF do rascunho de campo da missão,
- * com cálculo de rota TSP partindo do Gama, sem abrir nenhuma tela intermediária.
+ * com cálculo de rota sequencial otimizada e tipografia de alta legibilidade.
  */
 export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', currentUser = null }) => {
   if (!mission) {
@@ -80,13 +85,13 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
       dscEndereco: 'Endereço não localizado na base',
       dscPontoReferencia: '',
       dscLocalidade: '',
-      numLatitude: GAMA_CENTER.lat,
-      numLongitude: GAMA_CENTER.lng
+      numLatitude: -15.794,
+      numLongitude: -47.882
     };
   });
 
-  // Ordenação TSP a partir do Centro do Gama
-  const orderedList = optimizeRouteFromGama(missionHydrants);
+  // Ordenação de rota otimizada
+  const orderedList = optimizeRoute(missionHydrants);
 
   // RAs presentes
   const rasSet = new Set(orderedList.map(h => normalizeRAName(h.dscLocalidade)).filter(Boolean));
@@ -98,7 +103,9 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
   // Nome e matrícula do militar
   const militarNome = currentUser?.nome || mission.createdByName || mission.createdBy || 'Vistoriador / Responsável';
   const militarMatricula = currentUser?.matricula ? `Matrícula: ${currentUser.matricula}` : '';
-  const missionName = mission.name || 'Ordem de Missão';
+  const currentYear = new Date().getFullYear();
+  const defaultCity = Array.from(rasSet)[0] || 'Brasília';
+  const missionName = mission.name || `${defaultCity} ${currentYear}`;
   const atribuicaoText = mission.atribuicao ? ` • Equipe: ${mission.atribuicao}` : '';
 
   // Cria janela de impressão
@@ -127,9 +134,8 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
         </td>
         <td class="col-obs">
           <div class="obs-lines">
-            <div class="obs-line"></div>
-            <div class="obs-line"></div>
-            <div class="obs-line"></div>
+            <div class="obs-line top-line"></div>
+            <div class="obs-line bottom-line"></div>
           </div>
         </td>
       </tr>
@@ -145,7 +151,7 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
       <style>
         @page {
           size: A4 portrait;
-          margin: 8mm 10mm 10mm 10mm;
+          margin: 8mm 8mm 8mm 8mm;
         }
         * {
           box-sizing: border-box;
@@ -156,46 +162,47 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
         }
         body {
           font-family: Arial, Helvetica, sans-serif;
-          color: #0f172a;
+          color: #000000;
           background: #ffffff;
           line-height: 1.3;
-          font-size: 11px;
-          padding: 10px;
+          font-size: 13px;
+          padding: 8px;
         }
         .header {
           text-align: center;
-          border-bottom: 2px solid #0f172a;
+          border-bottom: 2px solid #000000;
           padding-bottom: 8px;
-          margin-bottom: 10px;
+          margin-bottom: 8px;
         }
         .header h1 {
-          font-size: 13px;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          color: #0f172a;
-        }
-        .header h2 {
           font-size: 15px;
           font-weight: 900;
           text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: #000000;
+        }
+        .header h2 {
+          font-size: 17px;
+          font-weight: 900;
+          text-transform: uppercase;
           color: #1e3a8a;
-          margin: 2px 0;
+          margin: 3px 0;
         }
         .header .mission-title {
-          font-size: 12px;
-          font-weight: bold;
+          font-size: 15px;
+          font-weight: 900;
           color: #047857;
-          margin-top: 1px;
+          margin-top: 2px;
         }
         .header-meta {
           margin-top: 6px;
-          font-size: 10px;
-          color: #334155;
+          font-size: 12px;
+          font-weight: 600;
+          color: #1e293b;
           display: flex;
           flex-wrap: wrap;
           justify-content: center;
-          gap: 12px;
+          gap: 14px;
         }
         .header-meta span {
           white-space: nowrap;
@@ -205,105 +212,111 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
           width: 100%;
           border-collapse: collapse;
           margin-top: 6px;
-          font-size: 10.5px;
+          font-size: 13px;
         }
         th, td {
-          border: 1px solid #475569;
-          padding: 4px 6px;
+          border: 1.5px solid #000000;
+          padding: 5px 6px;
           vertical-align: middle;
         }
         th {
-          background-color: #f1f5f9 !important;
-          color: #0f172a;
-          font-weight: 800;
+          background-color: #e2e8f0 !important;
+          color: #000000;
+          font-weight: 900;
           text-transform: uppercase;
-          font-size: 10px;
+          font-size: 12.5px;
           text-align: center;
         }
         tr {
           page-break-inside: avoid;
         }
         .col-seq {
-          width: 32px;
+          width: 34px;
           text-align: center;
-          font-weight: bold;
+          font-weight: 900;
           font-family: monospace;
-          font-size: 11px;
-          color: #1e3a8a;
+          font-size: 14px;
+          color: #000000;
         }
         .col-code {
-          width: 95px;
+          width: 105px;
           text-align: center;
           font-family: monospace;
         }
         .code-text {
-          font-weight: bold;
-          font-size: 11px;
-          color: #0f172a;
+          font-weight: 900;
+          font-size: 14.5px;
+          color: #000000;
         }
         .ra-text {
-          font-size: 9px;
-          color: #0284c7;
+          font-size: 11.5px;
+          color: #0369a1;
           font-family: Arial, sans-serif;
-          font-weight: 600;
+          font-weight: 800;
+          margin-top: 1px;
         }
         .col-address {
           min-width: 220px;
           text-align: left;
         }
         .end-text {
-          font-weight: 600;
-          color: #0f172a;
-          font-size: 10.5px;
+          font-weight: 700;
+          color: #000000;
+          font-size: 13px;
+          line-height: 1.25;
         }
         .ref-text {
-          font-size: 9.5px;
-          color: #475569;
+          font-size: 11.5px;
+          color: #334155;
           font-style: italic;
           margin-top: 2px;
+          font-weight: 600;
         }
         .col-obs {
-          width: 240px;
-          height: 44px;
-          padding: 2px 4px;
+          width: 250px;
+          height: 52px;
+          padding: 4px 6px;
           background: #ffffff;
         }
         .obs-lines {
           height: 100%;
+          min-height: 44px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          padding: 1px 0;
+          padding: 2px 0;
         }
         .obs-line {
-          border-bottom: 1px dashed #94a3b8;
-          height: 12px;
+          border-bottom: 1.5px dashed #475569;
+          height: 18px;
         }
 
         .footer {
-          margin-top: 18px;
-          padding-top: 10px;
+          margin-top: 16px;
+          padding-top: 8px;
           text-align: center;
           page-break-inside: avoid;
         }
         .signature-line {
-          width: 260px;
-          border-top: 1px solid #0f172a;
+          width: 280px;
+          border-top: 1.5px solid #000000;
           margin: 0 auto 4px auto;
         }
         .sig-name {
-          font-weight: bold;
-          font-size: 11px;
-          color: #0f172a;
+          font-weight: 900;
+          font-size: 13px;
+          color: #000000;
         }
         .sig-mat {
-          font-size: 10px;
-          color: #475569;
+          font-size: 11.5px;
+          font-weight: 600;
+          color: #334155;
         }
         .sys-meta {
-          margin-top: 8px;
-          font-size: 8.5px;
-          color: #94a3b8;
+          margin-top: 6px;
+          font-size: 10px;
+          font-weight: 500;
+          color: #64748b;
         }
       </style>
     </head>
@@ -313,8 +326,6 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
         <h2>Ficha de Vistoria de Campo • Rascunho de Missão</h2>
         <div class="mission-title">🎯 ${missionName}${atribuicaoText}</div>
         <div class="header-meta">
-          <span><strong>Partida:</strong> Centro do Gama (Rota Otimizada)</span>
-          <span>•</span>
           <span><strong>Região/Quartel:</strong> ${rasText}</span>
           <span>•</span>
           <span><strong>Total:</strong> ${orderedList.length} hidrantes</span>
@@ -326,10 +337,10 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
       <table>
         <thead>
           <tr>
-            <th style="width: 32px;">Nº</th>
-            <th style="width: 95px;">CÓDIGO</th>
+            <th style="width: 34px;">Nº</th>
+            <th style="width: 105px;">CÓDIGO</th>
             <th>ENDEREÇO E PONTO DE REFERÊNCIA</th>
-            <th style="width: 240px;">ANOTAÇÕES / OBSERVAÇÕES DE CAMPO (À CANETA)</th>
+            <th style="width: 250px;">ANOTAÇÕES / OBSERVAÇÕES DE CAMPO (À CANETA)</th>
           </tr>
         </thead>
         <tbody>
@@ -341,7 +352,7 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
         <div class="signature-line"></div>
         <div class="sig-name">${militarNome}</div>
         ${militarMatricula ? `<div class="sig-mat">${militarMatricula}</div>` : ''}
-        <div class="sys-meta">Sistema Netuno • Ordem calculada a partir do Centro do Gama • Gerado em ${today} ${nowTime}</div>
+        <div class="sys-meta">Sistema Netuno • Gerado em ${today} às ${nowTime}</div>
       </div>
 
       <script>

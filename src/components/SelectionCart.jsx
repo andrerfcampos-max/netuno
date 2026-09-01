@@ -15,6 +15,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { fixEncoding } from '../utils/textUtils';
+import { normalizeRAName } from '../utils/raList';
 
 const SelectionCart = ({
   selectedIds = [],
@@ -66,9 +67,9 @@ const SelectionCart = ({
       const firstHydrant = hidrantes.find(h => 
         h.codHidrante === selectedIds[0] || h.nomHidrante === selectedIds[0] || h._internalId === selectedIds[0]
       );
-      const loc = firstHydrant?.dscLocalidade ? ` - ${fixEncoding(firstHydrant.dscLocalidade)}` : '';
-      const dateStr = new Date().toLocaleDateString('pt-BR');
-      setNewMissionName(`Missão ${dateStr}${loc} (${selectedIds.length})`);
+      const loc = firstHydrant?.dscLocalidade ? (normalizeRAName(firstHydrant.dscLocalidade) || fixEncoding(firstHydrant.dscLocalidade)) : 'Brasília';
+      const year = new Date().getFullYear();
+      setNewMissionName(`${loc} ${year}`);
     }
   }, [selectedIds.length, isOpen]);
 
@@ -250,7 +251,13 @@ const SelectionCart = ({
 
   // Submeter Criação de Nova Missão
   const handleConfirmCreateMission = () => {
-    const finalName = newMissionName.trim() || `Missão ${new Date().toLocaleDateString('pt-BR')} (${selectedIds.length})`;
+    const firstHydrant = hidrantes.find(h => 
+      h.codHidrante === selectedIds[0] || h.nomHidrante === selectedIds[0] || h._internalId === selectedIds[0]
+    );
+    const loc = firstHydrant?.dscLocalidade ? (normalizeRAName(firstHydrant.dscLocalidade) || fixEncoding(firstHydrant.dscLocalidade)) : 'Brasília';
+    const year = new Date().getFullYear();
+    const defaultName = `${loc} ${year}`;
+    const finalName = newMissionName.trim() || defaultName;
     if (onCreateMission) {
       onCreateMission({
         name: finalName,

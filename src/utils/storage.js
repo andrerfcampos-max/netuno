@@ -122,10 +122,12 @@ export const createNewFolder = (name, parentFolderId = null, gbmUnitId = null) =
   };
 };
 
-export const createNewMission = (name = "Rascunho de Hoje", parentFolderId = null, currentUser = null) => {
+export const createNewMission = (name = null, parentFolderId = null, currentUser = null) => {
+  const currentYear = new Date().getFullYear();
+  const defaultMissionName = (name && String(name).trim()) ? String(name).trim() : `Brasília ${currentYear}`;
   return {
     id: generateId(),
-    name,
+    name: defaultMissionName,
     atribuicao: "", // Ex: 'sehur', '16º GBM Ala B'
     parentFolderId,
     createdAt: new Date().toISOString(),

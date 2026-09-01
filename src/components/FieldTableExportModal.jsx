@@ -20,14 +20,16 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
-// Algoritmo Vizinho Mais Próximo saindo do Centro do Gama
+// Algoritmo Vizinho Mais Próximo para ordenação da rota
 const optimizeRouteFromGama = (hidrantes) => {
   if (!hidrantes || hidrantes.length === 0) return [];
   
   let unvisited = [...hidrantes];
   let route = [];
-  let currentLat = GAMA_CENTER.lat;
-  let currentLng = GAMA_CENTER.lng;
+  let current = unvisited.shift();
+  route.push(current);
+  let currentLat = current.numLatitude;
+  let currentLng = current.numLongitude;
 
   while (unvisited.length > 0) {
     let nearestIdx = 0;
@@ -44,8 +46,10 @@ const optimizeRouteFromGama = (hidrantes) => {
 
     const nextHydrant = unvisited.splice(nearestIdx, 1)[0];
     route.push(nextHydrant);
-    currentLat = nextHydrant.numLatitude;
-    currentLng = nextHydrant.numLongitude;
+    if (nextHydrant.numLatitude !== undefined && nextHydrant.numLongitude !== undefined) {
+      currentLat = nextHydrant.numLatitude;
+      currentLng = nextHydrant.numLongitude;
+    }
   }
 
   return route;
@@ -261,8 +265,6 @@ const FieldTableExportModal = ({ isOpen, onClose, hidrantes = [], activeFilters 
               Ficha de Vistoria de Campo - Rota Otimizada de Trânsito
             </h2>
             <div className="mt-2 text-xs text-slate-300 print-text-black flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-              <span><strong>Ponto de Saída da Rota:</strong> Centro do Gama</span>
-              <span>•</span>
               <span><strong>Regiões (RAs):</strong> {rasPresentes || 'Distrito Federal'}</span>
               <span>•</span>
               <span><strong>Total:</strong> {orderedList.length} hidrantes</span>

@@ -774,7 +774,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
                                               }
                                             }}
                                             className="p-1.5 px-2.5 bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 border border-indigo-500/40 rounded-lg transition-all shrink-0 active:scale-95 flex items-center gap-1 text-xs font-semibold cursor-pointer"
-                                            title="Imprimir rascunho de campo com rota partindo do Gama"
+                                            title="Imprimir rascunho de campo da missão"
                                           >
                                             <Printer size={14} />
                                             <span className="hidden sm:inline">Rascunho</span>
@@ -1009,7 +1009,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
                       });
                     }}
                     className="flex-1 sm:flex-none px-3.5 py-2 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer text-xs sm:text-sm shadow-sm"
-                    title="Imprimir rascunho de campo com rota otimizada partindo do Gama"
+                    title="Imprimir rascunho de campo da missão"
                   >
                     <Printer size={16} />
                     <span>Imprimir rascunho</span>

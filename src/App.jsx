@@ -604,10 +604,15 @@ function App() {
 
   const handleCreateMissionFromCart = (missionParams = {}) => {
     if (cartSelectionIds.length === 0) return;
-    const dateStr = new Date().toLocaleDateString('pt-BR');
+    const year = new Date().getFullYear();
+    const firstHydrant = hidrantes.find(h => 
+      cartSelectionIds.includes(h.codHidrante) || cartSelectionIds.includes(h.nomHidrante) || cartSelectionIds.includes(h._internalId)
+    );
+    const loc = firstHydrant?.dscLocalidade ? (normalizeRAName(firstHydrant.dscLocalidade) || fixEncoding(firstHydrant.dscLocalidade)) : (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Brasília');
+    const defaultName = `${loc} ${year}`;
     const finalName = (missionParams.name && missionParams.name.trim()) 
       ? missionParams.name.trim() 
-      : `Missão ${dateStr} (${cartSelectionIds.length})`;
+      : defaultName;
     const targetFolderId = missionParams.parentFolderId || null;
 
     const newMission = createNewMission(finalName, targetFolderId, currentUser);
@@ -990,7 +995,16 @@ function App() {
   const handleNewMission = (parentFolderId = null) => {
     const defaultFolder = localStorage.getItem('netuno_default_folder') || null;
     const targetFolderId = parentFolderId !== null ? parentFolderId : defaultFolder;
-    const newMission = createNewMission("Rascunho de Hoje", targetFolderId, currentUser);
+    const folder = folders.find(f => f.id === targetFolderId);
+    let cityName = 'Brasília';
+    if (folder?.name) {
+      cityName = normalizeRAName(folder.name) || folder.name.replace(/^\d+º\s*GBM\s*-\s*/i, '').trim();
+    } else if (activeFilters?.ra) {
+      cityName = normalizeRAName(activeFilters.ra) || activeFilters.ra;
+    }
+    const year = new Date().getFullYear();
+    const defaultName = `${cityName} ${year}`;
+    const newMission = createNewMission(defaultName, targetFolderId, currentUser);
     newMission.createdBy = currentUser?.matricula;
     newMission.createdByName = currentUser?.nome;
     setMissions(prev => [...prev, newMission]);
