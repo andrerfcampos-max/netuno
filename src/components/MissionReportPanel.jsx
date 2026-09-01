@@ -14,6 +14,13 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   });
 
   const isGestorOrAdmin = currentUser?.role === 'admin' || currentUser?.role === 'gestor';
+  const isVistoriador = currentUser?.role === 'vistoriador';
+
+  useEffect(() => {
+    if (isVistoriador && reportType !== 'interno') {
+      setReportType('interno');
+    }
+  }, [isVistoriador, reportType]);
 
   useEffect(() => {
     localStorage.setItem('lastReportType', reportType);
@@ -393,41 +400,62 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       
       if (reportType === 'interno') {
         html += `<tr style="background-color: #f1f5f9; font-weight: bold;">
-          <th style="padding: 6px; text-align: left;">CÓDIGO</th>
-          <th style="padding: 6px; text-align: left;">ENDEREÇO</th>
-          <th style="padding: 6px; text-align: left;">PONTO DE REFERÊNCIA</th>
-          <th style="padding: 6px; text-align: left;">DATA DA VISTORIA</th>
-          <th style="padding: 6px; text-align: left;">VISTORIADOR</th>
-          <th style="padding: 6px; text-align: center;">SITUAÇÃO</th>
-          <th style="padding: 6px; text-align: left;">PROBLEMAS ENCONTRADOS</th>
-          <th style="padding: 6px; text-align: left;">OBSERVAÇÕES</th>
-          <th style="padding: 6px; text-align: center;">LOCALIZAÇÃO</th>
+          <th style="padding: 6px; text-align: left; width: 15%;">CÓDIGO / DATA</th>
+          <th style="padding: 6px; text-align: left; width: 30%;">ENDEREÇO E REFERÊNCIA</th>
+          <th style="padding: 6px; text-align: left; width: 15%;">VISTORIADOR</th>
+          <th style="padding: 6px; text-align: left; width: 30%;">SITUAÇÃO / PROBLEMAS / OBSERVAÇÕES</th>
+          <th style="padding: 6px; text-align: center; width: 10%;">LOCALIZAÇÃO</th>
         </tr>`;
       } else {
         html += `<tr style="background-color: #f1f5f9; font-weight: bold;">
-          <th style="padding: 6px; text-align: left;">CÓDIGO</th>
-          <th style="padding: 6px; text-align: left;">ENDEREÇO</th>
-          <th style="padding: 6px; text-align: left;">PONTO DE REFERÊNCIA</th>
-          <th style="padding: 6px; text-align: left;">PROBLEMA DO HIDRANTE</th>
-          <th style="padding: 6px; text-align: center;">LOCALIZAÇÃO</th>
+          <th style="padding: 6px; text-align: left; width: 18%;">CÓDIGO / DATA</th>
+          <th style="padding: 6px; text-align: left; width: 37%;">ENDEREÇO E REFERÊNCIA</th>
+          <th style="padding: 6px; text-align: left; width: 35%;">PROBLEMAS / OBSERVAÇÕES</th>
+          <th style="padding: 6px; text-align: center; width: 10%;">LOCALIZAÇÃO</th>
         </tr>`;
       }
       
       currentData.forEach(h => {
         const wazeLink = `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`;
+        const code = h.nomHidrante || h.codHidrante;
+        const dataVis = formatDateOnly(h.datHoraUltimaVistoria || h.datHoraVistoria);
+        const end = fixEncoding(h.dscEndereco) || h.dscLocalidade || '-';
+        const ref = h.dscPontoReferencia ? `Ref: ${fixEncoding(h.dscPontoReferencia)}` : '';
+        const prob = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '');
+        const obs = h.dscObservacao || h.observacoes || h.obsVistoria || '';
+
         html += `<tr>`;
-        html += `<td style="padding: 6px; font-weight: bold;">${h.nomHidrante || h.codHidrante}</td>`;
-        html += `<td style="padding: 6px;">${h.dscEndereco || h.dscLocalidade || '-'}</td>`;
-        html += `<td style="padding: 6px;">${h.dscPontoReferencia || '-'}</td>`;
+        // Coluna Código / Data
+        html += `<td style="padding: 6px; font-weight: bold;">
+          <div style="font-size: 12px; color: #0f172a;">${code}</div>
+          <div style="font-size: 10px; color: #64748b; font-weight: normal; margin-top: 2px;">${dataVis}</div>
+        </td>`;
+
+        // Coluna Endereço e Ponto de Referência
+        html += `<td style="padding: 6px;">
+          <div>${end}</div>
+          ${ref ? `<div style="font-size: 10px; color: #64748b; margin-top: 2px; font-style: italic;">${ref}</div>` : ''}
+        </td>`;
+
         if (reportType === 'interno') {
-          html += `<td style="padding: 6px;">${formatDateOnly(h.datHoraUltimaVistoria)}</td>`;
-          html += `<td style="padding: 6px;">${h.vistoriadorNome || '-'}</td>`;
-          html += `<td style="padding: 6px; text-align: center; color: ${h.flgAtivo ? '#166534' : '#991b1b'}; font-weight: bold; background-color: ${h.flgAtivo ? '#f0fdf4' : '#fef2f2'};">${h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}</td>`;
-          html += `<td style="padding: 6px; color: #991b1b; font-weight: ${!h.flgAtivo ? 'bold' : 'normal'};">${h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}</td>`;
-          html += `<td style="padding: 6px;">${h.dscObservacao || h.observacoes || h.obsVistoria || '-'}</td>`;
+          // Vistoriador
+          html += `<td style="padding: 6px; font-weight: bold; color: #047857;">${h.vistoriadorNome || '-'}</td>`;
+
+          // Situação / Problemas / Observações
+          html += `<td style="padding: 6px;">
+            <div style="font-weight: bold; color: ${h.flgAtivo ? '#166534' : '#dc2626'};">${h.flgAtivo ? '● OPERANTE' : '● INOPERANTE'}</div>
+            ${prob ? `<div style="color: #b91c1c; font-size: 10.5px; margin-top: 2px;"><strong>Problemas:</strong> ${prob}</div>` : ''}
+            ${obs ? `<div style="color: #475569; font-size: 10px; margin-top: 2px; font-style: italic;"><strong>Obs:</strong> ${obs}</div>` : ''}
+          </td>`;
         } else {
-          html += `<td style="padding: 6px; color: #991b1b; font-weight: bold;">${h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}</td>`;
+          // CAESB: Problemas e Observações
+          html += `<td style="padding: 6px;">
+            <div style="color: #dc2626; font-weight: bold;">${prob || 'INOPERANTE (Necessita Reparo)'}</div>
+            ${obs ? `<div style="color: #475569; font-size: 10px; margin-top: 2px; font-style: italic;"><strong>Obs:</strong> ${obs}</div>` : ''}
+          </td>`;
         }
+
+        // Localização
         html += `<td style="padding: 6px; text-align: center;"><a href="${wazeLink}" style="color: #2563eb; text-decoration: underline;">Waze</a></td>`;
         html += `</tr>`;
       });
@@ -567,12 +595,12 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     let rows = [];
     
     if (reportType === 'interno') {
-      headers = ["CÓDIGO", "ENDEREÇO", "PONTO DE REFERÊNCIA", "DATA DA VISTORIA", "VISTORIADOR", "SITUAÇÃO ATUAL", "PROBLEMAS ENCONTRADOS", "OBSERVAÇÕES", "LOCALIZAÇÃO"];
+      headers = ["CÓDIGO", "DATA DA VISTORIA", "ENDEREÇO", "PONTO DE REFERÊNCIA", "VISTORIADOR", "SITUAÇÃO ATUAL", "PROBLEMAS ENCONTRADOS", "OBSERVAÇÕES", "LOCALIZAÇÃO"];
       rows = currentData.map(h => [
         h.nomHidrante || h.codHidrante || '',
-        h.dscEndereco || h.dscLocalidade || '',
-        h.dscPontoReferencia || '',
         formatDateOnly(h.datHoraUltimaVistoria),
+        (fixEncoding(h.dscEndereco) || h.dscLocalidade || '').replace(/[;|]/g, ' - '),
+        (fixEncoding(h.dscPontoReferencia) || '').replace(/[;|]/g, ' - '),
         h.vistoriadorNome || '',
         h.flgAtivo ? 'OPERANTE' : 'INOPERANTE',
         (sanitizeProblem(h.problemasHidrante) || '').replace(/[;|]/g, ' - '),
@@ -580,12 +608,14 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`
       ]);
     } else {
-      headers = ["CÓDIGO", "ENDEREÇO", "PONTO DE REFERÊNCIA", "PROBLEMA DO HIDRANTE", "LOCALIZAÇÃO"];
+      headers = ["CÓDIGO", "DATA DA VISTORIA", "ENDEREÇO", "PONTO DE REFERÊNCIA", "PROBLEMA DO HIDRANTE", "OBSERVAÇÕES", "LOCALIZAÇÃO"];
       rows = currentData.map(h => [
         h.nomHidrante || h.codHidrante || '',
-        h.dscEndereco || h.dscLocalidade || '',
-        h.dscPontoReferencia || '',
+        formatDateOnly(h.datHoraUltimaVistoria),
+        (fixEncoding(h.dscEndereco) || h.dscLocalidade || '').replace(/[;|]/g, ' - '),
+        (fixEncoding(h.dscPontoReferencia) || '').replace(/[;|]/g, ' - '),
         (sanitizeProblem(h.problemasHidrante) || '').replace(/[;|]/g, ' - '),
+        (h.dscObservacao || h.observacoes || h.obsVistoria || '').replace(/[;|]/g, ' - '),
         `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`
       ]);
     }
@@ -787,26 +817,32 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           </div>
         </div>
         
-        <div className="flex bg-slate-900/80 rounded-xl p-1 w-full lg:w-auto shadow-inner border border-slate-700/80">
-          <button 
-            onClick={() => {
-              setReportType('interno');
-              setIsExportMenuOpen(false);
-            }}
-            className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${reportType === 'interno' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-          >
-            <ShieldHalf size={15} /> Relatório Geral (CBMDF)
-          </button>
-          <button 
-            onClick={() => {
-              setReportType('caesb');
-              setIsExportMenuOpen(false);
-            }}
-            className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${reportType === 'caesb' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-          >
-            <Building2 size={15} /> Relatório de Alterações (CAESB)
-          </button>
-        </div>
+        {currentUser?.role !== 'vistoriador' ? (
+          <div className="flex bg-slate-900/80 rounded-xl p-1 w-full lg:w-auto shadow-inner border border-slate-700/80">
+            <button 
+              onClick={() => {
+                setReportType('interno');
+                setIsExportMenuOpen(false);
+              }}
+              className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${reportType === 'interno' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <ShieldHalf size={15} /> Relatório Geral (CBMDF)
+            </button>
+            <button 
+              onClick={() => {
+                setReportType('caesb');
+                setIsExportMenuOpen(false);
+              }}
+              className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${reportType === 'caesb' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <Building2 size={15} /> Relatório de Alterações (CAESB)
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-950/80 border border-emerald-500/40 rounded-xl text-emerald-300 font-bold text-xs sm:text-sm shadow-md">
+            <ShieldHalf size={16} /> Relatório Geral da Missão (CBMDF)
+          </div>
+        )}
 
         {/* Controles Desktop */}
         <div className="hidden lg:flex items-center gap-2">
@@ -1220,88 +1256,118 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         )}
 
         {/* TABELA CONSOLIDADA */}
-        <div className="page-break-inside-avoid">
+        <div className="page-break-inside-avoid w-full">
           <h3 className="text-lg font-bold text-slate-200 mb-4 print-text-black border-b border-slate-700 print-border-gray pb-2 flex items-center gap-2">
             {reportType === 'interno' ? 'Relação Geral de Hidrantes' : 'Lista de Hidrantes com Problemas'}
           </h3>
-          <div className="overflow-x-auto shadow-md rounded-lg">
-            <table className="w-full text-left text-sm text-slate-300 print-text-black print-table">
-              <thead className="text-xs text-slate-400 uppercase bg-slate-700/80 print-bg-gray print-text-black">
+          <div className="w-full border border-slate-700/80 rounded-xl shadow-md overflow-hidden bg-slate-900/50 print-bg-white print-border-black">
+            <table className="w-full text-left text-xs sm:text-sm text-slate-300 print-text-black print-table border-collapse">
+              <thead className="text-xs text-slate-400 uppercase bg-slate-800/90 border-b border-slate-700 print-bg-gray print-text-black">
                 {reportType === 'interno' ? (
                   <tr>
-                    <th className="px-4 py-3 rounded-tl-lg print-border">CÓDIGO</th>
-                    <th className="px-4 py-3 print-border">ENDEREÇO</th>
-                    <th className="px-4 py-3 print-border">PONTO DE REF.</th>
-                    <th className="px-4 py-3 print-border">DATA VISTORIA</th>
-                    <th className="px-4 py-3 print-border">VISTORIADOR</th>
-                    <th className="px-4 py-3 print-border text-center">SITUAÇÃO</th>
-                    <th className="px-4 py-3 print-border">PROBLEMAS</th>
-                    <th className="px-4 py-3 print-border">OBSERVAÇÕES</th>
-                    <th className="px-4 py-3 rounded-tr-lg print-border text-center no-print">LOCALIZAÇÃO</th>
+                    <th className="px-3 py-3 w-28 sm:w-36 print-border">CÓDIGO / DATA</th>
+                    <th className="px-3 py-3 min-w-[160px] print-border">ENDEREÇO E REF.</th>
+                    <th className="px-3 py-3 w-28 sm:w-36 print-border">VISTORIADOR</th>
+                    <th className="px-3 py-3 min-w-[200px] print-border">SITUAÇÃO / PROBLEMAS / OBS.</th>
+                    <th className="px-3 py-3 w-16 text-center print-border no-print">LOCAL</th>
                   </tr>
                 ) : (
                   <tr>
-                    <th className="px-4 py-3 rounded-tl-lg print-border">CÓDIGO</th>
-                    <th className="px-4 py-3 print-border">ENDEREÇO</th>
-                    <th className="px-4 py-3 print-border">PONTO DE REF.</th>
-                    <th className="px-4 py-3 print-border">PROBLEMA DO HIDRANTE</th>
-                    <th className="px-4 py-3 rounded-tr-lg print-border text-center no-print">LOCALIZAÇÃO</th>
+                    <th className="px-3 py-3 w-28 sm:w-36 print-border">CÓDIGO / DATA</th>
+                    <th className="px-3 py-3 min-w-[200px] print-border">ENDEREÇO E REF.</th>
+                    <th className="px-3 py-3 min-w-[240px] print-border">PROBLEMAS / OBSERVAÇÕES</th>
+                    <th className="px-3 py-3 w-16 text-center print-border no-print">LOCAL</th>
                   </tr>
                 )}
               </thead>
-              <tbody className="divide-y divide-slate-700/50 print-divide-gray bg-slate-800/30 print-bg-transparent">
-                {currentData.map((h, i) => (
-                  <tr key={h.codHidrante || h.nomHidrante || i} className="hover:bg-slate-700/50 transition-colors print-row-avoid">
-                    <td className="px-4 py-3 font-medium text-slate-100 print-text-black print-border">
-                      {h.nomHidrante || h.codHidrante}
-                    </td>
-                    <td className="px-4 py-3 text-slate-300 print-text-black print-border whitespace-normal" title={h.dscEndereco || h.dscLocalidade}>
-                      {h.dscEndereco || h.dscLocalidade || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-400 print-text-black print-border whitespace-normal" title={h.dscPontoReferencia}>
-                      {h.dscPontoReferencia || '-'}
-                    </td>
-                    
-                    {reportType === 'interno' ? (
-                      <>
-                        <td className="px-4 py-3 whitespace-nowrap print-border text-xs">{formatDateOnly(h.datHoraUltimaVistoria)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap print-border text-emerald-300 print-text-black text-xs font-bold">{h.vistoriadorNome || '-'}</td>
-                        <td className={`px-4 py-3 font-bold text-center ${h.flgAtivo ? 'text-emerald-400' : 'text-red-400'} print-text-black print-border`}>
-                          {h.flgAtivo ? 'OPERANTE' : 'INOPERANTE'}
-                        </td>
-                        <td className="px-4 py-3 text-red-300 print-text-black print-border whitespace-normal text-xs" title={sanitizeProblem(h.problemasHidrante)}>
-                          {h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}
-                        </td>
-                        <td className="px-4 py-3 text-slate-400 print-text-black print-border whitespace-normal text-xs" title={h.dscObservacao || h.observacoes || h.obsVistoria}>
-                          {h.dscObservacao || h.observacoes || h.obsVistoria || '-'}
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-4 py-3 font-bold text-red-400 print-text-black print-border whitespace-normal text-xs" title={sanitizeProblem(h.problemasHidrante)}>
-                          <div>
-                            {h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '-')}
-                          </div>
-                          {(h.dscObservacao || h.observacoes || h.obsVistoria) && (
-                            <div className="mt-1 text-[11px] font-normal text-slate-300 print-text-black italic bg-slate-900/40 print-bg-transparent p-1 rounded border border-slate-700/50 print-border-0">
-                              <span className="font-semibold text-slate-400 print-text-black not-italic">Obs: </span>
-                              {h.dscObservacao || h.observacoes || h.obsVistoria}
+              <tbody className="divide-y divide-slate-700/60 print-divide-gray bg-slate-900/30 print-bg-transparent">
+                {currentData.map((h, i) => {
+                  const code = h.nomHidrante || h.codHidrante;
+                  const dataVis = formatDateOnly(h.datHoraUltimaVistoria || h.datHoraVistoria);
+                  const end = fixEncoding(h.dscEndereco) || h.dscLocalidade || '-';
+                  const ref = h.dscPontoReferencia ? fixEncoding(h.dscPontoReferencia) : '';
+                  const prob = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'INOPERANTE' : '');
+                  const obs = h.dscObservacao || h.observacoes || h.obsVistoria || '';
+
+                  return (
+                    <tr key={h.codHidrante || h.nomHidrante || h._internalId || i} className="hover:bg-slate-800/60 transition-colors print-row-avoid">
+                      {/* Código e Data na Mesma Célula */}
+                      <td className="px-3 py-2.5 font-medium text-slate-100 print-text-black print-border align-top">
+                        <div className="font-bold text-sm text-slate-100 print-text-black font-mono">{code}</div>
+                        <div className="text-[11px] text-slate-400 print-text-black font-normal mt-0.5">{dataVis}</div>
+                      </td>
+
+                      {/* Endereço e Referência na Mesma Célula */}
+                      <td className="px-3 py-2.5 text-slate-300 print-text-black print-border align-top">
+                        <div className="font-medium text-xs sm:text-sm text-slate-200 print-text-black leading-tight">{end}</div>
+                        {ref && (
+                          <div className="text-[11px] text-slate-400 print-text-black italic mt-0.5">Ref: {ref}</div>
+                        )}
+                      </td>
+                      
+                      {reportType === 'interno' ? (
+                        <>
+                          {/* Vistoriador */}
+                          <td className="px-3 py-2.5 text-xs text-emerald-300 print-text-black font-bold print-border align-top whitespace-nowrap">
+                            {h.vistoriadorNome || '-'}
+                          </td>
+
+                          {/* Situação, Problemas e Observações Fundidos na Mesma Célula com Quebra de Linha */}
+                          <td className="px-3 py-2.5 text-xs print-border align-top">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black tracking-wide ${
+                                h.flgAtivo 
+                                  ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 print-bg-transparent print-text-black' 
+                                  : 'bg-red-950/80 text-red-300 border border-red-500/40 print-bg-transparent print-text-black'
+                              }`}>
+                                {h.flgAtivo ? '● OPERANTE' : '● INOPERANTE'}
+                              </span>
                             </div>
-                          )}
-                        </td>
-                      </>
-                    )}
-                    
-                    <td className="px-4 py-3 text-center print-border no-print">
-                      <a href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`} target="_blank" rel="noreferrer" className="inline-block bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-3 py-1 rounded text-xs font-bold transition-all whitespace-nowrap">
-                        Waze
-                      </a>
-                    </td>
-                  </tr>
-                ))}
+
+                            {prob && (
+                              <div className="text-red-300 print-text-black font-semibold text-[11px] leading-tight mt-1">
+                                <span className="text-red-400 font-bold">Problemas: </span>
+                                {prob}
+                              </div>
+                            )}
+
+                            {obs && (
+                              <div className="text-slate-400 print-text-black text-[11px] italic bg-slate-950/50 print-bg-transparent p-1 rounded border border-slate-800 print-border-0 mt-1">
+                                <span className="font-semibold text-slate-300 print-text-black not-italic">Obs: </span>
+                                {obs}
+                              </div>
+                            )}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          {/* CAESB: Problemas e Observações */}
+                          <td className="px-3 py-2.5 text-xs font-bold text-red-400 print-text-black print-border align-top">
+                            <div className="leading-tight">
+                              {prob || 'INOPERANTE (Necessita Manutenção)'}
+                            </div>
+                            {obs && (
+                              <div className="mt-1 text-[11px] font-normal text-slate-300 print-text-black italic bg-slate-950/50 print-bg-transparent p-1 rounded border border-slate-800 print-border-0">
+                                <span className="font-semibold text-slate-400 print-text-black not-italic">Obs: </span>
+                                {obs}
+                              </div>
+                            )}
+                          </td>
+                        </>
+                      )}
+                      
+                      {/* Localização Waze */}
+                      <td className="px-2 py-2.5 text-center print-border no-print align-middle">
+                        <a href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`} target="_blank" rel="noreferrer" className="inline-block bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded text-xs font-bold transition-all whitespace-nowrap">
+                          Waze
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {currentData.length === 0 && (
                   <tr>
-                    <td colSpan={reportType === 'interno' ? 9 : 5} className="px-4 py-12 text-center text-slate-500 print-border text-lg font-bold">
+                    <td colSpan={reportType === 'interno' ? 5 : 4} className="px-4 py-12 text-center text-slate-500 print-border text-base font-bold">
                       Nenhum hidrante correspondente aos filtros.
                     </td>
                   </tr>

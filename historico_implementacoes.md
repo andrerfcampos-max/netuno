@@ -507,8 +507,30 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Linha 3: Bloco de endereço e referência legíveis com alerta de defeito destacado.
   - Linha 4: Botões grandes e ergonômicos de ação tática (`Navegar para o próximo` no Waze + `+ VISTORIA`).
 - **3. Adequação Resiliente de UI para Perfis Vistoriador e Gestor:**
-  - O perfil Vistoriador conta com interface limpa e focada em deslocamento e vistoria rápida.
-  - O perfil Gestor mantém acesso direto a atalhos de edição e exclusão de missão sem quebrar a proporção do layout ou empurrar textos para fora da tela.
+### [01/09/2026] Etapa 66 Concluída: Exclusão de Hidrante na Edição, Compactação e Largura Total do Relatório, Relatório de Missão para Vistoriador, Navegação por Perfil e Tabela de Campo do Gama
+- **1. Exclusão de Hidrantes na Tela de Edição (`EditHydrantModal.jsx`, `App.jsx`):**
+  - Adicionado botão de 'Excluir Hidrante' com destaque em vermelho e ícone `Trash2` na tela de cadastro/edição para hidrantes existentes, disponível para perfis `gestor` e `admin`.
+  - Inserido modal de confirmação de segurança com aviso explícito de ação irreversível antes de efetivar a remoção da base de dados e sincronizar com nuvem.
+- **2. Compactação e Otimização de Largura do Relatório de Vistoria (`MissionReportPanel.jsx`):**
+  - Tabela consolidada expandida para 100% da largura útil da tela no Desktop, eliminando necessidade de scrollbar horizontal distante.
+  - Fusão dos campos **Situação, Problemas e Observações** em uma única célula estilizada com badges de status, alerta de problemas técnicos e anotações em linha fluida.
+  - Fusão do **Código do Hidrante e Data da Vistoria** na mesma célula (código em destaque mono e data logo abaixo).
+  - Atualização dos exportadores SEI, PDF e CSV para refletir as colunas compactas.
+- **3. Liberação do Relatório de Missão para o Perfil Vistoriador (`MissionRoutePanel.jsx`, `MissionReportPanel.jsx`):**
+  - Habilitado o botão 'Relatório da Missão' no rodapé do painel de rotas para o perfil `vistoriador`.
+  - Para o vistoriador, a visualização fica travada exclusivamente no **Relatório Geral (CBMDF)**, com ocultação das abas e botões institucionais da CAESB.
+- **4. Sincronização Automática de Cidade (RA) ao Navegar da Rota para o Mapa (`App.jsx`):**
+  - Ao clicar em `[📍 Mapa]` em qualquer hidrante na Rota de Missão, o filtro de localidade (`activeFilters.ra`) é atualizado instantaneamente para a cidade do hidrante selecionado, assegurando plotagem e abertura do pino no mapa sem conflito de filtros.
+- **5. Mensagem Orientativa na Rota Vazia para Vistoriadores (`MissionRoutePanel.jsx`):**
+  - Quando a rota estiver vazia para o perfil vistoriador, exibe a orientação: *"Para cumprir a missão de vistoria do seu quartel, clique na Central de Missões"*, com botão de atalho direto para a Central de Missões.
+- **6. Navegação Adaptada por Perfil de Usuário (`App.jsx`):**
+  - Para o perfil `vistoriador`, a aba/botão "Lista" foi substituída pelo acesso à "Central de Missões" tanto no Desktop quanto na Bottom Bar Mobile (`[🗺️ Mapa]`, `[🏢 Central de Missões]`, `[🧭 Rota de Missão]`).
+  - Gestores e administradores continuam com a navegação completa de 4 botões (`[Mapa]`, `[Lista]`, `[Rota]`, `[Relatórios]`).
+- **7. Novo Módulo: Ficha de Campo para Impressão com Rota Saindo do Gama (`FieldTableExportModal.jsx`, `App.jsx`):**
+  - Criado modal dedicado no menu suspenso de Gestor/Admin: 'Tabela de Campo (Gama)'.
+  - Ordenação automática dos hidrantes filtrados via algoritmo TSP/vizinho mais próximo com ponto de partida fixo no **Centro do Gama** (`lat: -16.015, lng: -48.065`).
+  - Layout A4 pronto para impressão contendo Nº da sequência, Código/RA, Endereço com Ponto de Referência e coluna ampla pautada para anotações manuais à caneta "à moda antiga".
+  - Botões de exportação integrados: Impressão / PDF, Exportar CSV, Compartilhar WhatsApp e Copiar Dados.
 
 
 

@@ -31,10 +31,11 @@ const normalizeStr = (s) => {
     .trim();
 };
 
-const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes = [] }) => {
+const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentUser, allHidrantes = [] }) => {
   const isNew = !hidrante._internalId && !hidrante.codHidrante && !hidrante.nomHidrante;
   const initialCode = fixEncoding(hidrante.nomHidrante || hidrante.codHidrante || '');
   const initialRA = normalizeRAName(hidrante.dscLocalidade) || '';
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   
   // Lista de RAs rigorosamente em ordem alfabética
   const sortedRAList = useMemo(() => {
@@ -772,21 +773,36 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
           </div>
 
           {/* Footer Fixo sempre visível e nunca sobreposto */}
-          <div className="p-4 bg-slate-900 border-t border-slate-700/80 flex gap-3 shrink-0 z-30">
-            <button 
-              type="button" 
-              onClick={onClose} 
-              className="w-1/2 py-2.5 bg-slate-800 text-slate-300 border border-slate-700 font-bold rounded-lg hover:bg-slate-700 hover:text-white transition-colors active:scale-95 text-sm cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button 
-              type="submit" 
-              className="w-1/2 py-2.5 bg-emerald-600 text-white font-bold rounded-lg shadow-lg shadow-emerald-950/50 hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 active:scale-95 text-sm cursor-pointer"
-            >
-              <Save size={18} />
-              {isNew ? 'Salvar Hidrante' : 'Salvar Alterações'}
-            </button>
+          <div className="p-4 bg-slate-900 border-t border-slate-700/80 flex items-center justify-between gap-2 sm:gap-3 shrink-0 z-30">
+            {!isNew && (currentUser?.role === 'gestor' || currentUser?.role === 'admin') && onDeleteHydrant ? (
+              <button 
+                type="button" 
+                onClick={() => setShowConfirmDelete(true)} 
+                className="py-2.5 px-3 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800/80 font-bold rounded-lg transition-colors active:scale-95 text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shrink-0"
+                title="Excluir hidrante permanentemente da base"
+              >
+                <Trash2 size={16} className="text-red-400" />
+                <span className="hidden sm:inline">Excluir Hidrante</span>
+                <span className="sm:hidden">Excluir</span>
+              </button>
+            ) : null}
+
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-end">
+              <button 
+                type="button" 
+                onClick={onClose} 
+                className="py-2.5 px-4 bg-slate-800 text-slate-300 border border-slate-700 font-bold rounded-lg hover:bg-slate-700 hover:text-white transition-colors active:scale-95 text-xs sm:text-sm cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                className="py-2.5 px-4 bg-emerald-600 text-white font-bold rounded-lg shadow-lg shadow-emerald-950/50 hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 active:scale-95 text-xs sm:text-sm cursor-pointer"
+              >
+                <Save size={18} />
+                {isNew ? 'Salvar Hidrante' : 'Salvar Alterações'}
+              </button>
+            </div>
           </div>
         </form>
 
@@ -822,6 +838,43 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, currentUser, allHidrantes
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition-colors shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Save size={14} /> Salvar Alterações
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Confirmação: Excluir Hidrante */}
+        {showConfirmDelete && (
+          <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-red-500/50 rounded-2xl p-5 max-w-md w-full shadow-2xl flex flex-col gap-4 animate-scaleUp">
+              <div className="flex items-center gap-2.5 text-red-400 border-b border-slate-800 pb-3">
+                <Trash2 size={22} />
+                <h3 className="text-base font-bold text-white">Excluir Hidrante da Base</h3>
+              </div>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Tem certeza que deseja <strong className="text-red-400">EXCLUIR PERMANENTEMENTE</strong> o hidrante <strong className="text-white font-mono">{formData.codHidrante || initialCode}</strong> ({formData.dscLocalidade || 'DF'}) da base de dados? Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-end mt-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmDelete(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg text-xs transition-colors border border-slate-700 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onDeleteHydrant) {
+                      onDeleteHydrant(hidrante);
+                    }
+                    setShowConfirmDelete(false);
+                    onClose();
+                  }}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-xs transition-colors shadow-lg shadow-red-950/50 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 size={14} /> Confirmar Exclusão
                 </button>
               </div>
             </div>

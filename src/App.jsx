@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, Suspense, lazy } from 'react';
-import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw } from 'lucide-react';
+import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw, FileSpreadsheet } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
@@ -19,6 +19,7 @@ const TechnicalStudyModal = lazy(() => import('./components/TechnicalStudyModal'
 const BuildingStudiesModal = lazy(() => import('./components/BuildingStudiesModal'));
 const InconsistentHydrantsModal = lazy(() => import('./components/InconsistentHydrantsModal'));
 const CloudConfigModal = lazy(() => import('./components/CloudConfigModal'));
+const FieldTableExportModal = lazy(() => import('./components/FieldTableExportModal'));
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders } from './utils/storage';
 import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime } from './services/syncService';
@@ -243,8 +244,24 @@ function App() {
   const [isBuildingStudiesOpen, setIsBuildingStudiesOpen] = useState(false);
   const [isInconsistentModalOpen, setIsInconsistentModalOpen] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
+  const [isFieldTableOpen, setIsFieldTableOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  // Centraliza o hidrante no mapa e sincroniza automaticamente a cidade (RA) do filtro
+  const handleFocusHydrantOnMap = (h) => {
+    if (!h) return;
+    const hydrantRA = normalizeRAName(h.dscLocalidade);
+    if (hydrantRA && activeFilters?.ra !== hydrantRA) {
+      const newFilters = { ...activeFilters, ra: hydrantRA };
+      setActiveFilters(newFilters);
+      try {
+        localStorage.setItem('netuno_saved_filters', JSON.stringify(newFilters));
+      } catch (e) {}
+    }
+    setMapCenterPosition({ ...h, _ts: Date.now() });
+    setActiveView('map');
+  };
 
   // Fecha o menu suspenso ao clicar em qualquer lugar fora da tela
   useEffect(() => {
@@ -1190,6 +1207,7 @@ function App() {
             hidrante={editingHydrante}
             onClose={() => setEditingHydrante(null)}
             onSave={handleSaveEdit}
+            onDeleteHydrant={handleDeleteHydrant}
             currentUser={currentUser}
             allHidrantes={hidrantes}
           />
@@ -1389,6 +1407,32 @@ function App() {
 
                     {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
                       <a 
+                        href="?modal=tabela-campo-gama"
+                        onClick={(e) => {
+                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                            e.preventDefault();
+                            setIsFieldTableOpen(true);
+                            setIsMenuOpen(false);
+                          }
+                        }}
+                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-indigo-950/40 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5 group-hover:border-indigo-500/60 transition-colors">
+                          <FileSpreadsheet size={17} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                            Tabela de Campo (Gama)
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                            Ficha para impressão com rota partindo do Gama
+                          </span>
+                        </div>
+                      </a>
+                    )}
+
+                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                      <a 
                         href="?modal=inconsistentes"
                         onClick={(e) => {
                           if (!e.ctrlKey && !e.metaKey && e.button === 0) {
@@ -1515,14 +1559,26 @@ function App() {
             >
               Mapa
             </button>
-            <button 
-              onClick={() => setActiveView('table')}
-              className={`min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
-                activeView === 'table' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-              }`}
-            >
-              Lista
-            </button>
+
+            {currentUser?.role !== 'vistoriador' ? (
+              <button 
+                onClick={() => setActiveView('table')}
+                className={`min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
+                  activeView === 'table' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                }`}
+              >
+                Lista
+              </button>
+            ) : (
+              <button 
+                onClick={() => setIsMissionManagerOpen(true)}
+                className="min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 truncate bg-slate-800 border-slate-700 text-cyan-300 hover:bg-slate-700 hover:text-cyan-200 cursor-pointer"
+              >
+                <FolderOpen size={16} />
+                <span>Central de Missões</span>
+              </button>
+            )}
+
             <button 
               onClick={() => setActiveView('route')}
               className={`min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
@@ -1586,10 +1642,7 @@ function App() {
               data={filteredList} 
               onInspect={handleInspect}
               onEdit={(h) => setEditingHydrante(h)}
-              onCenterMap={(h) => {
-                setMapCenterPosition({...h, _ts: Date.now()});
-                setActiveView('map');
-              }} 
+              onCenterMap={handleFocusHydrantOnMap} 
               selectedMissionIds={cartSelectionIds}
               onToggleMission={toggleCartSelection}
               onSelectAllMission={selectAllCart}
@@ -1614,10 +1667,7 @@ function App() {
               lastInspectedCoords={lastInspectedCoords} 
               onInspect={handleInspect}
               onEdit={(h) => setEditingHydrante(h)}
-              onCenterMap={(h) => {
-                setMapCenterPosition({...h, _ts: Date.now()});
-                setActiveView('map');
-              }}
+              onCenterMap={handleFocusHydrantOnMap}
               currentUser={currentUser}
               folders={folders}
               onGenerateReport={() => {
@@ -1737,15 +1787,25 @@ function App() {
             <span className="text-[10px] font-semibold mt-0.5">Mapa</span>
           </button>
 
-          <button
-            onClick={() => setActiveView('table')}
-            className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all ${
-              activeView === 'table' ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <List size={20} className={activeView === 'table' ? 'text-emerald-400' : ''} />
-            <span className="text-[10px] font-semibold mt-0.5">Lista</span>
-          </button>
+          {currentUser?.role !== 'vistoriador' ? (
+            <button
+              onClick={() => setActiveView('table')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all ${
+                activeView === 'table' ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <List size={20} className={activeView === 'table' ? 'text-emerald-400' : ''} />
+              <span className="text-[10px] font-semibold mt-0.5">Lista</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsMissionManagerOpen(true)}
+              className="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-cyan-300 hover:text-cyan-200"
+            >
+              <FolderOpen size={20} className="text-cyan-400" />
+              <span className="text-[10px] font-semibold mt-0.5">Central Missões</span>
+            </button>
+          )}
 
           <button
             onClick={() => setActiveView('route')}
@@ -1845,10 +1905,7 @@ function App() {
           setIsCartOpen(false);
           toast.info('Seleção temporária limpa.');
         }}
-        onFocusHydrant={(h) => {
-          setMapCenterPosition({...h, _ts: Date.now()});
-          setActiveView('map');
-        }}
+        onFocusHydrant={handleFocusHydrantOnMap}
         onCreateMission={handleCreateMissionFromCart}
         onAddToMission={handleAddToMissionFromCart}
         activeMission={currentMission}
@@ -1878,6 +1935,18 @@ function App() {
             isOpen={isBuildingStudiesOpen}
             onClose={handleCloseBuildingStudies}
             allHydrantes={hidrantes}
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
+
+      {isFieldTableOpen && (
+        <Suspense fallback={null}>
+          <FieldTableExportModal
+            isOpen={isFieldTableOpen}
+            onClose={() => setIsFieldTableOpen(false)}
+            hidrantes={filteredList}
+            activeFilters={activeFilters}
             currentUser={currentUser}
           />
         </Suspense>
