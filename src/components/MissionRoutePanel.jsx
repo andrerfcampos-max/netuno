@@ -120,6 +120,7 @@ const fetchOSRMInitialChunk = async (chunkHydrants, startLat, startLng) => {
 const getShortRaName = (localidade) => {
   if (!localidade) return '';
   const clean = fixEncoding(localidade).trim();
+  if (clean.toUpperCase().includes('SCIA') || clean.toUpperCase().includes('ESTRUTURAL')) return 'Estrutural';
   if (clean.includes('(')) {
     const main = clean.split('(')[0].trim();
     if (main.length > 0) return main;
@@ -548,7 +549,7 @@ const MissionRoutePanel = ({
               title="Navegar no Waze para o Próximo Alvo"
             >
               <Navigation size={15} className="shrink-0 text-cyan-300 animate-bounce" />
-              <span className="truncate tracking-tight">Navegar Waze</span>
+              <span className="truncate tracking-tight">Navegar para o próximo</span>
             </button>
 
             <button 
@@ -580,7 +581,7 @@ const MissionRoutePanel = ({
 
     return (
       <div key={h._internalId || h.codHidrante || h.nomHidrante || index} className={itemClasses}>
-        {/* Linha Superior: Sequência + Código + RA + Distância + Ações Rápidas Alinhadas */}
+        {/* Linha Superior: Sequência + Código + Distância + Ações Rápidas Alinhadas */}
         <div className="flex items-center justify-between gap-1.5 w-full">
           <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
             {/* Sequência / Número */}
@@ -600,15 +601,6 @@ const MissionRoutePanel = ({
             <span className="font-bold text-slate-100 text-xs sm:text-sm tracking-wide shrink-0">
               {fixEncoding(h.nomHidrante) || h.codHidrante}
             </span>
-            
-            {h.dscLocalidade && (
-              <span 
-                className="bg-slate-700/80 border border-slate-600/60 text-cyan-300 text-[9px] font-semibold px-1.5 py-0.5 rounded shrink-0 max-w-[85px] sm:max-w-[130px] truncate"
-                title={fixEncoding(h.dscLocalidade)}
-              >
-                {getShortRaName(h.dscLocalidade)}
-              </span>
-            )}
 
             {distText && (
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-0.5 shrink-0 bg-slate-850 border-slate-700 text-slate-300">
@@ -647,16 +639,6 @@ const MissionRoutePanel = ({
               >
                 <Plus size={12} strokeWidth={3}/>
                 <span>VISTORIA</span>
-              </button>
-            )}
-
-            {(!isCompleted && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) && (
-              <button 
-                onClick={() => onEdit && onEdit(h)} 
-                title="Editar Hidrante" 
-                className="h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center bg-amber-700 hover:bg-amber-600 text-white rounded-lg active:scale-95 transition-all shadow-sm cursor-pointer"
-              >
-                <Edit size={12}/>
               </button>
             )}
             

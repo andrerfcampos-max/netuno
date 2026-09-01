@@ -57,8 +57,8 @@ const folderConfig = [
     pfx: ['SIA', 'SCI'],
     missions: [
       { name: 'Vistoria SIA Trechos 1 a 4 e Setor de Cargas', atribuicao: '3º GBM - Ala Charlie', status: 'concluida' },
-      { name: 'Operação Feira dos Importados e SCIA', atribuicao: '3º GBM - 1º Pelotão', status: 'andamento' },
-      { name: 'Inspeção SCIA / Estrutural - Quadras Centrais', atribuicao: '3º GBM - Ala Bravo', status: 'planejada' }
+      { name: 'Operação Feira dos Importados e Estrutural', atribuicao: '3º GBM - 1º Pelotão', status: 'andamento' },
+      { name: 'Inspeção Estrutural - Quadras Centrais', atribuicao: '3º GBM - Ala Bravo', status: 'planejada' }
     ]
   },
   {

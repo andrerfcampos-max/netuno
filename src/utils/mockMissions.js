@@ -208,7 +208,7 @@ export const MOCK_TEST_MISSIONS = [
   },
   {
     "id": "mock-m-3gbm-11",
-    "name": "Operação Feira dos Importados e SCIA",
+    "name": "Operação Feira dos Importados e Estrutural",
     "atribuicao": "3º GBM - 1º Pelotão",
     "parentFolderId": "f-3gbm",
     "createdAt": "2026-08-18T08:00:00.000Z",
@@ -229,7 +229,7 @@ export const MOCK_TEST_MISSIONS = [
   },
   {
     "id": "mock-m-3gbm-12",
-    "name": "Inspeção SCIA / Estrutural - Quadras Centrais",
+    "name": "Inspeção Estrutural - Quadras Centrais",
     "atribuicao": "3º GBM - Ala Bravo",
     "parentFolderId": "f-3gbm",
     "createdAt": "2026-08-18T08:00:00.000Z",
