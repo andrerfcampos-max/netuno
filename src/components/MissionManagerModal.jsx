@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput, FileSpreadsheet, Printer, BarChart3, Activity, Clock, CheckCircle2, Search, ArrowRight, Shield, Layers, Filter, Edit } from 'lucide-react';
 import { createNewFolder } from '../utils/storage';
 import { syncMissionToCloud, syncFolderToCloud } from '../services/syncService';
+import { printMissionDraft } from '../utils/draftPrintUtils';
 
-const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser }) => {
+const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, hidrantes = [], onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [activeTab, setActiveTab] = useState('todas'); // todas, nao_iniciadas, em_andamento, finalizadas, dashboard_comando
   const [searchTerm, setSearchTerm] = useState('');
@@ -758,13 +759,34 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
                                             </div>
                                           </div>
 
+                                          {/* Ação Rápida de Imprimir Rascunho */}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const fullMission = missions.find(x => x.id === m.id);
+                                              if (fullMission) {
+                                                printMissionDraft({
+                                                  mission: fullMission,
+                                                  hidrantes,
+                                                  folderName: qs.folder?.name || '',
+                                                  currentUser
+                                                });
+                                              }
+                                            }}
+                                            className="p-1.5 px-2.5 bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 border border-indigo-500/40 rounded-lg transition-all shrink-0 active:scale-95 flex items-center gap-1 text-xs font-semibold cursor-pointer"
+                                            title="Imprimir rascunho de campo com rota partindo do Gama"
+                                          >
+                                            <Printer size={14} />
+                                            <span className="hidden sm:inline">Rascunho</span>
+                                          </button>
+
                                           {/* Ação Rápida de Abertura */}
                                           <button
                                             onClick={() => {
                                               onOpenMission(m.id);
                                               onClose();
                                             }}
-                                            className="p-1.5 px-2.5 bg-slate-700 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-lg transition-all shrink-0 active:scale-95 flex items-center gap-1 text-xs font-semibold"
+                                            className="p-1.5 px-2.5 bg-slate-700 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-lg transition-all shrink-0 active:scale-95 flex items-center gap-1 text-xs font-semibold cursor-pointer"
                                             title="Abrir missão no mapa"
                                           >
                                             <span className="hidden sm:inline">Abrir</span>
@@ -973,19 +995,38 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
                   </div>
                 </div>
 
-                <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 items-center">
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto mt-2 sm:mt-0 items-center">
+                  {/* Botão Imprimir Rascunho (Acessível a Qualquer Perfil) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const parentFolder = folders.find(f => f.id === mission.parentFolderId);
+                      printMissionDraft({
+                        mission,
+                        hidrantes,
+                        folderName: parentFolder?.name || '',
+                        currentUser
+                      });
+                    }}
+                    className="flex-1 sm:flex-none px-3.5 py-2 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer text-xs sm:text-sm shadow-sm"
+                    title="Imprimir rascunho de campo com rota otimizada partindo do Gama"
+                  >
+                    <Printer size={16} />
+                    <span>Imprimir rascunho</span>
+                  </button>
+
                   <button 
                     onClick={() => {
                       onOpenMission(mission.id);
                       onClose();
                     }}
-                    className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors"
+                    className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors cursor-pointer text-xs sm:text-sm"
                   >
                     {isOpen ? 'Já Aberta' : 'Abrir'}
                   </button>
                   {isGestor && !isMoveMode && (
                     <>
-                      <button onClick={() => handleMoveMission(mission)} className="p-2 bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white rounded-lg transition-colors" title="Mover para...">
+                      <button onClick={() => handleMoveMission(mission)} className="p-2 bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer" title="Mover para...">
                         <FolderInput size={20} />
                       </button>
                       <button 
@@ -996,7 +1037,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
                           }
                           setMissionToDelete(mission);
                         }}
-                        className="p-2 bg-slate-800 hover:bg-red-600 text-slate-400 hover:text-white rounded-lg transition-colors"
+                        className="p-2 bg-slate-800 hover:bg-red-600 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
                         title="Excluir Missão"
                       >
                         <Trash2 size={20} />

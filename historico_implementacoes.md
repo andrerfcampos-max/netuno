@@ -534,3 +534,15 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 
 
 
+
+### [01/09/2026] Etapa 67 Concluída: Migração da Tabela de Campo: Botão 'Imprimir rascunho' Direto por Missão na Central de Missões com Rota Partindo do Gama
+- **1. Botão 'Imprimir rascunho' Integrado nos Cards de Missões (`MissionManagerModal.jsx`):**
+  - O botão 'Imprimir rascunho' (com ícone de impressora `Printer` e estilo tático touch-friendly) foi adicionado diretamente em todos os cards de ordens de missão na Central de Missões (e no mosaico de missões do Dashboard de Comando).
+  - O recurso é acessível para **qualquer perfil** de usuário militar (Vistoriador, Gestor e Administrador).
+- **2. Geração Imediata de PDF / Impressão Sem Telas Intermediárias (`draftPrintUtils.js`):**
+  - Ao clicar no botão, o sistema **não abre modais ou janelas intermediárias**.
+  - O algoritmo TSP de vizinho mais próximo calcula instantaneamente a rota otimizada dos hidrantes pertencentes àquela missão com ponto de partida fixo no **Centro do Gama** (`lat: -16.015, lng: -48.065`).
+  - O diálogo de impressão nativo / PDF do navegador (`window.print()`) é disparado diretamente com layout A4 oficial do CBMDF contendo cabeçalho institucional, 4 colunas (Nº, Código com RA, Endereço + Ponto de Referência, e Anotações de Campo pautadas para escrita à caneta) e espaço para assinatura militar no rodapé.
+- **3. Descontinuação do Menu Avulso Superior (`App.jsx`):**
+  - Removido o item antigo 'Tabela de Campo (Gama)' do menu suspenso de gestores no topo de `App.jsx`, descentralizando a funcionalidade e acoplando-a diretamente ao contexto de cada missão.
+  - Injetada a prop `hidrantes={hidrantes}` em `MissionManagerModal` para cruzamento de dados de geolocalização e cadastros da missão.

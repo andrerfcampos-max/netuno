@@ -19,7 +19,6 @@ const TechnicalStudyModal = lazy(() => import('./components/TechnicalStudyModal'
 const BuildingStudiesModal = lazy(() => import('./components/BuildingStudiesModal'));
 const InconsistentHydrantsModal = lazy(() => import('./components/InconsistentHydrantsModal'));
 const CloudConfigModal = lazy(() => import('./components/CloudConfigModal'));
-const FieldTableExportModal = lazy(() => import('./components/FieldTableExportModal'));
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders } from './utils/storage';
 import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime } from './services/syncService';
@@ -244,7 +243,6 @@ function App() {
   const [isBuildingStudiesOpen, setIsBuildingStudiesOpen] = useState(false);
   const [isInconsistentModalOpen, setIsInconsistentModalOpen] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
-  const [isFieldTableOpen, setIsFieldTableOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -1407,32 +1405,6 @@ function App() {
 
                     {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
                       <a 
-                        href="?modal=tabela-campo-gama"
-                        onClick={(e) => {
-                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                            e.preventDefault();
-                            setIsFieldTableOpen(true);
-                            setIsMenuOpen(false);
-                          }
-                        }}
-                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-indigo-950/40 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5 group-hover:border-indigo-500/60 transition-colors">
-                          <FileSpreadsheet size={17} />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                            Tabela de Campo (Gama)
-                          </span>
-                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                            Ficha para impressão com rota partindo do Gama
-                          </span>
-                        </div>
-                      </a>
-                    )}
-
-                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-                      <a 
                         href="?modal=inconsistentes"
                         onClick={(e) => {
                           if (!e.ctrlKey && !e.metaKey && e.button === 0) {
@@ -1860,6 +1832,7 @@ function App() {
             folders={folders}
             openMissionIds={openMissionIds}
             activeMissionId={activeMissionId}
+            hidrantes={hidrantes}
             onClose={() => setIsMissionManagerOpen(false)}
             onOpenMission={handleOpenMission}
             onNewMission={handleNewMission}
@@ -1935,18 +1908,6 @@ function App() {
             isOpen={isBuildingStudiesOpen}
             onClose={handleCloseBuildingStudies}
             allHydrantes={hidrantes}
-            currentUser={currentUser}
-          />
-        </Suspense>
-      )}
-
-      {isFieldTableOpen && (
-        <Suspense fallback={null}>
-          <FieldTableExportModal
-            isOpen={isFieldTableOpen}
-            onClose={() => setIsFieldTableOpen(false)}
-            hidrantes={filteredList}
-            activeFilters={activeFilters}
             currentUser={currentUser}
           />
         </Suspense>
