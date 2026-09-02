@@ -438,6 +438,12 @@
       "status": "completed",
       "name": "Refinamento Tático de Ações (Dialog e Lista), Galeria com Múltiplas Fotos, Subunidade GPCIU/SEHUR no Título e Gráficos Proporcionais no PDF",
       "prompt": "Implemente melhorias e correções táticas:\n1. Dialog e Lista: Ajustar botão de vistoria (remover '+' duplicado do texto), garantir cores sólidas em Waze (azul) e Street View (âmbar) no desktop e mobile, e equalizar prioridade de botões na visualização de lista.\n2. Relatórios Institucionais: Inserir subunidades GPCIU / SEHUR no título institucional do CBMDF.\n3. Rodapé Documental: Remover a linha de assinatura manual e exibir apenas a identificação do militar emissor.\n4. Evidências Fotográficas: Suportar múltiplas fotos por hidrante no anexo fotográfico da tela e do PDF.\n5. Gráficos no PDF: Substituir tabelas de impacto visual por gráficos de barras horizontais proporcionais acompanhando o texto conforme a tela do sistema."
+    },
+    {
+      "id": 74,
+      "status": "completed",
+      "name": "Remoção dos Brasões dos Relatórios (Layout Limpo e Tipográfico em Tela e PDF A4)",
+      "prompt": "Eliminar os brasões heráldicos (GDF e CBMDF) dos relatórios do Sistema Netuno (MissionReportPanel.jsx e officialPrintUtils.js):\n1. Remover os SVGs e containers dos brasões nas visualizações de relatório interno e relatório CAESB na tela.\n2. Remover os brasões dos templates HTML de impressão A4 em PDF de vistorias e de manutenção CAESB.\n3. Centralizar e valorizar a hierarquia tipográfica oficial (Governo do Distrito Federal, Corpo de Bombeiros Militar do Distrito Federal, GPCIU / SEHUR).\n4. Validar compilação com 'npm run build' e realizar deploy com 'git push origin main'."
     }
   ]
 }

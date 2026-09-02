@@ -2,8 +2,7 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown, Share2, ChevronDown, Check } from 'lucide-react';
 import { extractProblemsList, sanitizeProblem } from '../utils/problemUtils';
 import { normalizeRAName } from '../utils/raList';
-import { fixEncoding } from '../utils/textUtils';
-import { printGeneralReport, printCaesbReport, GDF_EMBLEM_SVG, CBMDF_EMBLEM_SVG } from '../utils/officialPrintUtils';
+import { printGeneralReport, printCaesbReport } from '../utils/officialPrintUtils';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser }) => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -909,55 +908,36 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         {/* CABEÇALHO DA PÁGINA IMPRESSA */}
         <div className="text-center mb-6 sm:mb-8 border-b-2 border-slate-700 print-border-black pb-4">
           {reportType === 'interno' ? (
-            <div className="flex items-center justify-between gap-3">
-              <div 
-                className="hidden sm:flex shrink-0 w-12 h-14 items-center justify-center opacity-90"
-                dangerouslySetInnerHTML={{ __html: GDF_EMBLEM_SVG }}
-              />
-              <div className="flex-1 text-center">
-                <div className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Governo do Distrito Federal</div>
-                <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
-                <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">GPCIU / SEHUR</div>
-                <h2 className="text-sm sm:text-base text-blue-400 print-text-black mt-0.5 uppercase font-bold">Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos</h2>
-                <div className="mt-3 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
-                  <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
-                    <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Todas as Cidades / DF Completo'}
+            <div className="w-full text-center">
+              <div className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Governo do Distrito Federal</div>
+              <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
+              <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">GPCIU / SEHUR</div>
+              <h2 className="text-sm sm:text-base text-blue-400 print-text-black mt-0.5 uppercase font-bold">Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos</h2>
+              <div className="mt-3 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
+                <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
+                  <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Todas as Cidades / DF Completo'}
+                </span>
+                {currentMission && (
+                  <span className="text-[11px] sm:text-xs text-slate-400 print-text-black font-semibold mt-1">
+                    <strong>Missão Ativa:</strong> {currentMission.name}
                   </span>
-                  {currentMission && (
-                    <span className="text-[11px] sm:text-xs text-slate-400 print-text-black font-semibold mt-1">
-                      <strong>Missão Ativa:</strong> {currentMission.name}
-                    </span>
-                  )}
-                </div>
+                )}
               </div>
-              <div 
-                className="hidden sm:flex shrink-0 w-12 h-14 items-center justify-center opacity-90"
-                dangerouslySetInnerHTML={{ __html: CBMDF_EMBLEM_SVG }}
-              />
             </div>
           ) : (
-            <div className="flex items-center justify-between gap-3">
-              <div 
-                className="hidden sm:flex shrink-0 w-12 h-14 items-center justify-center opacity-90"
-                dangerouslySetInnerHTML={{ __html: GDF_EMBLEM_SVG }}
-              />
-              <div className="flex-1 text-center">
-                <div className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Governo do Distrito Federal</div>
-                <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">CBMDF • CAESB</h1>
-                <h2 className="text-sm sm:text-base text-emerald-400 print-text-black mt-0.5 uppercase font-black">Solicitação de Manutenção de Hidrantes Urbanos de Incêndio</h2>
-                <p className="text-[10px] sm:text-xs text-slate-400 print-text-gray mt-1 uppercase tracking-wider font-semibold">
-                  De acordo com o Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019
-                </p>
-                <div className="mt-3 flex flex-col items-center text-xs sm:text-sm text-slate-300 print-text-black">
-                  <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
-                    <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Nenhuma região filtrada'}
-                  </span>
-                </div>
+            <div className="w-full text-center">
+              <div className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Governo do Distrito Federal</div>
+              <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">CBMDF • CAESB</h1>
+              <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">GPCIU / SEHUR</div>
+              <h2 className="text-sm sm:text-base text-emerald-400 print-text-black mt-0.5 uppercase font-black">Solicitação de Manutenção de Hidrantes Urbanos de Incêndio</h2>
+              <p className="text-[10px] sm:text-xs text-slate-400 print-text-gray mt-1 uppercase tracking-wider font-semibold">
+                De acordo com o Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019
+              </p>
+              <div className="mt-3 flex flex-col items-center text-xs sm:text-sm text-slate-300 print-text-black">
+                <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
+                  <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Nenhuma região filtrada'}
+                </span>
               </div>
-              <div 
-                className="hidden sm:flex shrink-0 w-12 h-14 items-center justify-center opacity-90"
-                dangerouslySetInnerHTML={{ __html: CBMDF_EMBLEM_SVG }}
-              />
             </div>
           )}
         </div>

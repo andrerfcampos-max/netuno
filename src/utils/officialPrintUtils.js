@@ -8,37 +8,9 @@ import { sanitizeProblem } from './problemUtils';
  * e Companhia de Saneamento Ambiental do Distrito Federal (CAESB).
  */
 
-// Brasão Oficial do Governo do Distrito Federal (SVG Institucional Vetorial)
-export const GDF_EMBLEM_SVG = `
-<svg viewBox="0 0 100 120" width="52" height="63" class="header-emblem" xmlns="http://www.w3.org/2000/svg">
-  <path d="M10,12 L90,12 L90,66 C90,96 50,113 50,113 C50,113 10,96 10,66 Z" fill="#ffffff" stroke="#c59b27" stroke-width="3.5" />
-  <rect x="23" y="27" width="54" height="54" rx="4" fill="#008037" stroke="#c59b27" stroke-width="1.6" />
-  <polygon points="50,44 54,50 50,56 46,50" fill="#ffd100" />
-  <polygon points="50,31 43,44 50,42 57,44" fill="#ffd100" />
-  <polygon points="50,77 43,64 50,66 57,64" fill="#ffd100" />
-  <polygon points="27,50 40,43 38,50 40,57" fill="#ffd100" />
-  <polygon points="73,50 60,43 62,50 60,57" fill="#ffd100" />
-  <path d="M22,6 L26,14 L30,6 L34,14 L38,6 L42,14 L46,6 L50,14 L54,6 L58,14 L62,6 L66,14 L70,6 L74,14 L78,6" fill="none" stroke="#c59b27" stroke-width="2.2" />
-  <text x="50" y="99" font-family="Arial, sans-serif" font-size="8.5" font-weight="900" fill="#0f172a" text-anchor="middle" letter-spacing="1">GDF</text>
-</svg>
-`.trim();
-
-// Brasão Oficial Heráldico do Corpo de Bombeiros Militar do Distrito Federal (CBMDF)
-export const CBMDF_EMBLEM_SVG = `
-<svg viewBox="0 0 100 120" width="52" height="63" class="header-emblem" xmlns="http://www.w3.org/2000/svg">
-  <path d="M12,12 L88,12 L88,66 C88,96 50,114 50,114 C50,114 12,96 12,66 Z" fill="#b91c1c" stroke="#d97706" stroke-width="3.5" />
-  <path d="M18,18 L82,18 L82,65 C82,88 50,105 50,105 C50,105 18,88 18,65 Z" fill="#991b1b" stroke="#fef08a" stroke-width="1.2" />
-  <line x1="26" y1="80" x2="74" y2="32" stroke="#fef08a" stroke-width="4.5" stroke-linecap="round" />
-  <path d="M67,25 L81,25 L76,38 L67,33 Z" fill="#fde047" stroke="#d97706" stroke-width="1.2" />
-  <line x1="74" y1="80" x2="26" y2="32" stroke="#fef08a" stroke-width="4.5" stroke-linecap="round" />
-  <path d="M33,25 L19,25 L24,38 L33,33 Z" fill="#fde047" stroke="#d97706" stroke-width="1.2" />
-  <rect x="46.5" y="44" width="7" height="38" rx="2" fill="#d97706" stroke="#78350f" stroke-width="1" />
-  <path d="M50,22 C43,30 43,38 47,44 C49,42 51,42 53,44 C57,38 57,30 50,22 Z" fill="#fbbf24" stroke="#dc2626" stroke-width="1.5" />
-  <path d="M50,27 C46,33 46,38 48,42 C49,41 51,41 52,42 C54,38 54,33 50,27 Z" fill="#ef4444" />
-  <rect x="22" y="87" width="56" height="14" rx="3" fill="#0f172a" stroke="#d97706" stroke-width="1.2" />
-  <text x="50" y="97.5" font-family="Arial, sans-serif" font-size="7.8" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="0.8">CBMDF</text>
-</svg>
-`.trim();
+// Brasões removidos conforme diretriz de simplificação e layout limpo institucional
+export const GDF_EMBLEM_SVG = '';
+export const CBMDF_EMBLEM_SVG = '';
 
 // Gerador de Hash Criptográfico Curto para Controle e Rastreabilidade Documental
 export const generateDocHash = (seedStr) => {
@@ -349,22 +321,9 @@ export const printGeneralReport = ({
           border-bottom: 2.5px solid #0f172a;
           padding-bottom: 10px;
           margin-bottom: 14px;
+          text-align: center;
         }
-        .header-emblems-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-        }
-        .emblem-col {
-          width: 58px;
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .title-col {
-          flex: 1;
+        .header-title-box {
           text-align: center;
         }
         .inst-gov {
@@ -740,20 +699,16 @@ export const printGeneralReport = ({
     </head>
     <body>
       <div class="official-header">
-        <div class="header-emblems-row">
-          <div class="emblem-col">${GDF_EMBLEM_SVG}</div>
-          <div class="title-col">
-            <div class="inst-gov">Governo do Distrito Federal</div>
-            <div class="inst-cbmdf">Corpo de Bombeiros Militar do Distrito Federal</div>
-            <div class="inst-sub">GPCIU / SEHUR</div>
-            <div class="doc-title">Relatório de Vistoria de Hidrantes Urbanos</div>
-            <div class="doc-meta">
-              <span><strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
-              ${currentMission ? `<span><strong>Missão:</strong> ${currentMission.name}</span>` : ''}
-              <span><strong>Emissão:</strong> ${nowStr}</span>
-            </div>
+        <div class="header-title-box">
+          <div class="inst-gov">Governo do Distrito Federal</div>
+          <div class="inst-cbmdf">Corpo de Bombeiros Militar do Distrito Federal</div>
+          <div class="inst-sub">GPCIU / SEHUR</div>
+          <div class="doc-title">Relatório de Vistoria de Hidrantes Urbanos</div>
+          <div class="doc-meta">
+            <span><strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
+            ${currentMission ? `<span><strong>Missão:</strong> ${currentMission.name}</span>` : ''}
+            <span><strong>Emissão:</strong> ${nowStr}</span>
           </div>
-          <div class="emblem-col">${CBMDF_EMBLEM_SVG}</div>
         </div>
       </div>
 
@@ -945,22 +900,9 @@ export const printCaesbReport = ({
           border-bottom: 2.5px solid #047857;
           padding-bottom: 10px;
           margin-bottom: 12px;
+          text-align: center;
         }
-        .header-emblems-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-        }
-        .emblem-col {
-          width: 58px;
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .title-col {
-          flex: 1;
+        .header-title-box {
           text-align: center;
         }
         .inst-gov {
@@ -1092,20 +1034,16 @@ export const printCaesbReport = ({
     </head>
     <body>
       <div class="official-header">
-        <div class="header-emblems-row">
-          <div class="emblem-col">${GDF_EMBLEM_SVG}</div>
-          <div class="title-col">
-            <div class="inst-gov">Governo do Distrito Federal</div>
-            <div class="inst-cbmdf">CBMDF • Companhia de Saneamento Ambiental do DF (CAESB)</div>
-            <div class="inst-sub">GPCIU / SEHUR</div>
-            <div class="doc-title">Solicitação Oficial de Manutenção de Hidrantes Urbanos</div>
-            <div class="legal-term">Conforme Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019</div>
-            <div class="doc-meta">
-              <span><strong>Regiões Administrativas:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
-              <span><strong>Data de Notificação:</strong> ${nowStr}</span>
-            </div>
+        <div class="header-title-box">
+          <div class="inst-gov">Governo do Distrito Federal</div>
+          <div class="inst-cbmdf">CBMDF • Companhia de Saneamento Ambiental do DF (CAESB)</div>
+          <div class="inst-sub">GPCIU / SEHUR</div>
+          <div class="doc-title">Solicitação Oficial de Manutenção de Hidrantes Urbanos</div>
+          <div class="legal-term">Conforme Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019</div>
+          <div class="doc-meta">
+            <span><strong>Regiões Administrativas:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
+            <span><strong>Data de Notificação:</strong> ${nowStr}</span>
           </div>
-          <div class="emblem-col">${CBMDF_EMBLEM_SVG}</div>
         </div>
       </div>
 
