@@ -3,7 +3,7 @@ import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSp
 import { extractProblemsList, sanitizeProblem } from '../utils/problemUtils';
 import { normalizeRAName } from '../utils/raList';
 import { fixEncoding } from '../utils/textUtils';
-import { printGeneralReport, printCaesbReport } from '../utils/officialPrintUtils';
+import { printGeneralReport, printCaesbReport, GDF_EMBLEM_SVG, CBMDF_EMBLEM_SVG } from '../utils/officialPrintUtils';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser }) => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -908,33 +908,55 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         {/* CABEÇALHO DA PÁGINA IMPRESSA */}
         <div className="text-center mb-6 sm:mb-8 border-b-2 border-slate-700 print-border-black pb-4">
           {reportType === 'interno' ? (
-            <>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
-              <h2 className="text-base sm:text-lg text-slate-300 print-text-black mt-1 uppercase font-bold">Sistema Netuno - Relatório de Vistoria</h2>
-              <div className="mt-4 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
-                <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
-                  <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Todas as Cidades / DF Completo'}
-                </span>
-                {currentMission && (
-                  <span className="text-[11px] sm:text-xs text-slate-400 print-text-black font-semibold mt-1">
-                    <strong>Missão Ativa:</strong> {currentMission.name}
+            <div className="flex items-center justify-between gap-3">
+              <div 
+                className="hidden sm:flex shrink-0 w-12 h-14 items-center justify-center opacity-90"
+                dangerouslySetInnerHTML={{ __html: GDF_EMBLEM_SVG }}
+              />
+              <div className="flex-1 text-center">
+                <div className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Governo do Distrito Federal</div>
+                <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
+                <h2 className="text-sm sm:text-base text-blue-400 print-text-black mt-0.5 uppercase font-bold">Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos</h2>
+                <div className="mt-3 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
+                  <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
+                    <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Todas as Cidades / DF Completo'}
                   </span>
-                )}
+                  {currentMission && (
+                    <span className="text-[11px] sm:text-xs text-slate-400 print-text-black font-semibold mt-1">
+                      <strong>Missão Ativa:</strong> {currentMission.name}
+                    </span>
+                  )}
+                </div>
               </div>
-            </>
+              <div 
+                className="hidden sm:flex shrink-0 w-12 h-14 items-center justify-center opacity-90"
+                dangerouslySetInnerHTML={{ __html: CBMDF_EMBLEM_SVG }}
+              />
+            </div>
           ) : (
-            <>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
-              <h2 className="text-base sm:text-lg text-emerald-400 print-text-black mt-1 uppercase font-black">Solicitação de Manutenção de Hidrantes Urbanos de Incêndio - CBMDF / CAESB</h2>
-              <p className="text-[11px] sm:text-xs text-slate-400 print-text-gray mt-1 uppercase tracking-wider font-bold">
-                De acordo com o Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019
-              </p>
-              <div className="mt-4 flex flex-col items-center text-xs sm:text-sm text-slate-300 print-text-black">
-                <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
-                  <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Nenhuma região filtrada'}
-                </span>
+            <div className="flex items-center justify-between gap-3">
+              <div 
+                className="hidden sm:flex shrink-0 w-12 h-14 items-center justify-center opacity-90"
+                dangerouslySetInnerHTML={{ __html: GDF_EMBLEM_SVG }}
+              />
+              <div className="flex-1 text-center">
+                <div className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Governo do Distrito Federal</div>
+                <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">CBMDF • CAESB</h1>
+                <h2 className="text-sm sm:text-base text-emerald-400 print-text-black mt-0.5 uppercase font-black">Solicitação de Manutenção de Hidrantes Urbanos de Incêndio</h2>
+                <p className="text-[10px] sm:text-xs text-slate-400 print-text-gray mt-1 uppercase tracking-wider font-semibold">
+                  De acordo com o Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019
+                </p>
+                <div className="mt-3 flex flex-col items-center text-xs sm:text-sm text-slate-300 print-text-black">
+                  <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
+                    <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Nenhuma região filtrada'}
+                  </span>
+                </div>
               </div>
-            </>
+              <div 
+                className="hidden sm:flex shrink-0 w-12 h-14 items-center justify-center opacity-90"
+                dangerouslySetInnerHTML={{ __html: CBMDF_EMBLEM_SVG }}
+              />
+            </div>
           )}
         </div>
 
@@ -1334,10 +1356,15 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
                   return (
                     <tr key={h.codHidrante || h.nomHidrante || h._internalId || i} className="hover:bg-slate-800/60 transition-colors print-row-avoid">
-                      {/* Código e Data na Mesma Célula */}
+                      {/* Código, Data e GPS na Mesma Célula */}
                       <td className="px-3 py-2.5 font-medium text-slate-100 print-text-black print-border align-top">
                         <div className="font-bold text-sm text-slate-100 print-text-black font-mono">{code}</div>
                         <div className="text-[11px] text-slate-400 print-text-black font-normal mt-0.5">{dataVis}</div>
+                        {h.numLatitude && h.numLongitude && (
+                          <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            GPS: {Number(h.numLatitude).toFixed(6)}, {Number(h.numLongitude).toFixed(6)}
+                          </div>
+                        )}
                       </td>
 
                       {/* Endereço e Referência na Mesma Célula */}
@@ -1457,6 +1484,11 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                         <p className="text-xs text-slate-300 print-text-black mb-1 truncate" title={h.dscEndereco}>
                           📍 {h.dscEndereco || 'Endereço não informado'}
                         </p>
+                        {h.numLatitude && h.numLongitude && (
+                          <p className="text-[10px] text-slate-400 font-mono mb-1">
+                            🌐 GPS: {Number(h.numLatitude).toFixed(6)}, {Number(h.numLongitude).toFixed(6)}
+                          </p>
+                        )}
 
                         <div className="text-xs text-red-400 print-text-black font-bold mb-3 line-clamp-2" title={defeito}>
                           ⚠️ {defeito}
@@ -1483,8 +1515,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         })()}
 
         {/* RODAPÉ DO DOCUMENTO DE RELATÓRIO */}
-        <div className="mt-24 pt-6 flex flex-col items-center justify-center text-sm text-slate-400 print-text-black page-break-inside-avoid">
-          <div className="w-64 border-t border-slate-400 print-border-black mb-2 mt-8"></div>
+        <div className="mt-20 pt-6 flex flex-col items-center justify-center text-sm text-slate-400 print-text-black page-break-inside-avoid">
+          <div className="w-64 border-t border-slate-400 print-border-black mb-2 mt-4"></div>
           <p className="font-bold text-center text-lg text-slate-200 print-text-black">
             {currentUser?.nome ? `${currentUser.nome}` : 'Assinatura do Responsável'}
           </p>
@@ -1492,8 +1524,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
             <p className="text-center text-slate-300 print-text-black">Matrícula: {currentUser.matricula}</p>
           )}
           
-          <p className="mt-8 mb-2"><strong>Gerado em:</strong> {new Date().toLocaleString('pt-BR')}</p>
-          <p className="mt-2 text-xs opacity-50">Sistema Netuno - CBMDF © {new Date().getFullYear()}</p>
+          <p className="mt-6 mb-1 text-xs"><strong>Gerado em:</strong> {new Date().toLocaleString('pt-BR')}</p>
+          <p className="text-[10px] font-mono text-slate-500">Controle: NETUNO-DF-SYS • Sistema Netuno - CBMDF © {new Date().getFullYear()}</p>
         </div>
 
       </div>

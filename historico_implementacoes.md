@@ -602,8 +602,20 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - **No Bloco de Lista (`DataTable.jsx`):** Na tabela de dados, linhas de hidrantes vistoriados exibem a ação direta `[✏️ EDIT. VIST.]` em âmbar e o atalho compacto `[+]` para nova vistoria.
   - **Restrição Estrita:** Nenhum botão de edição foi inserido no Relatório ou na Rota de Missão, preservando a interface desses módulos conforme solicitado.
 - **4. Integridade de Dados, Histórico e Sincronização em Nuvem (`App.jsx`, `syncService.js`):**
-  - A edição atualiza a vistoria existente em vez de gerar novas entradas duplicadas ou inflar o contador diário de vistorias cumpridas na missão.
-  - Atualiza o registro correspondente no `HISTORICO_VISTORIAS`, `problemasHidrante`, `flgAtivo`, `fotoVistoria` e anotações.
-  - Grava no LocalStorage via `saveHydrantChanges` e propaga em tempo real para a nuvem através de `syncHydrantMutationToCloud('update', ...)` e `syncInspectionToCloud(...)`.
+### [02/09/2026] Etapa 71 Concluída: Padronização Institucional de Relatórios Oficiais (Brasões GDF/CBMDF, Coordenadas GPS, Diagramação Inteligente A4 e Hash de Autenticidade)
+- **1. Brasões Oficiais Heráldicos Institucionais no Cabeçalho (`officialPrintUtils.js`, `MissionReportPanel.jsx`):**
+  - Inseridos os dois Brasões Oficiais no cabeçalho dos documentos A4 e na visualização em tela:
+    * **Brasão do Governo do Distrito Federal (GDF):** Escudo oficial com a Cruz de Brasília e colunas do Alvorada em SVG vetorial de alta precisão.
+    * **Brasão Heráldico do CBMDF:** Escudo vermelho com machados cruzados de bombeiro, tocha e chama ardente em SVG vetorial.
+  - Diagramação balanceada em 3 colunas (Brasão GDF à esquerda, Títulos institucionais centralizados e Brasão CBMDF à direita).
+- **2. Coordenadas Geográficas (GPS) na Tabela Detalhada e no Anexo Fotográfico:**
+  - Na coluna "Código / Data / GPS" da tabela oficial de hidrantes e no card de evidências do Anexo Fotográfico, adicionada a exibição das coordenadas com 6 casas decimais (`GPS: -15.XXXXXX, -48.XXXXXX`), permitindo localização imediata em campo.
+- **3. Diagramação A4 e Quebra Inteligente de Página (Page-Break Condicional):**
+  - Ajustadas as margens para `@page { size: A4 portrait; margin: 8mm 10mm 10mm 10mm; }`, maximizando o espaço útil da página.
+  - Implementada quebra condicional: para relatórios curtos (ex: 1 ou 2 hidrantes, como no exemplo de Samambaia), a evidência fotográfica e a assinatura militar cabem harmonicamente na Página 1, extinguindo a geração de uma segunda página vazia com assinatura isolada.
+- **4. Código de Controle / Hash de Autenticidade Discreto no Rodapé:**
+  - Inserido hash documental gerado matematicamente (`NETUNO-DF-[HASH]`) em tipografia monospace discreta abaixo da assinatura militar, viabilizando rastreabilidade sem poluir o documento.
+- **5. Paridade entre Tela e PDF:**
+  - O painel em tela (`MissionReportPanel.jsx`) reflete com exatidão a identidade visual militar, os brasões e os dados de GPS da versão para impressão.
 
 

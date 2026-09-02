@@ -8,6 +8,48 @@ import { sanitizeProblem } from './problemUtils';
  * e Companhia de Saneamento Ambiental do Distrito Federal (CAESB).
  */
 
+// Brasão Oficial do Governo do Distrito Federal (SVG Institucional Vetorial)
+export const GDF_EMBLEM_SVG = `
+<svg viewBox="0 0 100 120" width="52" height="63" class="header-emblem" xmlns="http://www.w3.org/2000/svg">
+  <path d="M10,12 L90,12 L90,66 C90,96 50,113 50,113 C50,113 10,96 10,66 Z" fill="#ffffff" stroke="#c59b27" stroke-width="3.5" />
+  <rect x="23" y="27" width="54" height="54" rx="4" fill="#008037" stroke="#c59b27" stroke-width="1.6" />
+  <polygon points="50,44 54,50 50,56 46,50" fill="#ffd100" />
+  <polygon points="50,31 43,44 50,42 57,44" fill="#ffd100" />
+  <polygon points="50,77 43,64 50,66 57,64" fill="#ffd100" />
+  <polygon points="27,50 40,43 38,50 40,57" fill="#ffd100" />
+  <polygon points="73,50 60,43 62,50 60,57" fill="#ffd100" />
+  <path d="M22,6 L26,14 L30,6 L34,14 L38,6 L42,14 L46,6 L50,14 L54,6 L58,14 L62,6 L66,14 L70,6 L74,14 L78,6" fill="none" stroke="#c59b27" stroke-width="2.2" />
+  <text x="50" y="99" font-family="Arial, sans-serif" font-size="8.5" font-weight="900" fill="#0f172a" text-anchor="middle" letter-spacing="1">GDF</text>
+</svg>
+`.trim();
+
+// Brasão Oficial Heráldico do Corpo de Bombeiros Militar do Distrito Federal (CBMDF)
+export const CBMDF_EMBLEM_SVG = `
+<svg viewBox="0 0 100 120" width="52" height="63" class="header-emblem" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12,12 L88,12 L88,66 C88,96 50,114 50,114 C50,114 12,96 12,66 Z" fill="#b91c1c" stroke="#d97706" stroke-width="3.5" />
+  <path d="M18,18 L82,18 L82,65 C82,88 50,105 50,105 C50,105 18,88 18,65 Z" fill="#991b1b" stroke="#fef08a" stroke-width="1.2" />
+  <line x1="26" y1="80" x2="74" y2="32" stroke="#fef08a" stroke-width="4.5" stroke-linecap="round" />
+  <path d="M67,25 L81,25 L76,38 L67,33 Z" fill="#fde047" stroke="#d97706" stroke-width="1.2" />
+  <line x1="74" y1="80" x2="26" y2="32" stroke="#fef08a" stroke-width="4.5" stroke-linecap="round" />
+  <path d="M33,25 L19,25 L24,38 L33,33 Z" fill="#fde047" stroke="#d97706" stroke-width="1.2" />
+  <rect x="46.5" y="44" width="7" height="38" rx="2" fill="#d97706" stroke="#78350f" stroke-width="1" />
+  <path d="M50,22 C43,30 43,38 47,44 C49,42 51,42 53,44 C57,38 57,30 50,22 Z" fill="#fbbf24" stroke="#dc2626" stroke-width="1.5" />
+  <path d="M50,27 C46,33 46,38 48,42 C49,41 51,41 52,42 C54,38 54,33 50,27 Z" fill="#ef4444" />
+  <rect x="22" y="87" width="56" height="14" rx="3" fill="#0f172a" stroke="#d97706" stroke-width="1.2" />
+  <text x="50" y="97.5" font-family="Arial, sans-serif" font-size="7.8" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="0.8">CBMDF</text>
+</svg>
+`.trim();
+
+// Gerador de Hash Criptográfico Curto para Controle e Rastreabilidade Documental
+export const generateDocHash = (seedStr) => {
+  let hashVal = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    hashVal = ((hashVal << 5) - hashVal) + seedStr.charCodeAt(i);
+    hashVal |= 0;
+  }
+  return Math.abs(hashVal).toString(16).toUpperCase().padStart(8, '0');
+};
+
 const formatDateOnly = (dateStr) => {
   if (!dateStr) return '-';
   try {
@@ -70,6 +112,9 @@ export const printGeneralReport = ({
     const prob = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!isOp ? 'INOPERANTE' : '');
     const obs = h.dscObservacao || h.observacoes || h.obsVistoria || '';
     const ra = normalizeRAName(h.dscLocalidade) || '';
+    const lat = typeof h.numLatitude === 'number' ? h.numLatitude.toFixed(6) : (h.numLatitude || '');
+    const lng = typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (h.numLongitude || '');
+    const coordStr = (lat && lng && lat !== '-' && lng !== '-') ? `${lat}, ${lng}` : '';
 
     return `
       <tr>
@@ -78,6 +123,7 @@ export const printGeneralReport = ({
           <strong>${code}</strong>
           ${ra ? `<div class="sub-text">${ra}</div>` : ''}
           <div class="date-text">${dataVis}</div>
+          ${coordStr ? `<div class="coord-text">${coordStr}</div>` : ''}
         </td>
         <td class="col-end">
           <div>${end}</div>
@@ -215,10 +261,11 @@ export const printGeneralReport = ({
   ` : '';
 
   const hidrantesComFoto = currentData.filter(h => h.fotoVistoria || h.fotoPerfil || h.foto || h.fotoUrl);
+  const shouldBreakPage = currentData.length > 2 || hidrantesComFoto.length > 2;
 
   const anexoFotograficoHtml = hidrantesComFoto.length > 0 ? `
-    <div class="section-block page-break-before">
-      <div class="section-title" style="font-size: 13px; border-bottom: 2px solid #0f172a; padding-bottom: 5px; margin-top: 18px; margin-bottom: 12px;">
+    <div class="section-block ${shouldBreakPage ? 'page-break-before' : 'avoid-break'}">
+      <div class="section-title" style="font-size: 12.5px; border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin-top: ${shouldBreakPage ? '16px' : '10px'}; margin-bottom: 10px;">
         📷 Anexo Fotográfico - Evidências das Vistorias (${hidrantesComFoto.length} ${hidrantesComFoto.length === 1 ? 'registro fotográfico' : 'registros fotográficos'})
       </div>
       <div class="photos-grid">
@@ -231,6 +278,9 @@ export const printGeneralReport = ({
           const ref = h.dscPontoReferencia ? `Ref: ${fixEncoding(h.dscPontoReferencia)}` : '';
           const isOp = Boolean(h.flgAtivo);
           const defeito = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!isOp ? 'Inoperante (necessita manutenção)' : 'Sem alterações / Operante');
+          const hLat = typeof h.numLatitude === 'number' ? h.numLatitude.toFixed(6) : (h.numLatitude || '');
+          const hLng = typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (h.numLongitude || '');
+          const hCoord = (hLat && hLng && hLat !== '-' && hLng !== '-') ? `${hLat}, ${hLng}` : '';
 
           return `
             <div class="photo-card avoid-break">
@@ -244,6 +294,7 @@ export const printGeneralReport = ({
               <div class="photo-card-body">
                 <div class="photo-end">📍 <strong>${end}</strong></div>
                 ${ref ? `<div class="photo-ref">${ref}</div>` : ''}
+                ${hCoord ? `<div class="photo-coord">🌐 GPS: ${hCoord}</div>` : ''}
                 <div class="photo-defect ${isOp ? 'text-green' : 'text-red'}">⚠️ ${defeito}</div>
                 <div class="photo-img-wrapper">
                   <img src="${fotoSrc}" alt="Evidência ${cod}" class="photo-evidence-img" />
@@ -256,6 +307,9 @@ export const printGeneralReport = ({
     </div>
   ` : '';
 
+  const docSeed = `${nowStr}_${currentData.length}_${operantes}_${inoperantes}_${emissorNome}_${rasPresentes}`;
+  const docHash = generateDocHash(docSeed);
+
   const html = `
     <!DOCTYPE html>
     <html lang="pt-BR">
@@ -265,7 +319,7 @@ export const printGeneralReport = ({
       <style>
         @page {
           size: A4 portrait;
-          margin: 10mm 10mm 12mm 10mm;
+          margin: 8mm 10mm 10mm 10mm;
         }
         * {
           box-sizing: border-box;
@@ -280,36 +334,60 @@ export const printGeneralReport = ({
           background: #ffffff;
           line-height: 1.35;
           font-size: 11px;
-          padding: 4px;
+          padding: 2px;
         }
         .official-header {
-          text-align: center;
           border-bottom: 2.5px solid #0f172a;
           padding-bottom: 10px;
           margin-bottom: 14px;
         }
-        .inst-title {
-          font-size: 13px;
+        .header-emblems-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+        .emblem-col {
+          width: 58px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .title-col {
+          flex: 1;
+          text-align: center;
+        }
+        .inst-gov {
+          font-size: 11px;
           font-weight: 800;
           letter-spacing: 0.8px;
-          color: #0f172a;
+          color: #334155;
           text-transform: uppercase;
         }
+        .inst-cbmdf {
+          font-size: 13.5px;
+          font-weight: 900;
+          letter-spacing: 0.5px;
+          color: #0f172a;
+          text-transform: uppercase;
+          margin-top: 1px;
+        }
         .doc-title {
-          font-size: 15px;
+          font-size: 14.5px;
           font-weight: 900;
           color: #1e3a8a;
           text-transform: uppercase;
-          margin: 4px 0;
+          margin: 3px 0;
         }
         .doc-meta {
-          font-size: 10.5px;
-          color: #334155;
+          font-size: 10px;
+          color: #475569;
           display: flex;
           flex-wrap: wrap;
           justify-content: center;
-          gap: 16px;
-          margin-top: 6px;
+          gap: 14px;
+          margin-top: 4px;
           font-weight: 600;
         }
         
@@ -457,8 +535,8 @@ export const printGeneralReport = ({
         }
         .data-table tbody tr:nth-child(even) { background: #fafafa; }
         .col-seq { width: 4%; text-align: center; font-weight: bold; color: #64748b; }
-        .col-code { width: 15%; }
-        .col-end { width: 35%; }
+        .col-code { width: 17%; }
+        .col-end { width: 33%; }
         .col-vistoriador { width: 16%; font-weight: 600; color: #047857; }
         .col-status { width: 30%; }
         .badge {
@@ -475,6 +553,7 @@ export const printGeneralReport = ({
         .ref-text { color: #64748b; font-size: 9.5px; font-style: italic; margin-top: 2px; }
         .sub-text { font-size: 9.5px; color: #64748b; }
         .date-text { font-size: 9px; color: #64748b; font-weight: bold; margin-top: 2px; }
+        .coord-text { font-size: 8.5px; color: #475569; font-family: monospace; margin-top: 2px; }
         .text-center { text-align: center; }
         .text-green { color: #15803d; }
         .text-red { color: #b91c1c; }
@@ -505,10 +584,11 @@ export const printGeneralReport = ({
         .photo-card-ra { font-size: 9.5px; color: #64748b; margin-left: 6px; font-weight: 600; }
         .photo-end { font-size: 10px; color: #1e293b; margin-bottom: 2px; }
         .photo-ref { font-size: 9px; color: #64748b; font-style: italic; margin-bottom: 2px; }
+        .photo-coord { font-size: 8.5px; color: #475569; font-family: monospace; margin-bottom: 3px; }
         .photo-defect { font-size: 9.5px; font-weight: 700; margin-bottom: 6px; line-height: 1.25; }
         .photo-img-wrapper {
           width: 100%;
-          height: 190px;
+          height: 170px;
           border-radius: 4px;
           overflow: hidden;
           background: #f1f5f9;
@@ -524,28 +604,42 @@ export const printGeneralReport = ({
         }
 
         .signature-section {
-          margin-top: 28px;
-          padding-top: 10px;
+          margin-top: 22px;
+          padding-top: 8px;
           text-align: center;
           page-break-inside: avoid;
         }
         .signature-line {
-          width: 320px;
+          width: 300px;
           border-top: 1.5px solid #000000;
-          margin: 0 auto 6px auto;
+          margin: 0 auto 5px auto;
         }
-        .signature-name { font-size: 11.5px; font-weight: 800; color: #000000; }
-        .signature-role { font-size: 10px; color: #475569; }
+        .signature-name { font-size: 11px; font-weight: 800; color: #000000; }
+        .signature-role { font-size: 9.5px; color: #475569; }
+        .doc-hash-footer {
+          font-size: 8.5px;
+          color: #64748b;
+          margin-top: 8px;
+          font-family: 'Courier New', Courier, monospace;
+          letter-spacing: 0.3px;
+        }
       </style>
     </head>
     <body>
       <div class="official-header">
-        <div class="inst-title">Governo do Distrito Federal • Corpo de Bombeiros Militar do Distrito Federal</div>
-        <div class="doc-title">Relatório de Vistoria de Hidrantes Urbanos</div>
-        <div class="doc-meta">
-          <span><strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
-          ${currentMission ? `<span><strong>Missão:</strong> ${currentMission.name}</span>` : ''}
-          <span><strong>Emissão:</strong> ${nowStr}</span>
+        <div class="header-emblems-row">
+          <div class="emblem-col">${GDF_EMBLEM_SVG}</div>
+          <div class="title-col">
+            <div class="inst-gov">Governo do Distrito Federal</div>
+            <div class="inst-cbmdf">Corpo de Bombeiros Militar do Distrito Federal</div>
+            <div class="doc-title">Relatório de Vistoria de Hidrantes Urbanos</div>
+            <div class="doc-meta">
+              <span><strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
+              ${currentMission ? `<span><strong>Missão:</strong> ${currentMission.name}</span>` : ''}
+              <span><strong>Emissão:</strong> ${nowStr}</span>
+            </div>
+          </div>
+          <div class="emblem-col">${CBMDF_EMBLEM_SVG}</div>
         </div>
       </div>
 
@@ -601,7 +695,7 @@ export const printGeneralReport = ({
           <thead>
             <tr>
               <th class="col-seq">Nº</th>
-              <th class="col-code">Código / Data</th>
+              <th class="col-code">Código / Data / GPS</th>
               <th class="col-end">Endereço e Referência</th>
               <th class="col-vistoriador">Vistoriador</th>
               <th class="col-status">Situação Operacional / Observações</th>
@@ -620,6 +714,9 @@ export const printGeneralReport = ({
         <div class="signature-name">${emissorNome}</div>
         <div class="signature-role">${emissorCargo} • ${emissorMatricula}</div>
         <div class="signature-role" style="font-size: 9px; margin-top: 3px;">Sistema NETUNO • CBMDF</div>
+        <div class="doc-hash-footer">
+          Controle / Hash: NETUNO-DF-${docHash} • Emitido eletronicamente via Sistema NETUNO • CBMDF
+        </div>
       </div>
 
       <script>
@@ -710,7 +807,7 @@ export const printCaesbReport = ({
       <style>
         @page {
           size: A4 portrait;
-          margin: 10mm 10mm 12mm 10mm;
+          margin: 8mm 10mm 10mm 10mm;
         }
         * {
           box-sizing: border-box;
@@ -725,42 +822,66 @@ export const printCaesbReport = ({
           background: #ffffff;
           line-height: 1.35;
           font-size: 11px;
-          padding: 4px;
+          padding: 2px;
         }
         .official-header {
-          text-align: center;
           border-bottom: 2.5px solid #047857;
           padding-bottom: 10px;
           margin-bottom: 12px;
         }
-        .inst-title {
-          font-size: 12px;
+        .header-emblems-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+        .emblem-col {
+          width: 58px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .title-col {
+          flex: 1;
+          text-align: center;
+        }
+        .inst-gov {
+          font-size: 11px;
           font-weight: 800;
+          letter-spacing: 0.8px;
+          color: #334155;
+          text-transform: uppercase;
+        }
+        .inst-cbmdf {
+          font-size: 13px;
+          font-weight: 900;
           letter-spacing: 0.5px;
           color: #0f172a;
           text-transform: uppercase;
+          margin-top: 1px;
         }
         .doc-title {
-          font-size: 15px;
+          font-size: 14.5px;
           font-weight: 900;
           color: #047857;
           text-transform: uppercase;
-          margin: 4px 0;
+          margin: 3px 0;
         }
         .legal-term {
-          font-size: 10px;
+          font-size: 9.5px;
           color: #475569;
-          margin-top: 3px;
+          margin-top: 2px;
           font-weight: 600;
         }
         .doc-meta {
-          font-size: 10.5px;
+          font-size: 10px;
           color: #334155;
           display: flex;
           flex-wrap: wrap;
           justify-content: center;
           gap: 16px;
-          margin-top: 6px;
+          margin-top: 5px;
           font-weight: 600;
         }
         .caesb-banner {
@@ -827,28 +948,42 @@ export const printCaesbReport = ({
         .avoid-break { page-break-inside: avoid; break-inside: avoid; }
         
         .signature-section {
-          margin-top: 32px;
-          padding-top: 10px;
+          margin-top: 24px;
+          padding-top: 8px;
           text-align: center;
           page-break-inside: avoid;
         }
         .signature-line {
-          width: 340px;
+          width: 320px;
           border-top: 1.5px solid #000000;
-          margin: 0 auto 6px auto;
+          margin: 0 auto 5px auto;
         }
-        .signature-name { font-size: 12px; font-weight: 800; color: #000000; }
-        .signature-role { font-size: 10px; color: #475569; }
+        .signature-name { font-size: 11px; font-weight: 800; color: #000000; }
+        .signature-role { font-size: 9.5px; color: #475569; }
+        .doc-hash-footer {
+          font-size: 8.5px;
+          color: #64748b;
+          margin-top: 8px;
+          font-family: 'Courier New', Courier, monospace;
+          letter-spacing: 0.3px;
+        }
       </style>
     </head>
     <body>
       <div class="official-header">
-        <div class="inst-title">Governo do Distrito Federal • CBMDF / CAESB</div>
-        <div class="doc-title">Solicitação Oficial de Manutenção de Hidrantes Urbanos</div>
-        <div class="legal-term">Conforme Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019</div>
-        <div class="doc-meta">
-          <span><strong>Regiões Administrativas:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
-          <span><strong>Data de Notificação:</strong> ${nowStr}</span>
+        <div class="header-emblems-row">
+          <div class="emblem-col">${GDF_EMBLEM_SVG}</div>
+          <div class="title-col">
+            <div class="inst-gov">Governo do Distrito Federal</div>
+            <div class="inst-cbmdf">CBMDF • Companhia de Saneamento Ambiental do DF (CAESB)</div>
+            <div class="doc-title">Solicitação Oficial de Manutenção de Hidrantes Urbanos</div>
+            <div class="legal-term">Conforme Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019</div>
+            <div class="doc-meta">
+              <span><strong>Regiões Administrativas:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
+              <span><strong>Data de Notificação:</strong> ${nowStr}</span>
+            </div>
+          </div>
+          <div class="emblem-col">${CBMDF_EMBLEM_SVG}</div>
         </div>
       </div>
 
@@ -884,6 +1019,9 @@ export const printCaesbReport = ({
         <div class="signature-name">${emissorNome}</div>
         <div class="signature-role">${emissorMatricula} • Encarregado da Gestão de Hidrantes de Incêndio</div>
         <div class="signature-role" style="font-size: 9px; margin-top: 3px;">Seção de Hidrantes Urbanos • CBMDF</div>
+        <div class="doc-hash-footer">
+          Controle / Hash: NETUNO-CAESB-${generateDocHash(nowStr + '_' + currentData.length + '_' + emissorNome)} • Emitido eletronicamente via Sistema NETUNO
+        </div>
       </div>
 
       <script>
