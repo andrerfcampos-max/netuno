@@ -200,7 +200,7 @@ export const printGeneralReport = ({
         <tbody>
           ${yearStats.map(y => `
             <tr>
-              <td><strong>${y.nome}</strong></td>
+              <td><strong>${String(y.nome).replace(/[^0-9]/g, '') || y.nome}</strong></td>
               <td class="text-center text-green"><strong>${y.count}</strong> vistoria${y.count > 1 ? 's' : ''}</td>
               <td>
                 <div class="bar-container">
@@ -596,7 +596,7 @@ export const printGeneralReport = ({
       ${yearStatsHtml}
 
       <div class="section-block">
-        <div class="section-title">📋 Relação Técnica Detalhada (${currentData.length} hidrantes)</div>
+        <div class="section-title">📋 Relação Técnica Detalhada (${currentData.length} ${currentData.length === 1 ? 'hidrante' : 'hidrantes'})</div>
         <table class="data-table">
           <thead>
             <tr>

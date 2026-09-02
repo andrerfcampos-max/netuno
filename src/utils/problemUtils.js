@@ -98,6 +98,16 @@ export const extractProblemsList = (raw) => {
   if (trimmed === '' || trimmed === '-' || trimmed.toLowerCase() === 'nenhum' || trimmed.toLowerCase() === 'falso' || trimmed === '.') return [];
   
   return trimmed.split(/[;|\n]+|\s+[-/]\s+/)
+    .map(p => p.trim())
+    .filter(p => {
+      if (!p || p === '-' || p === '.') return false;
+      const lower = p.toLowerCase();
+      // Ignora observações textuais descritivas livres para não poluir os 33 defeitos técnicos
+      if (lower.startsWith('obs:') || lower.startsWith('obs.:') || lower.startsWith('observação:') || lower.startsWith('observacao:')) {
+        return false;
+      }
+      return true;
+    })
     .map(p => normalizeProblemName(p))
     .filter(p => p && p !== '-' && p !== '.');
 };

@@ -80,7 +80,9 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     const parts = str.split(' ');
     if (parts.length < 1) return 'N/A';
     const [d, m, y] = parts[0].split('/');
-    return y || 'N/A';
+    if (!y) return 'N/A';
+    const clean = y.replace(/[^0-9]/g, '');
+    return clean && clean.length === 4 ? clean : (clean || 'N/A');
   };
 
   const sortedHidrantesGeral = useMemo(() => {
@@ -1018,7 +1020,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                       <div key={idx} className="flex flex-col gap-1">
                         <div className="flex justify-between items-center text-xs font-medium">
                           <span className="text-slate-200 print-text-black font-bold text-sm">
-                            {c.nome} <span className="text-slate-400 font-normal text-xs">({c.total} hidrantes)</span>
+                            {c.nome} <span className="text-slate-400 font-normal text-xs">({c.total} {c.total === 1 ? 'hidrante' : 'hidrantes'})</span>
                           </span>
                           <div className="flex items-center gap-2 text-xs">
                             <span className="text-emerald-400 print-text-black font-bold">🟢 {c.operantes} ({c.operantesPercent}%)</span>
