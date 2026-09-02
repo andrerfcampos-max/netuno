@@ -237,12 +237,12 @@ export const printGeneralReport = ({
   })).filter(item => item.extractedPhotos.length > 0);
 
   const totalFotosCount = hidrantesComFotos.reduce((acc, h) => acc + h.extractedPhotos.length, 0);
-  const shouldBreakPage = currentData.length > 2 || totalFotosCount > 2;
+  const shouldBreakPage = currentData.length > 2 || totalFotosCount > 1;
 
   const anexoFotograficoHtml = hidrantesComFotos.length > 0 ? `
     <div class="section-block ${shouldBreakPage ? 'page-break-before' : 'avoid-break'}">
-      <div class="section-title" style="font-size: 12.5px; border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin-top: ${shouldBreakPage ? '16px' : '10px'}; margin-bottom: 10px;">
-        📷 Anexo Fotográfico - Evidências das Vistorias (${totalFotosCount} ${totalFotosCount === 1 ? 'registro fotográfico' : 'registros fotográficos'})
+      <div class="section-title" style="font-size: 12.5px; border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin-top: ${shouldBreakPage ? '16px' : '10px'}; margin-bottom: 12px;">
+        📷 Anexo Fotográfico - Evidências das Vistorias (${totalFotosCount} ${totalFotosCount === 1 ? 'registro fotográfico' : 'registros fotográficos'}${hidrantesComFotos.length > 1 ? ` em ${hidrantesComFotos.length} hidrantes` : ''})
       </div>
       <div class="photos-grid">
         ${hidrantesComFotos.map((h, i) => {
@@ -257,26 +257,53 @@ export const printGeneralReport = ({
           const hLng = typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (h.numLongitude || '');
           const hCoord = (hLat && hLng && hLat !== '-' && hLng !== '-') ? `${hLat}, ${hLng}` : '';
           const pList = h.extractedPhotos;
+          const pCount = pList.length;
+
+          let galleryClass = 'photo-gallery-many';
+          let itemClass = 'photo-item-many';
+          if (pCount === 1) {
+            galleryClass = 'photo-gallery-1';
+            itemClass = 'photo-item-1';
+          } else if (pCount === 2) {
+            galleryClass = 'photo-gallery-2';
+            itemClass = 'photo-item-2';
+          } else if (pCount === 3) {
+            galleryClass = 'photo-gallery-3';
+            itemClass = 'photo-item-3';
+          } else if (pCount === 4) {
+            galleryClass = 'photo-gallery-4';
+            itemClass = 'photo-item-4';
+          } else if (pCount === 5 || pCount === 6) {
+            galleryClass = 'photo-gallery-6';
+            itemClass = 'photo-item-6';
+          }
 
           return `
             <div class="photo-card avoid-break">
               <div class="photo-card-header">
-                <div>
+                <div class="photo-card-title-box">
                   <span class="photo-card-code">${cod}</span>
                   <span class="photo-card-ra">${ra} • ${dataVis}</span>
                 </div>
-                <span class="badge ${isOp ? 'badge-op' : 'badge-inop'}">${isOp ? 'OPERANTE' : 'INOPERANTE'}</span>
+                <div class="photo-card-badges">
+                  <span class="photo-count-pill">📷 ${pCount} ${pCount === 1 ? 'foto' : 'fotos'}</span>
+                  <span class="badge ${isOp ? 'badge-op' : 'badge-inop'}">${isOp ? 'OPERANTE' : 'INOPERANTE'}</span>
+                </div>
               </div>
               <div class="photo-card-body">
-                <div class="photo-end">📍 <strong>${end}</strong></div>
-                ${ref ? `<div class="photo-ref">${ref}</div>` : ''}
-                ${hCoord ? `<div class="photo-coord">🌐 GPS: ${hCoord}</div>` : ''}
-                <div class="photo-defect ${isOp ? 'text-green' : 'text-red'}">⚠️ ${defeito}</div>
-                <div class="${pList.length > 1 ? 'photos-multi-grid' : 'photo-single-wrapper'}">
+                <div class="photo-meta-box">
+                  <div class="photo-end">📍 <strong>${end}</strong></div>
+                  ${ref ? `<div class="photo-ref">${ref}</div>` : ''}
+                  ${hCoord ? `<div class="photo-coord">🌐 GPS: ${hCoord}</div>` : ''}
+                </div>
+                <div class="photo-defect ${isOp ? 'is-operante text-green' : 'text-red'}">
+                  ⚠️ <strong>${isOp ? 'Condição Operacional:' : 'Inconformidades / Defeitos:'}</strong> ${defeito}
+                </div>
+                <div class="${galleryClass}">
                   ${pList.map((fotoSrc, pIdx) => `
-                    <div class="photo-img-wrapper ${pList.length > 1 ? 'photo-multi-item' : ''}">
+                    <div class="photo-img-wrapper ${itemClass}">
                       <img src="${fotoSrc}" alt="Evidência ${pIdx + 1} - ${cod}" class="photo-evidence-img" />
-                      ${pList.length > 1 ? `<span class="photo-multi-badge">${pIdx + 1}/${pList.length}</span>` : ''}
+                      ${pCount > 1 ? `<span class="photo-badge">${pIdx + 1}/${pCount}</span>` : ''}
                     </div>
                   `).join('')}
                 </div>
@@ -529,46 +556,186 @@ export const printGeneralReport = ({
         .page-break-before { page-break-before: always; break-before: page; }
         
         .photos-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
-          margin-top: 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          margin-top: 10px;
+          width: 100%;
         }
         .photo-card {
           border: 1.5px solid #cbd5e1;
           border-radius: 6px;
-          padding: 8px;
+          padding: 10px 12px;
           background: #ffffff;
+          width: 100%;
+          box-sizing: border-box;
         }
         .photo-card-header {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
-          border-bottom: 1px solid #e2e8f0;
-          padding-bottom: 4px;
+          align-items: center;
+          border-bottom: 1.5px solid #e2e8f0;
+          padding-bottom: 6px;
+          margin-bottom: 8px;
+        }
+        .photo-card-title-box {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .photo-card-code {
+          font-size: 13px;
+          font-weight: 900;
+          color: #0f172a;
+          letter-spacing: 0.3px;
+        }
+        .photo-card-ra {
+          font-size: 9.5px;
+          color: #475569;
+          font-weight: 700;
+          background: #f1f5f9;
+          padding: 2px 7px;
+          border-radius: 4px;
+          border: 1px solid #e2e8f0;
+        }
+        .photo-card-badges {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .photo-count-pill {
+          font-size: 9px;
+          font-weight: 800;
+          background: #f1f5f9;
+          color: #334155;
+          padding: 2px 7px;
+          border-radius: 12px;
+          border: 1px solid #cbd5e1;
+        }
+        .photo-meta-box {
           margin-bottom: 6px;
         }
-        .photo-card-code { font-size: 12px; font-weight: 900; color: #0f172a; }
-        .photo-card-ra { font-size: 9.5px; color: #64748b; margin-left: 6px; font-weight: 600; }
-        .photo-end { font-size: 10px; color: #1e293b; margin-bottom: 2px; }
-        .photo-ref { font-size: 9px; color: #64748b; font-style: italic; margin-bottom: 2px; }
-        .photo-coord { font-size: 8.5px; color: #475569; font-family: monospace; margin-bottom: 3px; }
-        .photo-defect { font-size: 9.5px; font-weight: 700; margin-bottom: 6px; line-height: 1.25; }
-        .photo-img-wrapper {
-          width: 100%;
-          height: 170px;
+        .photo-end { font-size: 10.5px; color: #1e293b; margin-bottom: 2px; }
+        .photo-ref { font-size: 9.5px; color: #64748b; font-style: italic; margin-bottom: 2px; }
+        .photo-coord { font-size: 9px; color: #475569; font-family: monospace; font-weight: 600; margin-bottom: 3px; }
+        .photo-defect {
+          font-size: 9.5px;
+          font-weight: 600;
+          margin-bottom: 10px;
+          line-height: 1.35;
+          padding: 5px 8px;
           border-radius: 4px;
+          background: #fef2f2;
+          border-left: 3px solid #dc2626;
+          color: #991b1b;
+        }
+        .photo-defect.is-operante {
+          background: #f0fdf4;
+          border-left: 3px solid #16a34a;
+          color: #166534;
+        }
+
+        /* Galerias Responsivas para Fotos do Relatório em Largura Total da Página A4 */
+        .photo-img-wrapper {
+          position: relative;
+          border-radius: 5px;
           overflow: hidden;
-          background: #f1f5f9;
-          border: 1px solid #e2e8f0;
+          background: #090d16;
+          border: 1px solid #cbd5e1;
           display: flex;
           align-items: center;
           justify-content: center;
+          width: 100%;
+          box-sizing: border-box;
         }
         .photo-evidence-img {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          display: block;
+        }
+        .photo-badge {
+          position: absolute;
+          bottom: 4px;
+          right: 4px;
+          background: rgba(15, 23, 42, 0.85);
+          color: #ffffff;
+          font-size: 8.5px;
+          font-weight: 800;
+          padding: 1.5px 5px;
+          border-radius: 3px;
+          border: 0.5px solid rgba(255, 255, 255, 0.3);
+          letter-spacing: 0.5px;
+        }
+
+        /* 1 Foto: Showcase amplo centralizado na página */
+        .photo-gallery-1 {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 100%;
+        }
+        .photo-item-1 {
+          max-width: 520px;
+          height: 270px;
+        }
+        .photo-item-1 .photo-evidence-img {
+          object-fit: contain;
+        }
+
+        /* 2 Fotos: 2 Colunas lado a lado ocupando 100% da largura */
+        .photo-gallery-2 {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          width: 100%;
+        }
+        .photo-item-2 {
+          height: 220px;
+        }
+
+        /* 3 Fotos: 3 Colunas na mesma linha ocupando 100% da largura */
+        .photo-gallery-3 {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+          width: 100%;
+        }
+        .photo-item-3 {
+          height: 185px;
+        }
+
+        /* 4 Fotos: Grid 2x2 harmonioso e equilibrado */
+        .photo-gallery-4 {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          width: 100%;
+        }
+        .photo-item-4 {
+          height: 190px;
+        }
+
+        /* 5 ou 6 Fotos: 3 Colunas x 2 Linhas aproveitando toda a largura da página */
+        .photo-gallery-6 {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+          width: 100%;
+        }
+        .photo-item-6 {
+          height: 165px;
+        }
+
+        /* Mais de 6 Fotos: 4 Colunas compactas e nítidas */
+        .photo-gallery-many {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 6px;
+          width: 100%;
+        }
+        .photo-item-many {
+          height: 145px;
         }
 
         .charts-row {
@@ -650,27 +817,6 @@ export const printGeneralReport = ({
           font-weight: 600;
         }
 
-        .photos-multi-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-          gap: 6px;
-          width: 100%;
-        }
-        .photo-multi-item {
-          height: 110px !important;
-          position: relative;
-        }
-        .photo-multi-badge {
-          position: absolute;
-          bottom: 3px;
-          right: 3px;
-          background: rgba(0, 0, 0, 0.75);
-          color: #ffffff;
-          font-size: 8px;
-          font-weight: 800;
-          padding: 1px 4px;
-          border-radius: 3px;
-        }
         .inst-sub {
           font-size: 11px;
           font-weight: 800;

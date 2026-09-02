@@ -1477,54 +1477,100 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="flex flex-col gap-6">
                 {hidrantesComFotos.map((h, i) => {
                   const cod = h.nomHidrante || h.codHidrante;
                   const dataVis = formatDateOnly(h.datHoraUltimaVistoria || h.datHoraVistoria);
-                  const defeito = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'Inoperante (necessita manutenção)' : 'Sem alteração');
+                  const isOp = Boolean(h.flgAtivo);
+                  const defeito = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!isOp ? 'Inoperante (necessita manutenção)' : 'Sem alteração');
+                  const pCount = h.extractedPhotos.length;
+
+                  let galleryCols = 'grid-cols-1';
+                  let imgHeight = 'h-64 sm:h-80 max-w-xl mx-auto';
+                  let imgFit = 'object-contain';
+                  if (pCount === 2) {
+                    galleryCols = 'grid-cols-1 sm:grid-cols-2';
+                    imgHeight = 'h-56 sm:h-64 w-full';
+                    imgFit = 'object-cover';
+                  } else if (pCount === 3) {
+                    galleryCols = 'grid-cols-1 sm:grid-cols-3';
+                    imgHeight = 'h-48 sm:h-56 w-full';
+                    imgFit = 'object-cover';
+                  } else if (pCount === 4) {
+                    galleryCols = 'grid-cols-2';
+                    imgHeight = 'h-48 sm:h-56 w-full';
+                    imgFit = 'object-cover';
+                  } else if (pCount === 5 || pCount === 6) {
+                    galleryCols = 'grid-cols-2 sm:grid-cols-3';
+                    imgHeight = 'h-44 sm:h-52 w-full';
+                    imgFit = 'object-cover';
+                  } else if (pCount > 6) {
+                    galleryCols = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4';
+                    imgHeight = 'h-36 sm:h-44 w-full';
+                    imgFit = 'object-cover';
+                  }
                   
                   return (
-                    <div key={`foto-${cod || i}`} className="bg-slate-800/80 p-4 rounded-xl border border-slate-700 print-border-gray print-bg-white page-break-inside-avoid shadow-lg flex flex-col justify-between">
+                    <div key={`foto-${cod || i}`} className="bg-slate-800/80 p-5 rounded-xl border border-slate-700 print-border-gray print-bg-white page-break-inside-avoid shadow-lg flex flex-col justify-between w-full">
                       <div>
-                        <div className="flex items-center justify-between gap-2 border-b border-slate-700 print-border-gray pb-2 mb-2">
-                          <span className="font-black text-slate-100 print-text-black text-base">
-                            {cod}
-                          </span>
-                          <span className="text-[11px] font-bold text-slate-400 print-text-black bg-slate-900/60 px-2 py-0.5 rounded border border-slate-700/60">
-                            {h.dscLocalidade || 'DF'} • {dataVis}
-                          </span>
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 print-border-gray pb-3 mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-slate-100 print-text-black text-lg">
+                              {cod}
+                            </span>
+                            <span className="text-xs font-bold text-slate-300 print-text-black bg-slate-900/80 px-2.5 py-0.5 rounded border border-slate-700">
+                              {h.dscLocalidade || 'DF'} • {dataVis}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-300 bg-slate-700/60 px-2.5 py-0.5 rounded-full border border-slate-600">
+                              📷 {pCount} {pCount === 1 ? 'foto' : 'fotos'}
+                            </span>
+                            <span className={`text-xs font-black px-2.5 py-0.5 rounded-md ${isOp ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700' : 'bg-rose-950/80 text-rose-300 border border-rose-700'}`}>
+                              {isOp ? 'OPERANTE' : 'INOPERANTE'}
+                            </span>
+                          </div>
                         </div>
                         
-                        <p className="text-xs text-slate-300 print-text-black mb-1 truncate" title={h.dscEndereco}>
-                          📍 {h.dscEndereco || 'Endereço não informado'}
-                        </p>
-                        {h.numLatitude && h.numLongitude && (
-                          <p className="text-[10px] text-slate-400 font-mono mb-1">
-                            🌐 GPS: {Number(h.numLatitude).toFixed(6)}, {Number(h.numLongitude).toFixed(6)}
-                          </p>
-                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
+                          <div>
+                            <p className="text-slate-200 print-text-black truncate" title={h.dscEndereco}>
+                              📍 <strong>{h.dscEndereco || 'Endereço não informado'}</strong>
+                            </p>
+                            {h.dscPontoReferencia && (
+                              <p className="text-[11px] text-slate-400 italic">
+                                Ref: {h.dscPontoReferencia}
+                              </p>
+                            )}
+                          </div>
+                          {h.numLatitude && h.numLongitude && (
+                            <p className="text-xs text-slate-300 font-mono sm:text-right">
+                              🌐 GPS: {Number(h.numLatitude).toFixed(6)}, {Number(h.numLongitude).toFixed(6)}
+                            </p>
+                          )}
+                        </div>
 
-                        <div className="text-xs text-red-400 print-text-black font-bold mb-3 line-clamp-2" title={defeito}>
-                          ⚠️ {defeito}
+                        <div className={`text-xs font-semibold p-2.5 rounded-lg mb-4 border-l-4 ${isOp ? 'bg-emerald-950/30 text-emerald-300 border-emerald-500' : 'bg-rose-950/30 text-rose-300 border-rose-500'}`}>
+                          ⚠️ <strong>{isOp ? 'Condição Operacional:' : 'Inconformidades / Defeitos:'}</strong> {defeito}
                         </div>
                       </div>
 
-                      {/* Galeria de Fotos: Exibe todas as fotos disponíveis para o hidrante */}
-                      <div className={`grid gap-2 bg-black/50 print-bg-transparent p-1.5 rounded-lg border border-slate-700/60 ${h.extractedPhotos.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                      {/* Galeria de Fotos Adaptativa */}
+                      <div className={`grid gap-3 bg-black/60 print-bg-transparent p-3 rounded-lg border border-slate-700/80 ${galleryCols}`}>
                         {h.extractedPhotos.map((fotoSrc, pIdx) => (
-                          <div key={pIdx} className="overflow-hidden rounded group relative">
+                          <div key={pIdx} className={`overflow-hidden rounded-md group relative bg-slate-950 flex items-center justify-center border border-slate-700/60 ${pCount === 1 ? 'max-w-xl mx-auto w-full' : ''}`}>
                             <img 
                               src={fotoSrc} 
                               alt={`Registro ${pIdx + 1} do hidrante ${cod}`} 
-                              className={`w-full ${h.extractedPhotos.length > 1 ? 'h-36' : 'h-52'} object-cover rounded shadow-inner group-hover:scale-105 transition-transform duration-300 cursor-pointer`}
+                              className={`w-full ${imgHeight} ${imgFit} rounded shadow-inner group-hover:scale-105 transition-transform duration-300 cursor-pointer`}
                               onClick={() => {
                                 const w = window.open('');
                                 w?.document.write(`<title>Foto ${pIdx + 1} - ${cod}</title><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${fotoSrc}" style="max-width:95%;max-height:95%;border-radius:8px;box-shadow:0 0 20px rgba(0,0,0,0.8);" /></body>`);
                               }}
                             />
-                            {h.extractedPhotos.length > 1 && (
-                              <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded pointer-events-none">
-                                {pIdx + 1}/{h.extractedPhotos.length}
+                            {pCount > 1 && (
+                              <span className="absolute bottom-1.5 right-1.5 bg-black/80 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-white/20 pointer-events-none">
+                                {pIdx + 1}/{pCount}
                               </span>
                             )}
                           </div>
