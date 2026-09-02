@@ -618,4 +618,27 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **5. Paridade entre Tela e PDF:**
   - O painel em tela (`MissionReportPanel.jsx`) reflete com exatidão a identidade visual militar, os brasões e os dados de GPS da versão para impressão.
 
+### [02/09/2026] Etapa 72 Concluída: Reformulação Tática da Dialog de Hidrantes (Linha 1 Waze 4x e Street View 3x, Linha 2 Secundários 1x Diferenciando Editar Vistoria de Editar Hidrante, Paridade Mobile/Desktop e Isolamento de Estado na Nova Vistoria)
+- **1. Nova Disposição Tática em Duas Linhas na Dialog (`MapComponent.jsx`):**
+  - **Linha 1 (Deslocamento Rápido em Trânsito):**
+    * **Navegar no Waze (Proporção 4x - `flex-[4]`):** Botão principal com altura `h-12`, cor azul vibrante, ícone de navegação e texto em negrito, permitindo acionamento imediato para navegação ponto a ponto.
+    * **Google Street View 360° (Proporção 3x - `flex-[3]`):** Botão com altura `h-12`, cor âmbar, ícone de alfinete e texto `STREET VIEW`, abrindo diretamente a visualização panorâmica da via.
+  - **Linha 2 (Ações Secundárias em Tamanho Homogêneo 1x - `flex-1`):**
+    * **`+ VISTORIA`:** Ação primária de vistoria técnica em verde esmeralda com ícone `Plus`.
+    * **`EDIT VIST.`:** Ação de retificação de vistoria cadastrada em laranja âmbar com ícone `Edit3`, exibida quando o hidrante possui vistoria prévia.
+    * **`EDIT HIDR.`:** Ação restrita a gestores para alteração dos dados cadastrais do hidrante (endereço, RA, coordenadas) em slate/ciano com ícone `Wrench` (chave de boca), diferenciando com clareza a edição cadastral da edição de vistoria.
+    * **`Maps`:** Acesso ao Google Maps tradicional em tom slate neutro.
+    * **`Zap`:** Compartilhamento direto no WhatsApp em verde.
+    * **`Rota`:** Inclusão/remoção na Missão ativa (para gestores).
+- **2. Paridade Visual Completa Mobile vs Desktop (`MapComponent.jsx`):**
+  - No mobile (bottom sheet), foi adicionado o badge com emoji de caminhão de bombeiro (🚒) como fallback quando o hidrante não tem foto cadastrada, idêntico ao desktop.
+  - No mobile, as informações de endereço, referência, alertas e coordenadas foram organizadas dentro de um sub-card estruturado de alto contraste, eliminando o texto solto anterior.
+- **3. Isolamento Total de Estado no Cadastro de Vistoria (`InspectionModal.jsx`, `App.jsx`):**
+  - O modo **Cadastrar nova vistoria** (`isEditing: false`) inicia estritamente em branco (`null` para todas as perguntas, campos de texto e fotos vazios).
+  - Adicionado `useEffect` de reset de ciclo de vida e `key` única baseada no hidrante e no modo no `App.jsx`, impedindo qualquer retenção de memória ou pré-preenchimento vindo de vistorias anteriores.
+  - O pré-preenchimento histórico permanece ativo exclusivamente para o modo **Editar Vistoria** (`isEditing: true`).
+- **4. Padronização do Título da Tela de Vistoria (`InspectionModal.jsx`):**
+  - O título do modal para novos cadastros foi atualizado pontualmente para **"Cadastrar nova vistoria"**.
+
+
 

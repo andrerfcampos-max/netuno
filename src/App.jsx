@@ -1265,6 +1265,7 @@ function App() {
       {inspectingHidrante && (
         <Suspense fallback={null}>
           <InspectionModal 
+            key={`${inspectingHidrante._internalId || inspectingHidrante.codHidrante || inspectingHidrante.nomHidrante || 'insp'}_${Boolean(inspectingHidrante._isEditing)}`}
             hidrante={inspectingHidrante}
             isEditing={Boolean(inspectingHidrante._isEditing)}
             onClose={() => setInspectingHidrante(null)}

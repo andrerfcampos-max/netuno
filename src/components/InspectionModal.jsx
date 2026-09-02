@@ -168,6 +168,29 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
 
+  // Isolamento estrito de ciclo de vida: nova vistoria NUNCA herda pré-preenchimento
+  React.useEffect(() => {
+    if (!isEditing) {
+      setQ1(null);
+      setQ2(null);
+      setQ3(null);
+      setQ4(null);
+      setQ5(null);
+      setQ6('');
+      setQ7('');
+      setFotos([]);
+    } else {
+      setQ1(initialData.q1);
+      setQ2(initialData.q2);
+      setQ3(initialData.q3);
+      setQ4(initialData.q4);
+      setQ5(initialData.q5);
+      setQ6(initialData.q6);
+      setQ7(initialData.q7);
+      setFotos(initialData.fotos || []);
+    }
+  }, [hidrante?.codHidrante, hidrante?._internalId, isEditing, initialData]);
+
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
 
   // Determina se há problemas que forçam o hidrante a ser inoperante
@@ -461,7 +484,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
                     <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-mono font-bold tracking-wide">EDIÇÃO</span>
                   </>
                 ) : (
-                  <span>Cadastrar Vistoria</span>
+                  <span>Cadastrar nova vistoria</span>
                 )}
               </h2>
               <p className="text-[11px] sm:text-xs text-slate-400 truncate">
