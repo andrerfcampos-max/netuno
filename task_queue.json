@@ -11,6 +11,16 @@
       "createdAt": "2026-09-02T19:07:54.609Z",
       "startedAt": "2026-09-02T19:07:57.326Z",
       "completedAt": "2026-09-02T19:09:02.750Z"
+    },
+    {
+      "id": "TASK-2",
+      "seq": 2,
+      "conversationId": "4089c02f-d8a1-4fca-9f89-fbe70ee6a04f",
+      "description": "Eliminar brasões do relatório",
+      "status": "completed",
+      "createdAt": "2026-09-02T19:19:42.116Z",
+      "startedAt": "2026-09-02T19:19:47.500Z",
+      "completedAt": "2026-09-02T19:30:11.796Z"
     }
   ]
 }
