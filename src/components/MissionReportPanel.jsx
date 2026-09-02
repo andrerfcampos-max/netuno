@@ -1597,7 +1597,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
             GPCIU / SEHUR • CBMDF
           </p>
           <div className="mt-6 pt-3 border-t border-slate-700/50 print-border-gray w-full max-w-xl flex flex-col items-center gap-1 text-[11px] text-slate-500 font-mono text-center">
-            <p>Gerado em: {new Date().toLocaleString('pt-BR')} • Sistema NETUNO</p>
+            <p>Gerado em: {new Date().toLocaleString('pt-BR')}</p>
             <p className="font-semibold text-slate-400 print-text-black">
               Controle / Hash: {reportType === 'caesb' ? `NETUNO-CAESB-${docHash}` : `NETUNO-DF-${docHash}`} • Emitido eletronicamente via Sistema NETUNO • CBMDF
             </p>
