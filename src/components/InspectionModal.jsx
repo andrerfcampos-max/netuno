@@ -48,16 +48,17 @@ const DEFEITOS_OFICIAIS = [
 const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, currentUser }) => {
   // Pré-processamento dos dados existentes caso seja modo edição
   const initialData = useMemo(() => {
-    if (!isEditing && (!hidrante.datHoraUltimaVistoria || hidrante.datHoraUltimaVistoria === '-')) {
+    // Se for cadastro de nova vistoria, SEMPRE inicia em branco
+    if (!isEditing) {
       return {
         q1: null,
         q2: null,
         q3: null,
         q4: null,
-        q5: hidrante.flgAtivo ? 'SIM' : 'NÃO',
+        q5: null,
         q6: '',
         q7: '',
-        foto: null
+        fotos: []
       };
     }
 
@@ -133,6 +134,16 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       }
     }
 
+    // Fotos na edição (suporte a múltiplas fotos ou foto individual legada)
+    let initialFotos = [];
+    if (Array.isArray(hidrante.fotosVistoria) && hidrante.fotosVistoria.length > 0) {
+      initialFotos = [...hidrante.fotosVistoria];
+    } else if (hidrante.fotoVistoria) {
+      initialFotos = [hidrante.fotoVistoria];
+    } else if (hidrante.fotoUrl) {
+      initialFotos = [hidrante.fotoUrl];
+    }
+
     return {
       q1: initialQ1,
       q2: initialQ2,
@@ -141,7 +152,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       q5: initialQ5,
       q6: initialQ6,
       q7: initialQ7,
-      foto: hidrante.fotoVistoria || hidrante.fotoUrl || null
+      fotos: initialFotos
     };
   }, [hidrante, isEditing]);
 
@@ -153,7 +164,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
   const [q6, setQ6] = useState(initialData.q6); // Algum outro problema
   const [q7, setQ7] = useState(initialData.q7); // Observações
   
-  const [fotoBase64, setFotoBase64] = useState(initialData.foto);
+  const [fotos, setFotos] = useState(initialData.fotos || []);
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
 
@@ -178,42 +189,72 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
     setQ5(val);
   };
 
-  const handleImageCapture = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  // Utilitário de compressão de foto para otimizar desempenho e sincronização
+  const compressImageFile = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 600;
-        const MAX_HEIGHT = 600;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
           }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.45);
-        setFotoBase64(compressedBase64);
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+          resolve(compressedBase64);
+        };
+        img.onerror = () => resolve(null);
+        img.src = event.target.result;
       };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Tirar foto via câmera (adiciona à lista)
+  const handleCameraCapture = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const base64 = await compressImageFile(file);
+    if (base64) {
+      setFotos(prev => [...prev, base64]);
+    }
+    e.target.value = '';
+  };
+
+  // Selecionar uma ou múltiplas fotos da galeria
+  const handleGalleryCapture = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const compressedList = await Promise.all(files.map(compressImageFile));
+    const validPhotos = compressedList.filter(Boolean);
+    if (validPhotos.length > 0) {
+      setFotos(prev => [...prev, ...validPhotos]);
+    }
+    e.target.value = '';
+  };
+
+  // Remover foto individual da lista
+  const handleRemovePhoto = (indexToRemove) => {
+    setFotos(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const handleSave = () => {
@@ -229,8 +270,8 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
 
     const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
 
-    if (!fotoBase64 && !isGestor && !isEditing) {
-      alert("⚠️ FOTO OBRIGATÓRIA: O vistoriador deve obrigatoriamente cadastrar a foto da vistoria (registre uma foto do problema ou do hidrante durante a descarga de água).");
+    if (fotos.length === 0 && !isGestor && !isEditing) {
+      alert("⚠️ FOTO OBRIGATÓRIA: O vistoriador deve obrigatoriamente cadastrar a foto da vistoria (registre ao menos uma foto do problema ou do hidrante durante a descarga de água).");
       return;
     }
 
@@ -278,6 +319,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
 
       const agora = new Date();
       const dataFormatada = agora.toLocaleString('pt-BR');
+      const fotoPrincipal = fotos[0] || null;
 
       let updatedHistorico = [...(hidrante.HISTORICO_VISTORIAS || [])];
       if (isEditing && updatedHistorico.length > 0) {
@@ -286,7 +328,8 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
           ...updatedHistorico[lastIdx],
           problemasHidrante: problemaFinal,
           flgAtivo: statusFinal,
-          fotoVistoria: fotoBase64,
+          fotoVistoria: fotoPrincipal,
+          fotosVistoria: fotos,
           datHoraEdicao: dataFormatada
         };
       } else if (isEditing) {
@@ -294,7 +337,8 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
           datHoraVistoria: hidrante.datHoraUltimaVistoria || dataFormatada,
           problemasHidrante: problemaFinal,
           flgAtivo: statusFinal,
-          fotoVistoria: fotoBase64,
+          fotoVistoria: fotoPrincipal,
+          fotosVistoria: fotos,
           vistoriadorNome: hidrante.vistoriadorNome || currentUser?.nome,
           vistoriadorMatricula: hidrante.vistoriadorMatricula || currentUser?.matricula,
           datHoraEdicao: dataFormatada
@@ -304,7 +348,8 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
           datHoraVistoria: dataFormatada,
           problemasHidrante: problemaFinal,
           flgAtivo: statusFinal,
-          fotoVistoria: fotoBase64,
+          fotoVistoria: fotoPrincipal,
+          fotosVistoria: fotos,
           vistoriadorNome: currentUser?.nome,
           vistoriadorMatricula: currentUser?.matricula
         });
@@ -316,7 +361,8 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
         problemasHidrante: problemaFinal,
         datHoraUltimaVistoria: isEditing ? (hidrante.datHoraUltimaVistoria || dataFormatada) : dataFormatada,
         datHoraEdicao: isEditing ? dataFormatada : undefined,
-        fotoVistoria: fotoBase64,
+        fotoVistoria: fotoPrincipal,
+        fotosVistoria: fotos,
         vistoriadorNome: hidrante.vistoriadorNome || currentUser?.nome,
         vistoriadorMatricula: hidrante.vistoriadorMatricula || currentUser?.matricula,
         HISTORICO_VISTORIAS: updatedHistorico
@@ -415,7 +461,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
                     <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-mono font-bold tracking-wide">EDIÇÃO</span>
                   </>
                 ) : (
-                  <span>Vistoria Técnica Rápida</span>
+                  <span>Cadastrar Vistoria</span>
                 )}
               </h2>
               <p className="text-[11px] sm:text-xs text-slate-400 truncate">
@@ -533,48 +579,68 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
             />
           </div>
 
-          {/* Foto */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+          {/* Registro Fotográfico */}
+          <div className="flex flex-col gap-2.5 bg-slate-900/40 p-3 rounded-xl border border-slate-700/50">
             <div className="flex flex-col">
               <label className="font-bold text-slate-300 text-sm flex items-center justify-between">
-                <span>Registro Fotográfico {!isGestor && <span className="text-red-500 font-bold ml-1">* (Obrigatório)</span>}</span>
+                <span>Registro Fotográfico {!isGestor && !isEditing && <span className="text-red-500 font-bold ml-1">* (Obrigatório)</span>}</span>
+                {fotos.length > 0 && (
+                  <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/40">
+                    {fotos.length} {fotos.length === 1 ? 'foto anexada' : 'fotos anexadas'}
+                  </span>
+                )}
               </label>
               <p className="text-xs text-amber-300/90 font-medium mt-0.5">
-                Registre uma foto do problema ou do hidrante durante a descarga de água.
+                Registre uma ou mais fotos do problema ou do hidrante durante a descarga de água.
               </p>
             </div>
-            {!fotoBase64 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="p-2.5 rounded-lg bg-emerald-700/80 hover:bg-emerald-600 border border-emerald-500/60 text-white font-bold text-xs sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <Camera size={16} />
-                  <span>Tirar Foto (Câmera)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => galleryInputRef.current?.click()}
-                  className="p-2.5 rounded-lg bg-slate-750 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <ImageIcon size={16} className="text-cyan-400" />
-                  <span>Escolher da Galeria</span>
-                </button>
-              </div>
-            ) : (
-              <div className="relative">
-                <img src={fotoBase64} alt="Preview da Vistoria" className="w-full h-36 object-cover rounded border border-slate-600" />
-                <button
-                  type="button"
-                  onClick={() => setFotoBase64(null)}
-                  className="absolute top-2 right-2 bg-red-600 text-white p-1 px-3 rounded-full font-bold text-xs shadow hover:bg-red-700 transition-colors flex items-center gap-1"
-                >
-                  <Trash2 size={12} />
-                  Remover Foto
-                </button>
+
+            {/* Grade de Fotos Anexadas */}
+            {fotos.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {fotos.map((foto, index) => (
+                  <div key={index} className="relative group rounded-xl overflow-hidden border border-slate-600 bg-slate-800 shadow-sm aspect-video sm:aspect-square">
+                    <img 
+                      src={foto} 
+                      alt={`Foto ${index + 1} da vistoria`} 
+                      className="w-full h-full object-cover" 
+                    />
+                    <div className="absolute top-1 left-1 bg-black/70 backdrop-blur-xs text-white text-[10px] font-mono font-bold px-1.5 py-0.5 rounded">
+                      #{index + 1}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(index)}
+                      className="absolute top-1 right-1 bg-red-600 hover:bg-red-500 text-white p-1 rounded-lg shadow-md transition-all active:scale-90 flex items-center justify-center cursor-pointer"
+                      title="Remover esta foto"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
+
+            {/* Botões de Ação para Tirar / Escolher Foto (Permanecem disponíveis para adicionar mais fotos) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                className="p-2.5 rounded-lg bg-emerald-700/80 hover:bg-emerald-600 border border-emerald-500/60 text-white font-bold text-xs sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+              >
+                <Camera size={16} />
+                <span>{fotos.length > 0 ? '📸 + Tirar Foto' : '📸 Tirar Foto (Câmera)'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => galleryInputRef.current?.click()}
+                className="p-2.5 rounded-lg bg-slate-750 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+              >
+                <ImageIcon size={16} className="text-cyan-400" />
+                <span>{fotos.length > 0 ? '🖼️ + Da Galeria' : '🖼️ Galeria (Múltiplas)'}</span>
+              </button>
+            </div>
+
             {/* Input Câmera (capture environment) */}
             <input
               type="file"
@@ -582,15 +648,16 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
               capture="environment"
               ref={cameraInputRef}
               className="hidden"
-              onChange={handleImageCapture}
+              onChange={handleCameraCapture}
             />
-            {/* Input Galeria (sem capture, abre seletor de arquivos/galeria) */}
+            {/* Input Galeria (multiple: permite selecionar mais de uma foto de uma vez) */}
             <input
               type="file"
               accept="image/*"
+              multiple
               ref={galleryInputRef}
               className="hidden"
-              onChange={handleImageCapture}
+              onChange={handleGalleryCapture}
             />
           </div>
 
