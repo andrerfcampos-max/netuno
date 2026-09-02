@@ -45,7 +45,9 @@ export const printGeneralReport = ({
   operantes = 0,
   operantesPercent = 0,
   inoperantes = 0,
-  inoperantesPercent = 0
+  inoperantesPercent = 0,
+  topDefeitos = [],
+  yearStats = []
 }) => {
   const printWindow = window.open('', '_blank', 'width=1050,height=850');
   if (!printWindow) {
@@ -124,16 +126,17 @@ export const printGeneralReport = ({
     </div>
   ` : '';
 
-  const topDefeitosHtml = (topDefeitosComCidades && topDefeitosComCidades.length > 0) ? `
+  const topDefeitosHtml = (isMultiCity && topDefeitosComCidades && topDefeitosComCidades.length > 0) ? `
     <div class="section-block avoid-break">
       <div class="section-title">⚠️ Principais Defeitos Identificados no DF</div>
       <table class="data-table">
         <thead>
           <tr>
-            <th>Defeito / Inconformidade Técnica</th>
-            <th class="text-center">Ocorrências</th>
-            <th class="text-center">% do Total</th>
-            <th>Cidades com Maior Incidência</th>
+            <th style="width: 38%;">Defeito / Inconformidade Técnica</th>
+            <th class="text-center" style="width: 12%;">Ocorrências</th>
+            <th class="text-center" style="width: 12%;">% do Total</th>
+            <th style="width: 20%;">Cidades com Maior Incidência</th>
+            <th style="width: 18%;">Impacto</th>
           </tr>
         </thead>
         <tbody>
@@ -143,10 +146,113 @@ export const printGeneralReport = ({
               <td class="text-center"><strong>${d.total}</strong></td>
               <td class="text-center">${d.percent.toFixed(1)}%</td>
               <td class="sub-text">${d.topCidades.map(tc => `${tc.cidade} (${tc.qtd})`).join(', ') || '-'}</td>
+              <td>
+                <div class="bar-container">
+                  <div class="bar-fill bar-red" style="width: ${Math.max(6, d.percent)}%;"></div>
+                </div>
+              </td>
             </tr>
           `).join('')}
         </tbody>
       </table>
+    </div>
+  ` : (topDefeitos && topDefeitos.length > 0 ? `
+    <div class="section-block avoid-break">
+      <div class="section-title">⚠️ Top Defeitos Registrados</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 50%;">Defeito / Inconformidade Técnica</th>
+            <th class="text-center" style="width: 15%;">Ocorrências</th>
+            <th class="text-center" style="width: 15%;">% do Total</th>
+            <th style="width: 20%;">Impacto Visual</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${topDefeitos.map(d => `
+            <tr>
+              <td><strong class="text-red">${d.nome}</strong></td>
+              <td class="text-center"><strong>${d.count}</strong></td>
+              <td class="text-center">${d.percent.toFixed(1)}%</td>
+              <td>
+                <div class="bar-container">
+                  <div class="bar-fill bar-red" style="width: ${Math.max(6, d.barPercent || d.percent)}%;"></div>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  ` : '');
+
+  const yearStatsHtml = (yearStats && yearStats.length > 0) ? `
+    <div class="section-block avoid-break">
+      <div class="section-title">📅 Distribuição Temporal (Vistorias por Ano)</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 30%;">Ano de Vistoria</th>
+            <th class="text-center" style="width: 30%;">Total de Vistorias</th>
+            <th style="width: 40%;">Proporção Visual</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${yearStats.map(y => `
+            <tr>
+              <td><strong>${y.nome}</strong></td>
+              <td class="text-center text-green"><strong>${y.count}</strong> vistoria${y.count > 1 ? 's' : ''}</td>
+              <td>
+                <div class="bar-container">
+                  <div class="bar-fill bar-green" style="width: ${Math.max(6, y.percent)}%;"></div>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  ` : '';
+
+  const hidrantesComFoto = currentData.filter(h => h.fotoVistoria || h.fotoPerfil || h.foto || h.fotoUrl);
+
+  const anexoFotograficoHtml = hidrantesComFoto.length > 0 ? `
+    <div class="section-block page-break-before">
+      <div class="section-title" style="font-size: 13px; border-bottom: 2px solid #0f172a; padding-bottom: 5px; margin-top: 18px; margin-bottom: 12px;">
+        📷 Anexo Fotográfico - Evidências das Vistorias (${hidrantesComFoto.length} ${hidrantesComFoto.length === 1 ? 'registro fotográfico' : 'registros fotográficos'})
+      </div>
+      <div class="photos-grid">
+        ${hidrantesComFoto.map((h, i) => {
+          const fotoSrc = h.fotoVistoria || h.fotoPerfil || h.foto || h.fotoUrl;
+          const cod = h.nomHidrante || h.codHidrante || `HID-${i + 1}`;
+          const dataVis = formatDateOnly(h.datHoraUltimaVistoria || h.datHoraVistoria);
+          const ra = normalizeRAName(h.dscLocalidade) || 'DF';
+          const end = fixEncoding(h.dscEndereco) || '-';
+          const ref = h.dscPontoReferencia ? `Ref: ${fixEncoding(h.dscPontoReferencia)}` : '';
+          const isOp = Boolean(h.flgAtivo);
+          const defeito = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!isOp ? 'Inoperante (necessita manutenção)' : 'Sem alterações / Operante');
+
+          return `
+            <div class="photo-card avoid-break">
+              <div class="photo-card-header">
+                <div>
+                  <span class="photo-card-code">${cod}</span>
+                  <span class="photo-card-ra">${ra} • ${dataVis}</span>
+                </div>
+                <span class="badge ${isOp ? 'badge-op' : 'badge-inop'}">${isOp ? 'OPERANTE' : 'INOPERANTE'}</span>
+              </div>
+              <div class="photo-card-body">
+                <div class="photo-end">📍 <strong>${end}</strong></div>
+                ${ref ? `<div class="photo-ref">${ref}</div>` : ''}
+                <div class="photo-defect ${isOp ? 'text-green' : 'text-red'}">⚠️ ${defeito}</div>
+                <div class="photo-img-wrapper">
+                  <img src="${fotoSrc}" alt="Evidência ${cod}" class="photo-evidence-img" />
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
     </div>
   ` : '';
 
@@ -206,27 +312,37 @@ export const printGeneralReport = ({
           margin-top: 6px;
           font-weight: 600;
         }
-        .kpi-row {
+        
+        .kpi-overview-container {
           display: flex;
           gap: 10px;
           margin-bottom: 14px;
+          align-items: stretch;
+        }
+        .kpi-cards-grid {
+          flex: 7;
+          display: flex;
+          gap: 8px;
         }
         .kpi-card {
           flex: 1;
           border: 1.5px solid #cbd5e1;
           border-radius: 6px;
-          padding: 8px 12px;
+          padding: 8px 10px;
           text-align: center;
           background: #f8fafc;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
         }
         .kpi-label {
-          font-size: 9.5px;
+          font-size: 9px;
           font-weight: 800;
           text-transform: uppercase;
           color: #64748b;
         }
         .kpi-value {
-          font-size: 18px;
+          font-size: 17px;
           font-weight: 900;
           margin-top: 2px;
           color: #0f172a;
@@ -236,9 +352,69 @@ export const printGeneralReport = ({
         .card-red { border-color: #fca5a5; background: #fef2f2; }
         .card-red .kpi-value { color: #b91c1c; }
         
+        .kpi-donut-card {
+          flex: 5;
+          border: 1.5px solid #cbd5e1;
+          border-radius: 6px;
+          padding: 6px 10px;
+          background: #f8fafc;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .donut-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          justify-content: space-around;
+        }
+        .donut-svg-box {
+          position: relative;
+          width: 58px;
+          height: 58px;
+          flex-shrink: 0;
+        }
+        .donut-svg {
+          width: 58px;
+          height: 58px;
+          transform: rotate(-90deg);
+        }
+        .donut-center-text {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+        .donut-percent {
+          font-size: 11px;
+          font-weight: 900;
+          color: #0f172a;
+          line-height: 1;
+        }
+        .donut-sub {
+          font-size: 7.5px;
+          font-weight: 800;
+          color: #64748b;
+          text-transform: uppercase;
+        }
+        .donut-legend {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          font-size: 9.5px;
+          font-weight: 700;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+        .bg-green { background: #16a34a; }
+        .bg-red { background: #dc2626; }
+        
         .bar-container {
           display: flex;
-          height: 10px;
+          height: 8px;
           border-radius: 3px;
           overflow: hidden;
           background: #e2e8f0;
@@ -277,7 +453,7 @@ export const printGeneralReport = ({
         .data-table td {
           border: 1px solid #e2e8f0;
           padding: 5px 6px;
-          vertical-align: top;
+          vertical-align: middle;
         }
         .data-table tbody tr:nth-child(even) { background: #fafafa; }
         .col-seq { width: 4%; text-align: center; font-weight: bold; color: #64748b; }
@@ -303,7 +479,50 @@ export const printGeneralReport = ({
         .text-green { color: #15803d; }
         .text-red { color: #b91c1c; }
         .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+        .page-break-before { page-break-before: always; break-before: page; }
         
+        .photos-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+          margin-top: 8px;
+        }
+        .photo-card {
+          border: 1.5px solid #cbd5e1;
+          border-radius: 6px;
+          padding: 8px;
+          background: #ffffff;
+        }
+        .photo-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          border-bottom: 1px solid #e2e8f0;
+          padding-bottom: 4px;
+          margin-bottom: 6px;
+        }
+        .photo-card-code { font-size: 12px; font-weight: 900; color: #0f172a; }
+        .photo-card-ra { font-size: 9.5px; color: #64748b; margin-left: 6px; font-weight: 600; }
+        .photo-end { font-size: 10px; color: #1e293b; margin-bottom: 2px; }
+        .photo-ref { font-size: 9px; color: #64748b; font-style: italic; margin-bottom: 2px; }
+        .photo-defect { font-size: 9.5px; font-weight: 700; margin-bottom: 6px; line-height: 1.25; }
+        .photo-img-wrapper {
+          width: 100%;
+          height: 190px;
+          border-radius: 4px;
+          overflow: hidden;
+          background: #f1f5f9;
+          border: 1px solid #e2e8f0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .photo-evidence-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
         .signature-section {
           margin-top: 28px;
           padding-top: 10px;
@@ -330,23 +549,51 @@ export const printGeneralReport = ({
         </div>
       </div>
 
-      <div class="kpi-row avoid-break">
-        <div class="kpi-card">
-          <div class="kpi-label">Total Vistoriado</div>
-          <div class="kpi-value">${total}</div>
+      <div class="kpi-overview-container avoid-break">
+        <div class="kpi-cards-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Vistoriado</div>
+            <div class="kpi-value">${total}</div>
+          </div>
+          <div class="kpi-card card-green">
+            <div class="kpi-label">Hidrantes Operantes</div>
+            <div class="kpi-value">${operantes} <span style="font-size: 11px;">(${operantesPercent}%)</span></div>
+          </div>
+          <div class="kpi-card card-red">
+            <div class="kpi-label">Hidrantes Inoperantes</div>
+            <div class="kpi-value">${inoperantes} <span style="font-size: 11px;">(${inoperantesPercent}%)</span></div>
+          </div>
         </div>
-        <div class="kpi-card card-green">
-          <div class="kpi-label">Hidrantes Operantes</div>
-          <div class="kpi-value">${operantes} <span style="font-size: 12px;">(${operantesPercent}%)</span></div>
-        </div>
-        <div class="kpi-card card-red">
-          <div class="kpi-label">Hidrantes Inoperantes</div>
-          <div class="kpi-value">${inoperantes} <span style="font-size: 12px;">(${inoperantesPercent}%)</span></div>
+
+        <div class="kpi-donut-card">
+          <div class="donut-wrapper">
+            <div class="donut-svg-box">
+              <svg viewBox="0 0 36 36" class="donut-svg">
+                <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#ef4444" stroke-width="4.2"></circle>
+                <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#10b981" stroke-width="4.2" stroke-dasharray="${operantesPercent} ${100 - operantesPercent}" stroke-dashoffset="25"></circle>
+              </svg>
+              <div class="donut-center-text">
+                <span class="donut-percent">${operantesPercent}%</span>
+                <span class="donut-sub">OK</span>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div class="legend-item text-green">
+                <span class="legend-dot bg-green"></span>
+                <span><strong>${operantes}</strong> Operantes</span>
+              </div>
+              <div class="legend-item text-red">
+                <span class="legend-dot bg-red"></span>
+                <span><strong>${inoperantes}</strong> Inoperantes</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       ${multiCityHtml}
       ${topDefeitosHtml}
+      ${yearStatsHtml}
 
       <div class="section-block">
         <div class="section-title">📋 Relação Técnica Detalhada (${currentData.length} hidrantes)</div>
@@ -365,6 +612,8 @@ export const printGeneralReport = ({
           </tbody>
         </table>
       </div>
+
+      ${anexoFotograficoHtml}
 
       <div class="signature-section avoid-break">
         <div class="signature-line"></div>

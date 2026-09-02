@@ -572,3 +572,17 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Persistência em nuvem estendida para Estudos de Edificações (PPO) e Estudos Técnicos via mutações `building_study` e `technical_study`.
   - Executada bateria automatizada de testes de ponta a ponta comprovando o ciclo de gravação, leitura, mutação e exclusão na nuvem.
 
+### [02/09/2026] Etapa 69 Concluída: Paridade Visual do PDF (Gráfico Donut, Barras de Defeitos/Anos e Anexo Fotográfico) e Eliminação de Sobreposição na Tela Cheia do Relatório
+- **1. Eliminação de Sobreposição e Ocultação do Seletor em Tela Cheia (`MissionReportPanel.jsx`):**
+  - No modo tela cheia (`isMaximized === true`), os botões de alternância `[Relatório Geral (CBMDF)]` / `[Relatório de Alterações (CAESB)]` são completamente ocultados da visualização. A escolha do tipo de documento é realizada pelo militar na visualização padrão.
+  - A barra superior em tela cheia foi condensada para uma faixa compacta e elegante com ~40px de altura (contendo o título com badge sutil do relatório ativo e botões de restaurar e fechar), eliminando 100% da sobreposição e impedindo que elementos flutuantes cubram títulos, KPIs e tabelas durante a rolagem no celular.
+- **2. Gráfico Donut Vetorial de Operacionalidade Geral no PDF (`officialPrintUtils.js`):**
+  - Implementado o gráfico de rosca (Donut) vetorial em SVG nativo de alta definição no documento PDF impresso do Relatório Geral CBMDF.
+  - O donut renderiza a divisão exata com preenchimento circular proporcional em verde (`#10b981`) para hidrantes operantes e vermelho (`#ef4444`) para inoperantes, com percentual e indicador "OK" centralizados e legendas laterais estruturadas com pontos coloridos e quantitativos.
+- **3. Barras de Progresso Gráficas nos Defeitos e Distribuição Temporal por Ano (`officialPrintUtils.js`):**
+  - A seção de "Top Defeitos Registrados" (e a tabela de defeitos em visão multi-cidade) agora inclui barras horizontais proporcionais de impacto visual em vermelho para cada patologia técnica identificada.
+  - Adicionada a seção "📅 Distribuição Temporal (Vistorias por Ano)" no PDF oficial, renderizando o volume anual de vistorias com barras gráficas proporcionais em verde esmeralda.
+- **4. Anexo Fotográfico Oficial no Relatório Geral CBMDF (`officialPrintUtils.js`):**
+  - Inserida a seção oficial `📷 Anexo Fotográfico - Evidências das Vistorias` antes do bloco de assinatura no Relatório Geral, espelhando fielmente o anexo que já existia na tela do sistema.
+  - Cada registro fotográfico é diagramado em grade A4 protegida contra quebras indesejadas (`page-break-inside: avoid`), contendo identificação do hidrante, RA, data da vistoria, endereço completo, referência, inconformidades técnicas constatadas e a fotografia em alta definição.
+

@@ -286,7 +286,9 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         operantes,
         operantesPercent,
         inoperantes,
-        inoperantesPercent
+        inoperantesPercent,
+        topDefeitos,
+        yearStats
       });
     }
   };
@@ -819,18 +821,31 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       </div>
 
       {/* TOOLBAR SUPERIOR NO PRINT */}
-      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 pb-2 border-b border-slate-700 no-print px-2 lg:px-0 gap-3 ${isMaximized ? 'sticky top-0 z-[110] bg-slate-900/95 backdrop-blur-sm pt-4 shadow-sm' : ''}`}>
+      <div className={`flex justify-between items-center mb-4 pb-2 border-b border-slate-700 no-print px-2 lg:px-0 gap-3 ${isMaximized ? 'sticky top-0 z-[110] bg-slate-900/95 backdrop-blur-sm pt-3 pb-3 shadow-md' : 'flex-col lg:flex-row items-start lg:items-center'}`}>
         <div className="flex items-center justify-between w-full lg:w-auto gap-2">
-          <h2 className="text-lg sm:text-xl font-bold text-blue-400 flex items-center gap-2 drop-shadow-sm truncate">
+          <h2 className="text-base sm:text-xl font-bold text-blue-400 flex items-center gap-2 drop-shadow-sm truncate">
             <FileSpreadsheet size={22} className="shrink-0" /> 
             <span>Relatórios de Vistoria</span>
+            {isMaximized && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-emerald-400 border border-slate-700 ml-2">
+                {reportType === 'interno' ? (
+                  <>
+                    <ShieldHalf size={13} /> Relatório Geral (CBMDF)
+                  </>
+                ) : (
+                  <>
+                    <Building2 size={13} /> Relatório CAESB
+                  </>
+                )}
+              </span>
+            )}
           </h2>
 
           <div className="flex items-center gap-1.5 lg:hidden">
             <button 
               onClick={() => setIsMaximized(!isMaximized)} 
               className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition-colors border border-slate-600"
-              title={isMaximized ? "Minimizar" : "Maximizar"}
+              title={isMaximized ? "Restaurar Janela" : "Maximizar Tela Cheia"}
             >
               {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
             </button>
@@ -840,31 +855,34 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           </div>
         </div>
         
-        {currentUser?.role !== 'vistoriador' ? (
-          <div className="flex bg-slate-900/80 rounded-xl p-1 w-full lg:w-auto shadow-inner border border-slate-700/80">
-            <button 
-              onClick={() => {
-                setReportType('interno');
-                setIsExportMenuOpen(false);
-              }}
-              className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${reportType === 'interno' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              <ShieldHalf size={15} /> Relatório Geral (CBMDF)
-            </button>
-            <button 
-              onClick={() => {
-                setReportType('caesb');
-                setIsExportMenuOpen(false);
-              }}
-              className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${reportType === 'caesb' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              <Building2 size={15} /> Relatório de Alterações (CAESB)
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-950/80 border border-emerald-500/40 rounded-xl text-emerald-300 font-bold text-xs sm:text-sm shadow-md">
-            <ShieldHalf size={16} /> Relatório Geral da Missão (CBMDF)
-          </div>
+        {/* Seletor de Relatório: Ocultado em tela cheia para eliminar sobreposição */}
+        {!isMaximized && (
+          currentUser?.role !== 'vistoriador' ? (
+            <div className="flex bg-slate-900/80 rounded-xl p-1 w-full lg:w-auto shadow-inner border border-slate-700/80">
+              <button 
+                onClick={() => {
+                  setReportType('interno');
+                  setIsExportMenuOpen(false);
+                }}
+                className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${reportType === 'interno' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <ShieldHalf size={15} /> Relatório Geral (CBMDF)
+              </button>
+              <button 
+                onClick={() => {
+                  setReportType('caesb');
+                  setIsExportMenuOpen(false);
+                }}
+                className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${reportType === 'caesb' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <Building2 size={15} /> Relatório de Alterações (CAESB)
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-950/80 border border-emerald-500/40 rounded-xl text-emerald-300 font-bold text-xs sm:text-sm shadow-md">
+              <ShieldHalf size={16} /> Relatório Geral da Missão (CBMDF)
+            </div>
+          )
         )}
 
         {/* Controles Desktop */}
@@ -872,7 +890,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           <button 
             onClick={() => setIsMaximized(!isMaximized)} 
             className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full transition-colors border border-slate-600"
-            title={isMaximized ? "Minimizar" : "Maximizar"}
+            title={isMaximized ? "Restaurar Janela" : "Maximizar Tela Cheia"}
           >
             {isMaximized ? <Minimize2 size={22} /> : <Maximize2 size={22} />}
           </button>
