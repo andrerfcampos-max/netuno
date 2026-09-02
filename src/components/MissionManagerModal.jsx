@@ -3,6 +3,7 @@ import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight,
 import { createNewFolder } from '../utils/storage';
 import { syncMissionToCloud, syncFolderToCloud } from '../services/syncService';
 import { printMissionDraft } from '../utils/draftPrintUtils';
+import { executePrintHtml } from '../utils/officialPrintUtils';
 
 const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, hidrantes = [], onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser, isEmbedded = false }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
@@ -216,7 +217,6 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
   };
 
   const handleExportPDFComando = () => {
-    const printWindow = window.open('', '', 'width=1000,height=800');
     const today = new Date().toLocaleDateString('pt-BR');
     
     let html = `
@@ -325,10 +325,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
       </body></html>
     `;
     
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+    executePrintHtml(html);
   };
 
   const handleCreateMission = () => {

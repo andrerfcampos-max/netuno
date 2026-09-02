@@ -45,6 +45,104 @@ const formatDateTime = (dateStr) => {
 };
 
 /**
+ * Utilitário central de disparo de impressão direta via Iframe invisível.
+ * Elimina completamente a abertura de janelas popup intermediárias na tela,
+ * disparando o diálogo nativo de PDF/Impressão do navegador (Chrome) diretamente
+ * sobre a aplicação e garantindo fidelidade total de A4 e fechamento limpo.
+ */
+export const executePrintHtml = (html) => {
+  try {
+    const existing = document.getElementById('netuno-print-iframe');
+    if (existing) existing.remove();
+
+    const iframe = document.createElement('iframe');
+    iframe.id = 'netuno-print-iframe';
+    iframe.style.position = 'fixed';
+    iframe.style.top = '-10000px';
+    iframe.style.left = '-10000px';
+    iframe.style.width = '1024px';
+    iframe.style.height = '768px';
+    iframe.style.border = '0';
+    iframe.style.opacity = '0';
+    iframe.style.pointerEvents = 'none';
+    iframe.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    const doPrint = () => {
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch (err) {
+        console.warn('Falha no iframe.print(), acionando fallback seguro:', err);
+        fallbackPopupPrint(html);
+      }
+    };
+
+    const cleanup = () => {
+      setTimeout(() => {
+        const frame = document.getElementById('netuno-print-iframe');
+        if (frame) frame.remove();
+      }, 500);
+    };
+
+    iframe.contentWindow.addEventListener('afterprint', cleanup);
+
+    // Aguarda carregamento de imagens se existirem
+    const images = Array.from(doc.images || []);
+    if (images.length === 0) {
+      setTimeout(doPrint, 250);
+    } else {
+      let loaded = 0;
+      const onDone = () => {
+        loaded++;
+        if (loaded >= images.length) {
+          setTimeout(doPrint, 200);
+        }
+      };
+      images.forEach(img => {
+        if (img.complete) {
+          loaded++;
+        } else {
+          img.addEventListener('load', onDone);
+          img.addEventListener('error', onDone);
+        }
+      });
+      if (loaded >= images.length) {
+        setTimeout(doPrint, 250);
+      } else {
+        setTimeout(doPrint, 2500); // tempo limite de segurança
+      }
+    }
+
+    // Limpeza de segurança após 2 minutos
+    setTimeout(cleanup, 120000);
+  } catch (e) {
+    console.error('Erro ao acionar impressão via iframe:', e);
+    fallbackPopupPrint(html);
+  }
+};
+
+export const fallbackPopupPrint = (html) => {
+  const printWindow = window.open('', '_blank', 'width=1050,height=850');
+  if (!printWindow) {
+    alert('Por favor, autorize a abertura de popups no seu navegador para gerar o PDF oficial.');
+    return;
+  }
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.addEventListener('afterprint', () => {
+    try { printWindow.close(); } catch (e) {}
+  });
+};
+
+/**
  * 1. IMPRESSÃO DO RELATÓRIO GERAL (CBMDF)
  */
 export const printGeneralReport = ({
@@ -63,12 +161,6 @@ export const printGeneralReport = ({
   topDefeitos = [],
   yearStats = []
 }) => {
-  const printWindow = window.open('', '_blank', 'width=1050,height=850');
-  if (!printWindow) {
-    alert('Por favor, autorize a abertura de popups no seu navegador para gerar o PDF oficial.');
-    return;
-  }
-
   const nowStr = formatDateTime(new Date());
   const emissorNome = currentUser?.nome || 'Militar Responsável';
   const emissorMatricula = currentUser?.matricula ? `Matrícula: ${currentUser.matricula}` : '';
@@ -940,17 +1032,15 @@ export const printGeneralReport = ({
       </div>
 
       <script>
-        window.onload = function() {
-          window.print();
-        };
+        window.addEventListener('afterprint', function() {
+          try { window.close(); } catch(e) {}
+        });
       </script>
     </body>
     </html>
   `;
 
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
+  executePrintHtml(html);
 };
 
 /**
@@ -964,12 +1054,6 @@ export const printCaesbReport = ({
   stats = {},
   topDefeitos = []
 }) => {
-  const printWindow = window.open('', '_blank', 'width=1050,height=850');
-  if (!printWindow) {
-    alert('Por favor, autorize a abertura de popups no seu navegador para gerar o PDF oficial.');
-    return;
-  }
-
   const nowStr = formatDateTime(new Date());
   const emissorNome = currentUser?.nome || 'Gestor de Hidrantes Urbanos';
   const emissorMatricula = currentUser?.matricula ? `Matrícula: ${currentUser.matricula}` : '';
@@ -1244,17 +1328,15 @@ export const printCaesbReport = ({
       </div>
 
       <script>
-        window.onload = function() {
-          window.print();
-        };
+        window.addEventListener('afterprint', function() {
+          try { window.close(); } catch(e) {}
+        });
       </script>
     </body>
     </html>
   `;
 
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
+  executePrintHtml(html);
 };
 
 /**
@@ -1263,12 +1345,6 @@ export const printCaesbReport = ({
 export const printBuildingStudyReport = ({ study, currentUser = null }) => {
   if (!study) {
     alert('Nenhuma edificação selecionada.');
-    return;
-  }
-
-  const printWindow = window.open('', '_blank', 'width=1050,height=850');
-  if (!printWindow) {
-    alert('Por favor, autorize a abertura de popups no seu navegador para gerar o PDF oficial.');
     return;
   }
 
@@ -1519,17 +1595,15 @@ export const printBuildingStudyReport = ({ study, currentUser = null }) => {
       </div>
 
       <script>
-        window.onload = function() {
-          window.print();
-        };
+        window.addEventListener('afterprint', function() {
+          try { window.close(); } catch(e) {}
+        });
       </script>
     </body>
     </html>
   `;
 
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
+  executePrintHtml(html);
 };
 
 /**
@@ -1538,12 +1612,6 @@ export const printBuildingStudyReport = ({ study, currentUser = null }) => {
 export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser = null }) => {
   if (!studyData || !calcResults) {
     alert('Dados do estudo técnico incompletos para impressão.');
-    return;
-  }
-
-  const printWindow = window.open('', '_blank', 'width=1050,height=850');
-  if (!printWindow) {
-    alert('Por favor, autorize a abertura de popups no seu navegador para gerar o PDF oficial.');
     return;
   }
 
@@ -1695,15 +1763,13 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
       </div>
 
       <script>
-        window.onload = function() {
-          window.print();
-        };
+        window.addEventListener('afterprint', function() {
+          try { window.close(); } catch(e) {}
+        });
       </script>
     </body>
     </html>
   `;
 
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
+  executePrintHtml(html);
 };

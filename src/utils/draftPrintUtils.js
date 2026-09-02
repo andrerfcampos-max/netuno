@@ -1,5 +1,6 @@
 import { fixEncoding } from './textUtils';
 import { normalizeRAName } from './raList';
+import { executePrintHtml } from './officialPrintUtils';
 
 // Cálculo de distância geodésica em km (Haversine)
 export const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -107,13 +108,6 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
   const defaultCity = Array.from(rasSet)[0] || 'Brasília';
   const missionName = mission.name || `${defaultCity} ${currentYear}`;
   const atribuicaoText = mission.atribuicao ? ` • Equipe: ${mission.atribuicao}` : '';
-
-  // Cria janela de impressão
-  const printWindow = window.open('', '_blank', 'width=1000,height=850');
-  if (!printWindow) {
-    alert('Por favor, autorize a abertura de popups no seu navegador para imprimir o rascunho.');
-    return;
-  }
 
   const rowsHtml = orderedList.map((h, idx) => {
     const code = h.nomHidrante || h.codHidrante || '-';
@@ -351,17 +345,13 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
       </div>
 
       <script>
-        window.onload = function() {
-          setTimeout(function() {
-            window.print();
-          }, 300);
-        };
+        window.addEventListener('afterprint', function() {
+          try { window.close(); } catch(e) {}
+        });
       </script>
     </body>
     </html>
   `;
 
-  printWindow.document.open();
-  printWindow.document.write(fullHtml);
-  printWindow.document.close();
+  executePrintHtml(fullHtml);
 };
