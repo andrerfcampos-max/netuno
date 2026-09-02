@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { Camera, Image as ImageIcon, Trash2, ClipboardCheck, X } from 'lucide-react';
+import { Camera, Image as ImageIcon, Trash2, ClipboardCheck, X, Edit3 } from 'lucide-react';
 import { fixEncoding } from '../utils/textUtils';
 import { calculateDistanceMeters } from '../utils/geoUtils';
 
@@ -45,16 +45,115 @@ const DEFEITOS_OFICIAIS = [
   "Vazamento no flange (operante)"
 ];
 
-const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
-  const [q1, setQ1] = useState(null); // Chave tipo T: 'SIM' | 'NÃO, FALTA LUVA'
-  const [q2, setQ2] = useState(null); // Registro: 'SEM ALTERAÇÃO' | 'SOTERRADO' | 'COM VAZAMENTO' | 'EMPERRADO'
-  const [q3, setQ3] = useState(null); // Tampa da caixa: 'SEM ALTERAÇÃO' | 'LACRADA' | 'QUEBRADA' | 'REMOVIDA'
-  const [q4, setQ4] = useState(null); // Tampões: 'SIM' | 'FALTA 1 TAMPÃO' | 'FALTAM 2 TAMPÕES' | 'FALTAM TODOS OS TAMPÕES'
-  const [q5, setQ5] = useState(hidrante.flgAtivo ? 'SIM' : 'NÃO'); // Operante
-  const [q6, setQ6] = useState(''); // Algum outro problema
-  const [q7, setQ7] = useState(''); // Observações
+const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, currentUser }) => {
+  // Pré-processamento dos dados existentes caso seja modo edição
+  const initialData = useMemo(() => {
+    if (!isEditing && (!hidrante.datHoraUltimaVistoria || hidrante.datHoraUltimaVistoria === '-')) {
+      return {
+        q1: null,
+        q2: null,
+        q3: null,
+        q4: null,
+        q5: hidrante.flgAtivo ? 'SIM' : 'NÃO',
+        q6: '',
+        q7: '',
+        foto: null
+      };
+    }
+
+    const rawProbs = (hidrante.problemasHidrante || '').split(' | ').map(p => p.trim()).filter(Boolean);
+
+    // Q1: Chave T / Luva
+    let initialQ1 = 'SIM';
+    if (rawProbs.some(p => p.toLowerCase().includes('falta cabeçote da haste do registro') || p.toLowerCase().includes('luva'))) {
+      initialQ1 = 'NÃO, FALTA LUVA';
+    }
+
+    // Q2: Registro
+    let initialQ2 = 'SEM ALTERAÇÃO';
+    if (rawProbs.some(p => p.toLowerCase().includes('soterrado'))) {
+      initialQ2 = 'SOTERRADO';
+    } else if (rawProbs.some(p => p.toLowerCase().includes('vazamento') && p.toLowerCase().includes('registro'))) {
+      initialQ2 = 'COM VAZAMENTO';
+    } else if (rawProbs.some(p => p.toLowerCase().includes('emperrado') || p.toLowerCase().includes('não funciona'))) {
+      initialQ2 = 'EMPERRADO';
+    }
+
+    // Q3: Tampa da caixa
+    let initialQ3 = 'SEM ALTERAÇÃO';
+    if (rawProbs.some(p => p.toLowerCase().includes('lacrada'))) {
+      initialQ3 = 'LACRADA';
+    } else if (rawProbs.some(p => p.toLowerCase().includes('quebrada'))) {
+      initialQ3 = 'QUEBRADA';
+    } else if (rawProbs.some(p => p.toLowerCase().includes('removida'))) {
+      initialQ3 = 'REMOVIDA';
+    }
+
+    // Q4: Tampões
+    let initialQ4 = 'SIM';
+    if (rawProbs.some(p => p.toLowerCase().includes('todos os tampões'))) {
+      initialQ4 = 'FALTAM TODOS OS TAMPÕES';
+    } else if (rawProbs.some(p => p.toLowerCase().includes('dois tampões') || p.toLowerCase().includes('2 tampões'))) {
+      initialQ4 = 'FALTAM 2 TAMPÕES';
+    } else if (rawProbs.some(p => p.toLowerCase().includes('falta 1 tampão') || p.toLowerCase().includes('falta tampão de 2.1/2') || p.toLowerCase().includes('falta tampão'))) {
+      initialQ4 = 'FALTA 1 TAMPÃO';
+    }
+
+    // Q5: Operante
+    const initialQ5 = hidrante.flgAtivo ? 'SIM' : 'NÃO';
+
+    // Q7: Observação
+    let initialQ7 = '';
+    const obsFound = rawProbs.find(p => p.toLowerCase().startsWith('obs:') || p.toLowerCase().startsWith('obs.:'));
+    if (obsFound) {
+      initialQ7 = obsFound.replace(/^obs\.?:?\s*/i, '').trim();
+    } else if (hidrante.dscObservacao) {
+      initialQ7 = hidrante.dscObservacao.trim();
+    }
+
+    // Q6: Algum outro problema
+    let initialQ6 = '';
+    for (const p of rawProbs) {
+      const pNorm = p.trim();
+      const isKnownButton = 
+        pNorm.toLowerCase().startsWith('obs:') ||
+        pNorm.toLowerCase().includes('falta cabeçote') ||
+        pNorm.toLowerCase().includes('registro soterrado') ||
+        pNorm.toLowerCase().includes('registro com vazamento') ||
+        pNorm.toLowerCase().includes('registro emperrado') ||
+        pNorm.toLowerCase().includes('tampa da caixa') ||
+        pNorm.toLowerCase().includes('tampa de concreto') ||
+        pNorm.toLowerCase().includes('tampão') ||
+        pNorm.toLowerCase().includes('tampões');
+
+      if (!isKnownButton && pNorm) {
+        const match = DEFEITOS_OFICIAIS.find(d => d.toLowerCase() === pNorm.toLowerCase() || pNorm.toLowerCase().includes(d.toLowerCase()));
+        initialQ6 = match || pNorm;
+        break;
+      }
+    }
+
+    return {
+      q1: initialQ1,
+      q2: initialQ2,
+      q3: initialQ3,
+      q4: initialQ4,
+      q5: initialQ5,
+      q6: initialQ6,
+      q7: initialQ7,
+      foto: hidrante.fotoVistoria || hidrante.fotoUrl || null
+    };
+  }, [hidrante, isEditing]);
+
+  const [q1, setQ1] = useState(initialData.q1); // Chave tipo T: 'SIM' | 'NÃO, FALTA LUVA'
+  const [q2, setQ2] = useState(initialData.q2); // Registro: 'SEM ALTERAÇÃO' | 'SOTERRADO' | 'COM VAZAMENTO' | 'EMPERRADO'
+  const [q3, setQ3] = useState(initialData.q3); // Tampa da caixa: 'SEM ALTERAÇÃO' | 'LACRADA' | 'QUEBRADA' | 'REMOVIDA'
+  const [q4, setQ4] = useState(initialData.q4); // Tampões: 'SIM' | 'FALTA 1 TAMPÃO' | 'FALTAM 2 TAMPÕES' | 'FALTAM TODOS OS TAMPÕES'
+  const [q5, setQ5] = useState(initialData.q5); // Operante
+  const [q6, setQ6] = useState(initialData.q6); // Algum outro problema
+  const [q7, setQ7] = useState(initialData.q7); // Observações
   
-  const [fotoBase64, setFotoBase64] = useState(null);
+  const [fotoBase64, setFotoBase64] = useState(initialData.foto);
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
 
@@ -130,7 +229,7 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
 
     const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
 
-    if (!fotoBase64 && !isGestor) {
+    if (!fotoBase64 && !isGestor && !isEditing) {
       alert("⚠️ FOTO OBRIGATÓRIA: O vistoriador deve obrigatoriamente cadastrar a foto da vistoria (registre uma foto do problema ou do hidrante durante a descarga de água).");
       return;
     }
@@ -180,56 +279,80 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
       const agora = new Date();
       const dataFormatada = agora.toLocaleString('pt-BR');
 
+      let updatedHistorico = [...(hidrante.HISTORICO_VISTORIAS || [])];
+      if (isEditing && updatedHistorico.length > 0) {
+        const lastIdx = updatedHistorico.length - 1;
+        updatedHistorico[lastIdx] = {
+          ...updatedHistorico[lastIdx],
+          problemasHidrante: problemaFinal,
+          flgAtivo: statusFinal,
+          fotoVistoria: fotoBase64,
+          datHoraEdicao: dataFormatada
+        };
+      } else if (isEditing) {
+        updatedHistorico = [{
+          datHoraVistoria: hidrante.datHoraUltimaVistoria || dataFormatada,
+          problemasHidrante: problemaFinal,
+          flgAtivo: statusFinal,
+          fotoVistoria: fotoBase64,
+          vistoriadorNome: hidrante.vistoriadorNome || currentUser?.nome,
+          vistoriadorMatricula: hidrante.vistoriadorMatricula || currentUser?.matricula,
+          datHoraEdicao: dataFormatada
+        }];
+      } else {
+        updatedHistorico.push({
+          datHoraVistoria: dataFormatada,
+          problemasHidrante: problemaFinal,
+          flgAtivo: statusFinal,
+          fotoVistoria: fotoBase64,
+          vistoriadorNome: currentUser?.nome,
+          vistoriadorMatricula: currentUser?.matricula
+        });
+      }
+
       const vistoriaAtualizada = {
         ...hidrante,
         flgAtivo: statusFinal,
         problemasHidrante: problemaFinal,
-        datHoraUltimaVistoria: dataFormatada,
+        datHoraUltimaVistoria: isEditing ? (hidrante.datHoraUltimaVistoria || dataFormatada) : dataFormatada,
+        datHoraEdicao: isEditing ? dataFormatada : undefined,
         fotoVistoria: fotoBase64,
-        vistoriadorNome: currentUser?.nome,
-        vistoriadorMatricula: currentUser?.matricula,
-        HISTORICO_VISTORIAS: [
-          ...(hidrante.HISTORICO_VISTORIAS || []),
-          {
-            datHoraVistoria: dataFormatada,
-            problemasHidrante: problemaFinal,
-            flgAtivo: statusFinal,
-            fotoVistoria: fotoBase64,
-            vistoriadorNome: currentUser?.nome,
-            vistoriadorMatricula: currentUser?.matricula
-          }
-        ]
+        vistoriadorNome: hidrante.vistoriadorNome || currentUser?.nome,
+        vistoriadorMatricula: hidrante.vistoriadorMatricula || currentUser?.matricula,
+        HISTORICO_VISTORIAS: updatedHistorico
       };
 
-      onSave(vistoriaAtualizada);
+      onSave(vistoriaAtualizada, isEditing);
     };
 
-    if (!isGestor) {
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            if (!pos || !pos.coords) {
-              alert(bloqueioMsg);
-              return;
-            }
-            const distMeters = calculateDistanceMeters(pos.coords.latitude, pos.coords.longitude, hidrante.numLatitude, hidrante.numLongitude);
-            if (distMeters > 100) {
-              alert(bloqueioMsg);
-            } else {
-              procederSalvamento();
-            }
-          },
-          (err) => {
-            console.warn('Erro ao obter GPS do vistoriador:', err);
-            alert(bloqueioMsg);
-          },
-          { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 }
-        );
-      } else {
-        alert(bloqueioMsg);
-      }
-    } else {
+    // Na edição, isenta de validação do GPS (militar pode estar no quartel ou viatura)
+    if (isEditing || isGestor) {
       procederSalvamento();
+      return;
+    }
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (!pos || !pos.coords) {
+            alert(bloqueioMsg);
+            return;
+          }
+          const distMeters = calculateDistanceMeters(pos.coords.latitude, pos.coords.longitude, hidrante.numLatitude, hidrante.numLongitude);
+          if (distMeters > 100) {
+            alert(bloqueioMsg);
+          } else {
+            procederSalvamento();
+          }
+        },
+        (err) => {
+          console.warn('Erro ao obter GPS do vistoriador:', err);
+          alert(bloqueioMsg);
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 }
+      );
+    } else {
+      alert(bloqueioMsg);
     }
   };
 
@@ -281,12 +404,19 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
             >
               ← Voltar
             </button>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/50 shrink-0">
-              <ClipboardCheck size={20} />
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md shrink-0 ${isEditing ? 'bg-gradient-to-br from-amber-500 to-amber-700 shadow-amber-950/50' : 'bg-gradient-to-br from-emerald-600 to-teal-700 shadow-emerald-950/50'}`}>
+              {isEditing ? <Edit3 size={20} /> : <ClipboardCheck size={20} />}
             </div>
             <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
-                Vistoria Técnica Rápida
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate flex items-center gap-2">
+                {isEditing ? (
+                  <>
+                    <span>Editar Vistoria</span>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-mono font-bold tracking-wide">EDIÇÃO</span>
+                  </>
+                ) : (
+                  <span>Vistoria Técnica Rápida</span>
+                )}
               </h2>
               <p className="text-[11px] sm:text-xs text-slate-400 truncate">
                 Hidrante: <span className="font-semibold text-emerald-400">{fixEncoding(hidrante.nomHidrante) || hidrante.codHidrante}</span>
@@ -477,9 +607,13 @@ const InspectionModal = ({ hidrante, onClose, onSave, currentUser }) => {
           <button 
             type="button"
             onClick={handleSave}
-            className="flex-[2] py-2.5 rounded-lg font-bold bg-emerald-600 text-white hover:bg-emerald-500 active:scale-95 transition-all shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 cursor-pointer"
+            className={`flex-[2] py-2.5 rounded-lg font-bold text-white active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer ${
+              isEditing 
+                ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-950/50 border border-amber-400/30' 
+                : 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-950/50'
+            }`}
           >
-            Salvar Vistoria
+            {isEditing ? '💾 Salvar Alterações' : 'Salvar Vistoria'}
           </button>
         </div>
 

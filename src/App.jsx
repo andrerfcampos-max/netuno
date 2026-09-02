@@ -371,7 +371,7 @@ function App() {
   const handleInspect = (h) => {
     const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
     if (isGestor) {
-      setInspectingHidrante(h);
+      setInspectingHidrante({ ...h, _isEditing: false });
       return;
     }
 
@@ -389,7 +389,7 @@ function App() {
           if (distMeters > 100) {
             alert(bloqueioMsg);
           } else {
-            setInspectingHidrante(h);
+            setInspectingHidrante({ ...h, _isEditing: false });
           }
         },
         (err) => {
@@ -401,6 +401,11 @@ function App() {
     } else {
       alert(bloqueioMsg);
     }
+  };
+
+  const handleEditInspection = (h) => {
+    // Modo de edição: Abre imediatamente sem trava de GPS (isenção total de distância para retificação)
+    setInspectingHidrante({ ...h, _isEditing: true });
   };
 
   // Sincroniza estado de pastas com LocalStorage
@@ -915,11 +920,13 @@ function App() {
     } catch (e) {}
   };
 
-  const handleSaveInspection = (updatedHidrante) => {
+  const handleSaveInspection = (updatedHidrante, isEditing = false) => {
     const sanitized = {
       ...updatedHidrante,
       dscLocalidade: normalizeRAName(updatedHidrante.dscLocalidade)
     };
+    delete sanitized._isEditing;
+
     const newHidrantes = hidrantes.map(h => {
       if (h._internalId === sanitized._internalId || 
          (h.nomHidrante === sanitized.nomHidrante && h.codHidrante === sanitized.codHidrante)) {
@@ -935,7 +942,7 @@ function App() {
     changes.updated[idKey] = sanitized;
     saveHydrantChanges(changes);
 
-    if (activeMissionId) {
+    if (activeMissionId && !isEditing) {
       const currentM = missions.find(m => m.id === activeMissionId);
       if (currentM) {
         const curSel = (currentM.selectedIds || []).map(x => String(x));
@@ -972,7 +979,7 @@ function App() {
     setInspectingHidrante(null);
     syncInspectionToCloud(sanitized);
     syncHydrantMutationToCloud('update', sanitized);
-    toast.success('Vistoria salva com sucesso e sincronizada!');
+    toast.success(isEditing ? 'Vistoria atualizada com sucesso e sincronizada!' : 'Vistoria salva com sucesso e sincronizada!');
   };
 
   const handleSaveEdit = (updatedHidrante) => {
@@ -1259,8 +1266,9 @@ function App() {
         <Suspense fallback={null}>
           <InspectionModal 
             hidrante={inspectingHidrante}
+            isEditing={Boolean(inspectingHidrante._isEditing)}
             onClose={() => setInspectingHidrante(null)}
-            onSave={handleSaveInspection}
+            onSave={(updated, isEditing) => handleSaveInspection(updated, isEditing)}
             currentUser={currentUser}
           />
         </Suspense>
@@ -1657,6 +1665,7 @@ function App() {
               hidrantes={mapHidrantes} 
               onInspect={handleInspect}
               onEdit={(h) => setEditingHydrante(h)}
+              onEditInspection={handleEditInspection}
               centerPosition={mapCenterPosition}
               onDeselectHydrant={() => setMapCenterPosition(null)}
               selectedMissionIds={cartSelectionIds}
@@ -1683,6 +1692,7 @@ function App() {
               data={filteredList} 
               onInspect={handleInspect}
               onEdit={(h) => setEditingHydrante(h)}
+              onEditInspection={handleEditInspection}
               onCenterMap={handleFocusHydrantOnMap} 
               selectedMissionIds={cartSelectionIds}
               onToggleMission={toggleCartSelection}

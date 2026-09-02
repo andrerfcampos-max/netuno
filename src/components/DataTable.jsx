@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, MessageSquareText, AlertTriangle } from 'lucide-react';
+import { Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, Edit3, MessageSquareText, AlertTriangle } from 'lucide-react';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
 import { isHydrantSelected } from '../utils/geoUtils';
@@ -38,7 +38,7 @@ const parseDateToTimestamp = (dateStr) => {
   return -Infinity;
 };
 
-const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
+const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
   const [sortConfig, setSortConfig] = useState({ key: 'datHoraUltimaVistoria', direction: 'descending' });
   const [displayCount, setDisplayCount] = useState(50);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
@@ -470,14 +470,34 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, selectedMissionIds = 
                         >
                           <MapPin size={16} />
                         </button>
-                        <button 
-                          onClick={() => onInspect(h)}
-                          title="Cadastrar Vistoria"
-                          className="flex items-center gap-1 p-1.5 px-2 bg-teal-600 hover:bg-teal-500 text-white rounded transition-colors active:scale-95 shadow-sm font-bold text-xs"
-                        >
-                          <Plus size={18} strokeWidth={3} />
-                          CAD. VIST.
-                        </button>
+                        {Boolean((h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') || (h.HISTORICO_VISTORIAS && h.HISTORICO_VISTORIAS.length > 0)) && onEditInspection ? (
+                          <div className="flex items-center gap-1">
+                            <button 
+                              onClick={() => onEditInspection(h)}
+                              title="Editar Vistoria Realizada"
+                              className="flex items-center gap-1 p-1.5 px-2 bg-amber-600 hover:bg-amber-500 text-white rounded transition-colors active:scale-95 shadow-sm font-bold text-xs border border-amber-400/30"
+                            >
+                              <Edit3 size={15} strokeWidth={2.5} />
+                              EDIT. VIST.
+                            </button>
+                            <button 
+                              onClick={() => onInspect(h)}
+                              title="Cadastrar Nova Vistoria"
+                              className="p-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded transition-colors active:scale-95 shadow-sm font-bold text-xs"
+                            >
+                              <Plus size={16} strokeWidth={3} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => onInspect(h)}
+                            title="Cadastrar Vistoria"
+                            className="flex items-center gap-1 p-1.5 px-2 bg-teal-600 hover:bg-teal-500 text-white rounded transition-colors active:scale-95 shadow-sm font-bold text-xs"
+                          >
+                            <Plus size={18} strokeWidth={3} />
+                            CAD. VIST.
+                          </button>
+                        )}
                         {isGestor && (
                           <button 
                             onClick={() => onEdit && onEdit(h)}

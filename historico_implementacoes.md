@@ -582,7 +582,28 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **3. Barras de Progresso Gráficas nos Defeitos e Distribuição Temporal por Ano (`officialPrintUtils.js`):**
   - A seção de "Top Defeitos Registrados" (e a tabela de defeitos em visão multi-cidade) agora inclui barras horizontais proporcionais de impacto visual em vermelho para cada patologia técnica identificada.
   - Adicionada a seção "📅 Distribuição Temporal (Vistorias por Ano)" no PDF oficial, renderizando o volume anual de vistorias com barras gráficas proporcionais em verde esmeralda.
-- **4. Anexo Fotográfico Oficial no Relatório Geral CBMDF (`officialPrintUtils.js`):**
-  - Inserida a seção oficial `📷 Anexo Fotográfico - Evidências das Vistorias` antes do bloco de assinatura no Relatório Geral, espelhando fielmente o anexo que já existia na tela do sistema.
-  - Cada registro fotográfico é diagramado em grade A4 protegida contra quebras indesejadas (`page-break-inside: avoid`), contendo identificação do hidrante, RA, data da vistoria, endereço completo, referência, inconformidades técnicas constatadas e a fotografia em alta definição.
+### [02/09/2026] Etapa 70 Concluída: Módulo de Edição de Vistoria Cadastrada (Pré-carregamento no InspectionModal, Isenção de GPS e Acesso no Mapa e na Lista)
+- **1. Modo Edição no `InspectionModal.jsx` com Pré-carregamento Automático:**
+  - Adicionado suporte à propriedade `isEditing` e cabeçalho tático com badge visual (`✏️ Editar Vistoria [EDIÇÃO]`).
+  - Pré-carregamento inteligente e reverso de todas as respostas com base nos dados registrados do hidrante:
+    * **Q1 (Chave T / Luva):** Detecta ausência de luva ou marca 'SIM'.
+    * **Q2 (Registro):** Detecta se o registro estava soterrado, emperrado, com vazamento ou sem alteração.
+    * **Q3 (Tampa da caixa):** Detecta se estava lacrada, quebrada, removida ou sem alteração.
+    * **Q4 (Tampões):** Identifica se faltava 1 tampão, faltavam 2 tampões, faltavam todos ou se todos estavam presentes.
+    * **Q5 (Operacionalidade):** Reflete o status `flgAtivo` salvo.
+    * **Q6 (Outro problema da lista de 33):** Pré-seleciona a patologia correspondente na lista oficial caso tenha sido assinalada.
+    * **Q7 (Observações):** Extrai o texto salvo no padrão `Obs: ...` ou `dscObservacao`.
+    * **Foto da Vistoria:** Pré-carrega a foto existente (`fotoVistoria` ou `fotoUrl`) no visualizador, permitindo mantê-la ou substituí-la.
+- **2. Isenção Total de Distância / GPS na Edição:**
+  - O geofencing rígido (> 50m / 100m) foi configurado para validar presença em campo exclusivamente no cadastro de *novas* vistorias.
+  - No modo de edição, a validação de GPS é completamente isenta, permitindo que o militar retifique dados de campo com tranquilidade na viatura ou no quartel sem travas indevidas.
+- **3. Pontos de Acesso Exclusivos no Mapa e no Bloco de Lista (Conforme Diretriz do Usuário):**
+  - **No Mapa (`MapComponent.jsx`):** Na janela de detalhes / bottom sheet do hidrante selecionado, quando o hidrante já possuir vistoria registrada, o sistema renderiza os botões ergonômicos lado a lado: `[✏️ EDITAR VISTORIA]` (destaque em âmbar) e `[+ NOVA VIST.]` (verde esmeralda).
+  - **No Bloco de Lista (`DataTable.jsx`):** Na tabela de dados, linhas de hidrantes vistoriados exibem a ação direta `[✏️ EDIT. VIST.]` em âmbar e o atalho compacto `[+]` para nova vistoria.
+  - **Restrição Estrita:** Nenhum botão de edição foi inserido no Relatório ou na Rota de Missão, preservando a interface desses módulos conforme solicitado.
+- **4. Integridade de Dados, Histórico e Sincronização em Nuvem (`App.jsx`, `syncService.js`):**
+  - A edição atualiza a vistoria existente em vez de gerar novas entradas duplicadas ou inflar o contador diário de vistorias cumpridas na missão.
+  - Atualiza o registro correspondente no `HISTORICO_VISTORIAS`, `problemasHidrante`, `flgAtivo`, `fotoVistoria` e anotações.
+  - Grava no LocalStorage via `saveHydrantChanges` e propaga em tempo real para a nuvem através de `syncHydrantMutationToCloud('update', ...)` e `syncInspectionToCloud(...)`.
+
 

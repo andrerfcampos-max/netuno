@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Minimize2, Maximize2, Plus, Share2, AlertTriangle } from 'lucide-react';
+import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Edit3, Minimize2, Maximize2, Plus, Share2, AlertTriangle } from 'lucide-react';
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
@@ -311,7 +311,7 @@ const GpsControl = ({ userLocation, isSheetOpen }) => {
   );
 };
 
-const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, onDeselectHydrant, selectedMissionIds = [], onToggleMission, isCartOpen = false, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '', hasFilter = false }) => {
+const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPosition, onDeselectHydrant, selectedMissionIds = [], onToggleMission, isCartOpen = false, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '', hasFilter = false }) => {
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [selectedHydrant, setSelectedHydrant] = useState(null);
@@ -695,14 +695,35 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, onDeselect
 
             {/* Barra de Ações Ergonômicas em Duas Linhas */}
             <div className="flex flex-col gap-2 pt-1">
-              <button 
-                onClick={() => { onInspect(selectedHydrant); }}
-                className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-xl font-black text-xs shadow-md flex items-center justify-center gap-2 transition-all tracking-wide"
-                title="Cadastrar Vistoria Técnica"
-              >
-                <Plus size={19} strokeWidth={3} />
-                <span>+ CADASTRAR VISTORIA</span>
-              </button>
+              {Boolean((selectedHydrant.datHoraUltimaVistoria && selectedHydrant.datHoraUltimaVistoria !== '-') || (selectedHydrant.HISTORICO_VISTORIAS && selectedHydrant.HISTORICO_VISTORIAS.length > 0)) && onEditInspection ? (
+                <div className="flex items-center gap-2 w-full">
+                  <button 
+                    onClick={() => { onEditInspection(selectedHydrant); }}
+                    className="flex-[1.4] h-11 bg-amber-600 hover:bg-amber-500 active:scale-95 text-white rounded-xl font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition-all tracking-wide border border-amber-400/40"
+                    title="Editar Vistoria Cadastrada"
+                  >
+                    <Edit3 size={17} strokeWidth={2.5} />
+                    <span>✏️ EDITAR VISTORIA</span>
+                  </button>
+                  <button 
+                    onClick={() => { onInspect(selectedHydrant); }}
+                    className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-xl font-black text-xs shadow-md flex items-center justify-center gap-1 transition-all tracking-wide"
+                    title="Cadastrar Nova Vistoria Técnica"
+                  >
+                    <Plus size={16} strokeWidth={3} />
+                    <span>+ NOVA VIST.</span>
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => { onInspect(selectedHydrant); }}
+                  className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-xl font-black text-xs shadow-md flex items-center justify-center gap-2 transition-all tracking-wide"
+                  title="Cadastrar Vistoria Técnica"
+                >
+                  <Plus size={19} strokeWidth={3} />
+                  <span>+ CADASTRAR VISTORIA</span>
+                </button>
+              )}
 
               <div className="flex items-center gap-1.5 w-full">
                 <a 
