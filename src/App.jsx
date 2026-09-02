@@ -20,7 +20,7 @@ const BuildingStudiesModal = lazy(() => import('./components/BuildingStudiesModa
 const InconsistentHydrantsModal = lazy(() => import('./components/InconsistentHydrantsModal'));
 const CloudConfigModal = lazy(() => import('./components/CloudConfigModal'));
 import { loadPreloadedDatabase } from './utils/xlsxParser';
-import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders } from './utils/storage';
+import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers } from './utils/storage';
 import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime } from './services/syncService';
 import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
@@ -1173,16 +1173,21 @@ function App() {
     }
 
     let user = null;
-    if (mat === '123') {
+    const rbacUsers = loadRbacUsers();
+    const foundRbac = rbacUsers.find(u => String(u.matricula).toLowerCase() === mat.toLowerCase());
+
+    if (foundRbac) {
+      user = { ...foundRbac };
+    } else if (mat === '123') {
       user = { matricula: '123', nome: 'Vistoriador Silva', role: 'vistoriador' };
     } else if (mat === '456') {
       user = { matricula: '456', nome: 'Gestor Souza', role: 'gestor' };
     } else if (mat === '789') {
       user = { matricula: '789', nome: 'Gestor Oliveira', role: 'gestor' };
+    } else if (mat === '1997400') {
+      user = { matricula: '1997400', nome: 'Sgt Roméro', role: 'gestor' };
     } else if (mat === 'admin') {
       user = { matricula: 'admin', nome: 'Administrador', role: 'admin' };
-    } else if (mat === '1997400') {
-      user = { matricula: '1997400', nome: 'Sgt Roméro', role: 'admin' };
     }
     
     if (user) {

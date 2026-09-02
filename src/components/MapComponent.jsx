@@ -19,33 +19,119 @@ L.Icon.Default.mergeOptions({
 const createDivIcon = (isOperante, isSelected, isInspected) => {
   const statusColor = isOperante ? '#10b981' : '#ef4444'; // Verde Esmeralda ou Vermelho Sólido
   
-  // EXCLUSIVO para hidrantes adicionados à rota de missão: fundo transparente com anel ciano destacado
-  const bgColor = isSelected ? 'rgba(0,0,0,0.5)' : statusColor; 
-  const borderColor = isSelected ? '#00FFFF' : (isInspected ? '#FFFFFF' : 'white');
-  const borderWidth = isSelected ? '4px' : (isInspected ? '3px' : '2px');
-  const shadow = isSelected 
-    ? '0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9)' 
-    : (isInspected ? '0 0 12px rgba(255,255,255,0.9), 0 0 4px rgba(0,0,0,0.8)' : '0 0 4px rgba(0,0,0,0.6)');
-  const size = isSelected ? 32 : (isInspected ? 22 : 18);
-  
+  if (isInspected) {
+    // SUPER-DESTAQUE quando o hidrante está selecionado (dialog/detalhe aberto):
+    // Halo pulsante estilo sonar/radar de 56px + anel de alto contraste + ponto de mira
+    return L.divIcon({
+      className: 'custom-div-icon',
+      html: `
+        <div style="
+          position: relative;
+          width: 56px;
+          height: 56px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+        ">
+          <!-- Onda 1 do Radar (Âmbar Vivo) -->
+          <div style="
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid #f59e0b;
+            animation: netunoRadarPulse 1.8s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+          "></div>
+          <!-- Onda 2 do Radar (Ciano Elétrico com delay) -->
+          <div style="
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #38bdf8;
+            animation: netunoRadarPulse 1.8s cubic-bezier(0, 0.2, 0.8, 1) infinite 0.7s;
+          "></div>
+          <!-- Pino Central em Evidência Máxima com Borda Dupla e Glow -->
+          <div style="
+            background-color: ${statusColor};
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 3px solid #ffffff;
+            outline: 2.5px solid #f59e0b;
+            animation: netunoActiveGlow 2s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            pointer-events: auto;
+          ">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #ffffff; box-shadow: 0 0 4px rgba(0,0,0,0.8);"></div>
+          </div>
+        </div>
+      `,
+      iconSize: [56, 56],
+      iconAnchor: [28, 28]
+    });
+  }
+
+  if (isSelected) {
+    // Hidrante adicionado à rota de missão: anel ciano neon destacado
+    return L.divIcon({
+      className: 'custom-div-icon',
+      html: `
+        <div style="
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <div style="
+            background-color: rgba(0,0,0,0.55);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3.5px solid #00FFFF;
+            box-shadow: 0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <div style="width: 9px; height: 9px; border-radius: 50%; background-color: ${statusColor};"></div>
+          </div>
+        </div>
+      `,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    });
+  }
+
+  // Marcador Padrão no Mapa
   return L.divIcon({
     className: 'custom-div-icon',
-    html: `<div style="
-      background-color: ${bgColor};
-      width: ${size}px;
-      height: ${size}px;
-      border-radius: 50%;
-      border: ${borderWidth} solid ${borderColor};
-      box-shadow: ${shadow};
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    ">
-      ${isSelected ? `<div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></div>` : ''}
-    </div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13]
+    html: `
+      <div style="
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div style="
+          background-color: ${statusColor};
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          border: 2px solid white;
+          box-shadow: 0 0 5px rgba(0,0,0,0.7);
+          transition: transform 0.2s ease;
+        "></div>
+      </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
   });
 };
 
@@ -367,13 +453,20 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, onDeselect
     return validHidrantes.map((h, i) => {
       const id = h.codHidrante || h._internalId || h.nomHidrante || `hid-${i}`;
       const isSelected = selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h._internalId);
-      const isCurrentActive = selectedHydrant && (selectedHydrant.codHidrante === h.codHidrante || selectedHydrant._internalId === h._internalId);
+      const isCurrentActive = Boolean(
+        selectedHydrant && (
+          (selectedHydrant.codHidrante && selectedHydrant.codHidrante === h.codHidrante) ||
+          (selectedHydrant.nomHidrante && selectedHydrant.nomHidrante === h.nomHidrante) ||
+          (selectedHydrant._internalId && selectedHydrant._internalId === h._internalId)
+        )
+      );
 
       return (
         <Marker 
           key={id} 
           position={[h.numLatitude, h.numLongitude]}
           icon={createDivIcon(h.flgAtivo, isSelected, isCurrentActive)}
+          zIndexOffset={isCurrentActive ? 2500 : (isSelected ? 500 : 0)}
           ref={(marker) => {
             if (marker) {
               markerRefs.current[id] = marker;

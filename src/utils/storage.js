@@ -191,20 +191,38 @@ export const saveActiveMissionState = (state) => {
 const RBAC_USERS_KEY = 'netuno_rbac_users';
 
 export const loadRbacUsers = () => {
+  const defaultUsers = [
+    { matricula: '123', nome: 'Vistoriador Silva', role: 'vistoriador' },
+    { matricula: '456', nome: 'Gestor Souza', role: 'gestor' },
+    { matricula: '789', nome: 'Gestor Oliveira', role: 'gestor' },
+    { matricula: '1997400', nome: 'Sgt Roméro', role: 'gestor' },
+    { matricula: 'admin', nome: 'Administrador', role: 'admin' },
+  ];
+
   try {
     const data = localStorage.getItem(RBAC_USERS_KEY);
     if (data !== null) {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) {
+        // Assegura que novos usuários padrão (como 1997400) existam mesmo se o storage já tiver dados
+        const existingMats = new Set(parsed.map(u => String(u.matricula).toLowerCase()));
+        let changed = false;
+        defaultUsers.forEach(du => {
+          if (!existingMats.has(du.matricula.toLowerCase())) {
+            parsed.push(du);
+            changed = true;
+          }
+        });
+        if (changed) {
+          saveRbacUsers(parsed);
+        }
+        return parsed;
+      }
     }
   } catch (error) {
     console.error("Erro ao ler usuários RBAC", error);
   }
-  return [
-    { matricula: '123', nome: 'Vistoriador Silva', role: 'vistoriador' },
-    { matricula: '456', nome: 'Gestor Souza', role: 'gestor' },
-    { matricula: '789', nome: 'Gestor Oliveira', role: 'gestor' },
-    { matricula: 'admin', nome: 'Administrador', role: 'admin' },
-  ];
+  return defaultUsers;
 };
 
 export const saveRbacUsers = (users) => {

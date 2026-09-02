@@ -132,9 +132,34 @@
 }
 
 /* Fix Leaflet custom div icons */
+.custom-div-icon,
+.custom-div-icon.leaflet-div-icon,
 .custom-red-marker-icon,
 .custom-red-marker-icon.leaflet-div-icon {
   background: transparent !important;
   border: none !important;
+}
+
+@keyframes netunoRadarPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+
+@keyframes netunoActiveGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px #f59e0b, 0 0 20px rgba(245, 158, 11, 0.8), 0 0 4px rgba(0, 0, 0, 0.9);
+  }
+  50% {
+    box-shadow: 0 0 18px #fbbf24, 0 0 32px rgba(251, 191, 36, 0.9), 0 0 6px rgba(0, 0, 0, 0.9);
+  }
 }
 

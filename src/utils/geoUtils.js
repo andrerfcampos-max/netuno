@@ -18,10 +18,10 @@ export const isValidDFCoordinate = (lat, lng) => {
   // Coordenadas nulas (0,0 no oceano / Null Island)
   if (Math.abs(numLat) < 0.0001 && Math.abs(numLng) < 0.0001) return false;
 
-  // Limites geográficos do Distrito Federal com margem de segurança para o Entorno Integrado (RIDE)
-  // Latitude do DF: ~ -15.50 a -16.05 -> Intervalo seguro: -16.60 a -15.30
+  // Limites geográficos do Distrito Federal com margem de segurança operacional (RIDE imediata)
+  // Latitude do DF: ~ -15.50 a -16.05 -> Intervalo seguro: -16.08 a -15.30
   // Longitude do DF: ~ -48.28 a -47.30 -> Intervalo seguro: -48.60 a -47.00
-  const isLatInDF = numLat >= -16.60 && numLat <= -15.30;
+  const isLatInDF = numLat >= -16.08 && numLat <= -15.30;
   const isLngInDF = numLng >= -48.60 && numLng <= -47.00;
 
   return isLatInDF && isLngInDF;

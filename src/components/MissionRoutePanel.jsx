@@ -759,15 +759,26 @@ const MissionRoutePanel = ({
             </span>
           )}
 
+          {/* Botão Ergonômico de Atualização de Rota */}
           <button 
+            type="button"
             onClick={handleRecalculateRoute} 
             title="Recalcular Rota com base no GPS Atual" 
-            className="p-1 sm:p-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-emerald-400 border border-slate-600/70 rounded-lg transition-all shrink-0 cursor-pointer"
+            className="h-7.5 w-7.5 sm:h-8 sm:w-8 flex items-center justify-center bg-slate-800 hover:bg-slate-700 active:scale-90 text-slate-200 hover:text-emerald-300 border border-slate-600/90 rounded-lg shadow-sm transition-all shrink-0 cursor-pointer"
           >
-            <RotateCcw size={13} className={isOptimizing ? "animate-spin text-amber-400" : ""} />
+            <RotateCcw size={15} className={isOptimizing ? "animate-spin text-amber-400" : ""} />
           </button>
 
-          <button onClick={onClose} className="p-1 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 rounded-full transition-colors shrink-0 cursor-pointer" title="Fechar Rota">
+          {/* Divisor Visual de Segurança para Prevenir Toque Acidental no Fechar */}
+          <div className="h-4.5 w-[1px] bg-slate-700/90 mx-0.5 sm:mx-1 shrink-0" />
+
+          {/* Botão Fechar Isolado */}
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="h-7.5 w-7.5 sm:h-8 sm:w-8 flex items-center justify-center bg-slate-800/80 hover:bg-rose-950/60 border border-slate-700/70 hover:border-rose-500/50 text-slate-400 hover:text-rose-300 rounded-lg transition-all shrink-0 cursor-pointer active:scale-90" 
+            title="Fechar Rota de Missão"
+          >
             <X size={16} />
           </button>
         </div>
