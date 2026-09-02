@@ -297,13 +297,18 @@ function App() {
   }, [activeFilters?.ra]);
 
   const mapHidrantes = useMemo(() => {
-    if (isCitySelected) {
-      return filteredList;
-    }
+    let list = isCitySelected ? [...filteredList] : [];
     if (mapCenterPosition) {
-      return [mapCenterPosition];
+      const alreadyInList = list.some(h => 
+        (h._internalId && mapCenterPosition._internalId && h._internalId === mapCenterPosition._internalId) ||
+        (h.codHidrante && mapCenterPosition.codHidrante && h.codHidrante === mapCenterPosition.codHidrante) ||
+        (h.nomHidrante && mapCenterPosition.nomHidrante && h.nomHidrante === mapCenterPosition.nomHidrante)
+      );
+      if (!alreadyInList) {
+        list.push(mapCenterPosition);
+      }
     }
-    return [];
+    return list;
   }, [isCitySelected, mapCenterPosition, filteredList]);
 
   // Suporte a abertura direta de modais e deep links de hidrante (?hid=...) via URL parameter
@@ -432,9 +437,12 @@ function App() {
 
         if (Array.isArray(cloudMissions)) {
           setMissions(prevMissions => {
-            const merged = mergeMissions(prevMissions, cloudMissions);
-            saveMissions(merged);
-            return merged;
+            const deletedSet = new Set(cloudMutations?.deletedMissions || []);
+            const validPrev = prevMissions.filter(m => !deletedSet.has(String(m.id)));
+            const merged = mergeMissions(validPrev, cloudMissions);
+            const finalMissions = merged.filter(m => !deletedSet.has(String(m.id)));
+            saveMissions(finalMissions);
+            return finalMissions;
           });
         }
 
@@ -464,6 +472,52 @@ function App() {
             });
             return updatedHidrantes;
           });
+
+          // Sincronização em tempo real de Edificações (PPO) vindas da nuvem
+          if (cloudMutations.buildingStudies && Object.keys(cloudMutations.buildingStudies).length > 0) {
+            try {
+              const customsRaw = localStorage.getItem('netuno_custom_building_studies');
+              const currentCustoms = customsRaw ? JSON.parse(customsRaw) : [];
+              const deletedPPO = new Set(cloudMutations.deletedBuildingStudies || []);
+              const updatedPPO = currentCustoms.filter(s => !deletedPPO.has(s.id));
+              Object.values(cloudMutations.buildingStudies).forEach(cs => {
+                if (!deletedPPO.has(cs.id)) {
+                  const idx = updatedPPO.findIndex(s => s.id === cs.id);
+                  if (idx >= 0) {
+                    updatedPPO[idx] = { ...updatedPPO[idx], ...cs };
+                  } else {
+                    updatedPPO.push(cs);
+                  }
+                }
+              });
+              localStorage.setItem('netuno_custom_building_studies', JSON.stringify(updatedPPO));
+            } catch (errPPO) {
+              console.warn('Erro ao mesclar PPO da nuvem:', errPPO);
+            }
+          }
+
+          // Sincronização em tempo real de Estudos Técnicos vindos da nuvem
+          if (cloudMutations.technicalStudies && Object.keys(cloudMutations.technicalStudies).length > 0) {
+            try {
+              const techRaw = localStorage.getItem('netuno_technical_studies');
+              const currentTech = techRaw ? JSON.parse(techRaw) : [];
+              const deletedTech = new Set(cloudMutations.deletedTechnicalStudies || []);
+              const updatedTech = currentTech.filter(s => !deletedTech.has(s.id));
+              Object.values(cloudMutations.technicalStudies).forEach(ts => {
+                if (!deletedTech.has(ts.id)) {
+                  const idx = updatedTech.findIndex(s => s.id === ts.id);
+                  if (idx >= 0) {
+                    updatedTech[idx] = { ...updatedTech[idx], ...ts };
+                  } else {
+                    updatedTech.push(ts);
+                  }
+                }
+              });
+              localStorage.setItem('netuno_technical_studies', JSON.stringify(updatedTech));
+            } catch (errTech) {
+              console.warn('Erro ao mesclar Estudos Técnicos da nuvem:', errTech);
+            }
+          }
         }
       } catch (e) {
         console.warn('Erro ao sincronizar com banco em nuvem:', e);
@@ -474,14 +528,8 @@ function App() {
 
     // Listener Realtime (WebSockets) para atualizações instantâneas entre Mobile e Desktop
     const unsubscribe = subscribeToCloudRealtime({
-      onMissionsChange: (freshMissions) => {
-        if (Array.isArray(freshMissions)) {
-          setMissions(prevMissions => {
-            const merged = mergeMissions(prevMissions, freshMissions);
-            saveMissions(merged);
-            return merged;
-          });
-        }
+      onMissionsChange: () => {
+        syncWithCloud();
       },
       onFoldersChange: (freshFolders) => {
         if (Array.isArray(freshFolders)) {
@@ -1557,8 +1605,10 @@ function App() {
               </button>
             ) : (
               <button 
-                onClick={() => setIsMissionManagerOpen(true)}
-                className="min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 truncate bg-slate-800 border-slate-700 text-cyan-300 hover:bg-slate-700 hover:text-cyan-200 cursor-pointer"
+                onClick={() => setActiveView('missions')}
+                className={`min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 truncate cursor-pointer ${
+                  activeView === 'missions' ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' : 'bg-slate-800 border-slate-700 text-cyan-300 hover:bg-slate-700 hover:text-cyan-200'
+                }`}
               >
                 <FolderOpen size={16} />
                 <span>Central de Missões</span>
@@ -1637,6 +1687,30 @@ function App() {
           </div>
         )}
 
+        {/* MÓDULO CENTRAL DE MISSÕES (BLOCO DE TELA) */}
+        {activeView === 'missions' && (
+          <div className="w-full h-full max-w-5xl mx-auto flex-1 min-h-0 border border-slate-700 rounded-xl overflow-hidden flex flex-col">
+            <MissionManagerModal 
+              missions={missions}
+              folders={folders}
+              openMissionIds={openMissionIds}
+              activeMissionId={activeMissionId}
+              hidrantes={hidrantes}
+              onClose={() => setActiveView('map')}
+              onOpenMission={(id) => {
+                handleOpenMission(id);
+                setActiveView('route');
+              }}
+              onNewMission={handleNewMission}
+              onDeleteMission={handleDeleteMission}
+              onFoldersChange={handleFoldersChange}
+              onMissionsChange={setMissions}
+              currentUser={currentUser}
+              isEmbedded={true}
+            />
+          </div>
+        )}
+
         {/* MÓDULO ROTA DE MISSÃO */}
         {activeView === 'route' && (
           <div id="modulo-rota" className="w-full h-full max-w-5xl mx-auto flex-1 min-h-0 border border-slate-700 rounded-xl overflow-hidden flex flex-col">
@@ -1647,7 +1721,7 @@ function App() {
               currentMission={currentMission}
               onUpdateMission={(updates) => updateCurrentMission(updates)}
               onClose={() => setActiveView('map')}
-              onBackToManager={() => setIsMissionManagerOpen(true)}
+              onBackToManager={() => currentUser?.role === 'vistoriador' ? setActiveView('missions') : setIsMissionManagerOpen(true)}
               onClearMission={() => updateCurrentMission({ selectedIds: [], completedIds: [] })}
               onRemoveFromMission={removeHydrantFromMission}
               lastInspectedCoords={lastInspectedCoords} 
@@ -1785,10 +1859,12 @@ function App() {
             </button>
           ) : (
             <button
-              onClick={() => setIsMissionManagerOpen(true)}
-              className="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-cyan-300 hover:text-cyan-200"
+              onClick={() => setActiveView('missions')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all ${
+                activeView === 'missions' ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+              }`}
             >
-              <FolderOpen size={20} className="text-cyan-400" />
+              <FolderOpen size={20} className={activeView === 'missions' ? 'text-emerald-400' : 'text-cyan-400'} />
               <span className="text-[10px] font-semibold mt-0.5">Central Missões</span>
             </button>
           )}

@@ -1,4 +1,5 @@
 import { calculateDistanceMeters, isValidDFCoordinate } from './geoUtils';
+import { syncBuildingStudyToCloud, deleteBuildingStudyFromCloud } from '../services/syncService';
 
 const STORAGE_KEY = 'netuno_building_studies';
 
@@ -292,6 +293,12 @@ export const saveBuildingStudy = (studyData) => {
 
     localStorage.setItem(CUSTOM_STORAGE_KEY, JSON.stringify(updatedCustoms));
     
+    // Sincroniza em tempo real com a nuvem
+    const targetStudy = updatedCustoms.find(s => s.id === savedId);
+    if (targetStudy) {
+      syncBuildingStudyToCloud(targetStudy);
+    }
+
     const all = getBuildingStudies();
     return { success: true, data: all, studyId: savedId };
   } catch (e) {
@@ -314,6 +321,9 @@ export const deleteBuildingStudy = (studyId) => {
       deletedIds.push(studyId);
       localStorage.setItem(DELETED_STORAGE_KEY, JSON.stringify(deletedIds));
     }
+
+    // Propaga exclusão na nuvem
+    deleteBuildingStudyFromCloud(studyId);
 
     const all = getBuildingStudies();
     return { success: true, data: all };

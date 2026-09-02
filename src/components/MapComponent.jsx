@@ -228,16 +228,27 @@ const GpsControl = ({ userLocation, isSheetOpen }) => {
 const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, onDeselectHydrant, selectedMissionIds = [], onToggleMission, isCartOpen = false, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '', hasFilter = false }) => {
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
-  const validHidrantes = useMemo(() => {
-    return hidrantes.filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude));
-  }, [hidrantes]);
-
-  const [userLocation, setUserLocation] = useState(null);
   const [selectedHydrant, setSelectedHydrant] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
   const [dragOffsetY, setDragOffsetY] = useState(0);
   const touchStartY = useRef(0);
   const isDragging = useRef(false);
   const markerRefs = useRef({});
+
+  const validHidrantes = useMemo(() => {
+    const list = hidrantes.filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude));
+    if (selectedHydrant && isValidDFCoordinate(selectedHydrant.numLatitude, selectedHydrant.numLongitude)) {
+      const exists = list.some(h => 
+        (h._internalId && selectedHydrant._internalId && h._internalId === selectedHydrant._internalId) ||
+        (h.codHidrante && selectedHydrant.codHidrante && h.codHidrante === selectedHydrant.codHidrante) ||
+        (h.nomHidrante && selectedHydrant.nomHidrante && h.nomHidrante === selectedHydrant.nomHidrante)
+      );
+      if (!exists) {
+        list.push(selectedHydrant);
+      }
+    }
+    return list;
+  }, [hidrantes, selectedHydrant]);
 
   const handleCloseHydrant = () => {
     setSelectedHydrant(null);
@@ -278,20 +289,6 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, centerPosition, onDeselect
     setDragOffsetY(0);
     isDragging.current = false;
   };
-
-  // Fecha imediatamente a dialog/bottom sheet de hidrante quando o filtro ou lista de hidrantes é alterada
-  const prevHidrantesRef = useRef(hidrantes);
-  useEffect(() => {
-    if (prevHidrantesRef.current !== hidrantes) {
-      prevHidrantesRef.current = hidrantes;
-      if (selectedHydrant) {
-        setSelectedHydrant(null);
-        if (onDeselectHydrant) {
-          onDeselectHydrant();
-        }
-      }
-    }
-  }, [hidrantes, selectedHydrant, onDeselectHydrant]);
 
   // Sincronizar com centerPosition externo quando recebido (ex: da Tabela ou Rota)
   useEffect(() => {

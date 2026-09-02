@@ -38,6 +38,7 @@ import {
   findNearestHydrantsForBuilding 
 } from '../utils/buildingStudiesStorage';
 import { isValidDFCoordinate } from '../utils/geoUtils';
+import { printBuildingStudyReport } from '../utils/officialPrintUtils';
 
 const OCCUPANCY_TYPES = [
   'Residencial',
@@ -513,6 +514,7 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
           }}
           onShareWhatsApp={() => handleShareWhatsApp(tacticalViewStudy)}
           onOpenZoom={(imgUrl) => setZoomImage(imgUrl)}
+          currentUser={currentUser}
         />
       )}
 
@@ -799,7 +801,8 @@ function BuildingTacticalViewModal({
   allHydrantes = [],
   onEdit, 
   onShareWhatsApp,
-  onOpenZoom
+  onOpenZoom,
+  currentUser
 }) {
   const [activeSec, setActiveSec] = useState('view-sec-A');
   const scrollContainerRef = useRef(null);
@@ -928,9 +931,9 @@ function BuildingTacticalViewModal({
             </button>
             <button
               type="button"
-              onClick={() => window.print()}
-              className="p-1.5 sm:p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition-all"
-              title="Imprimir Ficha"
+              onClick={() => printBuildingStudyReport({ study, currentUser })}
+              className="p-1.5 sm:p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition-all cursor-pointer"
+              title="Imprimir Ficha Oficial A4"
             >
               <Printer size={16} />
             </button>

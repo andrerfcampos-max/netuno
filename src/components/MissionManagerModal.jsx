@@ -4,7 +4,7 @@ import { createNewFolder } from '../utils/storage';
 import { syncMissionToCloud, syncFolderToCloud } from '../services/syncService';
 import { printMissionDraft } from '../utils/draftPrintUtils';
 
-const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, hidrantes = [], onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser }) => {
+const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, hidrantes = [], onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser, isEmbedded = false }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [activeTab, setActiveTab] = useState('todas'); // todas, nao_iniciadas, em_andamento, finalizadas, dashboard_comando
   const [searchTerm, setSearchTerm] = useState('');
@@ -367,9 +367,8 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fadeIn">
-      <div className="bg-slate-900 w-full max-w-4xl rounded-2xl border border-slate-700/80 shadow-2xl flex flex-col overflow-hidden max-h-[92vh] text-slate-100">
+  const modalContent = (
+    <div className={isEmbedded ? "bg-slate-900 w-full h-full flex-1 min-h-0 rounded-xl border border-slate-700/80 shadow-xl flex flex-col overflow-hidden text-slate-100" : "bg-slate-900 w-full max-w-4xl rounded-2xl border border-slate-700/80 shadow-2xl flex flex-col overflow-hidden max-h-[92vh] text-slate-100"}>
         
         {/* CABEÇALHO PADRONIZADO */}
         <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
@@ -1086,6 +1085,15 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
         )}
 
       </div>
+    );
+
+  if (isEmbedded) {
+    return modalContent;
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fadeIn">
+      {modalContent}
     </div>
   );
 };

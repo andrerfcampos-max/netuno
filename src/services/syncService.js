@@ -111,6 +111,14 @@ export const deleteMissionFromCloud = async (missionId) => {
     if (error) {
       console.warn(`Erro ao excluir missão ${missionId} da nuvem:`, error.message);
     }
+
+    // Registra mutação para propagar exclusão para todos os dispositivos conectados
+    await client.from('netuno_hydrant_mutations').upsert({
+      id: `del_mission_${missionId}`,
+      type: 'deleted_mission',
+      payload: { missionId: String(missionId), deletedAt: new Date().toISOString() },
+      updated_at: new Date().toISOString()
+    });
   } catch (err) {
     console.warn('Falha ao excluir missão da nuvem:', err);
   }
@@ -272,7 +280,16 @@ export const fetchHydrantMutationsFromCloud = async () => {
       return null;
     }
 
-    const result = { updated: {}, added: [], deleted: [] };
+    const result = { 
+      updated: {}, 
+      added: [], 
+      deleted: [],
+      deletedMissions: [],
+      buildingStudies: {},
+      deletedBuildingStudies: [],
+      technicalStudies: {},
+      deletedTechnicalStudies: []
+    };
 
     (data || []).forEach(row => {
       if (row.type === 'update' && row.payload) {
@@ -285,6 +302,27 @@ export const fetchHydrantMutationsFromCloud = async () => {
         if (!result.deleted.includes(key)) {
           result.deleted.push(key);
         }
+      } else if (row.type === 'deleted_mission') {
+        const mId = row.payload?.missionId || row.id.replace('del_mission_', '');
+        if (mId && !result.deletedMissions.includes(mId)) {
+          result.deletedMissions.push(mId);
+        }
+      } else if (row.type === 'building_study' && row.payload) {
+        const id = row.payload.id || row.id.replace('ppo_', '');
+        result.buildingStudies[id] = row.payload;
+      } else if (row.type === 'deleted_building_study') {
+        const id = row.payload?.id || row.id.replace('del_ppo_', '');
+        if (id && !result.deletedBuildingStudies.includes(id)) {
+          result.deletedBuildingStudies.push(id);
+        }
+      } else if (row.type === 'technical_study' && row.payload) {
+        const id = row.payload.id || row.id.replace('tech_', '');
+        result.technicalStudies[id] = row.payload;
+      } else if (row.type === 'deleted_technical_study') {
+        const id = row.payload?.id || row.id.replace('del_tech_', '');
+        if (id && !result.deletedTechnicalStudies.includes(id)) {
+          result.deletedTechnicalStudies.push(id);
+        }
       }
     });
 
@@ -292,6 +330,74 @@ export const fetchHydrantMutationsFromCloud = async () => {
   } catch (err) {
     console.warn('Falha ao carregar mutações da nuvem:', err);
     return null;
+  }
+};
+
+/**
+ * Sincronização em tempo real de Edificações / Pré-POP (netuno_hydrant_mutations type: building_study)
+ */
+export const syncBuildingStudyToCloud = async (study) => {
+  const client = getSupabaseClient();
+  if (!client || !study?.id) return;
+  try {
+    await client.from('netuno_hydrant_mutations').upsert({
+      id: `ppo_${study.id}`,
+      type: 'building_study',
+      payload: study,
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) {
+    console.warn('Falha ao sincronizar estudo de edificação na nuvem:', e);
+  }
+};
+
+export const deleteBuildingStudyFromCloud = async (studyId) => {
+  const client = getSupabaseClient();
+  if (!client || !studyId) return;
+  try {
+    await client.from('netuno_hydrant_mutations').delete().eq('id', `ppo_${studyId}`);
+    await client.from('netuno_hydrant_mutations').upsert({
+      id: `del_ppo_${studyId}`,
+      type: 'deleted_building_study',
+      payload: { id: studyId },
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) {
+    console.warn('Falha ao registrar exclusão de edificação na nuvem:', e);
+  }
+};
+
+/**
+ * Sincronização em tempo real de Estudos Técnicos (netuno_hydrant_mutations type: technical_study)
+ */
+export const syncTechnicalStudyToCloud = async (study) => {
+  const client = getSupabaseClient();
+  if (!client || !study?.id) return;
+  try {
+    await client.from('netuno_hydrant_mutations').upsert({
+      id: `tech_${study.id}`,
+      type: 'technical_study',
+      payload: study,
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) {
+    console.warn('Falha ao sincronizar estudo técnico na nuvem:', e);
+  }
+};
+
+export const deleteTechnicalStudyFromCloud = async (studyId) => {
+  const client = getSupabaseClient();
+  if (!client || !studyId) return;
+  try {
+    await client.from('netuno_hydrant_mutations').delete().eq('id', `tech_${studyId}`);
+    await client.from('netuno_hydrant_mutations').upsert({
+      id: `del_tech_${studyId}`,
+      type: 'deleted_technical_study',
+      payload: { id: studyId },
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) {
+    console.warn('Falha ao registrar exclusão de estudo técnico na nuvem:', e);
   }
 };
 

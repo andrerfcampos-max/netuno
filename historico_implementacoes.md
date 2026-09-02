@@ -546,3 +546,29 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **3. Descontinuação do Menu Avulso Superior (`App.jsx`):**
   - Removido o item antigo 'Tabela de Campo (Gama)' do menu suspenso de gestores no topo de `App.jsx`, descentralizando a funcionalidade e acoplando-a diretamente ao contexto de cada missão.
   - Injetada a prop `hidrantes={hidrantes}` em `MissionManagerModal` para cruzamento de dados de geolocalização e cadastros da missão.
+
+### [02/09/2026] Etapa 68 Concluída: Central de Missões em Bloco para Vistoriador, Estabilidade do Popup e Pinos no Mapa, PDFs Oficiais A4 Impecáveis e Sincronização Supabase em Tempo Real
+- **1. Central de Missões como Bloco de Tela Integrado para Vistoriador (`App.jsx`, `MissionManagerModal.jsx`):**
+  - O perfil `vistoriador` agora navega na Central de Missões como um bloco de tela nativo no `<main>` (`activeView === 'missions'`), exatamente idêntico aos blocos do Mapa e da Rota, sem popups sobrepostos bloqueando a visão.
+  - Botões inferiores (Mobile) e superiores (Desktop) adaptados para alternar com um toque entre: `[🗺️ Mapa]`, `[🏢 Central de Missões]` e `[🧭 Rota de Missão]`, destacando a aba ativa com efeito esmeralda.
+  - Ao clicar em "Abrir" em qualquer missão, a rota é carregada e a visão migra instantaneamente para `[🧭 Rota de Missão]`.
+  - Botão "← Voltar" na rota para o vistoriador retorna suavemente para o bloco da Central de Missões.
+- **2. Estabilidade da Dialog / Bottom Sheet do Hidrante no Mapa (`MapComponent.jsx`):**
+  - Eliminado o fechamento involuntário da dialog após alguns segundos: removido o `useEffect` que resetava `selectedHydrant` a cada nova referência do array `hidrantes` provocado por re-renders ou pelo polling de 15s do Supabase.
+  - A janela de detalhes agora permanece aberta de forma 100% estável até que o militar decida fechá-la pelo botão `✕`, toque no mapa aberto ou feche conscientemente o painel.
+- **3. Garantia de Plotagem do Marcador / Pino no Mapa (`App.jsx`, `MapComponent.jsx`):**
+  - Corrigida a divergência em que o pino não aparecia ao clicar em "Detalhes" a partir da tabela ou rota: `mapHidrantes` agora sempre inclui `mapCenterPosition`, mesmo que filtros restritivos secundários (busca livre ou status) estejam ativos.
+  - `validHidrantes` em `MapComponent.jsx` agora garante que `selectedHydrant` seja sempre incluído na lista renderizada, assegurando que o pino e seu anel de destaque sejam plotados instantaneamente.
+- **4. Documentos Oficiais Exportados em PDF com Padrão A4 Impecável (`officialPrintUtils.js`, `MissionReportPanel.jsx`, `BuildingStudiesModal.jsx`, `TechnicalStudyModal.jsx`):**
+  - Descontinuada a impressão direta da DOM com fundo escuro e textos cortados.
+  - Criado o módulo `src/utils/officialPrintUtils.js` contendo geradores dedicados que abrem em janela isolada de alta fidelidade com folhas A4 retrato brancas (`@page { size: A4; margin: 10mm; }` e `page-break-inside: avoid`):
+    * **Relatório Geral CBMDF:** Cabeçalho oficial com brasão/título do CBMDF, cartões de KPIs em alto contraste, comparativo de operacionalidade por Região Administrativa, principais defeitos do DF, listagem técnica completa e campo oficial para assinatura militar com nome e matrícula.
+    * **Relatório CAESB (Solicitação de Manutenção):** Documento formal com menção ao Termo de Cooperação Técnica CAESB/CBMDF (DODF 25/03/2019), matriz de demanda prioritária, tabela detalhada de hidrantes inoperantes com código, coordenadas GPS (6 casas decimais), defeitos normatizados, fotos de evidência de campo e assinatura do oficial responsável.
+    * **Ficha Tática PPO (Pré-Planejamento Operacional):** Modelo oficial SCI/CBMDF contendo dados cadastrais, acessibilidade do trem de socorro (vias principais/alternativas e posicionamento de ABT/AET/PC), recursos hídricos (com distâncias e diâmetros dos 3 hidrantes públicos mais próximos), pontos de corte de emergência e riscos específicos.
+    * **Parecer Técnico de Hidrantes (Padrão SEI):** Estrutura padronizada no formato SEI-GDF com fundamentação na ABNT NBR 12.218/2017, tabela técnica de hidrantes adjacentes e parecer conclusivo (Aprovado / Reprovado).
+- **5. Sincronização em Nuvem em Tempo Real (Supabase) e Exclusão Global:**
+  - Corrigido o fluxo de exclusão de missões: `deleteMissionFromCloud` agora apaga a linha de `netuno_missions` e registra uma mutação de exclusão (`deleted_mission`) na tabela em nuvem.
+  - Ao sincronizar via polling ou Realtime WebSockets, todos os dispositivos (celular e computador) removem as missões deletadas de seu cache local, impedindo que missões apagadas reapareçam no desktop.
+  - Persistência em nuvem estendida para Estudos de Edificações (PPO) e Estudos Técnicos via mutações `building_study` e `technical_study`.
+  - Executada bateria automatizada de testes de ponta a ponta comprovando o ciclo de gravação, leitura, mutação e exclusão na nuvem.
+

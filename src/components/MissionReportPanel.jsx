@@ -3,6 +3,7 @@ import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSp
 import { extractProblemsList, sanitizeProblem } from '../utils/problemUtils';
 import { normalizeRAName } from '../utils/raList';
 import { fixEncoding } from '../utils/textUtils';
+import { printGeneralReport, printCaesbReport } from '../utils/officialPrintUtils';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser }) => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -263,10 +264,31 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   }, [currentData]);
 
   const handlePrint = () => {
-    const originalTitle = document.title;
-    document.title = currentMission ? `${currentMission.name} - ${reportType === 'interno' ? 'CBMDF' : 'CAESB'}` : 'Relatório';
-    window.print();
-    document.title = originalTitle;
+    if (reportType === 'caesb') {
+      printCaesbReport({
+        currentData,
+        rasPresentes,
+        currentMission,
+        currentUser,
+        stats: { total, operantes, inoperantes },
+        topDefeitos
+      });
+    } else {
+      printGeneralReport({
+        currentData,
+        currentMission,
+        rasPresentes,
+        currentUser,
+        isMultiCity,
+        cityOperabilityStats,
+        topDefeitosComCidades,
+        total,
+        operantes,
+        operantesPercent,
+        inoperantes,
+        inoperantesPercent
+      });
+    }
   };
 
   const handleCopySEI = async () => {

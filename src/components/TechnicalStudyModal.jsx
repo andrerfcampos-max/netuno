@@ -38,6 +38,7 @@ import {
   saveTechnicalStudy, 
   deleteTechnicalStudy 
 } from '../utils/technicalStudiesStorage';
+import { printTechnicalStudyReport } from '../utils/officialPrintUtils';
 
 // Fix Leaflet icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -574,6 +575,23 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
     }
   };
 
+  const handlePrintTechnicalStudy = () => {
+    if (!results) return;
+    const studyPayload = {
+      id: activeStudyId,
+      docRef: docRef.trim() || 'Estudo Técnico S/N',
+      infoGerais: infoGerais.trim(),
+      studyType,
+      selectedRA: selectedRA || (results.evalHydrant?.dscLocalidade) || 'Brasília',
+      occupation: getOccupationName(),
+      targetCode: targetCode.trim(),
+      rawPolygon,
+      rawWaterNetwork,
+      fotoHidrante
+    };
+    printTechnicalStudyReport({ studyData: studyPayload, calcResults: results, currentUser });
+  };
+
   // Filtragem da lista de estudos salvos
   const filteredSavedStudies = savedStudies.filter(s => {
     const matchRA = !listRA || normalizeRAName(s.selectedRA) === normalizeRAName(listRA);
@@ -667,9 +685,9 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                   </button>
                   <button 
                     type="button"
-                    onClick={() => window.print()} 
+                    onClick={handlePrintTechnicalStudy} 
                     className="h-8.5 px-2.5 sm:px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors border border-slate-700 shadow-sm cursor-pointer"
-                    title="Imprimir ou Salvar em PDF"
+                    title="Imprimir ou Salvar Parecer Técnico Oficial em PDF"
                   >
                     <FileText size={14} />
                     <span className="hidden md:inline">PDF</span>

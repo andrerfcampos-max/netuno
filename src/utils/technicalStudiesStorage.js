@@ -1,4 +1,5 @@
 import { calculateDistanceMeters, isValidDFCoordinate } from './geoUtils';
+import { syncTechnicalStudyToCloud, deleteTechnicalStudyFromCloud } from '../services/syncService';
 
 const STORAGE_KEY = 'netuno_technical_studies';
 
@@ -106,7 +107,11 @@ export const saveTechnicalStudy = (studyData, currentUser = null) => {
     }
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    return { success: true, data: updated, savedStudy: studyData.id ? studyData : updated[0] };
+    const finalSaved = studyData.id ? updated.find(s => s.id === studyData.id) : updated[0];
+    if (finalSaved) {
+      syncTechnicalStudyToCloud(finalSaved);
+    }
+    return { success: true, data: updated, savedStudy: finalSaved };
   } catch (e) {
     console.error('Erro ao salvar estudo técnico:', e);
     return { success: false, error: e.message };
@@ -121,6 +126,7 @@ export const deleteTechnicalStudy = (studyId) => {
     const studies = getTechnicalStudies();
     const filtered = studies.filter(s => s.id !== studyId);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    deleteTechnicalStudyFromCloud(studyId);
     return { success: true, data: filtered };
   } catch (e) {
     console.error('Erro ao excluir estudo técnico:', e);
