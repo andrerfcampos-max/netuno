@@ -300,7 +300,7 @@ export const printGeneralReport = ({
       <style>
         @page {
           size: A4 portrait;
-          margin: 8mm 10mm 10mm 10mm;
+          margin: 8mm 10mm 14mm 10mm;
         }
         * {
           box-sizing: border-box;
@@ -315,7 +315,7 @@ export const printGeneralReport = ({
           background: #ffffff;
           line-height: 1.35;
           font-size: 11px;
-          padding: 2px;
+          padding: 2px 2px 22px 2px;
         }
         .official-header {
           border-bottom: 2.5px solid #0f172a;
@@ -689,9 +689,16 @@ export const printGeneralReport = ({
         .signature-name { font-size: 11.5px; font-weight: 900; color: #0f172a; text-transform: uppercase; }
         .signature-role { font-size: 9.5px; color: #475569; margin-top: 1px; }
         .doc-hash-footer {
-          font-size: 8.5px;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 8px;
           color: #64748b;
-          margin-top: 8px;
+          background: #ffffff;
+          border-top: 1px solid #cbd5e1;
+          padding: 3px 10px;
           font-family: 'Courier New', Courier, monospace;
           letter-spacing: 0.3px;
         }
@@ -780,9 +787,10 @@ export const printGeneralReport = ({
         <div class="signature-name">${emissorNome}</div>
         <div class="signature-role">${emissorCargo} • ${emissorMatricula}</div>
         <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">GPCIU / SEHUR • CBMDF</div>
-        <div class="doc-hash-footer">
-          Controle / Hash: NETUNO-DF-${docHash} • Emitido eletronicamente via Sistema NETUNO • CBMDF
-        </div>
+      </div>
+
+      <div class="doc-hash-footer">
+        Controle / Hash: NETUNO-DF-${docHash} • Emitido eletronicamente via Sistema NETUNO • CBMDF
       </div>
 
       <script>
@@ -878,7 +886,7 @@ export const printCaesbReport = ({
       <style>
         @page {
           size: A4 portrait;
-          margin: 8mm 10mm 10mm 10mm;
+          margin: 8mm 10mm 14mm 10mm;
         }
         * {
           box-sizing: border-box;
@@ -893,7 +901,7 @@ export const printCaesbReport = ({
           background: #ffffff;
           line-height: 1.35;
           font-size: 11px;
-          padding: 2px;
+          padding: 2px 2px 22px 2px;
         }
         .official-header {
           border-bottom: 2.5px solid #047857;
@@ -1023,9 +1031,16 @@ export const printCaesbReport = ({
         .signature-name { font-size: 11.5px; font-weight: 900; color: #0f172a; text-transform: uppercase; }
         .signature-role { font-size: 9.5px; color: #475569; margin-top: 1px; }
         .doc-hash-footer {
-          font-size: 8.5px;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 8px;
           color: #64748b;
-          margin-top: 8px;
+          background: #ffffff;
+          border-top: 1px solid #cbd5e1;
+          padding: 3px 10px;
           font-family: 'Courier New', Courier, monospace;
           letter-spacing: 0.3px;
         }
@@ -1076,9 +1091,10 @@ export const printCaesbReport = ({
         <div class="signature-name">${emissorNome}</div>
         <div class="signature-role">${emissorMatricula} • Encarregado da Gestão de Hidrantes de Incêndio</div>
         <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">GPCIU / SEHUR • CBMDF</div>
-        <div class="doc-hash-footer">
-          Controle / Hash: NETUNO-CAESB-${generateDocHash(nowStr + '_' + currentData.length + '_' + emissorNome)} • Emitido eletronicamente via Sistema NETUNO
-        </div>
+      </div>
+
+      <div class="doc-hash-footer">
+        Controle / Hash: NETUNO-CAESB-${generateDocHash(nowStr + '_' + currentData.length + '_' + emissorNome)} • Emitido eletronicamente via Sistema NETUNO
       </div>
 
       <script>

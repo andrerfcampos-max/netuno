@@ -2,7 +2,8 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown, Share2, ChevronDown, Check } from 'lucide-react';
 import { extractProblemsList, sanitizeProblem } from '../utils/problemUtils';
 import { normalizeRAName } from '../utils/raList';
-import { printGeneralReport, printCaesbReport } from '../utils/officialPrintUtils';
+import { fixEncoding } from '../utils/textUtils';
+import { printGeneralReport, printCaesbReport, generateDocHash } from '../utils/officialPrintUtils';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser }) => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -131,6 +132,11 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
     const r = new Set(currentData.map(h => normalizeRAName(h.dscLocalidade)).filter(Boolean));
     return Array.from(r).sort().join(', ');
   }, [currentData]);
+
+  const docHash = useMemo(() => {
+    const docSeed = `${new Date().toLocaleDateString('pt-BR')}_${currentData.length}_${operantes}_${inoperantes}_${currentUser?.nome || 'CBMDF'}_${rasPresentes}`;
+    return generateDocHash(docSeed);
+  }, [currentData.length, operantes, inoperantes, currentUser?.nome, rasPresentes]);
 
   const topDefeitos = useMemo(() => {
     const defeitosCount = {};
@@ -1544,9 +1550,11 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           <p className="text-xs font-semibold text-slate-400 print-text-gray mt-1">
             GPCIU / SEHUR • CBMDF
           </p>
-          <div className="mt-4 pt-2 border-t border-slate-700/50 print-border-gray flex flex-col items-center gap-0.5 text-[10px] text-slate-500 font-mono">
+          <div className="mt-6 pt-3 border-t border-slate-700/50 print-border-gray w-full max-w-xl flex flex-col items-center gap-1 text-[11px] text-slate-500 font-mono text-center">
             <p>Gerado em: {new Date().toLocaleString('pt-BR')} • Sistema NETUNO</p>
-            <p>Controle: NETUNO-DF-SYS • Emitido eletronicamente via Sistema NETUNO • CBMDF</p>
+            <p className="font-semibold text-slate-400 print-text-black">
+              Controle / Hash: {reportType === 'caesb' ? `NETUNO-CAESB-${docHash}` : `NETUNO-DF-${docHash}`} • Emitido eletronicamente via Sistema NETUNO • CBMDF
+            </p>
           </div>
         </div>
 

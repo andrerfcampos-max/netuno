@@ -26,6 +26,7 @@ import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
 import { extractProblemsList } from './utils/problemUtils';
+import { fixEncoding } from './utils/textUtils';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Raio da Terra em km
