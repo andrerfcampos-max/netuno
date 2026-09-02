@@ -21,6 +21,36 @@
       "createdAt": "2026-09-02T19:19:42.116Z",
       "startedAt": "2026-09-02T19:19:47.500Z",
       "completedAt": "2026-09-02T19:30:11.796Z"
+    },
+    {
+      "id": "TASK-3",
+      "seq": 3,
+      "conversationId": "e6292f0a-81ea-4183-a5f3-f60e3176c0a3",
+      "description": "Remover Governo do Distrito Federal do titulo do relatorio",
+      "status": "completed",
+      "createdAt": "2026-09-02T19:31:10.488Z",
+      "startedAt": "2026-09-02T19:31:12.200Z",
+      "completedAt": "2026-09-02T19:32:21.815Z"
+    },
+    {
+      "id": "TASK-4",
+      "seq": 4,
+      "conversationId": "6728d2ef-b530-4ae1-8ec2-b3e9809e1069",
+      "description": "Fix fixEncoding error and move hash to footer",
+      "status": "completed",
+      "createdAt": "2026-09-02T19:33:40.775Z",
+      "startedAt": "2026-09-02T19:33:42.298Z",
+      "completedAt": "2026-09-02T19:38:41.853Z"
+    },
+    {
+      "id": "TASK-5",
+      "seq": 5,
+      "conversationId": "09df0668-ffd8-4217-9d87-afefdbd32619",
+      "description": "Ajustar layout e dimensionamento responsivo das fotos no anexo do relatorio PDF",
+      "status": "queued",
+      "createdAt": "2026-09-02T19:37:02.402Z",
+      "startedAt": null,
+      "completedAt": null
     }
   ]
 }
