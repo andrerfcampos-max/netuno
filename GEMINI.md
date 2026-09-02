@@ -25,6 +25,34 @@ Você atua como Engenheiro de Software e Arquitetos neste projeto. Nosso método
        3. **Sanitização de Coordenadas e Status:** Normaliza latitude/longitude e booleano de `flgAtivo`.
        4. **Gravação Dupla:** Atualiza tanto `public/base-de-dados.xlsx` quanto a raiz `base-de-dados.xlsx`.
      - Após rodar a atualização, valide o build (`npm run build`), versione com `git commit` e envie via `git push origin main`.
+7. **Controle de Concorrência e Fila Ordenada entre Conversas/Chats (Task Queue):**
+   - **Objetivo Tático:** Evitar colisões, conflitos de concorrência no Git (`index.lock`), perda acidental de código e builds corrompidos quando o usuário enviar comandos em múltiplos chats/conversas simultaneamente.
+   - **Regra de Ouro (Execução Estritamente Sequencial / FIFO):**
+     - **TODA E QUALQUER tarefa enviada via chat deve aguardar sua vez na fila antes de alterar arquivos, rodar comandos ou fazer deploy.**
+     - Uma tarefa de uma conversa **só pode ser executada quando a tarefa ativa de outra conversa finalizar por completo**.
+     - As tarefas de diferentes conversas organizam suas esperas em uma **fila ordenada** de prioridade por ordem de chegada.
+   - **Ciclo Operacional Obrigatório em Toda Conversa:**
+     1. **Enfileirar (Enqueue):**
+        Logo ao receber o comando do usuário, antes de qualquer alteração, o agente DEVE registrar a tarefa na fila:
+        ```bash
+        node scripts/task_queue.cjs enqueue "<resumo_da_tarefa>" "<conversation_id>"
+        ```
+        Isso gera o ID da tarefa (ex: `TASK-1`, `TASK-2`, ...) e define o status como `queued`.
+     2. **Aguardar a Vez (Wait Turn):**
+        O agente DEVE verificar e aguardar até que a fila seja liberada e sua tarefa seja a próxima da vez:
+        ```bash
+        node scripts/task_queue.cjs wait <taskId>
+        ```
+        O script aguarda ativamente a liberação do lock. Se nenhuma outra conversa estiver em `running` e esta tarefa for a primeira da fila, o lock é adquirido imediatamente (`running`).
+     3. **Execução Segura:**
+        Com o lock garantido exclusivamente para a conversa atual, execute a alteração do código, compilação (`npm run build`) e testes necessários com total isolamento.
+     4. **Liberação Imediata da Fila (Release / Complete):**
+        Após o deploy bem-sucedido via `git push origin main`, o agente DEVE liberar imediatamente o lock para que a próxima conversa da fila assuma:
+        ```bash
+        node scripts/task_queue.cjs complete <taskId>
+        ```
+        *(Em caso de erro impeditivo, utilize `node scripts/task_queue.cjs fail <taskId> "<motivo>"` para não travar a fila de outras conversas).*
+     5. **Consulta Rápida de Status:**
+        Para inspecionar a fila a qualquer momento: `node scripts/task_queue.cjs status`.
 
 *Sempre siga essa metodologia para evitar assimetria entre código humano e gerado pelo pipeline de IA.*
-

@@ -1,5 +1,9 @@
 import fs from 'fs';
 import { execSync } from 'child_process';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const taskQueue = require('./scripts/task_queue.cjs');
 
 function readWorkflow() {
   return JSON.parse(fs.readFileSync('workflow.json', 'utf8'));
@@ -71,6 +75,13 @@ function main() {
   for (let i = 0; i < workflow.steps.length; i++) {
     const step = workflow.steps[i];
     if (step.status === 'pending') {
+      const taskItem = taskQueue.enqueue(`Orquestrador Etapa ${step.id}: ${step.name}`, 'run_automation');
+      const lockAcquired = taskQueue.acquire(taskItem.id);
+      if (!lockAcquired.success) {
+        console.log(`[Orquestrador] ⏳ ${lockAcquired.reason}. Aguardando liberação...`);
+        // Se a fila estiver ocupada por outro chat, pode tentar aguardar
+      }
+
       const success = processStep(step);
       
       if (success) {
@@ -78,9 +89,11 @@ function main() {
         writeWorkflow(workflow);
         logToHistory(step.id, step.name);
         runGitCommit(step.id, step.name);
+        taskQueue.complete(taskItem.id);
         
         console.log(`♻️ Contexto resetado com sucesso para a próxima etapa.`);
       } else {
+        taskQueue.fail(taskItem.id, 'Falha durante execução do agente');
         console.log(`❌ O loop autônomo pausou na Etapa ${step.id} para intervenção humana.`);
         break;
       }

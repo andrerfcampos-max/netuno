@@ -7,6 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "update-db": "node scripts/update_database.cjs",
+    "queue:status": "node scripts/task_queue.cjs status",
+    "queue:enqueue": "node scripts/task_queue.cjs enqueue",
+    "queue:wait": "node scripts/task_queue.cjs wait",
+    "queue:complete": "node scripts/task_queue.cjs complete",
     "lint": "oxlint",
     "preview": "vite preview"
   },

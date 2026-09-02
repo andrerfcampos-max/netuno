@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "activeTaskId": "TASK-1",
+  "queue": [
+    {
+      "id": "TASK-1",
+      "seq": 1,
+      "conversationId": "187d563d-b3b4-4c54-97dc-c64c79e13044",
+      "description": "Adicionar regra de fila ordenada e controle de concorrencia entre conversas nos arquivos de controle",
+      "status": "running",
+      "createdAt": "2026-09-02T19:07:54.609Z",
+      "startedAt": "2026-09-02T19:07:57.326Z",
+      "completedAt": null
+    }
+  ]
+}
