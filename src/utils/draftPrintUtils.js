@@ -297,11 +297,6 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
           text-align: center;
           page-break-inside: avoid;
         }
-        .signature-line {
-          width: 280px;
-          border-top: 1.5px solid #000000;
-          margin: 0 auto 4px auto;
-        }
         .sig-name {
           font-weight: 900;
           font-size: 13px;
@@ -323,6 +318,7 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
     <body>
       <div class="header">
         <h1>Corpo de Bombeiros Militar do Distrito Federal</h1>
+        <h3 style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase;">GPCIU / SEHUR</h3>
         <h2>Ficha de Vistoria de Campo • Rascunho de Missão</h2>
         <div class="mission-title">🎯 ${missionName}${atribuicaoText}</div>
         <div class="header-meta">
@@ -349,10 +345,9 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
       </table>
 
       <div class="footer">
-        <div class="signature-line"></div>
         <div class="sig-name">${militarNome}</div>
         ${militarMatricula ? `<div class="sig-mat">${militarMatricula}</div>` : ''}
-        <div class="sys-meta">Sistema Netuno • Gerado em ${today} às ${nowTime}</div>
+        <div class="sys-meta">GPCIU / SEHUR • CBMDF • Sistema Netuno • Gerado em ${today} às ${nowTime}</div>
       </div>
 
       <script>

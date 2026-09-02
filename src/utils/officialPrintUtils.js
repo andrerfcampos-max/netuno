@@ -172,105 +172,108 @@ export const printGeneralReport = ({
     </div>
   ` : '';
 
-  const topDefeitosHtml = (isMultiCity && topDefeitosComCidades && topDefeitosComCidades.length > 0) ? `
-    <div class="section-block avoid-break">
-      <div class="section-title">⚠️ Principais Defeitos Identificados no DF</div>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width: 38%;">Defeito / Inconformidade Técnica</th>
-            <th class="text-center" style="width: 12%;">Ocorrências</th>
-            <th class="text-center" style="width: 12%;">% do Total</th>
-            <th style="width: 20%;">Cidades com Maior Incidência</th>
-            <th style="width: 18%;">Impacto</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${topDefeitosComCidades.map(d => `
-            <tr>
-              <td><strong class="text-red">${d.nome}</strong></td>
-              <td class="text-center"><strong>${d.total}</strong></td>
-              <td class="text-center">${d.percent.toFixed(1)}%</td>
-              <td class="sub-text">${d.topCidades.map(tc => `${tc.cidade} (${tc.qtd})`).join(', ') || '-'}</td>
-              <td>
-                <div class="bar-container">
-                  <div class="bar-fill bar-red" style="width: ${Math.max(6, d.percent)}%;"></div>
-                </div>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  ` : (topDefeitos && topDefeitos.length > 0 ? `
-    <div class="section-block avoid-break">
-      <div class="section-title">⚠️ Top Defeitos Registrados</div>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width: 50%;">Defeito / Inconformidade Técnica</th>
-            <th class="text-center" style="width: 15%;">Ocorrências</th>
-            <th class="text-center" style="width: 15%;">% do Total</th>
-            <th style="width: 20%;">Impacto Visual</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${topDefeitos.map(d => `
-            <tr>
-              <td><strong class="text-red">${d.nome}</strong></td>
-              <td class="text-center"><strong>${d.count}</strong></td>
-              <td class="text-center">${d.percent.toFixed(1)}%</td>
-              <td>
-                <div class="bar-container">
-                  <div class="bar-fill bar-red" style="width: ${Math.max(6, d.barPercent || d.percent)}%;"></div>
-                </div>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  ` : '');
+  const hasDefeitos = (topDefeitosComCidades && topDefeitosComCidades.length > 0) || (topDefeitos && topDefeitos.length > 0);
+  const defeitosList = (isMultiCity && topDefeitosComCidades && topDefeitosComCidades.length > 0) ? topDefeitosComCidades : (topDefeitos || []);
+  const hasYears = yearStats && yearStats.length > 0;
 
-  const yearStatsHtml = (yearStats && yearStats.length > 0) ? `
-    <div class="section-block avoid-break">
-      <div class="section-title">📅 Distribuição Temporal (Vistorias por Ano)</div>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width: 30%;">Ano de Vistoria</th>
-            <th class="text-center" style="width: 30%;">Total de Vistorias</th>
-            <th style="width: 40%;">Proporção Visual</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${yearStats.map(y => `
-            <tr>
-              <td><strong>${String(y.nome).replace(/[^0-9]/g, '') || y.nome}</strong></td>
-              <td class="text-center text-green"><strong>${y.count}</strong> vistoria${y.count > 1 ? 's' : ''}</td>
-              <td>
-                <div class="bar-container">
-                  <div class="bar-fill bar-green" style="width: ${Math.max(6, y.percent)}%;"></div>
-                </div>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  ` : '';
+  let chartsHtml = '';
+  if (hasDefeitos || hasYears) {
+    chartsHtml = `
+      <div class="charts-row avoid-break">
+        ${hasDefeitos ? `
+          <div class="chart-card">
+            <div class="chart-title">⚠️ ${isMultiCity ? 'Top Defeitos no DF' : 'Top Defeitos Registrados'}</div>
+            <div class="bar-items-list">
+              ${defeitosList.map(d => {
+                const countVal = d.total !== undefined ? d.total : d.count;
+                const pctVal = typeof d.percent === 'number' ? d.percent.toFixed(1) : d.percent;
+                const barWidth = Math.max(4, d.barPercent || d.percent || 4);
+                return `
+                  <div class="bar-item">
+                    <div class="bar-item-header">
+                      <span class="bar-item-label" title="${d.nome}">${d.nome}</span>
+                      <span class="bar-item-value text-red">${countVal} ocorr. (${pctVal}%)</span>
+                    </div>
+                    <div class="bar-track">
+                      <div class="bar-fill bar-red" style="width: ${barWidth}%;"></div>
+                    </div>
+                    ${d.topCidades && d.topCidades.length > 0 ? `
+                      <div class="bar-item-tags">
+                        ${d.topCidades.map(tc => `<span class="bar-tag">📍 ${tc.cidade}: ${tc.qtd}</span>`).join('')}
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
 
-  const hidrantesComFoto = currentData.filter(h => h.fotoVistoria || h.fotoPerfil || h.foto || h.fotoUrl);
-  const shouldBreakPage = currentData.length > 2 || hidrantesComFoto.length > 2;
+        ${hasYears ? `
+          <div class="chart-card">
+            <div class="chart-title">📅 Vistorias por Ano</div>
+            <div class="bar-items-list">
+              ${yearStats.map(y => {
+                const yearLabel = String(y.nome).replace(/[^0-9]/g, '') || y.nome;
+                const barWidth = Math.max(4, y.percent || 4);
+                return `
+                  <div class="bar-item">
+                    <div class="bar-item-header">
+                      <span class="bar-item-label">${yearLabel}</span>
+                      <span class="bar-item-value text-green">${y.count} vistoria${y.count > 1 ? 's' : ''}</span>
+                    </div>
+                    <div class="bar-track">
+                      <div class="bar-fill bar-green" style="width: ${barWidth}%;"></div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
 
-  const anexoFotograficoHtml = hidrantesComFoto.length > 0 ? `
+  const extractPhotos = (h) => {
+    if (!h) return [];
+    const photos = [];
+    const add = (p) => {
+      if (typeof p === 'string' && p.trim().length > 10 && !photos.includes(p)) {
+        photos.push(p);
+      }
+    };
+    if (Array.isArray(h.fotosVistoria)) h.fotosVistoria.forEach(add);
+    if (Array.isArray(h.fotos)) h.fotos.forEach(add);
+    if (Array.isArray(h.HISTORICO_VISTORIAS)) {
+      h.HISTORICO_VISTORIAS.forEach(v => {
+        if (Array.isArray(v.fotosVistoria)) v.fotosVistoria.forEach(add);
+        if (v.fotoVistoria) add(v.fotoVistoria);
+        if (v.fotoUrl) add(v.fotoUrl);
+      });
+    }
+    if (h.fotoVistoria) add(h.fotoVistoria);
+    if (h.fotoPerfil) add(h.fotoPerfil);
+    if (h.foto) add(h.foto);
+    if (h.fotoUrl) add(h.fotoUrl);
+    return photos;
+  };
+
+  const hidrantesComFotos = currentData.map(h => ({
+    ...h,
+    extractedPhotos: extractPhotos(h)
+  })).filter(item => item.extractedPhotos.length > 0);
+
+  const totalFotosCount = hidrantesComFotos.reduce((acc, h) => acc + h.extractedPhotos.length, 0);
+  const shouldBreakPage = currentData.length > 2 || totalFotosCount > 2;
+
+  const anexoFotograficoHtml = hidrantesComFotos.length > 0 ? `
     <div class="section-block ${shouldBreakPage ? 'page-break-before' : 'avoid-break'}">
       <div class="section-title" style="font-size: 12.5px; border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin-top: ${shouldBreakPage ? '16px' : '10px'}; margin-bottom: 10px;">
-        📷 Anexo Fotográfico - Evidências das Vistorias (${hidrantesComFoto.length} ${hidrantesComFoto.length === 1 ? 'registro fotográfico' : 'registros fotográficos'})
+        📷 Anexo Fotográfico - Evidências das Vistorias (${totalFotosCount} ${totalFotosCount === 1 ? 'registro fotográfico' : 'registros fotográficos'})
       </div>
       <div class="photos-grid">
-        ${hidrantesComFoto.map((h, i) => {
-          const fotoSrc = h.fotoVistoria || h.fotoPerfil || h.foto || h.fotoUrl;
+        ${hidrantesComFotos.map((h, i) => {
           const cod = h.nomHidrante || h.codHidrante || `HID-${i + 1}`;
           const dataVis = formatDateOnly(h.datHoraUltimaVistoria || h.datHoraVistoria);
           const ra = normalizeRAName(h.dscLocalidade) || 'DF';
@@ -281,6 +284,7 @@ export const printGeneralReport = ({
           const hLat = typeof h.numLatitude === 'number' ? h.numLatitude.toFixed(6) : (h.numLatitude || '');
           const hLng = typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (h.numLongitude || '');
           const hCoord = (hLat && hLng && hLat !== '-' && hLng !== '-') ? `${hLat}, ${hLng}` : '';
+          const pList = h.extractedPhotos;
 
           return `
             <div class="photo-card avoid-break">
@@ -296,8 +300,13 @@ export const printGeneralReport = ({
                 ${ref ? `<div class="photo-ref">${ref}</div>` : ''}
                 ${hCoord ? `<div class="photo-coord">🌐 GPS: ${hCoord}</div>` : ''}
                 <div class="photo-defect ${isOp ? 'text-green' : 'text-red'}">⚠️ ${defeito}</div>
-                <div class="photo-img-wrapper">
-                  <img src="${fotoSrc}" alt="Evidência ${cod}" class="photo-evidence-img" />
+                <div class="${pList.length > 1 ? 'photos-multi-grid' : 'photo-single-wrapper'}">
+                  ${pList.map((fotoSrc, pIdx) => `
+                    <div class="photo-img-wrapper ${pList.length > 1 ? 'photo-multi-item' : ''}">
+                      <img src="${fotoSrc}" alt="Evidência ${pIdx + 1} - ${cod}" class="photo-evidence-img" />
+                      ${pList.length > 1 ? `<span class="photo-multi-badge">${pIdx + 1}/${pList.length}</span>` : ''}
+                    </div>
+                  `).join('')}
                 </div>
               </div>
             </div>
@@ -603,19 +612,123 @@ export const printGeneralReport = ({
           object-fit: cover;
         }
 
+        .charts-row {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 12px;
+          width: 100%;
+        }
+        .chart-card {
+          flex: 1;
+          border: 1.5px solid #cbd5e1;
+          border-radius: 6px;
+          padding: 8px 10px;
+          background: #f8fafc;
+        }
+        .chart-title {
+          font-size: 11px;
+          font-weight: 800;
+          color: #0f172a;
+          text-transform: uppercase;
+          border-bottom: 1.5px solid #cbd5e1;
+          padding-bottom: 4px;
+          margin-bottom: 8px;
+        }
+        .bar-items-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .bar-item {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .bar-item-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 9px;
+        }
+        .bar-item-label {
+          font-weight: 700;
+          color: #0f172a;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 68%;
+        }
+        .bar-item-value {
+          font-weight: 800;
+          font-size: 8.5px;
+          white-space: nowrap;
+        }
+        .bar-track {
+          width: 100%;
+          height: 6px;
+          background-color: #e2e8f0;
+          border-radius: 3px;
+          overflow: hidden;
+        }
+        .bar-fill {
+          height: 100%;
+          border-radius: 3px;
+        }
+        .bar-red { background-color: #ef4444; }
+        .bar-green { background-color: #10b981; }
+        .bar-item-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+          margin-top: 1px;
+          font-size: 8px;
+          color: #475569;
+        }
+        .bar-tag {
+          background: #e2e8f0;
+          padding: 0.5px 3px;
+          border-radius: 2px;
+          font-weight: 600;
+        }
+
+        .photos-multi-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+          gap: 6px;
+          width: 100%;
+        }
+        .photo-multi-item {
+          height: 110px !important;
+          position: relative;
+        }
+        .photo-multi-badge {
+          position: absolute;
+          bottom: 3px;
+          right: 3px;
+          background: rgba(0, 0, 0, 0.75);
+          color: #ffffff;
+          font-size: 8px;
+          font-weight: 800;
+          padding: 1px 4px;
+          border-radius: 3px;
+        }
+        .inst-sub {
+          font-size: 11px;
+          font-weight: 800;
+          color: #334155;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin: 1px 0 2px 0;
+        }
+
         .signature-section {
-          margin-top: 22px;
+          margin-top: 20px;
           padding-top: 8px;
           text-align: center;
           page-break-inside: avoid;
         }
-        .signature-line {
-          width: 300px;
-          border-top: 1.5px solid #000000;
-          margin: 0 auto 5px auto;
-        }
-        .signature-name { font-size: 11px; font-weight: 800; color: #000000; }
-        .signature-role { font-size: 9.5px; color: #475569; }
+        .signature-name { font-size: 11.5px; font-weight: 900; color: #0f172a; text-transform: uppercase; }
+        .signature-role { font-size: 9.5px; color: #475569; margin-top: 1px; }
         .doc-hash-footer {
           font-size: 8.5px;
           color: #64748b;
@@ -632,6 +745,7 @@ export const printGeneralReport = ({
           <div class="title-col">
             <div class="inst-gov">Governo do Distrito Federal</div>
             <div class="inst-cbmdf">Corpo de Bombeiros Militar do Distrito Federal</div>
+            <div class="inst-sub">GPCIU / SEHUR</div>
             <div class="doc-title">Relatório de Vistoria de Hidrantes Urbanos</div>
             <div class="doc-meta">
               <span><strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
@@ -686,8 +800,7 @@ export const printGeneralReport = ({
       </div>
 
       ${multiCityHtml}
-      ${topDefeitosHtml}
-      ${yearStatsHtml}
+      ${chartsHtml}
 
       <div class="section-block">
         <div class="section-title">📋 Relação Técnica Detalhada (${currentData.length} ${currentData.length === 1 ? 'hidrante' : 'hidrantes'})</div>
@@ -710,10 +823,9 @@ export const printGeneralReport = ({
       ${anexoFotograficoHtml}
 
       <div class="signature-section avoid-break">
-        <div class="signature-line"></div>
         <div class="signature-name">${emissorNome}</div>
         <div class="signature-role">${emissorCargo} • ${emissorMatricula}</div>
-        <div class="signature-role" style="font-size: 9px; margin-top: 3px;">Sistema NETUNO • CBMDF</div>
+        <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">GPCIU / SEHUR • CBMDF</div>
         <div class="doc-hash-footer">
           Controle / Hash: NETUNO-DF-${docHash} • Emitido eletronicamente via Sistema NETUNO • CBMDF
         </div>
@@ -763,8 +875,18 @@ export const printCaesbReport = ({
     const obs = h.dscObservacao || h.observacoes || h.obsVistoria || '';
     const ra = normalizeRAName(h.dscLocalidade) || '';
     const lat = typeof h.numLatitude === 'number' ? h.numLatitude.toFixed(6) : (h.numLatitude || '-');
-    const lng = typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (h.numLongitude || '-');
-    const foto = h.fotoUrl || h.fotoPerfil || '';
+    const photosList = extractPhotos(h);
+    const photoHtml = photosList.length > 0 ? `
+      <div class="photo-box" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;">
+        ${photosList.map((foto, pIdx) => `
+          <div style="position: relative; display: inline-block;">
+            <img src="${foto}" alt="Evidência ${pIdx + 1}" class="evidence-img" />
+            ${photosList.length > 1 ? `<span style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.75); color: #fff; font-size: 7px; font-weight: bold; padding: 1px 3px; border-radius: 2px;">${pIdx + 1}/${photosList.length}</span>` : ''}
+          </div>
+        `).join('')}
+        <div class="photo-label" style="width: 100%; text-align: center;">${photosList.length === 1 ? 'Evidência de Campo' : `${photosList.length} Evidências`}</div>
+      </div>
+    ` : '<div class="no-photo">Sem foto cadastrada</div>';
 
     return `
       <tr>
@@ -787,12 +909,7 @@ export const printCaesbReport = ({
           </div>
         </td>
         <td class="col-photo">
-          ${foto ? `
-            <div class="photo-box">
-              <img src="${foto}" alt="Registro Fotográfico" class="evidence-img" />
-              <div class="photo-label">Evidência de Campo</div>
-            </div>
-          ` : '<div class="no-photo">Sem foto cadastrada</div>'}
+          ${photoHtml}
         </td>
       </tr>
     `;
@@ -947,19 +1064,23 @@ export const printCaesbReport = ({
         .no-photo { font-size: 9px; color: #94a3b8; font-style: italic; padding: 10px 0; }
         .avoid-break { page-break-inside: avoid; break-inside: avoid; }
         
+        .inst-sub {
+          font-size: 11px;
+          font-weight: 800;
+          color: #334155;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin: 1px 0 2px 0;
+        }
+
         .signature-section {
-          margin-top: 24px;
+          margin-top: 20px;
           padding-top: 8px;
           text-align: center;
           page-break-inside: avoid;
         }
-        .signature-line {
-          width: 320px;
-          border-top: 1.5px solid #000000;
-          margin: 0 auto 5px auto;
-        }
-        .signature-name { font-size: 11px; font-weight: 800; color: #000000; }
-        .signature-role { font-size: 9.5px; color: #475569; }
+        .signature-name { font-size: 11.5px; font-weight: 900; color: #0f172a; text-transform: uppercase; }
+        .signature-role { font-size: 9.5px; color: #475569; margin-top: 1px; }
         .doc-hash-footer {
           font-size: 8.5px;
           color: #64748b;
@@ -976,6 +1097,7 @@ export const printCaesbReport = ({
           <div class="title-col">
             <div class="inst-gov">Governo do Distrito Federal</div>
             <div class="inst-cbmdf">CBMDF • Companhia de Saneamento Ambiental do DF (CAESB)</div>
+            <div class="inst-sub">GPCIU / SEHUR</div>
             <div class="doc-title">Solicitação Oficial de Manutenção de Hidrantes Urbanos</div>
             <div class="legal-term">Conforme Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019</div>
             <div class="doc-meta">
@@ -1015,10 +1137,9 @@ export const printCaesbReport = ({
       </div>
 
       <div class="signature-section avoid-break">
-        <div class="signature-line"></div>
         <div class="signature-name">${emissorNome}</div>
         <div class="signature-role">${emissorMatricula} • Encarregado da Gestão de Hidrantes de Incêndio</div>
-        <div class="signature-role" style="font-size: 9px; margin-top: 3px;">Seção de Hidrantes Urbanos • CBMDF</div>
+        <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">GPCIU / SEHUR • CBMDF</div>
         <div class="doc-hash-footer">
           Controle / Hash: NETUNO-CAESB-${generateDocHash(nowStr + '_' + currentData.length + '_' + emissorNome)} • Emitido eletronicamente via Sistema NETUNO
         </div>
@@ -1171,11 +1292,6 @@ export const printBuildingStudyReport = ({ study, currentUser = null }) => {
           text-align: center;
           page-break-inside: avoid;
         }
-        .signature-line {
-          width: 320px;
-          border-top: 1.5px solid #000000;
-          margin: 0 auto 6px auto;
-        }
         .signature-name { font-size: 11.5px; font-weight: 800; color: #000000; }
         .signature-role { font-size: 9.5px; color: #475569; }
       </style>
@@ -1299,10 +1415,9 @@ export const printBuildingStudyReport = ({ study, currentUser = null }) => {
       </div>
 
       <div class="signature-section avoid-break">
-        <div class="signature-line"></div>
         <div class="signature-name">${emissorNome}</div>
         <div class="signature-role">${emissorMatricula} • Oficial Especialista em Pré-Planejamento Operacional</div>
-        <div class="signature-role" style="font-size: 9px; margin-top: 3px;">Corpo de Bombeiros Militar do Distrito Federal</div>
+        <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">GPCIU / SEHUR • CBMDF</div>
       </div>
 
       <script>

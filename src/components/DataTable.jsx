@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, Edit3, MessageSquareText, AlertTriangle } from 'lucide-react';
+import { Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, Edit3, MessageSquareText, AlertTriangle, Wrench } from 'lucide-react';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
 import { isHydrantSelected } from '../utils/geoUtils';
@@ -296,52 +296,103 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
                     )}
                   </div>
 
-                  {/* Botões de Ação Horizontais no Mobile */}
-                  <div className="flex items-center gap-1 pt-1.5 border-t border-slate-750">
-                    <button
-                      onClick={() => onCenterMap(h)}
-                      className="flex items-center justify-center gap-1 py-1.5 px-2 bg-slate-750 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-slate-650"
-                      title="Ver Detalhes e Ficha no Mapa"
-                    >
-                      <MessageSquareText size={13} className="text-cyan-400" />
-                      <span>Detalhes</span>
-                    </button>
-
-                    <button
-                      onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')}
-                      className="flex items-center justify-center gap-1 py-1.5 px-2 bg-blue-900/50 hover:bg-blue-800 text-blue-300 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-blue-700/50"
-                      title="Navegar com Waze"
-                    >
-                      <Navigation size={13} className="text-blue-400" />
-                      <span>Waze</span>
-                    </button>
-
-                    <button
-                      onClick={() => onInspect(h)}
-                      className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-black active:scale-95 transition-all shadow-sm"
-                      title="Cadastrar Vistoria"
-                    >
-                      <Plus size={14} strokeWidth={3} className="text-emerald-200" />
-                      <span>VISTORIA</span>
-                    </button>
-
-                    {isGestor ? (
+                  {/* Barra de Ações Táticas: Linha 1 (Principais de Deslocamento: Waze 4x e Street View 3x) + Linha 2 (Secundários 1x) */}
+                  <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-750">
+                    {/* LINHA 1: Waze 4x e Street View 3x */}
+                    <div className="flex items-center gap-1.5 w-full">
                       <button
-                        onClick={() => onEdit && onEdit(h)}
-                        className="flex items-center justify-center p-1.5 px-2 bg-amber-900/50 hover:bg-amber-800 text-amber-300 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-amber-700/50"
-                        title="Editar Hidrante"
+                        onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')}
+                        style={{ backgroundColor: '#2563eb' }}
+                        className="flex-[4] h-9 bg-blue-600 hover:bg-blue-500 active:scale-98 text-white rounded-lg font-extrabold text-[11px] shadow-sm flex items-center justify-center gap-1.5 transition-all tracking-wide min-w-0 border border-blue-400/40"
+                        title="Navegar pelo Waze"
                       >
-                        <Edit size={13} className="text-amber-400" />
+                        <Navigation size={14} className="shrink-0 text-white" />
+                        <span className="truncate font-black text-white">NAVEGAR NO WAZE</span>
                       </button>
-                    ) : (
+
+                      <button
+                        onClick={() => window.open(`https://maps.google.com/maps?q=&layer=c&cbll=${h.numLatitude},${h.numLongitude}`, '_blank')}
+                        style={{ backgroundColor: '#d97706' }}
+                        className="flex-[3] h-9 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-lg font-bold text-[11px] shadow-sm flex items-center justify-center gap-1 transition-all tracking-wide min-w-0 border border-amber-400/40"
+                        title="Google Street View 360°"
+                      >
+                        <MapPin size={14} className="shrink-0 text-amber-200" />
+                        <span className="truncate text-white">STREET VIEW</span>
+                      </button>
+                    </div>
+
+                    {/* LINHA 2: Ações Secundárias (1x homogêneo conforme dialog) */}
+                    <div className="flex items-center gap-1 w-full">
+                      {/* Vistoria */}
+                      <button
+                        onClick={() => onInspect(h)}
+                        className="flex-1 h-8 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-lg font-bold flex items-center justify-center gap-1 shadow-sm transition-all text-[10px] min-w-0"
+                        title="Cadastrar Nova Vistoria Técnica"
+                      >
+                        <Plus size={13} strokeWidth={3} />
+                        <span className="truncate uppercase font-extrabold">VISTORIA</span>
+                      </button>
+
+                      {/* Editar Vistoria */}
+                      {Boolean((h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') || (h.HISTORICO_VISTORIAS && h.HISTORICO_VISTORIAS.length > 0)) && onEditInspection && (
+                        <button
+                          onClick={() => onEditInspection(h)}
+                          className="flex-1 h-8 bg-orange-600 hover:bg-orange-500 active:scale-95 text-white rounded-lg font-bold flex items-center justify-center gap-1 shadow-sm transition-all text-[10px] min-w-0 border border-orange-400/40"
+                          title="Editar Vistoria Cadastrada"
+                        >
+                          <Edit3 size={12} strokeWidth={2.5} />
+                          <span className="truncate uppercase font-extrabold">EDIT VIST.</span>
+                        </button>
+                      )}
+
+                      {/* Editar Hidrante */}
+                      {isGestor && (
+                        <button
+                          onClick={() => onEdit && onEdit(h)}
+                          className="flex-1 h-8 bg-slate-750 hover:bg-slate-700 active:scale-95 text-cyan-300 rounded-lg flex items-center justify-center gap-1 shadow-sm transition-colors text-[10px] min-w-0 border border-cyan-500/40"
+                          title="Editar Cadastro do Hidrante"
+                        >
+                          <Wrench size={12} className="text-cyan-400" />
+                          <span className="truncate uppercase font-extrabold text-slate-100">EDIT HIDR.</span>
+                        </button>
+                      )}
+
+                      {/* Google Maps */}
                       <button
                         onClick={() => window.open(`https://maps.google.com/maps?q=${h.numLatitude},${h.numLongitude}`, '_blank')}
-                        className="flex items-center justify-center p-1.5 px-2 bg-slate-750 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-bold active:scale-95 transition-all border border-slate-650"
-                        title="Google Maps"
+                        className="h-8 px-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 border border-slate-700 rounded-lg font-bold flex items-center justify-center gap-1 transition-all shadow-sm text-[10px]"
+                        title="Abrir no Google Maps"
                       >
-                        <MapIcon size={13} className="text-emerald-400" />
+                        <MapIcon size={12} className="text-emerald-400" />
+                        <span className="hidden sm:inline">Maps</span>
                       </button>
-                    )}
+
+                      {/* Detalhes / Ficha no Mapa */}
+                      <button
+                        onClick={() => onCenterMap(h)}
+                        className="h-8 px-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-cyan-300 border border-slate-700 rounded-lg font-bold flex items-center justify-center gap-1 transition-all shadow-sm text-[10px]"
+                        title="Ver no Mapa / Abrir Ficha"
+                      >
+                        <MessageSquareText size={12} className="text-cyan-400" />
+                        <span className="hidden sm:inline">Ficha</span>
+                      </button>
+
+                      {/* Rota (se gestor) */}
+                      {isGestor && onToggleMission && (
+                        <button
+                          onClick={() => onToggleMission(h.codHidrante || h._internalId || h.nomHidrante)}
+                          className={`h-8 px-2 rounded-lg font-bold flex items-center justify-center gap-0.5 shadow-sm transition-all active:scale-95 text-[10px] ${
+                            (selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h._internalId))
+                              ? 'bg-rose-600 text-white ring-1 ring-rose-400'
+                              : 'bg-cyan-600 hover:bg-cyan-500 text-white ring-1 ring-cyan-400/40'
+                          }`}
+                          title="Alternar na Rota da Missão"
+                        >
+                          <span>{(selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h._internalId)) ? '✕' : '+'}</span>
+                          <span>Rota</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -434,7 +485,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
                       {(h.dscObservacao || h.observacoes || h.obsVistoria) && (
                         <div className="truncate text-[10px] text-slate-400 italic" title={fixEncoding(h.dscObservacao || h.observacoes || h.obsVistoria)}>
                           <span className="font-semibold text-slate-500 not-italic">Obs: </span>
-                          {fixEncoding(h.dscObservacao || h.observacoes || h.obsVistoria)}
+                        {fixEncoding(h.dscObservacao || h.observacoes || h.obsVistoria)}
                         </div>
                       )}
                     </td>
@@ -442,71 +493,76 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
                     <td className="p-2 truncate max-w-[120px]" title={fixEncoding(h.dscPontoReferencia)}>{fixEncoding(h.dscPontoReferencia) || '-'}</td>
                     <td className="p-2">
                       <div className="flex flex-nowrap items-center justify-center gap-1.5">
+                        {/* Principais de Deslocamento: Waze e Street View destacados */}
+                        <button
+                          onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')}
+                          title="Navegar pelo Waze"
+                          style={{ backgroundColor: '#2563eb' }}
+                          className="flex items-center gap-1 py-1 px-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black transition-all active:scale-95 border border-blue-400/40 shadow-sm"
+                        >
+                          <Navigation size={13} className="text-white" />
+                          <span>Waze</span>
+                        </button>
+
+                        <button
+                          onClick={() => window.open(`https://maps.google.com/maps?q=&layer=c&cbll=${h.numLatitude},${h.numLongitude}`, '_blank')}
+                          title="Google Street View 360°"
+                          style={{ backgroundColor: '#d97706' }}
+                          className="flex items-center gap-1 py-1 px-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold transition-all active:scale-95 border border-amber-400/40 shadow-sm"
+                        >
+                          <MapPin size={13} className="text-amber-200" />
+                          <span>360°</span>
+                        </button>
+
+                        <div className="w-[1px] h-5 bg-slate-700 mx-0.5"></div>
+
+                        {/* Secundários: Vistoria, Edit Vist, Edit Hidr, Maps, Detalhes */}
+                        <button 
+                          onClick={() => onInspect(h)}
+                          title="Cadastrar Nova Vistoria Técnica"
+                          className="flex items-center gap-1 py-1 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black transition-all active:scale-95 shadow-sm"
+                        >
+                          <Plus size={14} strokeWidth={3} />
+                          <span>VISTORIA</span>
+                        </button>
+
+                        {Boolean((h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') || (h.HISTORICO_VISTORIAS && h.HISTORICO_VISTORIAS.length > 0)) && onEditInspection && (
+                          <button 
+                            onClick={() => onEditInspection(h)}
+                            title="Editar Vistoria Cadastrada"
+                            className="flex items-center gap-1 py-1 px-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm border border-orange-400/40"
+                          >
+                            <Edit3 size={13} strokeWidth={2.5} />
+                            <span>EDIT VIST.</span>
+                          </button>
+                        )}
+
+                        {isGestor && (
+                          <button
+                            onClick={() => onEdit && onEdit(h)}
+                            title="Editar Cadastro do Hidrante"
+                            className="flex items-center gap-1 py-1 px-2 bg-slate-750 hover:bg-slate-700 text-cyan-300 rounded-lg text-xs font-bold transition-all active:scale-95 border border-cyan-500/40 shadow-sm"
+                          >
+                            <Wrench size={13} className="text-cyan-400" />
+                            <span className="hidden lg:inline text-slate-100">EDIT HIDR.</span>
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => window.open(`https://maps.google.com/maps?q=${h.numLatitude},${h.numLongitude}`, '_blank')}
+                          title="Abrir no Google Maps"
+                          className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition-colors active:scale-95"
+                        >
+                          <MapIcon size={14} className="text-emerald-400" />
+                        </button>
+
                         <button
                           onClick={() => onCenterMap(h)}
                           title="Abrir Detalhes e Ficha no Mapa"
-                          className="flex items-center justify-center gap-1 p-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors active:scale-95 flex-shrink-0 font-bold text-xs"
+                          className="flex items-center justify-center p-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 rounded-lg transition-colors active:scale-95"
                         >
-                          <MessageSquareText size={16} />
+                          <MessageSquareText size={14} />
                         </button>
-                        <button
-                          onClick={() => window.open(`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`, '_blank')}
-                          title="Abrir no Waze"
-                          className="p-1.5 bg-blue-500 hover:bg-blue-400 text-white rounded transition-colors active:scale-95"
-                        >
-                          <Navigation size={16} />
-                        </button>
-                        <button
-                          onClick={() => window.open(`https://maps.google.com/maps?q=${h.numLatitude},${h.numLongitude}`, '_blank')}
-                          title="Google Maps"
-                          className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors active:scale-95"
-                        >
-                          <MapIcon size={16} />
-                        </button>
-                        <button
-                          onClick={() => window.open(`https://maps.google.com/maps?q=&layer=c&cbll=${h.numLatitude},${h.numLongitude}`, '_blank')}
-                          title="Street View"
-                          className="p-1.5 bg-orange-500 hover:bg-orange-400 text-white rounded transition-colors active:scale-95"
-                        >
-                          <MapPin size={16} />
-                        </button>
-                        {Boolean((h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') || (h.HISTORICO_VISTORIAS && h.HISTORICO_VISTORIAS.length > 0)) && onEditInspection ? (
-                          <div className="flex items-center gap-1">
-                            <button 
-                              onClick={() => onEditInspection(h)}
-                              title="Editar Vistoria Realizada"
-                              className="flex items-center gap-1 p-1.5 px-2 bg-amber-600 hover:bg-amber-500 text-white rounded transition-colors active:scale-95 shadow-sm font-bold text-xs border border-amber-400/30"
-                            >
-                              <Edit3 size={15} strokeWidth={2.5} />
-                              EDIT. VIST.
-                            </button>
-                            <button 
-                              onClick={() => onInspect(h)}
-                              title="Cadastrar Nova Vistoria"
-                              className="p-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded transition-colors active:scale-95 shadow-sm font-bold text-xs"
-                            >
-                              <Plus size={16} strokeWidth={3} />
-                            </button>
-                          </div>
-                        ) : (
-                          <button 
-                            onClick={() => onInspect(h)}
-                            title="Cadastrar Vistoria"
-                            className="flex items-center gap-1 p-1.5 px-2 bg-teal-600 hover:bg-teal-500 text-white rounded transition-colors active:scale-95 shadow-sm font-bold text-xs"
-                          >
-                            <Plus size={18} strokeWidth={3} />
-                            CAD. VIST.
-                          </button>
-                        )}
-                        {isGestor && (
-                          <button 
-                            onClick={() => onEdit && onEdit(h)}
-                            title="Editar Hidrante"
-                            className="p-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded transition-colors active:scale-95 shadow-sm"
-                          >
-                            <Edit size={16} />
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>

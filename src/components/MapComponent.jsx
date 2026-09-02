@@ -698,22 +698,24 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPo
                   href={`https://waze.com/ul?ll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}&navigate=yes`} 
                   target="_blank" 
                   rel="noreferrer" 
-                  className="flex-[4] h-12 bg-blue-600 hover:bg-blue-500 active:scale-98 text-white rounded-xl font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all tracking-wide min-w-0" 
+                  style={{ backgroundColor: '#2563eb' }}
+                  className="flex-[4] h-12 bg-blue-600 hover:bg-blue-500 active:scale-98 text-white rounded-xl font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all tracking-wide min-w-0 border border-blue-400/40" 
                   title="Navegar pelo Waze"
                 >
-                  <Navigation size={18} className="shrink-0" />
-                  <span className="truncate font-black">NAVEGAR NO WAZE</span>
+                  <Navigation size={18} className="shrink-0 text-white" />
+                  <span className="truncate font-black text-white">NAVEGAR NO WAZE</span>
                 </a>
 
                 <a 
                   href={`https://maps.google.com/maps?q=&layer=c&cbll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
                   target="_blank" 
                   rel="noreferrer" 
-                  className="flex-[3] h-12 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all tracking-wide min-w-0" 
+                  style={{ backgroundColor: '#d97706' }}
+                  className="flex-[3] h-12 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all tracking-wide min-w-0 border border-amber-400/40" 
                   title="Google Street View 360°"
                 >
                   <MapPin size={17} className="shrink-0 text-amber-200" />
-                  <span className="truncate">STREET VIEW</span>
+                  <span className="truncate text-white">STREET VIEW</span>
                 </a>
               </div>
 
@@ -726,7 +728,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPo
                   title="Cadastrar Nova Vistoria Técnica"
                 >
                   <Plus size={15} strokeWidth={3} />
-                  <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">+ VISTORIA</span>
+                  <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">VISTORIA</span>
                 </button>
 
                 {/* Editar Vistoria Cadastrada (Diferenciada com Laranja e Edit3) */}
@@ -888,22 +890,24 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPo
                   href={`https://waze.com/ul?ll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}&navigate=yes`} 
                   target="_blank" 
                   rel="noreferrer" 
-                  className="flex-[4] h-12 bg-blue-600 hover:bg-blue-500 active:scale-98 text-white rounded-xl font-extrabold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-all tracking-wide min-w-0" 
+                  style={{ backgroundColor: '#2563eb' }}
+                  className="flex-[4] h-12 bg-blue-600 hover:bg-blue-500 active:scale-98 text-white rounded-xl font-extrabold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-all tracking-wide min-w-0 border border-blue-400/40" 
                   title="Navegar pelo Waze"
                 >
-                  <Navigation size={18} className="shrink-0" />
-                  <span className="truncate font-black">NAVEGAR NO WAZE</span>
+                  <Navigation size={18} className="shrink-0 text-white" />
+                  <span className="truncate font-black text-white">NAVEGAR NO WAZE</span>
                 </a>
 
                 <a 
                   href={`https://maps.google.com/maps?q=&layer=c&cbll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
                   target="_blank" 
                   rel="noreferrer" 
-                  className="flex-[3] h-12 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5 transition-all tracking-wide min-w-0" 
+                  style={{ backgroundColor: '#d97706' }}
+                  className="flex-[3] h-12 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5 transition-all tracking-wide min-w-0 border border-amber-400/40" 
                   title="Google Street View 360°"
                 >
                   <MapPin size={17} className="shrink-0 text-amber-200" />
-                  <span className="truncate">STREET VIEW</span>
+                  <span className="truncate text-white">STREET VIEW</span>
                 </a>
               </div>
 
@@ -916,7 +920,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPo
                   title="Cadastrar Nova Vistoria Técnica"
                 >
                   <Plus size={15} strokeWidth={3} />
-                  <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">+ VISTORIA</span>
+                  <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">VISTORIA</span>
                 </button>
 
                 {/* Editar Vistoria Cadastrada (Diferenciada com Laranja e Edit3) */}

@@ -304,6 +304,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       // 1. Cabeçalho Oficial
       html += `<div style="text-align: center; border-bottom: 2px solid #334155; padding-bottom: 12px; margin-bottom: 16px;">
         <h2 style="margin: 0; font-size: 16px; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">Corpo de Bombeiros Militar do Distrito Federal</h2>
+        <div style="margin: 2px 0 0 0; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase;">GPCIU / SEHUR</div>
         <h3 style="margin: 4px 0 0 0; font-size: 14px; color: ${reportType === 'interno' ? '#1e40af' : '#047857'}; text-transform: uppercase; font-weight: bold;">
           ${reportType === 'interno' ? 'Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos' : 'Solicitação de Manutenção de Hidrantes Urbanos de Incêndio - CBMDF / CAESB'}
         </h3>
@@ -916,6 +917,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
               <div className="flex-1 text-center">
                 <div className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Governo do Distrito Federal</div>
                 <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
+                <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">GPCIU / SEHUR</div>
                 <h2 className="text-sm sm:text-base text-blue-400 print-text-black mt-0.5 uppercase font-bold">Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos</h2>
                 <div className="mt-3 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
                   <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
@@ -1448,9 +1450,38 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
         {/* ANEXO FOTOGRÁFICO DE EVIDÊNCIAS (CAESB / LAUDO) */}
         {(() => {
-          const hidrantesComFoto = currentData.filter(h => h.fotoVistoria || h.fotoPerfil || h.foto);
-          if (hidrantesComFoto.length === 0) return null;
-          
+          const extractHydrantPhotos = (h) => {
+            const photos = [];
+            const add = (p) => {
+              if (typeof p === 'string' && p.trim().length > 10 && !photos.includes(p)) {
+                photos.push(p);
+              }
+            };
+            if (Array.isArray(h.fotosVistoria)) h.fotosVistoria.forEach(add);
+            if (Array.isArray(h.fotos)) h.fotos.forEach(add);
+            if (Array.isArray(h.HISTORICO_VISTORIAS)) {
+              h.HISTORICO_VISTORIAS.forEach(v => {
+                if (Array.isArray(v.fotosVistoria)) v.fotosVistoria.forEach(add);
+                if (v.fotoVistoria) add(v.fotoVistoria);
+                if (v.fotoUrl) add(v.fotoUrl);
+              });
+            }
+            if (h.fotoVistoria) add(h.fotoVistoria);
+            if (h.fotoPerfil) add(h.fotoPerfil);
+            if (h.foto) add(h.foto);
+            if (h.fotoUrl) add(h.fotoUrl);
+            return photos;
+          };
+
+          const hidrantesComFotos = currentData.map(h => ({
+            ...h,
+            extractedPhotos: extractHydrantPhotos(h)
+          })).filter(item => item.extractedPhotos.length > 0);
+
+          if (hidrantesComFotos.length === 0) return null;
+
+          const totalFotos = hidrantesComFotos.reduce((acc, h) => acc + h.extractedPhotos.length, 0);
+
           return (
             <div className="mt-12 pt-8 border-t border-slate-700 print-border-gray print-page-break-before">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mb-6 border-b border-slate-700 print-border-gray pb-3">
@@ -1458,13 +1489,12 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                   📷 Anexo Fotográfico - Evidências das Vistorias
                 </h3>
                 <span className="text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-3 py-1 rounded-full print-border-gray print-text-black">
-                  {hidrantesComFoto.length} {hidrantesComFoto.length === 1 ? 'registro fotográfico' : 'registros fotográficos'}
+                  {totalFotos} {totalFotos === 1 ? 'registro fotográfico' : 'registros fotográficos'}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {hidrantesComFoto.map((h, i) => {
-                  const fotoSrc = h.fotoVistoria || h.fotoPerfil || h.foto;
+                {hidrantesComFotos.map((h, i) => {
                   const cod = h.nomHidrante || h.codHidrante;
                   const dataVis = formatDateOnly(h.datHoraUltimaVistoria || h.datHoraVistoria);
                   const defeito = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!h.flgAtivo ? 'Inoperante (necessita manutenção)' : 'Sem alteração');
@@ -1495,16 +1525,26 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                         </div>
                       </div>
 
-                      <div className="flex justify-center bg-black/50 print-bg-transparent p-1.5 rounded-lg overflow-hidden border border-slate-700/60 group">
-                        <img 
-                          src={fotoSrc} 
-                          alt={`Registro de vistoria do hidrante ${cod}`} 
-                          className="w-full h-52 object-cover rounded shadow-inner group-hover:scale-105 transition-transform duration-300 cursor-pointer"
-                          onClick={() => {
-                            const w = window.open('');
-                            w?.document.write(`<title>Foto ${cod}</title><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${fotoSrc}" style="max-width:95%;max-height:95%;border-radius:8px;box-shadow:0 0 20px rgba(0,0,0,0.8);" /></body>`);
-                          }}
-                        />
+                      {/* Galeria de Fotos: Exibe todas as fotos disponíveis para o hidrante */}
+                      <div className={`grid gap-2 bg-black/50 print-bg-transparent p-1.5 rounded-lg border border-slate-700/60 ${h.extractedPhotos.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                        {h.extractedPhotos.map((fotoSrc, pIdx) => (
+                          <div key={pIdx} className="overflow-hidden rounded group relative">
+                            <img 
+                              src={fotoSrc} 
+                              alt={`Registro ${pIdx + 1} do hidrante ${cod}`} 
+                              className={`w-full ${h.extractedPhotos.length > 1 ? 'h-36' : 'h-52'} object-cover rounded shadow-inner group-hover:scale-105 transition-transform duration-300 cursor-pointer`}
+                              onClick={() => {
+                                const w = window.open('');
+                                w?.document.write(`<title>Foto ${pIdx + 1} - ${cod}</title><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${fotoSrc}" style="max-width:95%;max-height:95%;border-radius:8px;box-shadow:0 0 20px rgba(0,0,0,0.8);" /></body>`);
+                              }}
+                            />
+                            {h.extractedPhotos.length > 1 && (
+                              <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded pointer-events-none">
+                                {pIdx + 1}/{h.extractedPhotos.length}
+                              </span>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   );
@@ -1514,18 +1554,22 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           );
         })()}
 
-        {/* RODAPÉ DO DOCUMENTO DE RELATÓRIO */}
-        <div className="mt-20 pt-6 flex flex-col items-center justify-center text-sm text-slate-400 print-text-black page-break-inside-avoid">
-          <div className="w-64 border-t border-slate-400 print-border-black mb-2 mt-4"></div>
-          <p className="font-bold text-center text-lg text-slate-200 print-text-black">
-            {currentUser?.nome ? `${currentUser.nome}` : 'Assinatura do Responsável'}
+        {/* RODAPÉ DO DOCUMENTO DE RELATÓRIO - IDENTIFICAÇÃO INSTITUCIONAL SEM LINHA DE CANETA */}
+        <div className="mt-16 pt-4 flex flex-col items-center justify-center text-sm text-slate-400 print-text-black page-break-inside-avoid">
+          <p className="font-bold text-center text-lg text-slate-100 print-text-black">
+            {currentUser?.nome ? `${currentUser.nome}` : 'Equipe CBMDF'}
           </p>
-          {currentUser?.matricula && (
-            <p className="text-center text-slate-300 print-text-black">Matrícula: {currentUser.matricula}</p>
-          )}
-          
-          <p className="mt-6 mb-1 text-xs"><strong>Gerado em:</strong> {new Date().toLocaleString('pt-BR')}</p>
-          <p className="text-[10px] font-mono text-slate-500">Controle: NETUNO-DF-SYS • Sistema Netuno - CBMDF © {new Date().getFullYear()}</p>
+          <p className="text-xs text-slate-300 print-text-black mt-0.5">
+            {currentUser?.role === 'admin' ? 'Administrador Técnico' : (currentUser?.role === 'gestor' ? 'Gestor de Seção' : 'Vistoriador Operacional')}
+            {currentUser?.matricula ? ` • Matrícula: ${currentUser.matricula}` : ''}
+          </p>
+          <p className="text-xs font-semibold text-slate-400 print-text-gray mt-1">
+            GPCIU / SEHUR • CBMDF
+          </p>
+          <div className="mt-4 pt-2 border-t border-slate-700/50 print-border-gray flex flex-col items-center gap-0.5 text-[10px] text-slate-500 font-mono">
+            <p>Gerado em: {new Date().toLocaleString('pt-BR')} • Sistema NETUNO</p>
+            <p>Controle: NETUNO-DF-SYS • Emitido eletronicamente via Sistema NETUNO • CBMDF</p>
+          </div>
         </div>
 
       </div>
