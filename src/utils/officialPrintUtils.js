@@ -700,7 +700,6 @@ export const printGeneralReport = ({
     <body>
       <div class="official-header">
         <div class="header-title-box">
-          <div class="inst-gov">Governo do Distrito Federal</div>
           <div class="inst-cbmdf">Corpo de Bombeiros Militar do Distrito Federal</div>
           <div class="inst-sub">GPCIU / SEHUR</div>
           <div class="doc-title">Relatório de Vistoria de Hidrantes Urbanos</div>
@@ -1035,7 +1034,6 @@ export const printCaesbReport = ({
     <body>
       <div class="official-header">
         <div class="header-title-box">
-          <div class="inst-gov">Governo do Distrito Federal</div>
           <div class="inst-cbmdf">CBMDF • Companhia de Saneamento Ambiental do DF (CAESB)</div>
           <div class="inst-sub">GPCIU / SEHUR</div>
           <div class="doc-title">Solicitação Oficial de Manutenção de Hidrantes Urbanos</div>
@@ -1466,8 +1464,7 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
     </head>
     <body>
       <div class="header">
-        <div class="inst">Governo do Distrito Federal</div>
-        <div class="sub-inst">Corpo de Bombeiros Militar do Distrito Federal</div>
+        <div class="inst">Corpo de Bombeiros Militar do Distrito Federal</div>
         <div class="sub-inst">Diretoria de Vistorias / Seção Técnica de Hidrantes</div>
         <div class="doc-title">Parecer Técnico de Dimensionamento e Viabilidade de Hidrantes</div>
       </div>

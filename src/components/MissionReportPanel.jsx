@@ -909,7 +909,6 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         <div className="text-center mb-6 sm:mb-8 border-b-2 border-slate-700 print-border-black pb-4">
           {reportType === 'interno' ? (
             <div className="w-full text-center">
-              <div className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Governo do Distrito Federal</div>
               <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
               <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">GPCIU / SEHUR</div>
               <h2 className="text-sm sm:text-base text-blue-400 print-text-black mt-0.5 uppercase font-bold">Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos</h2>
@@ -926,7 +925,6 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
             </div>
           ) : (
             <div className="w-full text-center">
-              <div className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Governo do Distrito Federal</div>
               <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">CBMDF • CAESB</h1>
               <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">GPCIU / SEHUR</div>
               <h2 className="text-sm sm:text-base text-emerald-400 print-text-black mt-0.5 uppercase font-black">Solicitação de Manutenção de Hidrantes Urbanos de Incêndio</h2>
