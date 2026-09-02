@@ -72,7 +72,7 @@ export const printGeneralReport = ({
   const nowStr = formatDateTime(new Date());
   const emissorNome = currentUser?.nome || 'Militar Responsável';
   const emissorMatricula = currentUser?.matricula ? `Matrícula: ${currentUser.matricula}` : '';
-  const emissorCargo = currentUser?.role === 'admin' ? 'Administrador Técnico' : (currentUser?.role === 'gestor' ? 'Gestor de Seção' : 'Vistoriador Operacional');
+  const emissorCargo = currentUser?.role === 'admin' ? 'Administrador Técnico' : (currentUser?.role === 'gestor' ? 'Gestor de Hidrante' : 'Vistoriador Operacional');
 
   const rowsHtml = currentData.map((h, idx) => {
     const code = h.nomHidrante || h.codHidrante || '-';

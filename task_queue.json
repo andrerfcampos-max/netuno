@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-7",
   "queue": [
     {
       "id": "TASK-1",
@@ -47,9 +47,29 @@
       "seq": 5,
       "conversationId": "09df0668-ffd8-4217-9d87-afefdbd32619",
       "description": "Ajustar layout e dimensionamento responsivo das fotos no anexo do relatorio PDF",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-02T19:37:02.402Z",
-      "startedAt": null,
+      "startedAt": "2026-09-02T19:38:45.636Z",
+      "completedAt": "2026-09-02T19:51:59.395Z"
+    },
+    {
+      "id": "TASK-6",
+      "seq": 6,
+      "conversationId": "8aa6f955-b4a3-4bcc-9d97-0b81d3fb0086",
+      "description": "Substituir Gestor de Seção por Gestor de Hidrante no relatório",
+      "status": "completed",
+      "createdAt": "2026-09-02T19:51:05.791Z",
+      "startedAt": "2026-09-02T19:52:00.075Z",
+      "completedAt": "2026-09-02T19:52:41.483Z"
+    },
+    {
+      "id": "TASK-7",
+      "seq": 7,
+      "conversationId": "08f5e0d9-2e4b-41f6-be1e-b7954c042ddd",
+      "description": "Remover duplicidade Sistema NETUNO no rodape do relatorio",
+      "status": "running",
+      "createdAt": "2026-09-02T19:52:25.788Z",
+      "startedAt": "2026-09-02T19:52:44.189Z",
       "completedAt": null
     }
   ]
