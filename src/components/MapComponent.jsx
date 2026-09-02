@@ -525,20 +525,6 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPo
         </div>
       )}
 
-      {isMapFullscreen && (
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onMapClick) onMapClick();
-          }}
-          className="absolute top-6 left-1/2 transform -translate-x-1/2 z-[9999] bg-slate-900/90 hover:bg-slate-800 text-slate-100 font-bold px-6 py-3 rounded-full border border-emerald-500/50 shadow-[0_0_20px_rgba(0,0,0,0.6)] flex items-center gap-2 transition-all active:scale-95 animate-bounce-short"
-          style={{ animationIterationCount: 3 }}
-        >
-          <Minimize2 size={20} className="text-emerald-400" />
-          Clique aqui para Sair da Tela Cheia
-        </button>
-      )}
-
       <MapContainer 
         center={initialCenter} 
         zoom={initialZoom} 
@@ -800,7 +786,7 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPo
           {/* 2. VERSÃO DESKTOP (hidden md:flex): Painel Tático Lateral Flutuante Inspirado no Argos */}
           <div 
             onClick={(e) => e.stopPropagation()} 
-            className="hidden md:flex absolute top-3 right-3 z-[1050] w-[380px] max-h-[calc(100%-24px)] overflow-y-auto bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-4 shadow-[0_10px_40px_rgba(0,0,0,0.8)] text-slate-100 flex-col gap-3 transition-all duration-200 select-text pointer-events-auto animate-scaleUp"
+            className="hidden md:flex absolute top-16 right-4 z-[1050] w-[380px] max-h-[calc(100%-80px)] overflow-y-auto bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-4 shadow-[0_10px_40px_rgba(0,0,0,0.8)] text-slate-100 flex-col gap-3 transition-all duration-200 select-text pointer-events-auto animate-scaleUp"
           >
             {/* Cabeçalho Desktop */}
             <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-3">
@@ -970,18 +956,21 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPo
         </>
       )}
 
-      {!isMapFullscreen && (
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onMapClick) onMapClick();
-          }}
-          className="absolute top-4 right-4 z-[9999] p-2.5 bg-slate-900/90 hover:bg-slate-800 text-slate-200 rounded-full transition-all border border-slate-600 shadow-xl active:scale-95 backdrop-blur-md"
-          title="Modo Tela Cheia"
-        >
-          <Maximize2 size={22} />
-        </button>
-      )}
+      {/* Botão Unificado de Tela Cheia do Mapa (Alterna entre Maximize e Minimize no canto superior direito) */}
+      <button 
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onMapClick) onMapClick();
+        }}
+        className={`absolute top-3.5 right-4 z-[9999] p-2.5 rounded-full transition-all border shadow-xl active:scale-95 backdrop-blur-md flex items-center justify-center ${
+          isMapFullscreen 
+            ? 'bg-slate-900/95 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 border-emerald-500/60 shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
+            : 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border-slate-600'
+        }`}
+        title={isMapFullscreen ? "Sair da Tela Cheia" : "Modo Tela Cheia"}
+      >
+        {isMapFullscreen ? <Minimize2 size={22} /> : <Maximize2 size={22} />}
+      </button>
       {fullscreenPhoto && (
         <div 
           className="fixed inset-0 bg-black/90 z-[999999] flex items-center justify-center p-4 cursor-pointer"
