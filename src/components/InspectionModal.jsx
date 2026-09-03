@@ -51,6 +51,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
     // Se for cadastro de nova vistoria, SEMPRE inicia em branco
     if (!isEditing) {
       return {
+        isRemovido: false,
         q1: null,
         q2: null,
         q3: null,
@@ -63,6 +64,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
     }
 
     const rawProbs = (hidrante.problemasHidrante || '').split(' | ').map(p => p.trim()).filter(Boolean);
+    const initialIsRemovido = rawProbs.some(p => p.toLowerCase().includes('removido') || p.toLowerCase().includes('não encontrado'));
 
     // Q1: Chave T / Luva
     let initialQ1 = 'SIM';
@@ -145,17 +147,19 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
     }
 
     return {
+      isRemovido: initialIsRemovido,
       q1: initialQ1,
       q2: initialQ2,
       q3: initialQ3,
       q4: initialQ4,
-      q5: initialQ5,
-      q6: initialQ6,
+      q5: initialIsRemovido ? 'NÃO' : initialQ5,
+      q6: initialIsRemovido ? 'Hidrante removido ou não encontrado' : initialQ6,
       q7: initialQ7,
       fotos: initialFotos
     };
   }, [hidrante, isEditing]);
 
+  const [isRemovido, setIsRemovido] = useState(initialData.isRemovido || false);
   const [q1, setQ1] = useState(initialData.q1); // Chave tipo T: 'SIM' | 'NÃO, FALTA LUVA'
   const [q2, setQ2] = useState(initialData.q2); // Registro: 'SEM ALTERAÇÃO' | 'SOTERRADO' | 'COM VAZAMENTO' | 'EMPERRADO'
   const [q3, setQ3] = useState(initialData.q3); // Tampa da caixa: 'SEM ALTERAÇÃO' | 'LACRADA' | 'QUEBRADA' | 'REMOVIDA'
@@ -171,6 +175,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
   // Isolamento estrito de ciclo de vida: nova vistoria NUNCA herda pré-preenchimento
   React.useEffect(() => {
     if (!isEditing) {
+      setIsRemovido(false);
       setQ1(null);
       setQ2(null);
       setQ3(null);
@@ -180,6 +185,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       setQ7('');
       setFotos([]);
     } else {
+      setIsRemovido(initialData.isRemovido || false);
       setQ1(initialData.q1);
       setQ2(initialData.q2);
       setQ3(initialData.q3);
@@ -191,17 +197,31 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
     }
   }, [hidrante?.codHidrante, hidrante?._internalId, isEditing, initialData]);
 
+  const handleToggleRemovido = (novoStatus) => {
+    setIsRemovido(novoStatus);
+    if (novoStatus) {
+      setQ5('NÃO');
+      setQ6('Hidrante removido ou não encontrado');
+    } else {
+      if (q6 === 'Hidrante removido ou não encontrado') {
+        setQ6('');
+      }
+      setQ5(null);
+    }
+  };
+
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
 
   // Determina se há problemas que forçam o hidrante a ser inoperante
   const motivoInoperante = useMemo(() => {
+    if (isRemovido) return 'Hidrante removido ou não encontrado';
     if (q2 === 'SOTERRADO') return 'Registro está soterrado';
     if (q2 === 'EMPERRADO') return 'Registro está emperrado';
     if (q3 === 'LACRADA') return 'Tampa da caixa está lacrada';
     if (q4 === 'FALTAM 2 TAMPÕES' || q4 === 'FALTAM TODOS OS TAMPÕES') return 'Faltam 2 ou mais tampões';
     if (q6 && PROBLEMAS_INATIVADORES.includes(q6)) return `Problema selecionado: "${q6}"`;
     return null;
-  }, [q2, q3, q4, q6]);
+  }, [isRemovido, q2, q3, q4, q6]);
 
   const handleSelectQ5 = (val) => {
     if (val === 'SIM' && motivoInoperante) {
@@ -281,19 +301,19 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
   };
 
   const handleSave = () => {
-    if (q1 === null || q2 === null || q3 === null || q4 === null || q5 === null) {
+    if (!isRemovido && (q1 === null || q2 === null || q3 === null || q4 === null || q5 === null)) {
       alert("Por favor, responda todas as perguntas obrigatórias através dos botões antes de salvar.");
       return;
     }
 
-    if (q5 === 'SIM' && motivoInoperante) {
+    if (!isRemovido && q5 === 'SIM' && motivoInoperante) {
       alert(`⚠️ ERRO DE VALIDAÇÃO: O hidrante não pode ser salvo como OPERANTE com o seguinte defeito inativador ativo: ${motivoInoperante}.`);
       return;
     }
 
     const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
 
-    if (fotos.length === 0 && !isGestor && !isEditing) {
+    if (!isRemovido && fotos.length === 0 && !isGestor && !isEditing) {
       alert("⚠️ FOTO OBRIGATÓRIA: O vistoriador deve obrigatoriamente cadastrar a foto da vistoria (registre ao menos uma foto do problema ou do hidrante durante a descarga de água).");
       return;
     }
@@ -303,26 +323,30 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
     const procederSalvamento = () => {
       let problemas = [];
       
-      // q1: Chave T
-      if (q1 === 'NÃO, FALTA LUVA') problemas.push("Falta cabeçote da haste do registro (luva)");
-      
-      // q2: Registro
-      if (q2 === 'SOTERRADO') problemas.push("Registro soterrado");
-      else if (q2 === 'COM VAZAMENTO') problemas.push("Registro com vazamento");
-      else if (q2 === 'EMPERRADO') problemas.push("Registro emperrado");
+      if (isRemovido) {
+        problemas.push("Hidrante removido ou não encontrado");
+      } else {
+        // q1: Chave T
+        if (q1 === 'NÃO, FALTA LUVA') problemas.push("Falta cabeçote da haste do registro (luva)");
+        
+        // q2: Registro
+        if (q2 === 'SOTERRADO') problemas.push("Registro soterrado");
+        else if (q2 === 'COM VAZAMENTO') problemas.push("Registro com vazamento");
+        else if (q2 === 'EMPERRADO') problemas.push("Registro emperrado");
 
-      // q3: Tampa da caixa do registro
-      if (q3 === 'LACRADA') problemas.push("Tampa da caixa lacrada (concretada)");
-      else if (q3 === 'QUEBRADA') problemas.push("Tampa de concreto quebrada ou removida");
-      else if (q3 === 'REMOVIDA') problemas.push("Tampa da caixa de registro removida");
+        // q3: Tampa da caixa do registro
+        if (q3 === 'LACRADA') problemas.push("Tampa da caixa lacrada (concretada)");
+        else if (q3 === 'QUEBRADA') problemas.push("Tampa de concreto quebrada ou removida");
+        else if (q3 === 'REMOVIDA') problemas.push("Tampa da caixa de registro removida");
 
-      // q4: Tampões
-      if (q4 === 'FALTA 1 TAMPÃO') problemas.push("Falta tampão de 2.1/2\"");
-      else if (q4 === 'FALTAM 2 TAMPÕES') problemas.push("Faltam dois tampões de 2 1/2");
-      else if (q4 === 'FALTAM TODOS OS TAMPÕES') problemas.push("Faltam todos os tampões");
+        // q4: Tampões
+        if (q4 === 'FALTA 1 TAMPÃO') problemas.push("Falta tampão de 2.1/2\"");
+        else if (q4 === 'FALTAM 2 TAMPÕES') problemas.push("Faltam dois tampões de 2 1/2");
+        else if (q4 === 'FALTAM TODOS OS TAMPÕES') problemas.push("Faltam todos os tampões");
 
-      // q6: Outro
-      if (q6) problemas.push(q6);
+        // q6: Outro
+        if (q6) problemas.push(q6);
+      }
 
       // q7: Observações
       if (q7.trim() !== '') problemas.push(`Obs: ${q7.trim()}`);
@@ -330,7 +354,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       const problemaFinal = problemas.join(" | ");
 
       // q5: Operante
-      let statusFinal = q5 === 'SIM';
+      let statusFinal = isRemovido ? false : (q5 === 'SIM');
       if (motivoInoperante) {
         statusFinal = false;
       }
@@ -504,92 +528,153 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
 
         <div className="p-4 flex flex-col gap-4 overflow-y-auto">
           
-          {/* Pergunta 1 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">
-              1) A CHAVE TIPO T ENCAIXA NO REGISTRO? <span className="text-red-500 font-bold ml-1">*</span>
-            </label>
-            <div className="flex gap-2">
-              {renderOption('SIM', q1, setQ1, true)}
-              {renderOption('NÃO, FALTA LUVA', q1, setQ1, false)}
+          {/* Card / Botão de Seleção Rápida: Hidrante Removido */}
+          <div className={`p-3 rounded-xl border transition-all ${
+            isRemovido 
+              ? 'bg-red-950/80 border-red-500/80 shadow-lg shadow-red-950/30' 
+              : 'bg-slate-800/80 border-slate-700/80 hover:border-slate-600'
+          }`}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${
+                  isRemovido ? 'bg-red-600 text-white' : 'bg-slate-700 text-slate-300'
+                }`}>
+                  {isRemovido ? '✕' : '⚠️'}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-xs sm:text-sm text-slate-200 truncate flex items-center gap-1.5">
+                    <span>Hidrante Removido ou Não Encontrado</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    {isRemovido 
+                      ? 'Demais perguntas de vistoria física dispensadas' 
+                      : 'O hidrante não existe mais no local? Clique para marcar.'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleToggleRemovido(!isRemovido)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                  isRemovido
+                    ? 'bg-red-600 hover:bg-red-500 text-white shadow-md active:scale-95'
+                    : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'
+                }`}
+              >
+                {isRemovido ? '✓ REMOVIDO' : 'MARCAR REMOVIDO'}
+              </button>
             </div>
           </div>
 
-          {/* Pergunta 2 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">
-              2) O REGISTRO ESTÁ... <span className="text-red-500 font-bold ml-1">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {renderOption('SEM ALTERAÇÃO', q2, setQ2, true)}
-              {renderOption('SOTERRADO', q2, setQ2, false)}
-              {renderOption('COM VAZAMENTO', q2, setQ2, false)}
-              {renderOption('EMPERRADO', q2, setQ2, false)}
+          {isRemovido ? (
+            /* Banner Informativo quando Hidrante Removido */
+            <div className="p-4 bg-red-950/30 border border-red-500/40 rounded-xl space-y-1.5 animate-fadeIn">
+              <div className="flex items-center gap-2 text-red-300 font-bold text-xs sm:text-sm">
+                <span>🚫 HIDRANTE REMOVIDO DO LOCAL</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Como o hidrante foi removido ou não foi encontrado no ponto georreferenciado, as perguntas de verificação física (Chave T, Registro, Tampa da Caixa, Tampões e Teste de Vazão) não se aplicam e estão <strong>automaticamente dispensadas</strong>.
+              </p>
+              <p className="text-[11px] text-slate-400">
+                O hidrante será cadastrado como <strong>INOPERANTE</strong> com motivo <em>"Hidrante removido ou não encontrado"</em>. Você pode adicionar observações ou fotos complementares abaixo, se desejar.
+              </p>
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Pergunta 1 */}
+              <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+                <label className="font-bold text-slate-300 text-sm">
+                  1) A CHAVE TIPO T ENCAIXA NO REGISTRO? <span className="text-red-500 font-bold ml-1">*</span>
+                </label>
+                <div className="flex gap-2">
+                  {renderOption('SIM', q1, setQ1, true)}
+                  {renderOption('NÃO, FALTA LUVA', q1, setQ1, false)}
+                </div>
+              </div>
 
-          {/* Pergunta 3 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">
-              3) A TAMPA DA CAIXA ESTÁ... <span className="text-red-500 font-bold ml-1">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {renderOption('SEM ALTERAÇÃO', q3, setQ3, true)}
-              {renderOption('LACRADA', q3, setQ3, false)}
-              {renderOption('QUEBRADA', q3, setQ3, false)}
-              {renderOption('REMOVIDA', q3, setQ3, false)}
-            </div>
-          </div>
+              {/* Pergunta 2 */}
+              <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+                <label className="font-bold text-slate-300 text-sm">
+                  2) O REGISTRO ESTÁ... <span className="text-red-500 font-bold ml-1">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {renderOption('SEM ALTERAÇÃO', q2, setQ2, true)}
+                  {renderOption('SOTERRADO', q2, setQ2, false)}
+                  {renderOption('COM VAZAMENTO', q2, setQ2, false)}
+                  {renderOption('EMPERRADO', q2, setQ2, false)}
+                </div>
+              </div>
 
-          {/* Pergunta 4 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">
-              4) TODOS OS TAMPÕES ESTÃO PRESENTES? <span className="text-red-500 font-bold ml-1">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {renderOption('SIM', q4, setQ4, true)}
-              {renderOption('FALTA 1 TAMPÃO', q4, setQ4, true)}
-              {renderOption('FALTAM 2 TAMPÕES', q4, setQ4, false)}
-              {renderOption('FALTAM TODOS OS TAMPÕES', q4, setQ4, false)}
-            </div>
-          </div>
+              {/* Pergunta 3 */}
+              <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+                <label className="font-bold text-slate-300 text-sm">
+                  3) A TAMPA DA CAIXA ESTÁ... <span className="text-red-500 font-bold ml-1">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {renderOption('SEM ALTERAÇÃO', q3, setQ3, true)}
+                  {renderOption('LACRADA', q3, setQ3, false)}
+                  {renderOption('QUEBRADA', q3, setQ3, false)}
+                  {renderOption('REMOVIDA', q3, setQ3, false)}
+                </div>
+              </div>
 
-          {/* Pergunta 5 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <div className="flex justify-between items-center">
-              <label className="font-bold text-slate-300 text-sm">
-                5) O HIDRANTE ESTÁ OPERANTE? <span className="text-red-500 font-bold ml-1">*</span>
-              </label>
-              {motivoInoperante && (
-                <span className="text-[10px] bg-red-900/80 text-red-300 font-bold px-2 py-0.5 rounded border border-red-700">
-                  Bloqueado (Inoperante)
-                </span>
-              )}
-            </div>
-            <div className="flex gap-2">
-              {renderOption('SIM', q5, setQ5, true, handleSelectQ5)}
-              {renderOption('NÃO', q5, setQ5, false)}
-            </div>
-          </div>
+              {/* Pergunta 4 */}
+              <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+                <label className="font-bold text-slate-300 text-sm">
+                  4) TODOS OS TAMPÕES ESTÃO PRESENTES? <span className="text-red-500 font-bold ml-1">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {renderOption('SIM', q4, setQ4, true)}
+                  {renderOption('FALTA 1 TAMPÃO', q4, setQ4, true)}
+                  {renderOption('FALTAM 2 TAMPÕES', q4, setQ4, false)}
+                  {renderOption('FALTAM TODOS OS TAMPÕES', q4, setQ4, false)}
+                </div>
+              </div>
 
-          {/* Pergunta 6 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">6) ALGUM OUTRO PROBLEMA? (Opcional)</label>
-            <select 
-              className="p-2 rounded bg-slate-700 border border-slate-600 text-sm text-white focus:outline-none focus:border-emerald-500 w-full"
-              value={q6}
-              onChange={(e) => {
-                const val = e.target.value;
-                setQ6(val);
-                if (PROBLEMAS_INATIVADORES.includes(val)) {
-                  setQ5('NÃO');
-                }
-              }}
-            >
-              <option value="">Nenhum</option>
-              {DEFEITOS_OFICIAIS.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
+              {/* Pergunta 5 */}
+              <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+                <div className="flex justify-between items-center">
+                  <label className="font-bold text-slate-300 text-sm">
+                    5) O HIDRANTE ESTÁ OPERANTE? <span className="text-red-500 font-bold ml-1">*</span>
+                  </label>
+                  {motivoInoperante && (
+                    <span className="text-[10px] bg-red-900/80 text-red-300 font-bold px-2 py-0.5 rounded border border-red-700">
+                      Bloqueado (Inoperante)
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {renderOption('SIM', q5, setQ5, true, handleSelectQ5)}
+                  {renderOption('NÃO', q5, setQ5, false)}
+                </div>
+              </div>
+
+              {/* Pergunta 6 */}
+              <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+                <label className="font-bold text-slate-300 text-sm">6) ALGUM OUTRO PROBLEMA? (Opcional)</label>
+                <select 
+                  className="p-2 rounded bg-slate-700 border border-slate-600 text-sm text-white focus:outline-none focus:border-emerald-500 w-full"
+                  value={q6}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setQ6(val);
+                    if (val === 'Hidrante removido ou não encontrado') {
+                      handleToggleRemovido(true);
+                    } else {
+                      if (isRemovido) setIsRemovido(false);
+                      if (PROBLEMAS_INATIVADORES.includes(val)) {
+                        setQ5('NÃO');
+                      }
+                    }
+                  }}
+                >
+                  <option value="">Nenhum</option>
+                  {DEFEITOS_OFICIAIS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+            </>
+          )}
 
           {/* Pergunta 7 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
@@ -606,7 +691,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
           <div className="flex flex-col gap-2.5 bg-slate-900/40 p-3 rounded-xl border border-slate-700/50">
             <div className="flex flex-col">
               <label className="font-bold text-slate-300 text-sm flex items-center justify-between">
-                <span>Registro Fotográfico {!isGestor && !isEditing && <span className="text-red-500 font-bold ml-1">* (Obrigatório)</span>}</span>
+                <span>Registro Fotográfico {!isGestor && !isEditing && !isRemovido && <span className="text-red-500 font-bold ml-1">* (Obrigatório)</span>}</span>
                 {fotos.length > 0 && (
                   <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/40">
                     {fotos.length} {fotos.length === 1 ? 'foto anexada' : 'fotos anexadas'}
@@ -614,7 +699,9 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
                 )}
               </label>
               <p className="text-xs text-amber-300/90 font-medium mt-0.5">
-                Registre uma ou mais fotos do problema ou do hidrante durante a descarga de água.
+                {isRemovido 
+                  ? 'Opcional: se desejar, registre foto do local onde o hidrante ficava.' 
+                  : 'Registre uma ou mais fotos do problema ou do hidrante durante a descarga de água.'}
               </p>
             </div>
 

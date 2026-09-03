@@ -1067,6 +1067,7 @@ export const printCaesbReport = ({
     const obs = h.dscObservacao || h.observacoes || h.obsVistoria || '';
     const ra = normalizeRAName(h.dscLocalidade) || '';
     const lat = typeof h.numLatitude === 'number' ? h.numLatitude.toFixed(6) : (h.numLatitude || '-');
+    const lng = typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (h.numLongitude || '-');
     const photosList = extractPhotos(h);
     const photoHtml = photosList.length > 0 ? `
       <div class="photo-box" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;">

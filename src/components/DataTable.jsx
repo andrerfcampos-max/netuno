@@ -190,9 +190,10 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
 
         <button
           onClick={exportCSV}
-          className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-3 rounded-lg transition-colors shadow-md active:scale-95 text-xs sm:text-sm"
+          className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white border border-slate-600 font-medium py-1.5 px-3 rounded-lg transition-colors shadow-sm active:scale-95 text-xs sm:text-sm cursor-pointer"
+          title="Exportar dados filtrados para planilha CSV"
         >
-          <Download size={15} />
+          <Download size={15} className="text-slate-400" />
           <span>Exportar CSV</span>
         </button>
       </div>

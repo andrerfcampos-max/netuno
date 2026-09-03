@@ -115,8 +115,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   const sortedHidrantesCaesb = useMemo(() => {
     return sortedHidrantesGeral.filter(h => 
-      (!h.flgAtivo || (h.problemasHidrante && extractProblemsList(h.problemasHidrante).length > 0) || (h.dscObservacao && h.dscObservacao.trim().length > 0)) && 
-      (!h.problemasHidrante || !h.problemasHidrante.toLowerCase().includes("removido ou não encontrado"))
+      !h.flgAtivo || (h.problemasHidrante && extractProblemsList(h.problemasHidrante).length > 0) || (h.dscObservacao && h.dscObservacao.trim().length > 0)
     );
   }, [sortedHidrantesGeral]);
 
