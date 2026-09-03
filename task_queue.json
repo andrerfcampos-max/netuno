@@ -101,6 +101,16 @@
       "createdAt": "2026-09-03T17:58:47.672Z",
       "startedAt": "2026-09-03T17:58:50.663Z",
       "completedAt": "2026-09-03T18:12:28.310Z"
+    },
+    {
+      "id": "TASK-11",
+      "seq": 11,
+      "conversationId": "78f1aa82-385d-47f1-8e01-61ea7c222829",
+      "description": "Restaurar layout PDF CAESB e trocar download por abertura direta",
+      "status": "completed",
+      "createdAt": "2026-09-03T18:40:08.190Z",
+      "startedAt": "2026-09-03T18:40:15.394Z",
+      "completedAt": "2026-09-03T19:00:07.003Z"
     }
   ]
 }
