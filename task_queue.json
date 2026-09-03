@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-7",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -67,10 +67,40 @@
       "seq": 7,
       "conversationId": "08f5e0d9-2e4b-41f6-be1e-b7954c042ddd",
       "description": "Remover duplicidade Sistema NETUNO no rodape do relatorio",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-02T19:52:25.788Z",
       "startedAt": "2026-09-02T19:52:44.189Z",
-      "completedAt": null
+      "completedAt": "2026-09-02T19:53:48.319Z"
+    },
+    {
+      "id": "TASK-8",
+      "seq": 8,
+      "conversationId": "ee9e6b4d-fd60-4d55-8449-98ac076e31f1",
+      "description": "Ajustar fluxo de geracao de PDF do relatorio para abrir direto no navegador sem janela duplicada",
+      "status": "completed",
+      "createdAt": "2026-09-02T19:55:20.606Z",
+      "startedAt": "2026-09-02T19:55:22.998Z",
+      "completedAt": "2026-09-02T20:00:10.032Z"
+    },
+    {
+      "id": "TASK-9",
+      "seq": 9,
+      "conversationId": "592c49ea-d8cb-4eb3-bb4a-a9295b2ce507",
+      "description": "Fix relatorio caesb, botao exportar csv color, and hidrante removido required fields",
+      "status": "completed",
+      "createdAt": "2026-09-03T16:50:07.574Z",
+      "startedAt": "2026-09-03T16:50:11.213Z",
+      "completedAt": "2026-09-03T17:48:25.601Z"
+    },
+    {
+      "id": "TASK-10",
+      "seq": 10,
+      "conversationId": "ccb51eb7-c7c7-4f34-a027-5555de1775db",
+      "description": "Correcoes relatorio CAESB, assinatura, busca digitavel problema/cidade, fluxo hidrante removido, nome PDF e abertura no leitor nativo",
+      "status": "completed",
+      "createdAt": "2026-09-03T17:58:47.672Z",
+      "startedAt": "2026-09-03T17:58:50.663Z",
+      "completedAt": "2026-09-03T18:12:28.310Z"
     }
   ]
 }
