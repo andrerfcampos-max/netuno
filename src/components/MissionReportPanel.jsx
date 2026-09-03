@@ -922,7 +922,9 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
           <div className="w-full text-center">
             <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
             <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">SEHUR / GPCIU</div>
-            <h2 className="text-sm sm:text-base text-blue-400 print-text-black mt-0.5 uppercase font-bold">Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos</h2>
+            <h2 className={`text-sm sm:text-base ${reportType === 'caesb' ? 'text-emerald-400' : 'text-blue-400'} print-text-black mt-0.5 uppercase font-bold`}>
+              {reportType === 'caesb' ? 'Solicitação Oficial de Manutenção de Hidrantes Urbanos' : 'Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos'}
+            </h2>
             <div className="mt-3 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
               <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
                 <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Todas as Cidades / DF Completo'}

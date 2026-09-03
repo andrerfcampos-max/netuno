@@ -1940,7 +1940,7 @@ export const printCaesbReport = ({
     <body>
       <div class="official-header">
         <div class="header-title-box">
-          <div class="inst-cbmdf">CBMDF • Companhia de Saneamento Ambiental do DF (CAESB)</div>
+          <div class="inst-cbmdf">Corpo de Bombeiros Militar do Distrito Federal</div>
           <div class="inst-sub">SEHUR / GPCIU</div>
           <div class="doc-title">Solicitação Oficial de Manutenção de Hidrantes Urbanos</div>
           <div class="legal-term">Conforme Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019</div>
