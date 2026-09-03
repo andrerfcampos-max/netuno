@@ -111,6 +111,16 @@
       "createdAt": "2026-09-03T18:40:08.190Z",
       "startedAt": "2026-09-03T18:40:15.394Z",
       "completedAt": "2026-09-03T19:00:07.003Z"
+    },
+    {
+      "id": "TASK-12",
+      "seq": 12,
+      "conversationId": "759dfb19-2799-4025-b290-b69df83852ad",
+      "description": "Corrigir cabecalho relatorio CAESB na tela e remover bloco desnecessario do PDF CAESB e filtrar hidrante removido ou nao encontrado",
+      "status": "completed",
+      "createdAt": "2026-09-03T19:09:15.645Z",
+      "startedAt": "2026-09-03T19:09:21.956Z",
+      "completedAt": "2026-09-03T19:17:08.090Z"
     }
   ]
 }
