@@ -111,3 +111,39 @@ export const extractProblemsList = (raw) => {
     .map(p => normalizeProblemName(p))
     .filter(p => p && p !== '-' && p !== '.');
 };
+
+/**
+ * Verifica se o hidrante possui a condição ou defeito de removido / não encontrado.
+ * Pela regra institucional, hidrantes com esse defeito não devem constar no relatório CAESB.
+ */
+export const isHidranteRemovido = (h) => {
+  if (!h) return false;
+  if (h.flgRemovido) return true;
+  
+  if (h.problemasHidrante) {
+    const list = extractProblemsList(String(h.problemasHidrante));
+    if (list.some(p => p.includes('REMOVIDO') || p.includes('NÃO ENCONTRADO') || p.includes('NAO ENCONTRADO'))) {
+      return true;
+    }
+    const rawLower = String(h.problemasHidrante).toLowerCase();
+    if (rawLower.includes('removido') || rawLower.includes('não encontrado') || rawLower.includes('nao encontrado')) {
+      return true;
+    }
+  }
+
+  if (h.motivoInoperante) {
+    const mLower = String(h.motivoInoperante).toLowerCase();
+    if (mLower.includes('removido') || mLower.includes('não encontrado') || mLower.includes('nao encontrado')) {
+      return true;
+    }
+  }
+
+  if (h.motivoInconsistencia) {
+    const mLower = String(h.motivoInconsistencia).toLowerCase();
+    if (mLower.includes('removido') || mLower.includes('não encontrado') || mLower.includes('nao encontrado')) {
+      return true;
+    }
+  }
+
+  return false;
+};

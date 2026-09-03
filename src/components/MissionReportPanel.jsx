@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown, Share2, ChevronDown, Check } from 'lucide-react';
-import { extractProblemsList, sanitizeProblem } from '../utils/problemUtils';
+import { extractProblemsList, sanitizeProblem, isHidranteRemovido } from '../utils/problemUtils';
 import { normalizeRAName } from '../utils/raList';
 import { fixEncoding } from '../utils/textUtils';
 import { printGeneralReport, printCaesbReport, generateDocHash } from '../utils/officialPrintUtils';
@@ -114,9 +114,13 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
   }, [hidrantes, currentMission]);
 
   const sortedHidrantesCaesb = useMemo(() => {
-    return sortedHidrantesGeral.filter(h => 
-      !h.flgAtivo || (h.problemasHidrante && extractProblemsList(h.problemasHidrante).length > 0) || (h.dscObservacao && h.dscObservacao.trim().length > 0)
-    );
+    return sortedHidrantesGeral.filter(h => {
+      // Regra de Negócio: Hidrante com defeito de "removido ou não encontrado" não deve aparecer no relatório CAESB, apenas no relatório geral
+      if (isHidranteRemovido(h)) {
+        return false;
+      }
+      return !h.flgAtivo || (h.problemasHidrante && extractProblemsList(h.problemasHidrante).length > 0) || (h.dscObservacao && h.dscObservacao.trim().length > 0);
+    });
   }, [sortedHidrantesGeral]);
 
   const currentData = reportType === 'interno' ? sortedHidrantesGeral : sortedHidrantesCaesb;
@@ -913,39 +917,23 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       {/* ÁREA IMPRIMÍVEL (Relatório) */}
       <div className="w-full h-auto bg-slate-800/50 lg:bg-slate-800 rounded-xl p-3 sm:p-6 border border-slate-700 report-content print-bg-white print-text-black pb-24">
         
-        {/* CABEÇALHO DA PÁGINA IMPRESSA */}
+        {/* CABEÇALHO DO RELATÓRIO NA TELA */}
         <div className="text-center mb-6 sm:mb-8 border-b-2 border-slate-700 print-border-black pb-4">
-          {reportType === 'interno' ? (
-            <div className="w-full text-center">
-              <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
-              <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">SEHUR / GPCIU</div>
-              <h2 className="text-sm sm:text-base text-blue-400 print-text-black mt-0.5 uppercase font-bold">Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos</h2>
-              <div className="mt-3 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
-                <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
-                  <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Todas as Cidades / DF Completo'}
+          <div className="w-full text-center">
+            <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
+            <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">SEHUR / GPCIU</div>
+            <h2 className="text-sm sm:text-base text-blue-400 print-text-black mt-0.5 uppercase font-bold">Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos</h2>
+            <div className="mt-3 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
+              <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
+                <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Todas as Cidades / DF Completo'}
+              </span>
+              {currentMission && (
+                <span className="text-[11px] sm:text-xs text-slate-400 print-text-black font-semibold mt-1">
+                  <strong>Missão Ativa:</strong> {currentMission.name}
                 </span>
-                {currentMission && (
-                  <span className="text-[11px] sm:text-xs text-slate-400 print-text-black font-semibold mt-1">
-                    <strong>Missão Ativa:</strong> {currentMission.name}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
-          ) : (
-            <div className="w-full text-center">
-              <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">CBMDF • CAESB</h1>
-              <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">SEHUR / GPCIU</div>
-              <h2 className="text-sm sm:text-base text-emerald-400 print-text-black mt-0.5 uppercase font-black">Solicitação de Manutenção de Hidrantes Urbanos de Incêndio</h2>
-              <p className="text-[10px] sm:text-xs text-slate-400 print-text-gray mt-1 uppercase tracking-wider font-semibold">
-                De acordo com o Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019
-              </p>
-              <div className="mt-3 flex flex-col items-center text-xs sm:text-sm text-slate-300 print-text-black">
-                <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
-                  <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Nenhuma região filtrada'}
-                </span>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* KPIs e GRÁFICOS */}

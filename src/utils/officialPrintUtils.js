@@ -1,6 +1,6 @@
 import { fixEncoding } from './textUtils';
 import { normalizeRAName } from './raList';
-import { sanitizeProblem } from './problemUtils';
+import { sanitizeProblem, isHidranteRemovido } from './problemUtils';
 
 /**
  * Utilitário de Geração e Impressão de Documentos Oficiais em Formato A4
@@ -1214,9 +1214,12 @@ export const printCaesbReport = ({
   const emissorNome = currentUser?.nome || 'Gestor de Hidrantes Urbanos';
   const emissorMatricula = currentUser?.matricula ? `Matrícula: ${currentUser.matricula}` : '';
 
-  const rowsHtml = currentData.length === 0 
+  // Regra institucional: hidrante com defeito de "removido ou não encontrado" não deve aparecer no relatório CAESB, apenas no relatório geral
+  const caesbData = currentData.filter(h => !isHidranteRemovido(h));
+
+  const rowsHtml = caesbData.length === 0 
     ? `<tr><td colspan="4" style="text-align:center; padding: 24px; font-weight: bold; color: #64748b;">Nenhum hidrante com pendência ou defeito registrado para o relatório CAESB.</td></tr>`
-    : currentData.map((h, idx) => {
+    : caesbData.map((h, idx) => {
     const code = h.nomHidrante || h.codHidrante || '-';
     const dataVis = formatDateOnly(h.datHoraUltimaVistoria || h.datHoraVistoria);
     const end = fixEncoding(h.dscEndereco) || h.dscLocalidade || '-';
@@ -1267,7 +1270,7 @@ export const printCaesbReport = ({
         </thead>
         <tbody>
           ${cityOperabilityStats.filter(c => c.total > 0).map(c => {
-            const pct = currentData.length > 0 ? ((c.total / currentData.length) * 100).toFixed(1) : '0';
+            const pct = caesbData.length > 0 ? ((c.total / caesbData.length) * 100).toFixed(1) : '0';
             return `
               <tr>
                 <td><strong>${c.nome}</strong></td>
@@ -1285,8 +1288,17 @@ export const printCaesbReport = ({
     </div>
   ` : '';
 
-  const hasDefeitos = (topDefeitosComCidades && topDefeitosComCidades.length > 0) || (topDefeitos && topDefeitos.length > 0);
-  const defeitosList = (isMultiCity && topDefeitosComCidades && topDefeitosComCidades.length > 0) ? topDefeitosComCidades : (topDefeitos || []);
+  const filteredTopDefeitos = (topDefeitos || []).filter(d => {
+    const n = (d.nome || '').toLowerCase();
+    return !n.includes('removido') && !n.includes('não encontrado') && !n.includes('nao encontrado');
+  });
+  const filteredTopDefeitosComCidades = (topDefeitosComCidades || []).filter(d => {
+    const n = (d.nome || '').toLowerCase();
+    return !n.includes('removido') && !n.includes('não encontrado') && !n.includes('nao encontrado');
+  });
+
+  const hasDefeitos = (filteredTopDefeitosComCidades && filteredTopDefeitosComCidades.length > 0) || (filteredTopDefeitos && filteredTopDefeitos.length > 0);
+  const defeitosList = (isMultiCity && filteredTopDefeitosComCidades && filteredTopDefeitosComCidades.length > 0) ? filteredTopDefeitosComCidades : (filteredTopDefeitos || []);
 
   let chartsHtml = '';
   if (hasDefeitos) {
@@ -1322,13 +1334,13 @@ export const printCaesbReport = ({
     `;
   }
 
-  const hidrantesComFotos = currentData.map(h => ({
+  const hidrantesComFotos = caesbData.map(h => ({
     ...h,
     extractedPhotos: extractPhotos(h)
   })).filter(item => item.extractedPhotos.length > 0);
 
   const totalFotosCount = hidrantesComFotos.reduce((acc, h) => acc + h.extractedPhotos.length, 0);
-  const shouldBreakPage = currentData.length > 2 || totalFotosCount > 1;
+  const shouldBreakPage = caesbData.length > 2 || totalFotosCount > 1;
 
   const anexoFotograficoHtml = hidrantesComFotos.length > 0 ? `
     <div class="section-block ${shouldBreakPage ? 'page-break-before' : 'avoid-break'}">
@@ -1406,7 +1418,7 @@ export const printCaesbReport = ({
     </div>
   ` : '';
 
-  const docSeed = `${nowStr}_${currentData.length}_${emissorNome}_${rasPresentes}`;
+  const docSeed = `${nowStr}_${caesbData.length}_${emissorNome}_${rasPresentes}`;
   const docHash = generateDocHash(docSeed);
 
   const html = `
@@ -1861,21 +1873,11 @@ export const printCaesbReport = ({
         </div>
       </div>
 
-      <div class="caesb-banner avoid-break">
-        <div>
-          <strong>Demanda Prioritária de Manutenção Hidráulica</strong>
-          <div style="font-size: 10px; color: #047857; margin-top: 2px;">
-            Encaminhamento formal à Companhia de Saneamento Ambiental do Distrito Federal (CAESB) para providências de reparo.
-          </div>
-        </div>
-        <div class="caesb-badge">${currentData.length} ${currentData.length === 1 ? 'Hidrante para Manutenção' : 'Hidrantes para Manutenção'}</div>
-      </div>
-
       ${multiCityHtml}
       ${chartsHtml}
 
       <div class="section-block">
-        <div class="section-title" style="color: #065f46; border-bottom-color: #047857;">📋 Relação de Hidrantes para Intervenção CAESB (${currentData.length} ${currentData.length === 1 ? 'hidrante' : 'hidrantes'})</div>
+        <div class="section-title" style="color: #065f46; border-bottom-color: #047857;">📋 Relação de Hidrantes para Intervenção CAESB (${caesbData.length} ${caesbData.length === 1 ? 'hidrante' : 'hidrantes'})</div>
         <table class="data-table">
           <thead>
             <tr>
