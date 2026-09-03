@@ -325,6 +325,78 @@ export const fallbackPopupPrint = (html) => {
 };
 
 /**
+ * Constrói nome padronizado do arquivo de relatório / PDF contendo o tipo, a Cidade (RA),
+ * os filtros aplicados e a data.
+ */
+export const buildReportFileName = ({
+  prefix = 'Relatorio_CBMDF',
+  cidade = '',
+  rasPresentes = '',
+  activeFilters = null,
+  currentMission = null
+}) => {
+  const parts = [prefix];
+
+  // 1. Nome da Cidade / Região Administrativa
+  let cidadeStr = '';
+  if (activeFilters?.ra && activeFilters.ra.trim()) {
+    cidadeStr = normalizeRAName(activeFilters.ra) || activeFilters.ra;
+  } else if (cidade && cidade.trim()) {
+    cidadeStr = normalizeRAName(cidade) || cidade;
+  } else if (rasPresentes && rasPresentes.trim()) {
+    const list = rasPresentes.split(',').map(s => s.trim()).filter(Boolean);
+    if (list.length === 1) {
+      cidadeStr = list[0];
+    } else if (list.length <= 3) {
+      cidadeStr = list.join('_');
+    } else {
+      cidadeStr = 'DF_Multiplas_RAs';
+    }
+  } else {
+    cidadeStr = 'DF_Geral';
+  }
+
+  if (cidadeStr) {
+    parts.push(cidadeStr.replace(/[^a-zA-Z0-9]/g, '_'));
+  }
+
+  // 2. Missão (se ativa)
+  if (currentMission?.name) {
+    parts.push(`Missao_${currentMission.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
+  }
+
+  // 3. Filtros aplicados
+  if (activeFilters) {
+    if (activeFilters.status && activeFilters.status !== 'Todos') {
+      parts.push(activeFilters.status.replace(/[^a-zA-Z0-9]/g, '_'));
+    }
+    if (activeFilters.periodo) {
+      parts.push(`Ano_${String(activeFilters.periodo).replace(/[^a-zA-Z0-9]/g, '_')}`);
+    }
+    if (activeFilters.problema && activeFilters.problema.trim()) {
+      parts.push(`Defeito_${activeFilters.problema.trim().replace(/[^a-zA-Z0-9]/g, '_')}`);
+    }
+    if (activeFilters.buscaGeral && activeFilters.buscaGeral.trim()) {
+      parts.push(`Busca_${activeFilters.buscaGeral.trim().replace(/[^a-zA-Z0-9]/g, '_')}`);
+    }
+    if (activeFilters.dataInicio || activeFilters.dataFim) {
+      const dIni = activeFilters.dataInicio ? activeFilters.dataInicio.replace(/[^0-9]/g, '') : '';
+      const dFim = activeFilters.dataFim ? activeFilters.dataFim.replace(/[^0-9]/g, '') : '';
+      parts.push(`Periodo_${dIni}_${dFim}`);
+    }
+  }
+
+  // 4. Data de emissão (AAAAMMDD)
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  parts.push(`${year}${month}${day}`);
+
+  return parts.filter(Boolean).join('_').replace(/_+/g, '_');
+};
+
+/**
  * 1. IMPRESSÃO DO RELATÓRIO GERAL (CBMDF)
  */
 export const printGeneralReport = ({
@@ -341,7 +413,8 @@ export const printGeneralReport = ({
   inoperantes = 0,
   inoperantesPercent = 0,
   topDefeitos = [],
-  yearStats = []
+  yearStats = [],
+  activeFilters = null
 }) => {
   const nowStr = formatDateTime(new Date());
   const emissorNome = currentUser?.nome || 'Militar Responsável';
@@ -1192,7 +1265,12 @@ export const printGeneralReport = ({
     </html>
   `;
 
-  const docTitle = rasPresentes ? `Relatorio_Geral_CBMDF_${rasPresentes.replace(/[^a-zA-Z0-9]/g, '_')}_${nowStr.replace(/[^0-9]/g, '_')}` : `Relatorio_Geral_CBMDF_${nowStr.replace(/[^0-9]/g, '_')}`;
+  const docTitle = buildReportFileName({
+    prefix: 'Relatorio_Geral_CBMDF',
+    rasPresentes,
+    activeFilters,
+    currentMission
+  });
   executePrintHtml(html, docTitle);
 };
 
@@ -1208,7 +1286,8 @@ export const printCaesbReport = ({
   cityOperabilityStats = [],
   topDefeitosComCidades = [],
   stats = {},
-  topDefeitos = []
+  topDefeitos = [],
+  activeFilters = null
 }) => {
   const nowStr = formatDateTime(new Date());
   const emissorNome = currentUser?.nome || 'Gestor de Hidrantes Urbanos';
@@ -1908,7 +1987,12 @@ export const printCaesbReport = ({
     </html>
   `;
 
-  const docTitle = rasPresentes ? `Relatorio_CAESB_Manutencao_${rasPresentes.replace(/[^a-zA-Z0-9]/g, '_')}_${nowStr.replace(/[^0-9]/g, '_')}` : `Relatorio_CAESB_Manutencao_${nowStr.replace(/[^0-9]/g, '_')}`;
+  const docTitle = buildReportFileName({
+    prefix: 'Relatorio_CAESB_Manutencao',
+    rasPresentes,
+    activeFilters,
+    currentMission
+  });
   executePrintHtml(html, docTitle);
 };
 

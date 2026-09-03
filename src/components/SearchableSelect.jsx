@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, X, Check, Search } from 'lucide-react';
 
 const normalizeText = (text) => {
@@ -214,13 +214,13 @@ const SearchableSelect = ({
       {isOpen && !disabled && (
         <div 
           ref={listRef}
-          className={`absolute left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto bg-slate-850 border border-slate-700 rounded-xl shadow-2xl z-[250] py-1 text-xs sm:text-sm animate-fadeIn ${dropdownClassName}`}
-          style={{ scrollbarWidth: 'thin' }}
+          className={`absolute left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[250] py-1 text-xs sm:text-sm animate-fadeIn ${dropdownClassName}`}
+          style={{ scrollbarWidth: 'thin', backgroundColor: '#0f172a' }}
         >
           {isCustomTyped && (
             <div
               onClick={() => handleSelect(searchQuery.trim())}
-              className="px-3 py-2 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border-b border-slate-700/60 cursor-pointer flex items-center justify-between font-semibold"
+              className="px-3 py-2.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border-b border-slate-700/60 cursor-pointer flex items-center justify-between font-semibold"
             >
               <div className="truncate">
                 <span className="text-[11px] text-emerald-400 uppercase block">Defeito Personalizado:</span>
@@ -245,12 +245,12 @@ const SearchableSelect = ({
                   key={opt.value + '_' + idx}
                   onClick={() => handleSelect(opt.value)}
                   onMouseEnter={() => setHighlightedIndex(idx)}
-                  className={`px-3 py-2 flex items-center justify-between cursor-pointer transition-colors ${
+                  className={`px-3 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${
                     isSelected
                       ? 'bg-emerald-600/30 text-emerald-200 font-bold'
                       : isHighlighted
-                      ? 'bg-slate-700 text-white'
-                      : 'text-slate-200 hover:bg-slate-750'
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-200 hover:bg-slate-800'
                   }`}
                 >
                   <div className="min-w-0 pr-2">

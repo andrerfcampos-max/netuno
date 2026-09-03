@@ -25,7 +25,7 @@ import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fet
 import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
-import { extractProblemsList } from './utils/problemUtils';
+import { extractProblemsList, isHidranteRemovido } from './utils/problemUtils';
 import { fixEncoding } from './utils/textUtils';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -245,6 +245,7 @@ function App() {
   const [isInconsistentModalOpen, setIsInconsistentModalOpen] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [pendingDeleteHydrant, setPendingDeleteHydrant] = useState(null);
   const menuRef = useRef(null);
 
   // Centraliza o hidrante no mapa e sincroniza automaticamente a cidade (RA) do filtro
@@ -989,6 +990,12 @@ function App() {
     syncInspectionToCloud(sanitized);
     syncHydrantMutationToCloud('update', sanitized);
     toast.success(isEditing ? 'Vistoria atualizada com sucesso e sincronizada!' : 'Vistoria salva com sucesso e sincronizada!');
+
+    // Se for perfil gestor/admin e o hidrante estiver marcado como removido/não encontrado, pergunta se deseja remover da base
+    const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
+    if (isGestor && isHidranteRemovido(sanitized)) {
+      setPendingDeleteHydrant(sanitized);
+    }
   };
 
   const handleSaveEdit = (updatedHidrante) => {
@@ -1315,6 +1322,50 @@ function App() {
             currentUser={currentUser}
           />
         </Suspense>
+      )}
+
+      {/* Confirmação pós-vistoria de remoção de hidrante para Gestor */}
+      {pendingDeleteHydrant && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-sm w-full shadow-2xl text-slate-100 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold text-lg shrink-0">
+                ⚠️
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-bold text-white text-base">Remover da Base de Dados?</h3>
+                <p className="text-xs text-slate-400 truncate">
+                  Hidrante: <span className="font-semibold text-emerald-400">{pendingDeleteHydrant.nomHidrante || pendingDeleteHydrant.codHidrante}</span>
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Deseja remover o hidrante da base de dados?
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setPendingDeleteHydrant(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+              >
+                Não
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const target = pendingDeleteHydrant;
+                  setPendingDeleteHydrant(null);
+                  handleDeleteHydrant(target);
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold shadow-md cursor-pointer transition-colors"
+              >
+                Sim
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Header */}
@@ -1855,6 +1906,7 @@ function App() {
               onClose={() => { setActiveView('map'); setReportMode('global'); }}
               currentUser={currentUser}
               isMissionReport={reportMode === 'mission'}
+              activeFilters={activeFilters}
             />
           </div>
         )}

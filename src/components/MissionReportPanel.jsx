@@ -5,7 +5,7 @@ import { normalizeRAName } from '../utils/raList';
 import { fixEncoding } from '../utils/textUtils';
 import { printGeneralReport, printCaesbReport, generateDocHash } from '../utils/officialPrintUtils';
 
-const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser }) => {
+const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, activeFilters = null }) => {
   const [isMaximized, setIsMaximized] = useState(false);
   const panelRef = useRef(null);
   const [copied, setCopied] = useState(false);
@@ -143,18 +143,17 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   const topDefeitos = useMemo(() => {
     const defeitosCount = {};
-    let totalDefeitos = 0;
+    const totalHidrantes = currentData.length;
     currentData.forEach(h => {
+      let problemas = [];
       if (h.problemasHidrante) {
-        const problemas = extractProblemsList(h.problemasHidrante);
-        problemas.forEach(p => {
-          defeitosCount[p] = (defeitosCount[p] || 0) + 1;
-          totalDefeitos++;
-        });
+        problemas = Array.from(new Set(extractProblemsList(h.problemasHidrante)));
       } else if (!h.flgAtivo) {
-        defeitosCount['Inoperante (sem detalhe)'] = (defeitosCount['Inoperante (sem detalhe)'] || 0) + 1;
-        totalDefeitos++;
+        problemas = ['Inoperante (sem detalhe)'];
       }
+      problemas.forEach(p => {
+        defeitosCount[p] = (defeitosCount[p] || 0) + 1;
+      });
     });
     const max = Math.max(...Object.values(defeitosCount), 1);
     return Object.entries(defeitosCount)
@@ -163,7 +162,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       .map(([nome, count]) => ({
         nome,
         count,
-        percent: totalDefeitos > 0 ? (count / totalDefeitos) * 100 : 0,
+        percent: totalHidrantes > 0 ? (count / totalHidrantes) * 100 : 0,
         barPercent: (count / max) * 100
       }));
   }, [currentData]);
@@ -203,27 +202,26 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
   const isMultiCity = cityOperabilityStats.length > 1;
 
-  // Top Defeitos com distribuição pelas Cidades com maior incidência
+  // Top Defeitos com distribuição pelas Cidades com maior incidência (% sobre hidrantes listados)
   const topDefeitosComCidades = useMemo(() => {
     const defeitosMap = {};
-    let totalDefeitos = 0;
+    const totalHidrantes = currentData.length;
     currentData.forEach(h => {
       const city = normalizeRAName(h.dscLocalidade) || 'Não informada';
-      const countDefect = (p) => {
+      let distinctProblems = [];
+      if (h.problemasHidrante) {
+        distinctProblems = Array.from(new Set(extractProblemsList(h.problemasHidrante)));
+      } else if (!h.flgAtivo) {
+        distinctProblems = ['Inoperante (sem detalhe)'];
+      }
+
+      distinctProblems.forEach(p => {
         if (!defeitosMap[p]) {
           defeitosMap[p] = { nome: p, total: 0, cidades: {} };
         }
         defeitosMap[p].total += 1;
         defeitosMap[p].cidades[city] = (defeitosMap[p].cidades[city] || 0) + 1;
-        totalDefeitos += 1;
-      };
-
-      if (h.problemasHidrante) {
-        const problemas = extractProblemsList(h.problemasHidrante);
-        problemas.forEach(p => countDefect(p));
-      } else if (!h.flgAtivo) {
-        countDefect('Inoperante (sem detalhe)');
-      }
+      });
     });
 
     const maxDefeito = Math.max(...Object.values(defeitosMap).map(d => d.total), 1);
@@ -239,7 +237,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         return {
           nome: d.nome,
           total: d.total,
-          percent: totalDefeitos > 0 ? (d.total / totalDefeitos) * 100 : 0,
+          percent: totalHidrantes > 0 ? (d.total / totalHidrantes) * 100 : 0,
           barPercent: (d.total / maxDefeito) * 100,
           topCidades
         };
@@ -284,7 +282,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         cityOperabilityStats,
         topDefeitosComCidades,
         stats: { total, operantes, inoperantes },
-        topDefeitos
+        topDefeitos,
+        activeFilters
       });
     } else {
       printGeneralReport({
@@ -301,7 +300,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         inoperantes,
         inoperantesPercent,
         topDefeitos,
-        yearStats
+        yearStats,
+        activeFilters
       });
     }
   };
