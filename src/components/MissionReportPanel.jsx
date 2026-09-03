@@ -276,6 +276,9 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
         rasPresentes,
         currentMission,
         currentUser,
+        isMultiCity,
+        cityOperabilityStats,
+        topDefeitosComCidades,
         stats: { total, operantes, inoperantes },
         topDefeitos
       });
@@ -772,7 +775,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
                 className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
               >
                 <Printer size={16} className="text-cyan-400 shrink-0" />
-                <span>Imprimir / Gerar PDF</span>
+                <span>Abrir PDF / Imprimir</span>
               </button>
               <button 
                 onClick={() => { handleCopySEI(); setIsExportMenuOpen(false); }}

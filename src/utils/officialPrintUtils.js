@@ -158,14 +158,16 @@ export const executePrintHtml = (html, docTitle = '') => {
           body {
             padding-top: 56px !important;
             background: #cbd5e1 !important;
+            margin: 0 !important;
           }
-          .official-sheet, body > div:not(.netuno-pdf-toolbar) {
+          .netuno-document-sheet {
             max-width: 210mm;
-            margin: 12px auto !important;
+            margin: 16px auto !important;
             background: #ffffff !important;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.18) !important;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.18) !important;
             border-radius: 4px;
             padding: 12mm 10mm !important;
+            box-sizing: border-box;
           }
         }
         @media print {
@@ -175,6 +177,14 @@ export const executePrintHtml = (html, docTitle = '') => {
           body {
             padding-top: 0 !important;
             background: #ffffff !important;
+            margin: 0 !important;
+          }
+          .netuno-document-sheet {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
           }
         }
       </style>
@@ -210,15 +220,10 @@ export const executePrintHtml = (html, docTitle = '') => {
             window.print();
           }
         }
-        window.addEventListener('load', function() {
-          setTimeout(function() {
-            try { window.print(); } catch (e) {}
-          }, 450);
-        });
       </script>
     `;
 
-    // Injeta estilo no head e toolbar no body
+    // Injeta estilo no head e toolbar no body, envolvendo o conteúdo na folha .netuno-document-sheet
     let fullHtml = html;
     if (fullHtml.includes('</head>')) {
       fullHtml = fullHtml.replace('</head>', `${readerToolbarStyle}</head>`);
@@ -227,9 +232,11 @@ export const executePrintHtml = (html, docTitle = '') => {
     }
 
     if (fullHtml.includes('<body')) {
-      fullHtml = fullHtml.replace(/<body([^>]*)>/i, `<body$1>${readerToolbarHtml}`);
+      fullHtml = fullHtml.replace(/<body([^>]*)>([\s\S]*)<\/body>/i, (match, bodyAttrs, bodyContent) => {
+        return `<body${bodyAttrs}>${readerToolbarHtml}<div class="netuno-document-sheet">${bodyContent}</div></body>`;
+      });
     } else {
-      fullHtml = readerToolbarHtml + fullHtml;
+      fullHtml = `${readerToolbarHtml}<div class="netuno-document-sheet">${fullHtml}</div>`;
     }
 
     // 4. Abre em nova aba no leitor padrão/nativo do navegador
@@ -1181,12 +1188,6 @@ export const printGeneralReport = ({
       <div class="doc-hash-footer">
         Controle / Hash: NETUNO-DF-${docHash} • Emitido eletronicamente via Sistema NETUNO • CBMDF
       </div>
-
-      <script>
-        window.addEventListener('afterprint', function() {
-          try { window.close(); } catch(e) {}
-        });
-      </script>
     </body>
     </html>
   `;
@@ -1203,6 +1204,9 @@ export const printCaesbReport = ({
   rasPresentes = '',
   currentMission = null,
   currentUser = null,
+  isMultiCity = false,
+  cityOperabilityStats = [],
+  topDefeitosComCidades = [],
   stats = {},
   topDefeitos = []
 }) => {
@@ -1211,29 +1215,19 @@ export const printCaesbReport = ({
   const emissorMatricula = currentUser?.matricula ? `Matrícula: ${currentUser.matricula}` : '';
 
   const rowsHtml = currentData.length === 0 
-    ? `<tr><td colspan="5" style="text-align:center; padding: 24px; font-weight: bold; color: #64748b;">Nenhum hidrante com pendência ou defeito registrado para o relatório CAESB.</td></tr>`
+    ? `<tr><td colspan="4" style="text-align:center; padding: 24px; font-weight: bold; color: #64748b;">Nenhum hidrante com pendência ou defeito registrado para o relatório CAESB.</td></tr>`
     : currentData.map((h, idx) => {
     const code = h.nomHidrante || h.codHidrante || '-';
     const dataVis = formatDateOnly(h.datHoraUltimaVistoria || h.datHoraVistoria);
     const end = fixEncoding(h.dscEndereco) || h.dscLocalidade || '-';
     const ref = h.dscPontoReferencia ? `Ref: ${fixEncoding(h.dscPontoReferencia)}` : '';
-    const prob = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : 'INOPERANTE (Necessita Manutenção)';
+    const isOp = Boolean(h.flgAtivo);
+    const prob = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!isOp ? 'INOPERANTE (Necessita Manutenção)' : '');
     const obs = h.dscObservacao || h.observacoes || h.obsVistoria || '';
     const ra = normalizeRAName(h.dscLocalidade) || '';
-    const lat = typeof h.numLatitude === 'number' ? h.numLatitude.toFixed(6) : (h.numLatitude || '-');
-    const lng = typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (h.numLongitude || '-');
-    const photosList = extractPhotos(h);
-    const photoHtml = photosList.length > 0 ? `
-      <div class="photo-box" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;">
-        ${photosList.map((foto, pIdx) => `
-          <div style="position: relative; display: inline-block;">
-            <img src="${foto}" alt="Evidência ${pIdx + 1}" class="evidence-img" />
-            ${photosList.length > 1 ? `<span style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.75); color: #fff; font-size: 7px; font-weight: bold; padding: 1px 3px; border-radius: 2px;">${pIdx + 1}/${photosList.length}</span>` : ''}
-          </div>
-        `).join('')}
-        <div class="photo-label" style="width: 100%; text-align: center;">${photosList.length === 1 ? 'Evidência de Campo' : `${photosList.length} Evidências`}</div>
-      </div>
-    ` : '<div class="no-photo">Sem foto cadastrada</div>';
+    const lat = typeof h.numLatitude === 'number' ? h.numLatitude.toFixed(6) : (h.numLatitude || '');
+    const lng = typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (h.numLongitude || '');
+    const coordStr = (lat && lng && lat !== '-' && lng !== '-') ? `${lat}, ${lng}` : '';
 
     return `
       <tr>
@@ -1241,26 +1235,179 @@ export const printCaesbReport = ({
         <td class="col-code">
           <strong>${code}</strong>
           ${ra ? `<div class="sub-text">${ra}</div>` : ''}
-          <div class="coord-text">${lat}, ${lng}</div>
           <div class="date-text">Vistoria: ${dataVis}</div>
+          ${coordStr ? `<div class="coord-text">${coordStr}</div>` : ''}
         </td>
         <td class="col-end">
           <div><strong>${end}</strong></div>
           ${ref ? `<div class="ref-text">${ref}</div>` : ''}
         </td>
         <td class="col-prob">
-          <div class="prob-box">
+          <span class="badge ${isOp ? 'badge-op' : 'badge-inop'}">${isOp ? '● OPERANTE C/ DEFEITO' : '● INOPERANTE'}</span>
+          <div class="prob-box" style="margin-top: 4px;">
             <strong>⚠️ Defeito Constatado:</strong>
-            <div class="prob-name">${prob}</div>
+            <div class="prob-name">${prob || 'Defeito não especificado'}</div>
             ${obs ? `<div class="obs-box"><em>Obs: ${obs}</em></div>` : ''}
           </div>
-        </td>
-        <td class="col-photo">
-          ${photoHtml}
         </td>
       </tr>
     `;
   }).join('');
+
+  const multiCityHtml = (isMultiCity && cityOperabilityStats.filter(c => c.total > 0).length > 0) ? `
+    <div class="section-block avoid-break">
+      <div class="section-title" style="color: #065f46; border-bottom-color: #047857;">🏢 Demanda de Manutenção por Cidade (Ranking CAESB)</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Região Administrativa (RA)</th>
+            <th class="text-center">Hidrantes para Reparo</th>
+            <th style="width: 40%;">Proporção da Demanda no DF</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${cityOperabilityStats.filter(c => c.total > 0).map(c => {
+            const pct = currentData.length > 0 ? ((c.total / currentData.length) * 100).toFixed(1) : '0';
+            return `
+              <tr>
+                <td><strong>${c.nome}</strong></td>
+                <td class="text-center text-red"><strong>${c.total} reparo${c.total > 1 ? 's' : ''}</strong></td>
+                <td>
+                  <div class="bar-container">
+                    <div class="bar-fill bar-red" style="width: ${pct}%;"></div>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  ` : '';
+
+  const hasDefeitos = (topDefeitosComCidades && topDefeitosComCidades.length > 0) || (topDefeitos && topDefeitos.length > 0);
+  const defeitosList = (isMultiCity && topDefeitosComCidades && topDefeitosComCidades.length > 0) ? topDefeitosComCidades : (topDefeitos || []);
+
+  let chartsHtml = '';
+  if (hasDefeitos) {
+    chartsHtml = `
+      <div class="charts-row avoid-break">
+        <div class="chart-card" style="flex: 1;">
+          <div class="chart-title" style="color: #065f46;">🛠️ Principais Tipos de Defeitos para Intervenção CAESB ${isMultiCity ? 'e Cidades com Maior Volume' : ''}</div>
+          <div class="bar-items-list">
+            ${defeitosList.slice(0, 6).map(d => {
+              const countVal = d.total !== undefined ? d.total : d.count;
+              const pctVal = typeof d.percent === 'number' ? d.percent.toFixed(1) : (d.percent || '0');
+              const barWidth = Math.max(4, d.barPercent || d.percent || 4);
+              return `
+                <div class="bar-item">
+                  <div class="bar-item-header">
+                    <span class="bar-item-label" title="${d.nome}">${d.nome}</span>
+                    <span class="bar-item-value text-red">${countVal} ocorr. (${pctVal}%)</span>
+                  </div>
+                  <div class="bar-track">
+                    <div class="bar-fill bar-red" style="width: ${barWidth}%;"></div>
+                  </div>
+                  ${d.topCidades && d.topCidades.length > 0 ? `
+                    <div class="bar-item-tags">
+                      ${d.topCidades.map(tc => `<span class="bar-tag">📍 ${tc.cidade}: ${tc.qtd}</span>`).join('')}
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const hidrantesComFotos = currentData.map(h => ({
+    ...h,
+    extractedPhotos: extractPhotos(h)
+  })).filter(item => item.extractedPhotos.length > 0);
+
+  const totalFotosCount = hidrantesComFotos.reduce((acc, h) => acc + h.extractedPhotos.length, 0);
+  const shouldBreakPage = currentData.length > 2 || totalFotosCount > 1;
+
+  const anexoFotograficoHtml = hidrantesComFotos.length > 0 ? `
+    <div class="section-block ${shouldBreakPage ? 'page-break-before' : 'avoid-break'}">
+      <div class="section-title" style="font-size: 12.5px; border-bottom: 2px solid #047857; color: #065f46; padding-bottom: 4px; margin-top: ${shouldBreakPage ? '16px' : '10px'}; margin-bottom: 12px;">
+        📷 Anexo Fotográfico - Evidências das Vistorias (${totalFotosCount} ${totalFotosCount === 1 ? 'registro fotográfico' : 'registros fotográficos'}${hidrantesComFotos.length > 1 ? ` em ${hidrantesComFotos.length} hidrantes` : ''})
+      </div>
+      <div class="photos-grid">
+        ${hidrantesComFotos.map((h, i) => {
+          const cod = h.nomHidrante || h.codHidrante || `HID-${i + 1}`;
+          const dataVis = formatDateOnly(h.datHoraUltimaVistoria || h.datHoraVistoria);
+          const ra = normalizeRAName(h.dscLocalidade) || 'DF';
+          const end = fixEncoding(h.dscEndereco) || '-';
+          const ref = h.dscPontoReferencia ? `Ref: ${fixEncoding(h.dscPontoReferencia)}` : '';
+          const isOp = Boolean(h.flgAtivo);
+          const defeito = h.problemasHidrante ? sanitizeProblem(h.problemasHidrante) : (!isOp ? 'Inoperante (necessita manutenção)' : 'Sem alterações / Operante');
+          const hLat = typeof h.numLatitude === 'number' ? h.numLatitude.toFixed(6) : (h.numLatitude || '');
+          const hLng = typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (h.numLongitude || '');
+          const hCoord = (hLat && hLng && hLat !== '-' && hLng !== '-') ? `${hLat}, ${hLng}` : '';
+          const pList = h.extractedPhotos;
+          const pCount = pList.length;
+
+          let galleryClass = 'photo-gallery-many';
+          let itemClass = 'photo-item-many';
+          if (pCount === 1) {
+            galleryClass = 'photo-gallery-1';
+            itemClass = 'photo-item-1';
+          } else if (pCount === 2) {
+            galleryClass = 'photo-gallery-2';
+            itemClass = 'photo-item-2';
+          } else if (pCount === 3) {
+            galleryClass = 'photo-gallery-3';
+            itemClass = 'photo-item-3';
+          } else if (pCount === 4) {
+            galleryClass = 'photo-gallery-4';
+            itemClass = 'photo-item-4';
+          } else if (pCount === 5 || pCount === 6) {
+            galleryClass = 'photo-gallery-6';
+            itemClass = 'photo-item-6';
+          }
+
+          return `
+            <div class="photo-card avoid-break">
+              <div class="photo-card-header">
+                <div class="photo-card-title-box">
+                  <span class="photo-card-code">${cod}</span>
+                  <span class="photo-card-ra">${ra} • ${dataVis}</span>
+                </div>
+                <div class="photo-card-badges">
+                  <span class="photo-count-pill">📷 ${pCount} ${pCount === 1 ? 'foto' : 'fotos'}</span>
+                  <span class="badge ${isOp ? 'badge-op' : 'badge-inop'}">${isOp ? 'OPERANTE C/ DEFEITO' : 'INOPERANTE'}</span>
+                </div>
+              </div>
+              <div class="photo-card-body">
+                <div class="photo-meta-box">
+                  <div class="photo-end">📍 <strong>${end}</strong></div>
+                  ${ref ? `<div class="photo-ref">${ref}</div>` : ''}
+                  ${hCoord ? `<div class="photo-coord">🌐 GPS: ${hCoord}</div>` : ''}
+                </div>
+                <div class="photo-defect ${isOp ? 'is-operante text-green' : 'text-red'}">
+                  ⚠️ <strong>${isOp ? 'Defeito / Inconformidade:' : 'Defeito Crítico:'}</strong> ${defeito}
+                </div>
+                <div class="${galleryClass}">
+                  ${pList.map((fotoSrc, pIdx) => `
+                    <div class="photo-img-wrapper ${itemClass}">
+                      <img src="${fotoSrc}" alt="Evidência ${pIdx + 1} - ${cod}" class="photo-evidence-img" />
+                      ${pCount > 1 ? `<span class="photo-badge">${pIdx + 1}/${pCount}</span>` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  const docSeed = `${nowStr}_${currentData.length}_${emissorNome}_${rasPresentes}`;
+  const docHash = generateDocHash(docSeed);
 
   const html = `
     <!DOCTYPE html>
@@ -1305,7 +1452,7 @@ export const printCaesbReport = ({
           text-transform: uppercase;
         }
         .inst-cbmdf {
-          font-size: 13px;
+          font-size: 13.5px;
           font-weight: 900;
           letter-spacing: 0.5px;
           color: #0f172a;
@@ -1354,6 +1501,29 @@ export const printCaesbReport = ({
           font-weight: 800;
           font-size: 12px;
         }
+
+        .bar-container {
+          display: flex;
+          height: 8px;
+          border-radius: 3px;
+          overflow: hidden;
+          background: #e2e8f0;
+          width: 100%;
+        }
+        .bar-fill { height: 100%; }
+        .bar-green { background: #16a34a; }
+        .bar-red { background: #dc2626; }
+
+        .section-block { margin-bottom: 14px; }
+        .section-title {
+          font-size: 11.5px;
+          font-weight: 800;
+          color: #0f172a;
+          text-transform: uppercase;
+          border-bottom: 1.5px solid #334155;
+          padding-bottom: 3px;
+          margin-bottom: 6px;
+        }
         .data-table {
           width: 100%;
           border-collapse: collapse;
@@ -1364,22 +1534,22 @@ export const printCaesbReport = ({
           background: #f1f5f9;
           color: #0f172a;
           font-weight: 800;
-          border: 1.5px solid #cbd5e1;
-          padding: 6px;
+          border: 1px solid #cbd5e1;
+          padding: 5px 6px;
           text-align: left;
           font-size: 9.5px;
           text-transform: uppercase;
         }
         .data-table td {
-          border: 1px solid #cbd5e1;
-          padding: 6px;
-          vertical-align: top;
+          border: 1px solid #e2e8f0;
+          padding: 5px 6px;
+          vertical-align: middle;
         }
+        .data-table tbody tr:nth-child(even) { background: #fafafa; }
         .col-seq { width: 4%; text-align: center; font-weight: bold; color: #64748b; }
         .col-code { width: 18%; }
-        .col-end { width: 34%; }
-        .col-prob { width: 30%; }
-        .col-photo { width: 14%; text-align: center; }
+        .col-end { width: 38%; }
+        .col-prob { width: 40%; }
         .coord-text { font-family: monospace; font-size: 9px; color: #1e3a8a; font-weight: bold; margin-top: 2px; }
         .sub-text { font-size: 9.5px; color: #64748b; }
         .date-text { font-size: 9px; color: #475569; margin-top: 2px; }
@@ -1387,16 +1557,261 @@ export const printCaesbReport = ({
         .prob-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 6px; }
         .prob-name { color: #b91c1c; font-weight: 800; font-size: 10.5px; margin-top: 2px; }
         .obs-box { margin-top: 4px; font-size: 9.5px; color: #475569; }
-        .evidence-img {
-          width: 65px;
-          height: 65px;
-          object-fit: cover;
+        .badge {
+          display: inline-block;
+          padding: 2px 6px;
           border-radius: 4px;
-          border: 1px solid #94a3b8;
+          font-weight: 800;
+          font-size: 9.5px;
         }
-        .photo-label { font-size: 8px; color: #64748b; margin-top: 2px; text-transform: uppercase; font-weight: bold; }
-        .no-photo { font-size: 9px; color: #94a3b8; font-style: italic; padding: 10px 0; }
+        .badge-op { background: #dcfce7; color: #166534; }
+        .badge-inop { background: #fee2e2; color: #991b1b; }
+        
+        .charts-row {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+        .chart-card {
+          flex: 1;
+          border: 1.5px solid #cbd5e1;
+          border-radius: 6px;
+          padding: 8px 12px;
+          background: #f8fafc;
+        }
+        .chart-title {
+          font-size: 10px;
+          font-weight: 800;
+          text-transform: uppercase;
+          color: #334155;
+          margin-bottom: 6px;
+          border-bottom: 1px solid #e2e8f0;
+          padding-bottom: 3px;
+        }
+        .bar-items-list {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+        .bar-item { width: 100%; }
+        .bar-item-header {
+          display: flex;
+          justify-content: space-between;
+          font-size: 9px;
+          margin-bottom: 1px;
+        }
+        .bar-item-label {
+          font-weight: 700;
+          color: #1e293b;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 70%;
+        }
+        .bar-item-value { font-weight: 800; }
+        .bar-track {
+          height: 6px;
+          background: #e2e8f0;
+          border-radius: 3px;
+          overflow: hidden;
+          width: 100%;
+        }
+        .bar-item-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+          margin-top: 1px;
+          font-size: 8px;
+          color: #475569;
+        }
+        .bar-tag {
+          background: #e2e8f0;
+          padding: 0.5px 3px;
+          border-radius: 2px;
+          font-weight: 600;
+        }
+
+        .photos-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          margin-top: 10px;
+          width: 100%;
+        }
+        .photo-card {
+          border: 1.5px solid #cbd5e1;
+          border-radius: 6px;
+          padding: 10px 12px;
+          background: #ffffff;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .photo-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1.5px solid #e2e8f0;
+          padding-bottom: 6px;
+          margin-bottom: 8px;
+        }
+        .photo-card-title-box {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .photo-card-code {
+          font-size: 13px;
+          font-weight: 900;
+          color: #0f172a;
+          letter-spacing: 0.3px;
+        }
+        .photo-card-ra {
+          font-size: 9.5px;
+          color: #475569;
+          font-weight: 700;
+          background: #f1f5f9;
+          padding: 2px 7px;
+          border-radius: 4px;
+          border: 1px solid #e2e8f0;
+        }
+        .photo-card-badges {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .photo-count-pill {
+          font-size: 9px;
+          font-weight: 800;
+          background: #f1f5f9;
+          color: #334155;
+          padding: 2px 7px;
+          border-radius: 12px;
+          border: 1px solid #cbd5e1;
+        }
+        .photo-meta-box {
+          margin-bottom: 6px;
+        }
+        .photo-end { font-size: 10.5px; color: #1e293b; margin-bottom: 2px; }
+        .photo-ref { font-size: 9.5px; color: #64748b; font-style: italic; margin-bottom: 2px; }
+        .photo-coord { font-size: 9px; color: #475569; font-family: monospace; font-weight: 600; margin-bottom: 3px; }
+        .photo-defect {
+          font-size: 9.5px;
+          font-weight: 600;
+          margin-bottom: 10px;
+          line-height: 1.35;
+          padding: 5px 8px;
+          border-radius: 4px;
+          background: #fef2f2;
+          border-left: 3px solid #dc2626;
+          color: #991b1b;
+        }
+        .photo-defect.is-operante {
+          background: #f0fdf4;
+          border-left: 3px solid #16a34a;
+          color: #166534;
+        }
+
+        .photo-img-wrapper {
+          position: relative;
+          border-radius: 5px;
+          overflow: hidden;
+          background: #090d16;
+          border: 1px solid #cbd5e1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .photo-evidence-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+        .photo-badge {
+          position: absolute;
+          bottom: 4px;
+          right: 4px;
+          background: rgba(15, 23, 42, 0.85);
+          color: #ffffff;
+          font-size: 8.5px;
+          font-weight: 800;
+          padding: 1.5px 5px;
+          border-radius: 3px;
+          border: 0.5px solid rgba(255, 255, 255, 0.3);
+          letter-spacing: 0.5px;
+        }
+
+        .photo-gallery-1 {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 100%;
+        }
+        .photo-item-1 {
+          max-width: 520px;
+          height: 270px;
+        }
+        .photo-item-1 .photo-evidence-img {
+          object-fit: contain;
+        }
+
+        .photo-gallery-2 {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          width: 100%;
+        }
+        .photo-item-2 {
+          height: 220px;
+        }
+
+        .photo-gallery-3 {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+          width: 100%;
+        }
+        .photo-item-3 {
+          height: 185px;
+        }
+
+        .photo-gallery-4 {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          width: 100%;
+        }
+        .photo-item-4 {
+          height: 190px;
+        }
+
+        .photo-gallery-6 {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+          width: 100%;
+        }
+        .photo-item-6 {
+          height: 165px;
+        }
+
+        .photo-gallery-many {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 6px;
+          width: 100%;
+        }
+        .photo-item-many {
+          height: 145px;
+        }
+
         .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+        .page-break-before { page-break-before: always; break-before: page; }
+        .text-center { text-align: center; }
+        .text-green { color: #15803d; }
+        .text-red { color: #b91c1c; }
         
         .inst-sub {
           font-size: 11px;
@@ -1440,6 +1855,7 @@ export const printCaesbReport = ({
           <div class="legal-term">Conforme Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019</div>
           <div class="doc-meta">
             <span><strong>Regiões Administrativas:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
+            ${currentMission ? `<span><strong>Missão:</strong> ${currentMission.name}</span>` : ''}
             <span><strong>Data de Notificação:</strong> ${nowStr}</span>
           </div>
         </div>
@@ -1452,18 +1868,21 @@ export const printCaesbReport = ({
             Encaminhamento formal à Companhia de Saneamento Ambiental do Distrito Federal (CAESB) para providências de reparo.
           </div>
         </div>
-        <div class="caesb-badge">${currentData.length} Hidrantes Inoperantes</div>
+        <div class="caesb-badge">${currentData.length} ${currentData.length === 1 ? 'Hidrante para Manutenção' : 'Hidrantes para Manutenção'}</div>
       </div>
 
-      <div class="avoid-break">
+      ${multiCityHtml}
+      ${chartsHtml}
+
+      <div class="section-block">
+        <div class="section-title" style="color: #065f46; border-bottom-color: #047857;">📋 Relação de Hidrantes para Intervenção CAESB (${currentData.length} ${currentData.length === 1 ? 'hidrante' : 'hidrantes'})</div>
         <table class="data-table">
           <thead>
             <tr>
               <th class="col-seq">Nº</th>
-              <th class="col-code">Código / Coordenadas</th>
+              <th class="col-code">Código / Data / GPS</th>
               <th class="col-end">Endereço e Ponto de Referência</th>
               <th class="col-prob">Inconformidade / Defeito Normatizado</th>
-              <th class="col-photo">Evidência</th>
             </tr>
           </thead>
           <tbody>
@@ -1472,6 +1891,8 @@ export const printCaesbReport = ({
         </table>
       </div>
 
+      ${anexoFotograficoHtml}
+
       <div class="signature-section avoid-break">
         <div class="signature-name">${emissorNome}</div>
         <div class="signature-role">${emissorMatricula} • Encarregado da Gestão de Hidrantes de Incêndio</div>
@@ -1479,14 +1900,8 @@ export const printCaesbReport = ({
       </div>
 
       <div class="doc-hash-footer">
-        Controle / Hash: NETUNO-CAESB-${generateDocHash(nowStr + '_' + currentData.length + '_' + emissorNome)} • Emitido eletronicamente via Sistema NETUNO
+        Controle / Hash: NETUNO-CAESB-${docHash} • Emitido eletronicamente via Sistema NETUNO • CBMDF
       </div>
-
-      <script>
-        window.addEventListener('afterprint', function() {
-          try { window.close(); } catch(e) {}
-        });
-      </script>
     </body>
     </html>
   `;
@@ -1749,12 +2164,6 @@ export const printBuildingStudyReport = ({ study, currentUser = null }) => {
         <div class="signature-role">${emissorMatricula} • Oficial Especialista em Pré-Planejamento Operacional</div>
         <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">SEHUR / GPCIU • CBMDF</div>
       </div>
-
-      <script>
-        window.addEventListener('afterprint', function() {
-          try { window.close(); } catch(e) {}
-        });
-      </script>
     </body>
     </html>
   `;
@@ -1938,12 +2347,6 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
         ${emissorMatricula ? `<div class="sig-role">${emissorMatricula} • Analista Técnico de Hidrantes</div>` : ''}
         <div class="sig-role">SEHUR / GPCIU • Corpo de Bombeiros Militar do Distrito Federal</div>
       </div>
-
-      <script>
-        window.addEventListener('afterprint', function() {
-          try { window.close(); } catch(e) {}
-        });
-      </script>
     </body>
     </html>
   `;
