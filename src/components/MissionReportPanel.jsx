@@ -316,14 +316,13 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       html += `<div style="text-align: center; border-bottom: 2px solid #334155; padding-bottom: 12px; margin-bottom: 16px;">
         <h2 style="margin: 0; font-size: 16px; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">Corpo de Bombeiros Militar do Distrito Federal</h2>
         <div style="margin: 2px 0 0 0; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase;">SEHUR / GPCIU</div>
-        <h3 style="margin: 4px 0 0 0; font-size: 14px; color: ${reportType === 'interno' ? '#1e40af' : '#047857'}; text-transform: uppercase; font-weight: bold;">
-          ${reportType === 'interno' ? 'Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos' : 'Solicitação de Manutenção de Hidrantes Urbanos de Incêndio - CBMDF / CAESB'}
+        <h3 style="margin: 4px 0 0 0; font-size: 14px; color: #1e40af; text-transform: uppercase; font-weight: bold;">
+          Relatório de Vistoria de Hidrantes Urbanos
         </h3>
-        ${reportType === 'caesb' ? '<p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b;">De acordo com o Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019</p>' : ''}
         <div style="margin-top: 8px; font-size: 12px; color: #475569;">
-          <strong>Regiões Administrativas (RAs):</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}<br/>
-          ${currentMission ? `<strong>Missão Ativa:</strong> ${currentMission.name}<br/>` : ''}
-          <strong>Data de Emissão:</strong> ${nowStr}
+          <strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}<br/>
+          ${currentMission ? `<strong>Missão:</strong> ${currentMission.name}<br/>` : ''}
+          <strong>Emissão:</strong> ${nowStr}
         </div>
       </div>`;
 
@@ -922,16 +921,16 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
           <div className="w-full text-center">
             <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
             <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">SEHUR / GPCIU</div>
-            <h2 className={`text-sm sm:text-base ${reportType === 'caesb' ? 'text-emerald-400' : 'text-blue-400'} print-text-black mt-0.5 uppercase font-bold`}>
-              {reportType === 'caesb' ? 'Solicitação Oficial de Manutenção de Hidrantes Urbanos' : 'Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos'}
+            <h2 className="text-sm sm:text-base text-blue-400 print-text-black mt-0.5 uppercase font-bold">
+              Relatório de Vistoria de Hidrantes Urbanos
             </h2>
             <div className="mt-3 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
               <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
-                <strong>Regiões Administrativas (RAs):</strong> {rasPresentes || 'Todas as Cidades / DF Completo'}
+                <strong>Localidade / RAs:</strong> {rasPresentes || 'Todas as Cidades / DF Completo'}
               </span>
               {currentMission && (
                 <span className="text-[11px] sm:text-xs text-slate-400 print-text-black font-semibold mt-1">
-                  <strong>Missão Ativa:</strong> {currentMission.name}
+                  <strong>Missão:</strong> {currentMission.name}
                 </span>
               )}
             </div>

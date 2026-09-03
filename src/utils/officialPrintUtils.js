@@ -1527,9 +1527,9 @@ export const printCaesbReport = ({
           padding: 2px 2px 22px 2px;
         }
         .official-header {
-          border-bottom: 2.5px solid #047857;
+          border-bottom: 2.5px solid #0f172a;
           padding-bottom: 10px;
-          margin-bottom: 12px;
+          margin-bottom: 14px;
           text-align: center;
         }
         .header-title-box {
@@ -1553,7 +1553,7 @@ export const printCaesbReport = ({
         .doc-title {
           font-size: 14.5px;
           font-weight: 900;
-          color: #047857;
+          color: #1e3a8a;
           text-transform: uppercase;
           margin: 3px 0;
         }
@@ -1942,12 +1942,11 @@ export const printCaesbReport = ({
         <div class="header-title-box">
           <div class="inst-cbmdf">Corpo de Bombeiros Militar do Distrito Federal</div>
           <div class="inst-sub">SEHUR / GPCIU</div>
-          <div class="doc-title">Solicitação Oficial de Manutenção de Hidrantes Urbanos</div>
-          <div class="legal-term">Conforme Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019</div>
+          <div class="doc-title">Relatório de Vistoria de Hidrantes Urbanos</div>
           <div class="doc-meta">
-            <span><strong>Regiões Administrativas:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
+            <span><strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
             ${currentMission ? `<span><strong>Missão:</strong> ${currentMission.name}</span>` : ''}
-            <span><strong>Data de Notificação:</strong> ${nowStr}</span>
+            <span><strong>Emissão:</strong> ${nowStr}</span>
           </div>
         </div>
       </div>
