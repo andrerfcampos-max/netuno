@@ -220,7 +220,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
     const today = new Date().toLocaleDateString('pt-BR');
     
     let html = `
-      <html><head><title>Relatório - Dashboard de Comando Multiquartéis</title>
+      <html><head><title>Relatorio_Dashboard_Comando_${today.replace(/[^0-9]/g, '_')}</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 20px; color: #1e293b; line-height: 1.4; }
         h1 { text-align: center; color: #0f172a; margin-bottom: 4px; font-size: 18px; text-transform: uppercase; }
@@ -320,12 +320,13 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
     html += `
         <div class="signature">
           <br><br>_________________________________________<br>
-          Comando Operacional / SEHUR - CBMDF
+          Comando Operacional / SEHUR / GPCIU • CBMDF
         </div>
       </body></html>
     `;
     
-    executePrintHtml(html);
+    const docTitle = `Relatorio_Dashboard_Comando_${today.replace(/[^0-9]/g, '_')}`;
+    executePrintHtml(html, docTitle);
   };
 
   const handleCreateMission = () => {

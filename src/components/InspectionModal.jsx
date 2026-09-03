@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { Camera, Image as ImageIcon, Trash2, ClipboardCheck, X, Edit3 } from 'lucide-react';
 import { fixEncoding } from '../utils/textUtils';
 import { calculateDistanceMeters } from '../utils/geoUtils';
+import SearchableSelect from './SearchableSelect';
 
 // Lista configurável e modular de problemas que tornam o hidrante automaticamente inativo
 export const PROBLEMAS_INATIVADORES = [
@@ -45,7 +46,7 @@ const DEFEITOS_OFICIAIS = [
   "Vazamento no flange (operante)"
 ];
 
-const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, currentUser }) => {
+const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, currentUser, onDeleteHydrant }) => {
   // Pré-processamento dos dados existentes caso seja modo edição
   const initialData = useMemo(() => {
     // Se for cadastro de nova vistoria, SEMPRE inicia em branco
@@ -318,9 +319,24 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       return;
     }
 
-    const bloqueioMsg = "vc está a mais de 100 M de distância do hidrante. Não pode. Se houver problemas técnico, envie o relatório da vistoria através do sei para GPCIU/sehur";
+    const bloqueioMsg = "vc está a mais de 100 M de distância do hidrante. Não pode. Se houver problemas técnico, envie o relatório da vistoria através do sei para SEHUR/GPCIU";
 
     const procederSalvamento = () => {
+      // 1. Fluxo de hidrante removido para perfil Gestor (sugestão de exclusão definitiva)
+      if (isRemovido && isGestor) {
+        const hidranteIdent = hidrante.nomHidrante || hidrante.codHidrante || 'sem código';
+        const querExcluir = window.confirm(
+          `⚠️ ATENÇÃO - PERFIL GESTOR / ADMIN:\n\nO hidrante "${hidranteIdent}" foi registrado como REMOVIDO OU NÃO ENCONTRADO no local.\n\nDeseja realizar a EXCLUSÃO DEFINITIVA deste hidrante da base de dados agora?\n\n• [OK]: EXCLUIR DEFINITIVAMENTE DO BANCO DE DADOS\n• [Cancelar]: Manter cadastro e salvar apenas como vistoriado inoperante`
+        );
+        if (querExcluir) {
+          if (onDeleteHydrant) {
+            onDeleteHydrant(hidrante);
+          }
+          onClose();
+          return;
+        }
+      }
+
       let problemas = [];
       
       if (isRemovido) {
@@ -412,10 +428,18 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
         fotosVistoria: fotos,
         vistoriadorNome: hidrante.vistoriadorNome || currentUser?.nome,
         vistoriadorMatricula: hidrante.vistoriadorMatricula || currentUser?.matricula,
-        HISTORICO_VISTORIAS: updatedHistorico
+        HISTORICO_VISTORIAS: updatedHistorico,
+        // Caso vistoriador cadastre hidrante removido, marca como inconsistente para revisão do gestor
+        isInconsistent: isRemovido ? true : (hidrante.isInconsistent || false),
+        flgRemovido: isRemovido ? true : (hidrante.flgRemovido || false),
+        motivoInconsistencia: isRemovido ? 'Hidrante removido em vistoria de campo (Aguardando avaliação/exclusão do Gestor)' : (hidrante.motivoInconsistencia || undefined)
       };
 
       onSave(vistoriaAtualizada, isEditing);
+
+      if (isRemovido && !isGestor) {
+        alert('ℹ️ Vistoria salva com sucesso!\n\nComo o hidrante foi marcado como REMOVIDO OU NÃO ENCONTRADO, ele foi incluído na lista de "Hidrantes Inconsistentes" para que o Gestor avalie a necessidade de exclusão definitiva da base de dados.');
+      }
     };
 
     // Na edição, isenta de validação do GPS (militar pode estar no quartel ou viatura)
@@ -653,11 +677,16 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
               {/* Pergunta 6 */}
               <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
                 <label className="font-bold text-slate-300 text-sm">6) ALGUM OUTRO PROBLEMA? (Opcional)</label>
-                <select 
-                  className="p-2 rounded bg-slate-700 border border-slate-600 text-sm text-white focus:outline-none focus:border-emerald-500 w-full"
+                <SearchableSelect
+                  options={[
+                    { value: '', label: 'Nenhum outro defeito constatado' },
+                    ...DEFEITOS_OFICIAIS.map(d => ({ value: d, label: d }))
+                  ]}
                   value={q6}
-                  onChange={(e) => {
-                    const val = e.target.value;
+                  placeholder="Selecione ou digite para filtrar defeitos (ex: vazamento, pressão, abelhas)..."
+                  allowCustom={true}
+                  clearable={true}
+                  onChange={(val) => {
                     setQ6(val);
                     if (val === 'Hidrante removido ou não encontrado') {
                       handleToggleRemovido(true);
@@ -668,10 +697,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
                       }
                     }
                   }}
-                >
-                  <option value="">Nenhum</option>
-                  {DEFEITOS_OFICIAIS.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+                />
               </div>
             </>
           )}

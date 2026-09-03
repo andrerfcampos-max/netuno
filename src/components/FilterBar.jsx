@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, MapPin, AlertCircle, SlidersHorizontal, X, Check, Filter } from 'lucide-react';
+import SearchableSelect from './SearchableSelect';
 
 const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problemasAtivos = [], isVisible, currentUser, onLogout, filteredCount = null }) => {
   const filters = useMemo(() => {
@@ -14,6 +15,16 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
       problema: activeFilters?.problema || ''
     };
   }, [activeFilters]);
+
+  const cityOptions = useMemo(() => {
+    return [
+      { value: '', label: '🎯 DF Completo (Todas as Cidades / RAs)' },
+      ...(regions || []).map(r => {
+        const name = typeof r === 'object' && r ? r.name : r;
+        return { value: name, label: name };
+      })
+    ];
+  }, [regions]);
 
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
@@ -223,24 +234,14 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
                     </span>
                   )}
                 </div>
-                <div className="relative">
-                  <select 
-                    className={`w-full h-8 pl-7 pr-3 rounded-lg text-xs font-semibold focus:outline-none transition-all truncate ${
-                      filters.ra && filters.ra !== ''
-                        ? 'bg-slate-800 border-2 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500/30' 
-                        : 'bg-slate-800 border border-slate-700 text-white'
-                    }`}
-                    value={filters.ra}
-                    onChange={(e) => handleChange('ra', e.target.value)}
-                  >
-                    <option value="" className="bg-slate-900 text-slate-400">🎯 DF Completo (Todas as Cidades / RAs)...</option>
-                    {regions.map(r => {
-                      const name = typeof r === 'object' && r ? r.name : r;
-                      return <option key={name} value={name} className="bg-slate-900 text-white">{name}</option>;
-                    })}
-                  </select>
-                  <MapPin size={12} className={`absolute left-2.5 top-2 pointer-events-none ${filters.ra ? 'text-emerald-400' : 'text-slate-400'}`} />
-                </div>
+                <SearchableSelect
+                  options={cityOptions}
+                  value={filters.ra}
+                  onChange={(val) => handleChange('ra', val)}
+                  placeholder="Buscar Cidade / RA (digite para filtrar)..."
+                  icon={MapPin}
+                  clearable={true}
+                />
               </div>
 
               {/* 2. Busca Livre no Drawer */}
@@ -446,21 +447,14 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
                 </span>
               )}
             </div>
-            <select 
-              className={`min-h-[38px] px-2.5 py-1.5 rounded-lg text-xs sm:text-sm text-white focus:outline-none transition-all duration-300 font-medium ${
-                filters.ra && filters.ra !== ''
-                  ? 'bg-slate-800 border-2 border-emerald-500 ring-2 ring-emerald-500/30 text-emerald-300' 
-                  : 'bg-slate-850 border border-cyan-500/60 ring-1 ring-cyan-500/20 hover:border-cyan-400'
-              }`}
+            <SearchableSelect
+              options={cityOptions}
               value={filters.ra}
-              onChange={(e) => handleChange('ra', e.target.value)}
-            >
-              <option value="" className="bg-slate-900 text-slate-300">🎯 Selecione uma Cidade / RA...</option>
-              {regions.map(r => {
-                const name = typeof r === 'object' && r ? r.name : r;
-                return <option key={name} value={name} className="bg-slate-900 text-white">{name}</option>;
-              })}
-            </select>
+              onChange={(val) => handleChange('ra', val)}
+              placeholder="Buscar Cidade / RA (ex: Ceilândia, Taguatinga)..."
+              icon={MapPin}
+              clearable={true}
+            />
           </div>
 
           {/* 2. Busca Textual (Geral) */}

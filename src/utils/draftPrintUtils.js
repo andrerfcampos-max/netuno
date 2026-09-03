@@ -312,7 +312,7 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
     <body>
       <div class="header">
         <h1>Corpo de Bombeiros Militar do Distrito Federal</h1>
-        <h3 style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase;">GPCIU / SEHUR</h3>
+        <h3 style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase;">SEHUR / GPCIU</h3>
         <h2>Ficha de Vistoria de Campo • Rascunho de Missão</h2>
         <div class="mission-title">🎯 ${missionName}${atribuicaoText}</div>
         <div class="header-meta">
@@ -341,7 +341,7 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
       <div class="footer">
         <div class="sig-name">${militarNome}</div>
         ${militarMatricula ? `<div class="sig-mat">${militarMatricula}</div>` : ''}
-        <div class="sys-meta">GPCIU / SEHUR • CBMDF • Sistema Netuno • Gerado em ${today} às ${nowTime}</div>
+        <div class="sys-meta">SEHUR / GPCIU • CBMDF • Sistema Netuno • Gerado em ${today} às ${nowTime}</div>
       </div>
 
       <script>
@@ -353,5 +353,6 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
     </html>
   `;
 
-  executePrintHtml(fullHtml);
+  const docTitle = `Rascunho_Missao_${(mission.name || 'Campo').replace(/[^a-zA-Z0-9]/g, '_')}_${today.replace(/[^0-9]/g, '_')}`;
+  executePrintHtml(fullHtml, docTitle);
 };

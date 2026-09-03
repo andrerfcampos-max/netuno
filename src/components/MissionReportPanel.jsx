@@ -308,7 +308,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
       // 1. Cabeçalho Oficial
       html += `<div style="text-align: center; border-bottom: 2px solid #334155; padding-bottom: 12px; margin-bottom: 16px;">
         <h2 style="margin: 0; font-size: 16px; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">Corpo de Bombeiros Militar do Distrito Federal</h2>
-        <div style="margin: 2px 0 0 0; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase;">GPCIU / SEHUR</div>
+        <div style="margin: 2px 0 0 0; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase;">SEHUR / GPCIU</div>
         <h3 style="margin: 4px 0 0 0; font-size: 14px; color: ${reportType === 'interno' ? '#1e40af' : '#047857'}; text-transform: uppercase; font-weight: bold;">
           ${reportType === 'interno' ? 'Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos' : 'Solicitação de Manutenção de Hidrantes Urbanos de Incêndio - CBMDF / CAESB'}
         </h3>
@@ -915,7 +915,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           {reportType === 'interno' ? (
             <div className="w-full text-center">
               <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
-              <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">GPCIU / SEHUR</div>
+              <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">SEHUR / GPCIU</div>
               <h2 className="text-sm sm:text-base text-blue-400 print-text-black mt-0.5 uppercase font-bold">Sistema Netuno - Relatório de Vistoria de Hidrantes Urbanos</h2>
               <div className="mt-3 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
                 <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
@@ -931,7 +931,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
           ) : (
             <div className="w-full text-center">
               <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">CBMDF • CAESB</h1>
-              <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">GPCIU / SEHUR</div>
+              <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">SEHUR / GPCIU</div>
               <h2 className="text-sm sm:text-base text-emerald-400 print-text-black mt-0.5 uppercase font-black">Solicitação de Manutenção de Hidrantes Urbanos de Incêndio</h2>
               <p className="text-[10px] sm:text-xs text-slate-400 print-text-gray mt-1 uppercase tracking-wider font-semibold">
                 De acordo com o Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019
@@ -1585,7 +1585,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
 
         {/* RODAPÉ DO DOCUMENTO DE RELATÓRIO - IDENTIFICAÇÃO INSTITUCIONAL SEM LINHA DE CANETA */}
         <div className="mt-16 pt-4 flex flex-col items-center justify-center text-sm text-slate-400 print-text-black page-break-inside-avoid">
-          <p className="font-bold text-center text-lg text-slate-100 print-text-black">
+          <p className="font-bold text-center text-xs sm:text-sm text-slate-200 print-text-black uppercase tracking-wide">
             {currentUser?.nome ? `${currentUser.nome}` : 'Equipe CBMDF'}
           </p>
           <p className="text-xs text-slate-300 print-text-black mt-0.5">
@@ -1593,7 +1593,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser })
             {currentUser?.matricula ? ` • Matrícula: ${currentUser.matricula}` : ''}
           </p>
           <p className="text-xs font-semibold text-slate-400 print-text-gray mt-1">
-            GPCIU / SEHUR • CBMDF
+            SEHUR / GPCIU • CBMDF
           </p>
           <div className="mt-6 pt-3 border-t border-slate-700/50 print-border-gray w-full max-w-xl flex flex-col items-center gap-1 text-[11px] text-slate-500 font-mono text-center">
             <p>Gerado em: {new Date().toLocaleString('pt-BR')}</p>

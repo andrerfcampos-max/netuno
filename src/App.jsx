@@ -280,7 +280,15 @@ function App() {
   }, [isMenuOpen]);
 
   const inconsistentCount = useMemo(() => {
-    return hidrantes.filter(h => !isValidDFCoordinate(h.numLatitude, h.numLongitude)).length;
+    return hidrantes.filter(h => {
+      const isCoordInvalid = !isValidDFCoordinate(h.numLatitude, h.numLongitude);
+      const isRemovido = Boolean(
+        h.isInconsistent || 
+        h.flgRemovido || 
+        (h.problemasHidrante && h.problemasHidrante.toLowerCase().includes('removido ou não encontrado'))
+      );
+      return isCoordInvalid || isRemovido;
+    }).length;
   }, [hidrantes]);
 
   const hasSecondaryFilter = useMemo(() => {
@@ -1272,6 +1280,7 @@ function App() {
             onClose={() => setInspectingHidrante(null)}
             onSave={(updated, isEditing) => handleSaveInspection(updated, isEditing)}
             currentUser={currentUser}
+            onDeleteHydrant={handleDeleteHydrant}
           />
         </Suspense>
       )}

@@ -45,12 +45,218 @@ const formatDateTime = (dateStr) => {
 };
 
 /**
- * Utilitário central de disparo de impressão direta via Iframe invisível.
- * Elimina completamente a abertura de janelas popup intermediárias na tela,
- * disparando o diálogo nativo de PDF/Impressão do navegador (Chrome) diretamente
- * sobre a aplicação e garantindo fidelidade total de A4 e fechamento limpo.
+ * Utilitário modular para extração consistente de fotos/evidências de hidrantes
  */
-export const executePrintHtml = (html) => {
+export const extractPhotos = (h) => {
+  if (!h) return [];
+  const photos = [];
+  const add = (p) => {
+    if (typeof p === 'string' && p.trim().length > 10 && !photos.includes(p)) {
+      photos.push(p);
+    }
+  };
+  if (Array.isArray(h.fotosVistoria)) h.fotosVistoria.forEach(add);
+  if (Array.isArray(h.fotos)) h.fotos.forEach(add);
+  if (Array.isArray(h.HISTORICO_VISTORIAS)) {
+    h.HISTORICO_VISTORIAS.forEach(v => {
+      if (Array.isArray(v.fotosVistoria)) v.fotosVistoria.forEach(add);
+      if (v.fotoVistoria) add(v.fotoVistoria);
+      if (v.fotoUrl) add(v.fotoUrl);
+    });
+  }
+  if (h.fotoVistoria) add(h.fotoVistoria);
+  if (h.fotoPerfil) add(h.fotoPerfil);
+  if (h.foto) add(h.foto);
+  if (h.fotoUrl) add(h.fotoUrl);
+  return photos;
+};
+
+/**
+ * Utilitário central de abertura no Leitor de PDF / Impressão Nativo do Navegador.
+ * Permite ao usuário visualizar o documento em tela cheia, com barra de ações
+ * imediatas para Salvar como PDF, Compartilhar ou Fechar.
+ * Restaura o nome padronizado original do arquivo no diálogo de download, eliminando 'netuno.pdf'.
+ */
+export const executePrintHtml = (html, docTitle = '') => {
+  try {
+    // 1. Extrai ou define o título padronizado oficial do documento
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+    const standardTitle = docTitle || (titleMatch ? titleMatch[1] : 'Relatorio_Netuno_CBMDF');
+
+    // 2. Garante que o documento principal também reflita temporariamente o nome padronizado
+    // prevenindo que navegadores desktop/mobile salvem como "netuno.pdf"
+    const prevMainTitle = document.title;
+    document.title = standardTitle;
+    setTimeout(() => {
+      try { document.title = prevMainTitle; } catch (e) {}
+    }, 20000);
+
+    // 3. Estilos e Barra Superior do Leitor de PDF (ativa em tela, oculta na impressão física/PDF)
+    const readerToolbarStyle = `
+      <style>
+        .netuno-pdf-toolbar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 48px;
+          background: #0f172a;
+          color: #f8fafc;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 16px;
+          z-index: 999999;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+          font-family: Arial, Helvetica, sans-serif;
+        }
+        .netuno-pdf-title {
+          font-size: 13px;
+          font-weight: bold;
+          color: #38bdf8;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .netuno-pdf-actions {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+        .netuno-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 14px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: bold;
+          cursor: pointer;
+          border: none;
+          transition: background 0.2s, transform 0.1s;
+        }
+        .netuno-btn:active { transform: scale(0.97); }
+        .netuno-btn-print {
+          background: #0284c7;
+          color: #ffffff;
+        }
+        .netuno-btn-print:hover { background: #0369a1; }
+        .netuno-btn-share {
+          background: #059669;
+          color: #ffffff;
+        }
+        .netuno-btn-share:hover { background: #047857; }
+        .netuno-btn-close {
+          background: #334155;
+          color: #e2e8f0;
+        }
+        .netuno-btn-close:hover { background: #475569; }
+        @media screen {
+          body {
+            padding-top: 56px !important;
+            background: #cbd5e1 !important;
+          }
+          .official-sheet, body > div:not(.netuno-pdf-toolbar) {
+            max-width: 210mm;
+            margin: 12px auto !important;
+            background: #ffffff !important;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.18) !important;
+            border-radius: 4px;
+            padding: 12mm 10mm !important;
+          }
+        }
+        @media print {
+          .netuno-pdf-toolbar {
+            display: none !important;
+          }
+          body {
+            padding-top: 0 !important;
+            background: #ffffff !important;
+          }
+        }
+      </style>
+    `;
+
+    const readerToolbarHtml = `
+      <div class="netuno-pdf-toolbar no-print">
+        <div class="netuno-pdf-title">
+          <span>📄</span>
+          <span>${standardTitle.replace(/_/g, ' ')}</span>
+        </div>
+        <div class="netuno-pdf-actions">
+          <button type="button" class="netuno-btn netuno-btn-print" onclick="window.print()" title="Salvar como PDF ou Imprimir">
+            🖨️ Salvar PDF / Imprimir
+          </button>
+          <button type="button" class="netuno-btn netuno-btn-share" onclick="handleShareDocumento()" title="Compartilhar documento">
+            📲 Compartilhar
+          </button>
+          <button type="button" class="netuno-btn netuno-btn-close" onclick="window.close()" title="Fechar leitor">
+            ✕ Fechar
+          </button>
+        </div>
+      </div>
+      <script>
+        function handleShareDocumento() {
+          if (navigator.share) {
+            navigator.share({
+              title: document.title,
+              text: 'Relatório Oficial Sistema Netuno - CBMDF: ' + document.title,
+              url: window.location.href
+            }).catch(function() {});
+          } else {
+            window.print();
+          }
+        }
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            try { window.print(); } catch (e) {}
+          }, 450);
+        });
+      </script>
+    `;
+
+    // Injeta estilo no head e toolbar no body
+    let fullHtml = html;
+    if (fullHtml.includes('</head>')) {
+      fullHtml = fullHtml.replace('</head>', `${readerToolbarStyle}</head>`);
+    } else {
+      fullHtml = readerToolbarStyle + fullHtml;
+    }
+
+    if (fullHtml.includes('<body')) {
+      fullHtml = fullHtml.replace(/<body([^>]*)>/i, `<body$1>${readerToolbarHtml}`);
+    } else {
+      fullHtml = readerToolbarHtml + fullHtml;
+    }
+
+    // 4. Abre em nova aba no leitor padrão/nativo do navegador
+    let printWindow = null;
+    try {
+      printWindow = window.open('', '_blank');
+    } catch (err) {
+      console.warn('Falha ao abrir nova aba para leitor de PDF:', err);
+    }
+
+    if (printWindow && printWindow.document) {
+      printWindow.document.open();
+      printWindow.document.write(fullHtml);
+      printWindow.document.close();
+      if (printWindow.focus) printWindow.focus();
+      return;
+    }
+
+    // Fallback: se o navegador bloquear popup, aciona iframe invisível de impressão
+    fallbackIframePrint(fullHtml);
+  } catch (e) {
+    console.error('Erro ao acionar leitor de PDF/impressão:', e);
+    fallbackPopupPrint(html);
+  }
+};
+
+export const fallbackIframePrint = (html) => {
   try {
     const existing = document.getElementById('netuno-print-iframe');
     if (existing) existing.remove();
@@ -78,7 +284,6 @@ export const executePrintHtml = (html) => {
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
       } catch (err) {
-        console.warn('Falha no iframe.print(), acionando fallback seguro:', err);
         fallbackPopupPrint(html);
       }
     };
@@ -91,38 +296,8 @@ export const executePrintHtml = (html) => {
     };
 
     iframe.contentWindow.addEventListener('afterprint', cleanup);
-
-    // Aguarda carregamento de imagens se existirem
-    const images = Array.from(doc.images || []);
-    if (images.length === 0) {
-      setTimeout(doPrint, 250);
-    } else {
-      let loaded = 0;
-      const onDone = () => {
-        loaded++;
-        if (loaded >= images.length) {
-          setTimeout(doPrint, 200);
-        }
-      };
-      images.forEach(img => {
-        if (img.complete) {
-          loaded++;
-        } else {
-          img.addEventListener('load', onDone);
-          img.addEventListener('error', onDone);
-        }
-      });
-      if (loaded >= images.length) {
-        setTimeout(doPrint, 250);
-      } else {
-        setTimeout(doPrint, 2500); // tempo limite de segurança
-      }
-    }
-
-    // Limpeza de segurança após 2 minutos
-    setTimeout(cleanup, 120000);
-  } catch (e) {
-    console.error('Erro ao acionar impressão via iframe:', e);
+    setTimeout(doPrint, 350);
+  } catch (err) {
     fallbackPopupPrint(html);
   }
 };
@@ -298,30 +473,6 @@ export const printGeneralReport = ({
       </div>
     `;
   }
-
-  const extractPhotos = (h) => {
-    if (!h) return [];
-    const photos = [];
-    const add = (p) => {
-      if (typeof p === 'string' && p.trim().length > 10 && !photos.includes(p)) {
-        photos.push(p);
-      }
-    };
-    if (Array.isArray(h.fotosVistoria)) h.fotosVistoria.forEach(add);
-    if (Array.isArray(h.fotos)) h.fotos.forEach(add);
-    if (Array.isArray(h.HISTORICO_VISTORIAS)) {
-      h.HISTORICO_VISTORIAS.forEach(v => {
-        if (Array.isArray(v.fotosVistoria)) v.fotosVistoria.forEach(add);
-        if (v.fotoVistoria) add(v.fotoVistoria);
-        if (v.fotoUrl) add(v.fotoUrl);
-      });
-    }
-    if (h.fotoVistoria) add(h.fotoVistoria);
-    if (h.fotoPerfil) add(h.fotoPerfil);
-    if (h.foto) add(h.foto);
-    if (h.fotoUrl) add(h.fotoUrl);
-    return photos;
-  };
 
   const hidrantesComFotos = currentData.map(h => ({
     ...h,
@@ -924,8 +1075,8 @@ export const printGeneralReport = ({
           text-align: center;
           page-break-inside: avoid;
         }
-        .signature-name { font-size: 11.5px; font-weight: 900; color: #0f172a; text-transform: uppercase; }
-        .signature-role { font-size: 9.5px; color: #475569; margin-top: 1px; }
+        .signature-name { font-size: 10px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
+        .signature-role { font-size: 9px; color: #475569; margin-top: 1px; }
         .doc-hash-footer {
           position: fixed;
           bottom: 0;
@@ -946,7 +1097,7 @@ export const printGeneralReport = ({
       <div class="official-header">
         <div class="header-title-box">
           <div class="inst-cbmdf">Corpo de Bombeiros Militar do Distrito Federal</div>
-          <div class="inst-sub">GPCIU / SEHUR</div>
+          <div class="inst-sub">SEHUR / GPCIU</div>
           <div class="doc-title">Relatório de Vistoria de Hidrantes Urbanos</div>
           <div class="doc-meta">
             <span><strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
@@ -1024,7 +1175,7 @@ export const printGeneralReport = ({
       <div class="signature-section avoid-break">
         <div class="signature-name">${emissorNome}</div>
         <div class="signature-role">${emissorCargo} • ${emissorMatricula}</div>
-        <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">GPCIU / SEHUR • CBMDF</div>
+        <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">SEHUR / GPCIU • CBMDF</div>
       </div>
 
       <div class="doc-hash-footer">
@@ -1040,7 +1191,8 @@ export const printGeneralReport = ({
     </html>
   `;
 
-  executePrintHtml(html);
+  const docTitle = rasPresentes ? `Relatorio_Geral_CBMDF_${rasPresentes.replace(/[^a-zA-Z0-9]/g, '_')}_${nowStr.replace(/[^0-9]/g, '_')}` : `Relatorio_Geral_CBMDF_${nowStr.replace(/[^0-9]/g, '_')}`;
+  executePrintHtml(html, docTitle);
 };
 
 /**
@@ -1058,7 +1210,9 @@ export const printCaesbReport = ({
   const emissorNome = currentUser?.nome || 'Gestor de Hidrantes Urbanos';
   const emissorMatricula = currentUser?.matricula ? `Matrícula: ${currentUser.matricula}` : '';
 
-  const rowsHtml = currentData.map((h, idx) => {
+  const rowsHtml = currentData.length === 0 
+    ? `<tr><td colspan="5" style="text-align:center; padding: 24px; font-weight: bold; color: #64748b;">Nenhum hidrante com pendência ou defeito registrado para o relatório CAESB.</td></tr>`
+    : currentData.map((h, idx) => {
     const code = h.nomHidrante || h.codHidrante || '-';
     const dataVis = formatDateOnly(h.datHoraUltimaVistoria || h.datHoraVistoria);
     const end = fixEncoding(h.dscEndereco) || h.dscLocalidade || '-';
@@ -1259,7 +1413,7 @@ export const printCaesbReport = ({
           text-align: center;
           page-break-inside: avoid;
         }
-        .signature-name { font-size: 11.5px; font-weight: 900; color: #0f172a; text-transform: uppercase; }
+        .signature-name { font-size: 10px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
         .signature-role { font-size: 9.5px; color: #475569; margin-top: 1px; }
         .doc-hash-footer {
           position: fixed;
@@ -1281,7 +1435,7 @@ export const printCaesbReport = ({
       <div class="official-header">
         <div class="header-title-box">
           <div class="inst-cbmdf">CBMDF • Companhia de Saneamento Ambiental do DF (CAESB)</div>
-          <div class="inst-sub">GPCIU / SEHUR</div>
+          <div class="inst-sub">SEHUR / GPCIU</div>
           <div class="doc-title">Solicitação Oficial de Manutenção de Hidrantes Urbanos</div>
           <div class="legal-term">Conforme Termo de Cooperação Técnica CAESB/CBMDF publicado no DODF em 25/03/2019</div>
           <div class="doc-meta">
@@ -1321,7 +1475,7 @@ export const printCaesbReport = ({
       <div class="signature-section avoid-break">
         <div class="signature-name">${emissorNome}</div>
         <div class="signature-role">${emissorMatricula} • Encarregado da Gestão de Hidrantes de Incêndio</div>
-        <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">GPCIU / SEHUR • CBMDF</div>
+        <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">SEHUR / GPCIU • CBMDF</div>
       </div>
 
       <div class="doc-hash-footer">
@@ -1337,7 +1491,8 @@ export const printCaesbReport = ({
     </html>
   `;
 
-  executePrintHtml(html);
+  const docTitle = rasPresentes ? `Relatorio_CAESB_Manutencao_${rasPresentes.replace(/[^a-zA-Z0-9]/g, '_')}_${nowStr.replace(/[^0-9]/g, '_')}` : `Relatorio_CAESB_Manutencao_${nowStr.replace(/[^0-9]/g, '_')}`;
+  executePrintHtml(html, docTitle);
 };
 
 /**
@@ -1592,7 +1747,7 @@ export const printBuildingStudyReport = ({ study, currentUser = null }) => {
       <div class="signature-section avoid-break">
         <div class="signature-name">${emissorNome}</div>
         <div class="signature-role">${emissorMatricula} • Oficial Especialista em Pré-Planejamento Operacional</div>
-        <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">GPCIU / SEHUR • CBMDF</div>
+        <div class="signature-role" style="font-size: 9px; margin-top: 2px; font-weight: bold;">SEHUR / GPCIU • CBMDF</div>
       </div>
 
       <script>
@@ -1604,7 +1759,8 @@ export const printBuildingStudyReport = ({ study, currentUser = null }) => {
     </html>
   `;
 
-  executePrintHtml(html);
+  const docTitle = `Ficha_Tatica_PPO_${fixEncoding(study.nomeFantasia || 'Edificacao').replace(/[^a-zA-Z0-9]/g, '_')}_${nowStr.replace(/[^0-9]/g, '_')}`;
+  executePrintHtml(html, docTitle);
 };
 
 /**
@@ -1648,30 +1804,50 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
           box-sizing: border-box;
           margin: 0;
           padding: 0;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
         }
         body {
           font-family: 'Times New Roman', Times, serif;
-          color: #000000;
-          background: #ffffff;
-          line-height: 1.5;
           font-size: 12pt;
-          padding: 8px;
+          line-height: 1.5;
+          color: #000;
         }
-        .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #000; padding-bottom: 12px; }
+        .header {
+          text-align: center;
+          margin-bottom: 25px;
+        }
         .inst { font-size: 13pt; font-weight: bold; text-transform: uppercase; }
-        .sub-inst { font-size: 11pt; }
-        .doc-title { font-size: 14pt; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
+        .sub-inst { font-size: 11pt; margin-top: 2px; }
+        .doc-title {
+          font-size: 14pt;
+          font-weight: bold;
+          text-transform: uppercase;
+          margin-top: 15px;
+          border-top: 2px solid #000;
+          border-bottom: 2px solid #000;
+          padding: 6px 0;
+        }
+        .section-num { font-weight: bold; margin-top: 14px; text-transform: uppercase; }
+        p { text-align: justify; text-indent: 2.5cm; margin-bottom: 8px; }
         
-        .section-num { font-weight: bold; text-transform: uppercase; margin-top: 16px; margin-bottom: 6px; }
-        p { text-align: justify; text-indent: 2.5em; margin-bottom: 8px; }
-        
-        .data-table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 9.5pt; margin: 12px 0; }
-        .data-table th, .data-table td { border: 1px solid #000; padding: 5px 6px; }
-        .data-table th { background: #f2f2f2; font-weight: bold; text-align: left; }
+        .data-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-family: Arial, sans-serif;
+          font-size: 9.5pt;
+          margin: 12px 0;
+        }
+        .data-table th {
+          background: #f1f5f9;
+          border: 1px solid #000;
+          padding: 5px;
+          text-align: left;
+        }
+        .data-table td {
+          border: 1px solid #000;
+          padding: 5px;
+        }
         .text-center { text-align: center; }
-        .badge { display: inline-block; padding: 1px 5px; border-radius: 3px; font-weight: bold; font-size: 8.5pt; }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 8pt; }
         .badge-op { background: #dcfce7; color: #166534; }
         .badge-inop { background: #fee2e2; color: #991b1b; }
         
@@ -1689,14 +1865,14 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
         
         .signature { margin-top: 40px; text-align: center; page-break-inside: avoid; }
         .sig-line { width: 320px; border-top: 1px solid #000; margin: 0 auto 6px auto; }
-        .sig-name { font-weight: bold; }
-        .sig-role { font-size: 10pt; color: #333; }
+        .sig-name { font-size: 10.5pt; font-weight: bold; }
+        .sig-role { font-size: 9.5pt; color: #333; }
       </style>
     </head>
     <body>
       <div class="header">
         <div class="inst">Corpo de Bombeiros Militar do Distrito Federal</div>
-        <div class="sub-inst">Diretoria de Vistorias / Seção Técnica de Hidrantes</div>
+        <div class="sub-inst">SEHUR / GPCIU • Seção Técnica de Hidrantes</div>
         <div class="doc-title">Parecer Técnico de Dimensionamento e Viabilidade de Hidrantes</div>
       </div>
 
@@ -1759,8 +1935,8 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
       <div class="signature">
         <div class="sig-line"></div>
         <div class="sig-name">${emissorNome}</div>
-        <div class="sig-role">${emissorMatricula} • Analista Técnico de Hidrantes</div>
-        <div class="sig-role">Corpo de Bombeiros Militar do Distrito Federal</div>
+        ${emissorMatricula ? `<div class="sig-role">${emissorMatricula} • Analista Técnico de Hidrantes</div>` : ''}
+        <div class="sig-role">SEHUR / GPCIU • Corpo de Bombeiros Militar do Distrito Federal</div>
       </div>
 
       <script>
@@ -1772,5 +1948,6 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
     </html>
   `;
 
-  executePrintHtml(html);
+  const docTitle = `Parecer_Tecnico_Hidrantes_${fixEncoding(studyData.docRef || 'Estudo').replace(/[^a-zA-Z0-9]/g, '_')}_${nowStr.replace(/[^0-9]/g, '_')}`;
+  executePrintHtml(html, docTitle);
 };

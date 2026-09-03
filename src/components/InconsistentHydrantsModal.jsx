@@ -8,8 +8,18 @@ const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydr
 
   if (!isOpen) return null;
 
-  // Filtra hidrantes que possuem coordenadas inválidas ou fora do DF
-  const inconsistentList = hidrantes.filter(h => !isValidDFCoordinate(h.numLatitude, h.numLongitude));
+  // Filtra hidrantes com coordenadas inválidas OU reportados como removidos em vistoria de campo
+  const isHydrantInconsistent = (h) => {
+    const isCoordInvalid = !isValidDFCoordinate(h.numLatitude, h.numLongitude);
+    const isRemovido = Boolean(
+      h.isInconsistent || 
+      h.flgRemovido || 
+      (h.problemasHidrante && h.problemasHidrante.toLowerCase().includes('removido ou não encontrado'))
+    );
+    return isCoordInvalid || isRemovido;
+  };
+
+  const inconsistentList = hidrantes.filter(isHydrantInconsistent);
 
   const filteredInconsistent = inconsistentList.filter(h => {
     const code = (h.nomHidrante || h.codHidrante || '').toLowerCase();
@@ -20,6 +30,12 @@ const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydr
   });
 
   const getInconsistencyReason = (h) => {
+    const isRemovido = Boolean(
+      h.isInconsistent || 
+      h.flgRemovido || 
+      (h.problemasHidrante && h.problemasHidrante.toLowerCase().includes('removido ou não encontrado'))
+    );
+    if (isRemovido) return 'Hidrante Removido em Vistoria (Avaliar Exclusão Definitiva)';
     const lat = parseFloat(h.numLatitude);
     const lng = parseFloat(h.numLongitude);
     if (isNaN(lat) || isNaN(lng)) return 'Coordenadas Não Numéricas / Indefinidas';
@@ -55,13 +71,13 @@ const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydr
             </div>
             <div className="min-w-0">
               <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate flex items-center gap-2">
-                <span>Hidrantes com Coordenadas Inconsistentes</span>
+                <span>Hidrantes Inconsistentes & Removidos</span>
                 <span className="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full border border-amber-500/40 font-semibold">
                   {inconsistentList.length} encontrados
                 </span>
               </h2>
               <p className="text-[11px] sm:text-xs text-slate-400 truncate">
-                Pré-tratamento geográfico: hidrantes ocultados do mapa para preservar o enquadramento do DF
+                Hidrantes com anomalias de coordenadas ou reportados como removidos em vistoria para avaliação e exclusão do Gestor
               </p>
             </div>
           </div>
@@ -97,8 +113,8 @@ const InconsistentHydrantsModal = ({ isOpen, onClose, hidrantes = [], onEditHydr
           {inconsistentList.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400">
               <CheckCircle2 size={48} className="text-emerald-400 mb-3" />
-              <p className="font-semibold text-slate-200">Excelente! Nenhum hidrante com coordenada inconsistente.</p>
-              <p className="text-xs text-slate-400 mt-1">Todos os hidrantes da base de dados possuem coordenadas válidas no Distrito Federal.</p>
+              <p className="font-semibold text-slate-200">Excelente! Nenhum hidrante inconsistente ou com pendência de exclusão.</p>
+              <p className="text-xs text-slate-400 mt-1">Todos os hidrantes da base de dados possuem coordenadas válidas no DF e nenhuma solicitação de exclusão pendente.</p>
             </div>
           ) : (
             <div className="overflow-x-auto border border-slate-700/80 rounded-xl shadow-sm">
