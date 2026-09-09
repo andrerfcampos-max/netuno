@@ -10,6 +10,10 @@ const normalizeText = (text) => {
     .trim();
 };
 
+const isTouchDevice = () => {
+  return typeof window !== 'undefined' && ('ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0));
+};
+
 const SearchableSelect = ({
   options = [],
   value = '',
@@ -26,10 +30,12 @@ const SearchableSelect = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const listRef = useRef(null);
+  const selectedItemRef = useRef(null);
 
   const normalizedOptions = useMemo(() => {
     return options.map(opt => {
@@ -61,8 +67,11 @@ const SearchableSelect = ({
     return normalizedOptions.find(opt => opt.value === value) || null;
   }, [normalizedOptions, value, isMulti]);
 
+  // Se o usuário não estiver digitando ativamente, a lista exibe TODAS as opções disponíveis
   const filteredOptions = useMemo(() => {
-    if (!searchQuery.trim()) return normalizedOptions;
+    if (!isTyping || !searchQuery.trim()) {
+      return normalizedOptions;
+    }
     const queryNorm = normalizeText(searchQuery);
     return normalizedOptions.filter(opt => {
       const labelNorm = normalizeText(opt.label);
@@ -70,29 +79,43 @@ const SearchableSelect = ({
       const subNorm = normalizeText(opt.subtitle || '');
       return labelNorm.includes(queryNorm) || valNorm.includes(queryNorm) || subNorm.includes(queryNorm);
     });
-  }, [normalizedOptions, searchQuery]);
+  }, [normalizedOptions, isTyping, searchQuery]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      if (!isMulti) {
-        if (selectedOption) {
-          setSearchQuery(selectedOption.label);
-        } else if (value && allowCustom) {
-          setSearchQuery(String(value));
-        } else {
-          setSearchQuery('');
-        }
-      } else {
-        setSearchQuery('');
-      }
-      setHighlightedIndex(-1);
+  // Valor exibido no input
+  const inputValue = useMemo(() => {
+    if (isMulti) {
+      return isTyping ? searchQuery : '';
     }
-  }, [isOpen, selectedOption, value, allowCustom, isMulti]);
+    if (isTyping) {
+      return searchQuery;
+    }
+    if (selectedOption) {
+      return selectedOption.label;
+    }
+    if (allowCustom && value) {
+      return String(value);
+    }
+    return '';
+  }, [isMulti, isTyping, searchQuery, selectedOption, allowCustom, value]);
 
+  // Auto-scroll para a opção atualmente selecionada quando a lista abrir
+  useEffect(() => {
+    if (isOpen && selectedItemRef.current) {
+      const timer = setTimeout(() => {
+        selectedItemRef.current?.scrollIntoView({ block: 'nearest' });
+      }, 40);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  // Fechar ao clicar fora
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsOpen(false);
+        setIsTyping(false);
+        setSearchQuery('');
+        setHighlightedIndex(-1);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -103,6 +126,35 @@ const SearchableSelect = ({
     };
   }, []);
 
+  const openMenu = () => {
+    if (disabled) return;
+    setIsOpen(true);
+    setIsTyping(false);
+    setSearchQuery('');
+    setHighlightedIndex(-1);
+    if (!isTouchDevice()) {
+      setTimeout(() => {
+        inputRef.current?.select();
+      }, 30);
+    }
+  };
+
+  const closeMenu = () => {
+    setIsOpen(false);
+    setIsTyping(false);
+    setSearchQuery('');
+    setHighlightedIndex(-1);
+  };
+
+  const toggleMenu = () => {
+    if (disabled) return;
+    if (isOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  };
+
   const handleSelect = (optionValue) => {
     if (isMulti) {
       const currentList = Array.isArray(value) ? value : (value ? [value] : []);
@@ -112,10 +164,11 @@ const SearchableSelect = ({
         onChange && onChange([...currentList, optionValue]);
       }
       setSearchQuery('');
+      setIsTyping(false);
       if (inputRef.current) inputRef.current.focus();
     } else {
       onChange && onChange(optionValue);
-      setIsOpen(false);
+      closeMenu();
     }
   };
 
@@ -131,18 +184,13 @@ const SearchableSelect = ({
     e.stopPropagation();
     onChange && onChange(isMulti ? [] : '');
     setSearchQuery('');
+    setIsTyping(false);
     if (inputRef.current) inputRef.current.focus();
-  };
-
-  const handleInputFocus = () => {
-    if (!disabled) {
-      setIsOpen(true);
-      // NUNCA chamar inputRef.current.select() no mobile/touch, pois abre a barra de seleção nativa
-    }
   };
 
   const handleInputChange = (e) => {
     const text = e.target.value;
+    setIsTyping(true);
     setSearchQuery(text);
     if (!isOpen) setIsOpen(true);
     setHighlightedIndex(0);
@@ -156,7 +204,7 @@ const SearchableSelect = ({
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (!isOpen) {
-        setIsOpen(true);
+        openMenu();
       } else {
         setHighlightedIndex(prev => (prev < filteredOptions.length - 1 ? prev + 1 : prev));
       }
@@ -170,21 +218,21 @@ const SearchableSelect = ({
       if (isOpen) {
         if (highlightedIndex >= 0 && highlightedIndex < filteredOptions.length) {
           handleSelect(filteredOptions[highlightedIndex].value);
-        } else if (allowCustom && searchQuery.trim()) {
+        } else if (allowCustom && isTyping && searchQuery.trim()) {
           handleSelect(searchQuery.trim());
         }
       } else {
-        setIsOpen(true);
+        openMenu();
       }
     } else if (e.key === 'Escape') {
-      setIsOpen(false);
+      closeMenu();
     }
   };
 
   const hasValue = isMulti 
     ? selectedList.length > 0 
-    : Boolean(value || (allowCustom && searchQuery.trim()));
-  const isCustomTyped = allowCustom && searchQuery.trim() && !normalizedOptions.some(opt => normalizeText(opt.value) === normalizeText(searchQuery));
+    : Boolean(value || (allowCustom && isTyping && searchQuery.trim()));
+  const isCustomTyped = allowCustom && isTyping && searchQuery.trim() && !normalizedOptions.some(opt => normalizeText(opt.value) === normalizeText(searchQuery));
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
@@ -220,8 +268,7 @@ const SearchableSelect = ({
         } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         onClick={() => {
           if (!disabled) {
-            setIsOpen(prev => !prev);
-            if (inputRef.current) inputRef.current.focus();
+            toggleMenu();
           }
         }}
       >
@@ -234,12 +281,18 @@ const SearchableSelect = ({
           name={name}
           type="text"
           disabled={disabled}
-          value={isOpen ? searchQuery : (isMulti ? '' : (selectedOption ? selectedOption.label : (allowCustom ? value : '')))}
+          value={inputValue}
           onChange={handleInputChange}
-          onFocus={handleInputFocus}
+          onFocus={() => {
+            if (!disabled && !isOpen) {
+              openMenu();
+            }
+          }}
           onClick={(e) => {
             e.stopPropagation();
-            if (!isOpen) setIsOpen(true);
+            if (!isOpen) {
+              openMenu();
+            }
           }}
           onKeyDown={handleKeyDown}
           placeholder={isMulti && selectedList.length > 0 ? "+ Adicionar outro problema..." : placeholder}
@@ -264,7 +317,7 @@ const SearchableSelect = ({
           disabled={disabled}
           onClick={(e) => {
             e.stopPropagation();
-            if (!disabled) setIsOpen(prev => !prev);
+            toggleMenu();
           }}
           className="pr-2.5 pl-1 text-slate-400 hover:text-slate-200 transition-colors shrink-0 cursor-pointer"
         >
@@ -306,6 +359,7 @@ const SearchableSelect = ({
               return (
                 <div
                   key={opt.value + '_' + idx}
+                  ref={isSelected ? selectedItemRef : null}
                   onClick={() => handleSelect(opt.value)}
                   onMouseEnter={() => setHighlightedIndex(idx)}
                   className={`px-3 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${
