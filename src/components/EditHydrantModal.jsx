@@ -442,23 +442,23 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
       <div className="bg-slate-900 w-full max-w-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border-0 sm:border border-slate-700/80 h-[100dvh] sm:h-auto sm:max-h-[92dvh] text-slate-100">
         
         {/* CABEÇALHO PADRONIZADO */}
-        <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="px-3 py-2 sm:px-6 sm:py-3.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button 
               type="button"
               onClick={onClose} 
-              className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+              className="text-[11px] sm:text-xs px-2 py-1 sm:px-2.5 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
             >
               ← Voltar
             </button>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/50 shrink-0">
-              <MapPin size={20} />
+            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/50 shrink-0">
+              <MapPin size={16} className="sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+              <h2 className="text-sm sm:text-lg font-bold text-white tracking-tight truncate">
                 {isNew ? 'Cadastrar Novo Hidrante' : `Editar Hidrante: ${formData.codHidrante || initialCode}`}
               </h2>
-              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+              <p className="text-[10px] sm:text-xs text-slate-400 truncate">
                 {isNew ? 'Georreferenciamento e dados cadastrais no DF' : 'Atualização de dados cadastrais e posição no mapa'}
               </p>
             </div>
@@ -466,58 +466,58 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
           <button 
             type="button"
             onClick={onClose} 
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+            className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
             title="Fechar"
           >
-            <X size={20} />
+            <X size={18} className="sm:w-5 sm:h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
           
-          <div className="p-4 flex-1 overflow-y-auto flex flex-col gap-4">
-            <div className="flex flex-col md:flex-row gap-4">
+          <div className="p-2.5 sm:p-4 flex-1 overflow-y-auto flex flex-col gap-2.5 sm:gap-4">
+            <div className="flex flex-col md:flex-row gap-2.5 sm:gap-4">
               
-              <div className="w-full md:w-1/2 flex flex-col gap-3">
+              <div className="w-full md:w-1/2 flex flex-col gap-2 sm:gap-3">
                 
                 {/* Foto de Perfil */}
-                <div className="flex flex-col gap-2 bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                <div className="flex flex-col gap-1.5 bg-slate-900/50 p-2 sm:p-3 rounded-lg border border-slate-700">
                   <div className="flex flex-col">
-                    <label className="font-bold text-slate-300 text-xs sm:text-sm flex items-center justify-between">
+                    <label className="font-bold text-slate-300 text-[11px] sm:text-sm flex items-center justify-between">
                       <span>Foto de Perfil do Hidrante</span>
                     </label>
-                    <p className="text-[11px] text-amber-300/90 font-medium mt-0.5">
+                    <p className="text-[10px] sm:text-[11px] text-amber-300/90 font-medium leading-tight">
                       Registre uma foto vertical de perfil do hidrante.
                     </p>
                   </div>
                   {!formData.fotoPerfil ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => cameraInputRef.current?.click()}
-                        className="p-2.5 rounded-lg bg-emerald-700/80 hover:bg-emerald-600 border border-emerald-500/60 text-white font-bold text-xs sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
+                        className="py-1.5 sm:py-2.5 px-2 rounded-lg bg-emerald-700/80 hover:bg-emerald-600 border border-emerald-500/60 text-white font-bold text-[11px] sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
                       >
-                        <Camera size={16} />
-                        <span>Tirar Foto (Câmera)</span>
+                        <Camera size={15} />
+                        <span className="truncate">Tirar Foto</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => galleryInputRef.current?.click()}
-                        className="p-2.5 rounded-lg bg-slate-750 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
+                        className="py-1.5 sm:py-2.5 px-2 rounded-lg bg-slate-750 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-[11px] sm:text-sm active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
                       >
-                        <ImageIcon size={16} className="text-cyan-400" />
-                        <span>Escolher da Galeria</span>
+                        <ImageIcon size={15} className="text-cyan-400" />
+                        <span className="truncate">Galeria</span>
                       </button>
                     </div>
                   ) : (
                     <div className="relative">
-                      <img src={formData.fotoPerfil} alt="Preview do Hidrante" className="w-full h-36 object-cover rounded border border-slate-600" />
+                      <img src={formData.fotoPerfil} alt="Preview do Hidrante" className="w-full h-24 sm:h-36 object-cover rounded border border-slate-600" />
                       <button
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, fotoPerfil: '' }))}
-                        className="absolute top-2 right-2 bg-red-600 text-white p-1 px-3 rounded-full font-bold text-xs shadow hover:bg-red-700 transition-colors flex items-center gap-1"
+                        className="absolute top-1.5 right-1.5 bg-red-600 text-white py-0.5 px-2 rounded-full font-bold text-[10px] sm:text-xs shadow hover:bg-red-700 transition-colors flex items-center gap-1"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={11} />
                         Remover Foto
                       </button>
                     </div>
@@ -525,7 +525,7 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                   <input 
                     type="file" 
                     accept="image/*" 
-                    capture="environment"
+                    capture="environment" 
                     className="hidden" 
                     ref={cameraInputRef}
                     onChange={handleImageUpload}
@@ -539,55 +539,58 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                   />
                 </div>
 
-                {/* Região Administrativa (RA) em Ordem Alfabética */}
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs text-slate-400 font-bold uppercase">
-                      Região Administrativa (RA) {isNew && <span className="text-red-400">*</span>}
-                    </label>
-                    <span className="text-[10px] text-slate-400 font-semibold">Ordem Alfabética</span>
+                {/* Linha dupla compacta: RA e Código do Hidrante */}
+                <div className="grid grid-cols-12 gap-2">
+                  {/* Região Administrativa (RA) */}
+                  <div className="col-span-7 flex flex-col gap-0.5">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase truncate">
+                        RA {isNew && <span className="text-red-400">*</span>}
+                      </label>
+                      <span className="text-[9px] text-slate-500 font-semibold hidden sm:inline">Ordem Alfabética</span>
+                    </div>
+                    <select 
+                      name="dscLocalidade" 
+                      value={formData.dscLocalidade} 
+                      onChange={handleRAChange} 
+                      required={isNew}
+                      className="bg-slate-900 border border-slate-700 rounded py-1.5 px-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500 truncate"
+                    >
+                      <option value="">Selecione a RA...</option>
+                      {sortedRAList.map(ra => (
+                        <option key={ra.name} value={ra.name}>{ra.name}</option>
+                      ))}
+                    </select>
                   </div>
-                  <select 
-                    name="dscLocalidade" 
-                    value={formData.dscLocalidade} 
-                    onChange={handleRAChange} 
-                    required={isNew}
-                    className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="">Selecione uma RA...</option>
-                    {sortedRAList.map(ra => (
-                      <option key={ra.name} value={ra.name}>{ra.name}</option>
-                    ))}
-                  </select>
-                </div>
 
-                {/* Código do Hidrante (Sequencial Automático para Novo) */}
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs text-slate-400 font-bold uppercase">Código do Hidrante</label>
-                    {isNew && (
-                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800">
-                        Preenchimento Automático
-                      </span>
-                    )}
+                  {/* Código do Hidrante */}
+                  <div className="col-span-5 flex flex-col gap-0.5">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase truncate">Código</label>
+                      {isNew && (
+                        <span className="text-[9px] text-emerald-400 font-bold bg-emerald-950/60 px-1 rounded border border-emerald-800 truncate hidden sm:inline">
+                          Automático
+                        </span>
+                      )}
+                    </div>
+                    <input 
+                      name="codHidrante" 
+                      value={formData.codHidrante} 
+                      readOnly
+                      placeholder={isNew ? "Auto..." : ""}
+                      className="border border-slate-700 rounded py-1.5 px-2 text-xs sm:text-sm font-mono bg-slate-900/70 text-emerald-400 font-bold cursor-not-allowed" 
+                    />
                   </div>
-                  <input 
-                    name="codHidrante" 
-                    value={formData.codHidrante} 
-                    readOnly
-                    placeholder={isNew ? "Gerado automaticamente ao escolher a RA..." : ""}
-                    className="border border-slate-700 rounded p-2 text-sm font-mono bg-slate-900/70 text-emerald-400 font-bold cursor-not-allowed" 
-                  />
                 </div>
 
                 {/* Endereço com Sugestões Inteligentes (estilo iFood) */}
-                <div className="flex flex-col gap-1 relative" ref={addressInputRef}>
+                <div className="flex flex-col gap-0.5 relative" ref={addressInputRef}>
                   <div className="flex justify-between items-center">
-                    <label className="text-xs text-slate-400 font-bold uppercase flex items-center gap-1">
+                    <label className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase flex items-center gap-1">
                       Endereço {isNew && <span className="text-red-400">*</span>}
                     </label>
-                    <span className="text-[10px] text-amber-400 flex items-center gap-1 font-semibold">
-                      <Sparkles size={11} />
+                    <span className="text-[9px] sm:text-[10px] text-amber-400 flex items-center gap-1 font-semibold">
+                      <Sparkles size={10} />
                       Sugestões ao digitar
                     </span>
                   </div>
@@ -600,10 +603,10 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                       required={isNew}
                       placeholder="Ex: Quadra 02 Conjunto A Lote 15, Av. Central..."
                       autoComplete="off"
-                      className="w-full bg-slate-900 border border-slate-700 rounded p-2 pr-8 text-sm text-white focus:outline-none focus:border-amber-500" 
+                      className="w-full bg-slate-900 border border-slate-700 rounded py-1.5 px-2 pr-7 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500" 
                     />
                     {isLoadingSuggestions && (
-                      <Loader2 size={15} className="absolute right-2.5 top-3 text-amber-400 animate-spin" />
+                      <Loader2 size={13} className="absolute right-2 top-2.5 text-amber-400 animate-spin" />
                     )}
                   </div>
 
@@ -618,13 +621,13 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                           dscLocalidade: mapSuggestedAddress.ra || prev.dscLocalidade
                         }));
                       }}
-                      className="mt-1 p-1.5 bg-amber-950/40 border border-amber-500/40 rounded-lg text-xs text-amber-300 flex items-center justify-between cursor-pointer hover:bg-amber-900/50 transition-all"
+                      className="mt-0.5 p-1 bg-amber-950/40 border border-amber-500/40 rounded-lg text-[10px] sm:text-xs text-amber-300 flex items-center justify-between cursor-pointer hover:bg-amber-900/50 transition-all"
                     >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <MapPin size={13} className="text-amber-400 shrink-0" />
-                        <span className="truncate"><strong>Ponto no mapa:</strong> {mapSuggestedAddress.address}</span>
+                      <div className="flex items-center gap-1 truncate">
+                        <MapPin size={11} className="text-amber-400 shrink-0" />
+                        <span className="truncate"><strong>No mapa:</strong> {mapSuggestedAddress.address}</span>
                       </div>
-                      <span className="text-[10px] font-bold text-amber-400 underline shrink-0 ml-2">Usar este</span>
+                      <span className="text-[9px] font-bold text-amber-400 underline shrink-0 ml-1.5">Usar este</span>
                     </div>
                   )}
 
@@ -681,8 +684,8 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                 </div>
 
                 {/* Ponto de Referência */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-slate-400 font-bold uppercase">
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase">
                     Ponto de Referência {isNew && <span className="text-red-400">*</span>}
                   </label>
                   <input 
@@ -691,14 +694,14 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                     onChange={handleChange} 
                     required={isNew}
                     placeholder="Ex: Em frente à farmácia / esquina / portaria"
-                    className="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500" 
+                    className="bg-slate-900 border border-slate-700 rounded py-1.5 px-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500" 
                   />
                 </div>
                 
                 {/* Coordenadas */}
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs text-slate-400 font-bold uppercase">Latitude (Lat)</label>
+                  <div className="flex flex-col gap-0.5">
+                    <label className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase">Latitude (Lat)</label>
                     <input 
                       type="text" 
                       name="numLatitude" 
@@ -706,11 +709,11 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                       onChange={handleChange} 
                       onBlur={() => handleCoordinateBlur('numLatitude')}
                       placeholder="-15.820000"
-                      className="bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono focus:border-amber-500 outline-none" 
+                      className="bg-slate-900 border border-slate-700 rounded py-1 px-2 text-xs text-white font-mono focus:border-amber-500 outline-none" 
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs text-slate-400 font-bold uppercase">Longitude (Lng)</label>
+                  <div className="flex flex-col gap-0.5">
+                    <label className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase">Longitude (Lng)</label>
                     <input 
                       type="text" 
                       name="numLongitude" 
@@ -718,25 +721,25 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                       onChange={handleChange} 
                       onBlur={() => handleCoordinateBlur('numLongitude')}
                       placeholder="-47.980000"
-                      className="bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono focus:border-amber-500 outline-none" 
+                      className="bg-slate-900 border border-slate-700 rounded py-1 px-2 text-xs text-white font-mono focus:border-amber-500 outline-none" 
                     />
                   </div>
                 </div>
-                <span className="text-[11px] text-slate-400 italic">
-                  Dica: Clique no mapa de satélite para reposicionar o pino vermelho nas coordenadas exatas.
+                <span className="text-[10px] sm:text-[11px] text-slate-400 italic leading-tight">
+                  Dica: Toque no mapa de satélite para reposicionar o pino vermelho nas coordenadas exatas.
                 </span>
               </div>
 
               {/* Container do Mapa com Satélite e Botão de Localização GPS */}
-              <div className="w-full md:w-1/2 min-h-[260px] h-[280px] md:h-auto md:min-h-[380px] border border-slate-600 rounded-lg overflow-hidden relative shadow-inner z-0">
+              <div className="w-full md:w-1/2 min-h-[160px] h-[170px] sm:h-[220px] md:h-auto md:min-h-[360px] border border-slate-600 rounded-lg overflow-hidden relative shadow-inner z-0">
                  
                  {/* Botão de Localização GPS do Usuário */}
-                 <div className="absolute top-3 right-3 z-[1000] flex flex-col items-end gap-1">
+                 <div className="absolute top-2 right-2 z-[1000] flex flex-col items-end gap-1">
                    <button
                      type="button"
                      onClick={() => handleFetchCurrentGPS(false)}
                      disabled={isLocatingGPS}
-                     className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-xl border backdrop-blur-md flex items-center gap-1.5 transition-all active:scale-95 ${
+                     className={`px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold shadow-xl border backdrop-blur-md flex items-center gap-1.5 transition-all active:scale-95 ${
                        isLocatingGPS
                          ? 'bg-slate-900/90 text-amber-300 border-amber-500/50 cursor-wait'
                          : (gpsObtained
@@ -746,9 +749,9 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                      title="Centralizar e mover o pino para a sua localização atual via GPS"
                    >
                      {isLocatingGPS ? (
-                       <Loader2 size={14} className="animate-spin text-amber-400" />
+                       <Loader2 size={12} className="animate-spin text-amber-400" />
                      ) : (
-                       <LocateFixed size={14} className={gpsObtained ? 'text-emerald-400' : 'text-slate-300'} />
+                       <LocateFixed size={12} className={gpsObtained ? 'text-emerald-400' : 'text-slate-300'} />
                      )}
                      <span>{isLocatingGPS ? 'Obtendo GPS...' : (gpsObtained ? 'GPS Localizado' : 'Minha Localização')}</span>
                    </button>
@@ -773,15 +776,15 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
           </div>
 
           {/* Footer Fixo sempre visível e nunca sobreposto */}
-          <div className="p-4 bg-slate-900 border-t border-slate-700/80 flex items-center justify-between gap-2 sm:gap-3 shrink-0 z-30">
+          <div className="px-3 py-2 sm:px-4 sm:py-3 bg-slate-900 border-t border-slate-700/80 flex items-center justify-between gap-2 sm:gap-3 shrink-0 z-30 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
             {!isNew && (currentUser?.role === 'gestor' || currentUser?.role === 'admin') && onDeleteHydrant ? (
               <button 
                 type="button" 
                 onClick={() => setShowConfirmDelete(true)} 
-                className="py-2.5 px-3 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800/80 font-bold rounded-lg transition-colors active:scale-95 text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shrink-0"
+                className="py-1.5 px-2.5 sm:py-2.5 sm:px-3 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800/80 font-bold rounded-lg transition-colors active:scale-95 text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shrink-0"
                 title="Excluir hidrante permanentemente da base"
               >
-                <Trash2 size={16} className="text-red-400" />
+                <Trash2 size={15} className="text-red-400" />
                 <span className="hidden sm:inline">Excluir Hidrante</span>
                 <span className="sm:hidden">Excluir</span>
               </button>
@@ -791,15 +794,15 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
               <button 
                 type="button" 
                 onClick={onClose} 
-                className="py-2.5 px-4 bg-slate-800 text-slate-300 border border-slate-700 font-bold rounded-lg hover:bg-slate-700 hover:text-white transition-colors active:scale-95 text-xs sm:text-sm cursor-pointer"
+                className="py-1.5 px-3 sm:py-2 sm:px-4 bg-slate-800 text-slate-300 border border-slate-700 font-bold rounded-lg hover:bg-slate-700 hover:text-white transition-colors active:scale-95 text-xs sm:text-sm cursor-pointer"
               >
                 Cancelar
               </button>
               <button 
                 type="submit" 
-                className="py-2.5 px-4 bg-emerald-600 text-white font-bold rounded-lg shadow-lg shadow-emerald-950/50 hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 active:scale-95 text-xs sm:text-sm cursor-pointer"
+                className="py-1.5 px-3.5 sm:py-2 sm:px-4 bg-emerald-600 text-white font-bold rounded-lg shadow-lg shadow-emerald-950/50 hover:bg-emerald-500 transition-colors flex items-center justify-center gap-1.5 active:scale-95 text-xs sm:text-sm cursor-pointer"
               >
-                <Save size={18} />
+                <Save size={16} />
                 {isNew ? 'Salvar Hidrante' : 'Salvar Alterações'}
               </button>
             </div>
