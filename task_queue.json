@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-35",
   "queue": [
     {
       "id": "TASK-1",
@@ -291,6 +291,110 @@
       "createdAt": "2026-09-09T21:00:20.946Z",
       "startedAt": "2026-09-09T21:00:24.022Z",
       "completedAt": "2026-09-09T21:01:09.821Z"
+    },
+    {
+      "id": "TASK-30",
+      "seq": 30,
+      "conversationId": "d2385d5f-bb36-416b-94d0-4ea7bb4402ff",
+      "description": "Calcular automaticamente rota otimizada ao abrir missao",
+      "status": "failed",
+      "createdAt": "2026-09-09T21:01:22.425Z",
+      "startedAt": "2026-09-09T21:01:25.119Z",
+      "completedAt": "2026-09-09T21:12:17.887Z",
+      "error": "Processo abandonado pela conversa anterior"
+    },
+    {
+      "id": "TASK-31",
+      "seq": 31,
+      "conversationId": "1545ae4d-01ef-4648-bc78-9717a965ffe3",
+      "description": "Melhorar botao PDF e fluxo de compartilhamento mobile",
+      "status": "failed",
+      "createdAt": "2026-09-09T21:03:30.816Z",
+      "startedAt": null,
+      "completedAt": "2026-09-09T21:12:51.801Z",
+      "error": "Timed out waiting in queue"
+    },
+    {
+      "id": "TASK-32",
+      "seq": 32,
+      "conversationId": "e8d1564b-9035-4448-a456-2fe83e0a4fcb",
+      "description": "Criar secao de historico de auditoria e notificacoes para gestor",
+      "status": "failed",
+      "createdAt": "2026-09-09T21:05:25.664Z",
+      "startedAt": "2026-09-09T21:12:35.152Z",
+      "completedAt": "2026-09-09T21:12:54.491Z",
+      "error": "Timed out waiting in queue"
+    },
+    {
+      "id": "TASK-33",
+      "seq": 33,
+      "conversationId": "dd15cfc2-9ea7-4a35-9723-83ac76910da5",
+      "description": "Sobreposicao de vistorias e historico restrito a gestores",
+      "status": "failed",
+      "createdAt": "2026-09-09T21:08:54.306Z",
+      "startedAt": "2026-09-09T21:12:57.151Z",
+      "completedAt": "2026-09-09T21:13:02.766Z",
+      "error": "Timed out waiting in queue"
+    },
+    {
+      "id": "TASK-34",
+      "seq": 34,
+      "conversationId": "2331a914-e0af-46b9-9b70-cd263ae1480c",
+      "description": "Foto obrigatoria para vistoriador",
+      "status": "completed",
+      "createdAt": "2026-09-09T21:09:24.401Z",
+      "startedAt": "2026-09-09T21:13:04.740Z",
+      "completedAt": "2026-09-09T21:14:20.595Z"
+    },
+    {
+      "id": "TASK-35",
+      "seq": 35,
+      "conversationId": "c7c78c22-7e67-4c57-a425-46e13489d822",
+      "description": "Ver pinos concluidos e faltantes no mapa da rota de missao",
+      "status": "running",
+      "createdAt": "2026-09-09T21:09:54.942Z",
+      "startedAt": "2026-09-09T21:14:21.525Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-36",
+      "seq": 36,
+      "conversationId": "97a0d11d-d664-4ee3-8594-3e46bc63aa4e",
+      "description": "Ajustar espacamento tela cadastro hidrante mobile",
+      "status": "queued",
+      "createdAt": "2026-09-09T21:10:49.597Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-37",
+      "seq": 37,
+      "conversationId": "d0240435-bca6-45f6-8f05-7fdcef855ef3",
+      "description": "Exibir nome do usuario no topo no mobile",
+      "status": "queued",
+      "createdAt": "2026-09-09T21:11:18.051Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-38",
+      "seq": 38,
+      "conversationId": "bc814177-b05c-4c00-8edc-bdd8b003fa3a",
+      "description": "baixar base de dados prepop em csv (gestor)",
+      "status": "queued",
+      "createdAt": "2026-09-09T21:12:04.632Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-39",
+      "seq": 39,
+      "conversationId": "fcd5dbde-9422-44a2-90d1-f4ef59f6096b",
+      "description": "Adicionar visualizacao dos codigos dos pinos no mapa",
+      "status": "queued",
+      "createdAt": "2026-09-09T21:13:55.876Z",
+      "startedAt": null,
+      "completedAt": null
     }
   ]
 }
