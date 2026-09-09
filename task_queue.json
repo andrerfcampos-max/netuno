@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-36",
+  "activeTaskId": "TASK-37",
   "queue": [
     {
       "id": "TASK-1",
@@ -361,19 +361,19 @@
       "seq": 36,
       "conversationId": "97a0d11d-d664-4ee3-8594-3e46bc63aa4e",
       "description": "Ajustar espacamento tela cadastro hidrante mobile",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-09T21:10:49.597Z",
       "startedAt": "2026-09-09T21:19:41.361Z",
-      "completedAt": null
+      "completedAt": "2026-09-09T21:22:02.534Z"
     },
     {
       "id": "TASK-37",
       "seq": 37,
       "conversationId": "d0240435-bca6-45f6-8f05-7fdcef855ef3",
       "description": "Exibir nome do usuario no topo no mobile",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-09-09T21:11:18.051Z",
-      "startedAt": null,
+      "startedAt": "2026-09-09T21:22:03.039Z",
       "completedAt": null
     },
     {
