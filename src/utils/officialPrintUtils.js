@@ -434,6 +434,7 @@ export const printGeneralReport = ({
     const lat = typeof h.numLatitude === 'number' ? h.numLatitude.toFixed(6) : (h.numLatitude || '');
     const lng = typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (h.numLongitude || '');
     const coordStr = (lat && lng && lat !== '-' && lng !== '-') ? `${lat}, ${lng}` : '';
+    const wazeLink = (lat && lng && lat !== '-' && lng !== '-') ? `https://waze.com/ul?ll=${lat},${lng}&navigate=yes` : '';
 
     return `
       <tr>
@@ -453,6 +454,9 @@ export const printGeneralReport = ({
           <span class="badge ${isOp ? 'badge-op' : 'badge-inop'}">${isOp ? '● OPERANTE' : '● INOPERANTE'}</span>
           ${prob ? `<div class="prob-text">⚠️ ${prob}</div>` : ''}
           ${obs ? `<div class="obs-text"><em>Obs: ${obs}</em></div>` : ''}
+        </td>
+        <td class="col-local text-center">
+          ${wazeLink ? `<a href="${wazeLink}" target="_blank" class="waze-btn" title="Abrir localização no Waze">Waze</a>` : '-'}
         </td>
       </tr>
     `;
@@ -774,27 +778,7 @@ export const printGeneralReport = ({
         .donut-svg {
           width: 58px;
           height: 58px;
-          transform: rotate(-90deg);
-        }
-        .donut-center-text {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-        }
-        .donut-percent {
-          font-size: 11px;
-          font-weight: 900;
-          color: #0f172a;
-          line-height: 1;
-        }
-        .donut-sub {
-          font-size: 7.5px;
-          font-weight: 800;
-          color: #64748b;
-          text-transform: uppercase;
+          display: block;
         }
         .donut-legend {
           display: flex;
@@ -852,11 +836,24 @@ export const printGeneralReport = ({
           vertical-align: middle;
         }
         .data-table tbody tr:nth-child(even) { background: #fafafa; }
-        .col-seq { width: 4%; text-align: center; font-weight: bold; color: #64748b; }
-        .col-code { width: 17%; }
-        .col-end { width: 33%; }
-        .col-vistoriador { width: 16%; font-weight: 600; color: #047857; }
-        .col-status { width: 30%; }
+        .col-seq { width: 3.5%; text-align: center; font-weight: bold; color: #64748b; }
+        .col-code { width: 16.5%; }
+        .col-end { width: 30%; }
+        .col-vistoriador { width: 15%; font-weight: 600; color: #047857; }
+        .col-status { width: 27%; }
+        .col-local { width: 8%; text-align: center; }
+        .waze-btn {
+          display: inline-block;
+          background: #2563eb;
+          color: #ffffff !important;
+          text-decoration: none !important;
+          padding: 2.5px 7px;
+          border-radius: 4px;
+          font-weight: 800;
+          font-size: 9px;
+          letter-spacing: 0.3px;
+          white-space: nowrap;
+        }
         .badge {
           display: inline-block;
           padding: 2px 6px;
@@ -1207,13 +1204,13 @@ export const printGeneralReport = ({
           <div class="donut-wrapper">
             <div class="donut-svg-box">
               <svg viewBox="0 0 36 36" class="donut-svg">
-                <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#ef4444" stroke-width="4.2"></circle>
-                <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#10b981" stroke-width="4.2" stroke-dasharray="${operantesPercent} ${100 - operantesPercent}" stroke-dashoffset="25"></circle>
+                <g transform="rotate(-90 18 18)">
+                  <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#ef4444" stroke-width="4.2"></circle>
+                  <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#10b981" stroke-width="4.2" stroke-dasharray="${operantesPercent} ${100 - operantesPercent}" stroke-dashoffset="25"></circle>
+                </g>
+                <text x="18" y="16.5" text-anchor="middle" dominant-baseline="central" font-size="6.8" font-weight="900" fill="#0f172a">${operantesPercent}%</text>
+                <text x="18" y="22.5" text-anchor="middle" dominant-baseline="central" font-size="4.2" font-weight="800" fill="#64748b">OK</text>
               </svg>
-              <div class="donut-center-text">
-                <span class="donut-percent">${operantesPercent}%</span>
-                <span class="donut-sub">OK</span>
-              </div>
             </div>
             <div class="donut-legend">
               <div class="legend-item text-green">
@@ -1242,6 +1239,7 @@ export const printGeneralReport = ({
               <th class="col-end">Endereço e Referência</th>
               <th class="col-vistoriador">Vistoriador</th>
               <th class="col-status">Situação Operacional / Observações</th>
+              <th class="col-local text-center">Local</th>
             </tr>
           </thead>
           <tbody>
@@ -1310,6 +1308,7 @@ export const printCaesbReport = ({
     const lat = typeof h.numLatitude === 'number' ? h.numLatitude.toFixed(6) : (h.numLatitude || '');
     const lng = typeof h.numLongitude === 'number' ? h.numLongitude.toFixed(6) : (h.numLongitude || '');
     const coordStr = (lat && lng && lat !== '-' && lng !== '-') ? `${lat}, ${lng}` : '';
+    const wazeLink = (lat && lng && lat !== '-' && lng !== '-') ? `https://waze.com/ul?ll=${lat},${lng}&navigate=yes` : '';
 
     return `
       <tr>
@@ -1331,6 +1330,9 @@ export const printCaesbReport = ({
             <div class="prob-name">${prob || 'Defeito não especificado'}</div>
             ${obs ? `<div class="obs-box"><em>Obs: ${obs}</em></div>` : ''}
           </div>
+        </td>
+        <td class="col-local text-center">
+          ${wazeLink ? `<a href="${wazeLink}" target="_blank" class="waze-btn" title="Abrir localização no Waze">Waze</a>` : '-'}
         </td>
       </tr>
     `;
@@ -1574,23 +1576,46 @@ export const printCaesbReport = ({
           font-weight: 600;
         }
         .caesb-banner {
-          background: #ecfdf5;
-          border: 1.5px solid #a7f3d0;
+          background: #fef2f2;
+          border: 1.5px solid #f87171;
           border-radius: 6px;
-          padding: 8px 12px;
+          padding: 8px 14px;
           margin-bottom: 12px;
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
-        .caesb-banner strong { color: #065f46; font-size: 12px; }
-        .caesb-badge {
-          background: #047857;
-          color: #ffffff;
-          padding: 4px 10px;
-          border-radius: 6px;
+        .caesb-banner-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .caesb-count-box {
+          font-size: 26px;
+          font-weight: 900;
+          color: #dc2626;
+          line-height: 1;
+        }
+        .caesb-banner-title {
+          font-size: 11.5px;
+          font-weight: 900;
+          color: #991b1b;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .caesb-banner-sub {
+          font-size: 9.5px;
+          color: #475569;
+          margin-top: 1px;
+        }
+        .caesb-city-badge {
+          font-size: 9.5px;
           font-weight: 800;
-          font-size: 12px;
+          color: #b45309;
+          background: #fef3c7;
+          border: 1px solid #fde68a;
+          padding: 3px 8px;
+          border-radius: 4px;
         }
 
         .bar-container {
@@ -1637,10 +1662,23 @@ export const printCaesbReport = ({
           vertical-align: middle;
         }
         .data-table tbody tr:nth-child(even) { background: #fafafa; }
-        .col-seq { width: 4%; text-align: center; font-weight: bold; color: #64748b; }
-        .col-code { width: 18%; }
-        .col-end { width: 38%; }
-        .col-prob { width: 40%; }
+        .col-seq { width: 3.5%; text-align: center; font-weight: bold; color: #64748b; }
+        .col-code { width: 17%; }
+        .col-end { width: 34.5%; }
+        .col-prob { width: 37%; }
+        .col-local { width: 8%; text-align: center; }
+        .waze-btn {
+          display: inline-block;
+          background: #2563eb;
+          color: #ffffff !important;
+          text-decoration: none !important;
+          padding: 2.5px 7px;
+          border-radius: 4px;
+          font-weight: 800;
+          font-size: 9px;
+          letter-spacing: 0.3px;
+          white-space: nowrap;
+        }
         .coord-text { font-family: monospace; font-size: 9px; color: #1e3a8a; font-weight: bold; margin-top: 2px; }
         .sub-text { font-size: 9.5px; color: #64748b; }
         .date-text { font-size: 9px; color: #475569; margin-top: 2px; }
@@ -1942,13 +1980,29 @@ export const printCaesbReport = ({
         <div class="header-title-box">
           <div class="inst-cbmdf">Corpo de Bombeiros Militar do Distrito Federal</div>
           <div class="inst-sub">SEHUR / GPCIU</div>
-          <div class="doc-title">Relatório de Vistoria de Hidrantes Urbanos</div>
+          <div class="doc-title">Relatório de Alterações e Manutenção - CAESB</div>
+          <div class="legal-term">Encaminhamento Institucional para Intervenção Preventiva e Corretiva • CBMDF / CAESB</div>
           <div class="doc-meta">
             <span><strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
             ${currentMission ? `<span><strong>Missão:</strong> ${currentMission.name}</span>` : ''}
             <span><strong>Emissão:</strong> ${nowStr}</span>
           </div>
         </div>
+      </div>
+
+      <div class="caesb-banner avoid-break">
+        <div class="caesb-banner-left">
+          <div class="caesb-count-box">${caesbData.length}</div>
+          <div>
+            <div class="caesb-banner-title">Total de Hidrantes para Reparo</div>
+            <div class="caesb-banner-sub">Encaminhamento para manutenção preventiva e corretiva CAESB</div>
+          </div>
+        </div>
+        ${(isMultiCity && cityOperabilityStats.filter(c => c.total > 0).length > 0) ? `
+          <div class="caesb-city-badge">
+            📍 ${cityOperabilityStats.filter(c => c.total > 0).length} cidades com demanda de reparo
+          </div>
+        ` : ''}
       </div>
 
       ${multiCityHtml}
@@ -1963,6 +2017,7 @@ export const printCaesbReport = ({
               <th class="col-code">Código / Data / GPS</th>
               <th class="col-end">Endereço e Ponto de Referência</th>
               <th class="col-prob">Inconformidade / Defeito Normatizado</th>
+              <th class="col-local text-center">Local</th>
             </tr>
           </thead>
           <tbody>

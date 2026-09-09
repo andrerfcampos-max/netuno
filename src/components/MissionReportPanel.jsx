@@ -1313,14 +1313,14 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
                     <th className="px-3 py-3 min-w-[160px] print-border">ENDEREÇO E REF.</th>
                     <th className="px-3 py-3 w-28 sm:w-36 print-border">VISTORIADOR</th>
                     <th className="px-3 py-3 min-w-[200px] print-border">SITUAÇÃO / PROBLEMAS / OBS.</th>
-                    <th className="px-3 py-3 w-16 text-center print-border no-print">LOCAL</th>
+                    <th className="px-3 py-3 w-16 text-center print-border">LOCAL</th>
                   </tr>
                 ) : (
                   <tr>
                     <th className="px-3 py-3 w-28 sm:w-36 print-border">CÓDIGO / DATA</th>
                     <th className="px-3 py-3 min-w-[200px] print-border">ENDEREÇO E REF.</th>
                     <th className="px-3 py-3 min-w-[240px] print-border">PROBLEMAS / OBSERVAÇÕES</th>
-                    <th className="px-3 py-3 w-16 text-center print-border no-print">LOCAL</th>
+                    <th className="px-3 py-3 w-16 text-center print-border">LOCAL</th>
                   </tr>
                 )}
               </thead>
@@ -1405,7 +1405,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
                       )}
                       
                       {/* Localização Waze */}
-                      <td className="px-2 py-2.5 text-center print-border no-print align-middle">
+                      <td className="px-2 py-2.5 text-center print-border align-middle">
                         <a href={`https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}&navigate=yes`} target="_blank" rel="noreferrer" className="inline-block bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded text-xs font-bold transition-all whitespace-nowrap">
                           Waze
                         </a>
