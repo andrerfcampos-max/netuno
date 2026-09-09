@@ -31,6 +31,8 @@ import { isValidDFCoordinate } from './utils/geoUtils';
 import { extractProblemsList, isHidranteRemovido } from './utils/problemUtils';
 import { fixEncoding } from './utils/textUtils';
 import { exportGlobalDatabaseCSV } from './utils/exportGlobalCsv';
+import { getLastKnownLocation, startGlobalGeoTracking, subscribeLocation } from './utils/geoTracker';
+import { optimizeRouteEuclidean } from './utils/routeOptimization';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Raio da Terra em km
@@ -235,6 +237,18 @@ function App() {
   const [cartSelectionIds, setCartSelectionIds] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [userLocation, setUserLocation] = useState(() => getLastKnownLocation());
+
+  // Rastreamento Contínuo e Global de GPS
+  useEffect(() => {
+    startGlobalGeoTracking();
+    const unsub = subscribeLocation((loc) => {
+      if (loc && typeof loc.lat === 'number' && typeof loc.lng === 'number') {
+        setUserLocation(loc);
+      }
+    });
+    return () => unsub();
+  }, []);
   
   // Controle de Missões Persistentes
   const [missions, setMissions] = useState(loadMissions());
@@ -779,6 +793,21 @@ function App() {
     newMission.createdBy = currentUser?.matricula;
     newMission.createdByName = currentUser?.nome;
     newMission.updatedAt = new Date().toISOString();
+
+    // Pré-calcula orderedIds inicial otimizado via GPS se disponível imediatamente
+    const currentLoc = userLocation || getLastKnownLocation();
+    if (currentLoc && typeof currentLoc.lat === 'number' && typeof currentLoc.lng === 'number') {
+      const missionHydrants = hidrantes.filter(h => {
+        const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
+        const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+        const k3 = h._internalId ? String(h._internalId) : null;
+        return cartSelectionIds.some(id => String(id) === k1 || String(id) === k2 || String(id) === k3);
+      });
+      const initialOrdered = optimizeRouteEuclidean(missionHydrants, currentLoc.lat, currentLoc.lng);
+      if (initialOrdered.length > 0) {
+        newMission.orderedIds = initialOrdered.map(h => h.codHidrante || h._internalId || h.nomHidrante);
+      }
+    }
     
     setMissions(prev => {
       const updated = [...prev, newMission];
@@ -807,6 +836,7 @@ function App() {
     const updatedMission = {
       ...targetM,
       selectedIds: merged,
+      orderedIds: [], // Reseta para recalcular otimizado para o novo conjunto
       updatedAt: new Date().toISOString()
     };
     setMissions(prev => {
@@ -2164,6 +2194,7 @@ function App() {
           <ErrorBoundary>
             <MapComponent 
               hidrantes={mapHidrantes} 
+              userLocation={userLocation}
               onInspect={handleInspect}
               onEdit={(h) => setEditingHydrante(h)}
               onEditInspection={handleEditInspection}
@@ -2243,6 +2274,7 @@ function App() {
           <div id="modulo-rota" className="w-full h-full max-w-5xl mx-auto flex-1 min-h-0 border border-slate-700 rounded-xl overflow-hidden flex flex-col">
             <MissionRoutePanel 
               hidrantes={hidrantes}
+              userLocation={userLocation}
               selectedMissionIds={selectedMissionIds}
               completedMissionIds={completedMissionIds}
               currentMission={currentMission}

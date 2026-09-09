@@ -9,6 +9,12 @@ import {
   optimizeRouteEuclidean, 
   fetchOSRMAndOptimizeRoute 
 } from '../utils/routeOptimization';
+import { 
+  getLastKnownLocation, 
+  getFreshLocation, 
+  subscribeLocation, 
+  setCachedLocation 
+} from '../utils/geoTracker';
 
 // Fórmula de Haversine em km para compatibilidade interna
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -32,6 +38,7 @@ const MissionRoutePanel = ({
   selectedMissionIds = [], 
   completedMissionIds = [], 
   currentMission = null, 
+  userLocation: propUserLocation = null,
   onUpdateMission, 
   onViewOnMap,
   onClose, 
@@ -51,50 +58,28 @@ const MissionRoutePanel = ({
   const [drivingMetrics, setDrivingMetrics] = useState({});
   const [isTrafficOptimized, setIsTrafficOptimized] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [userLocation, setUserLocation] = useState(null);
+  const [userLocation, setUserLocation] = useState(() => propUserLocation || getLastKnownLocation());
+  const hasRealGpsAnchorRef = useRef(Boolean(propUserLocation || getLastKnownLocation()));
   const lastOptimizedIdsRef = useRef('');
   const lastAnchorLocationRef = useRef(null);
+  const isInitialMountRef = useRef(true);
 
-  // Sincronização GPS Ativa
+  // Sincronização GPS com prop e rastreador global
   useEffect(() => {
-    let watchId;
-    const startWatching = () => {
-      if ('geolocation' in navigator) {
-        watchId = navigator.geolocation.watchPosition(
-          (pos) => {
-            if (pos?.coords) {
-              setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-            }
-          },
-          (err) => console.warn('Erro no GPS', err),
-          { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
-        );
+    if (propUserLocation && typeof propUserLocation.lat === 'number' && typeof propUserLocation.lng === 'number') {
+      setUserLocation(propUserLocation);
+      hasRealGpsAnchorRef.current = true;
+    }
+  }, [propUserLocation]);
+
+  useEffect(() => {
+    const unsub = subscribeLocation((loc) => {
+      if (loc && typeof loc.lat === 'number' && typeof loc.lng === 'number') {
+        setUserLocation(loc);
+        hasRealGpsAnchorRef.current = true;
       }
-    };
-    
-    startWatching();
-    
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        if ('geolocation' in navigator) {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              if (pos?.coords) {
-                setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-              }
-            },
-            () => {},
-            { enableHighAccuracy: true, timeout: 4000 }
-          );
-        }
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-    
-    return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
+    });
+    return () => unsub();
   }, []);
 
   // Conjunto de IDs selecionados normalizados em string
@@ -139,8 +124,91 @@ const MissionRoutePanel = ({
     });
   }, [missionHydrants, completedIdsSet]);
 
-  // Algoritmo Híbrido Estável de Alta Performance (Instantâneo Euclidiano + OSRM ATSP 2-Opt)
-  // Estabilizado contra ruído de GPS para prevenir reordenação contínua da lista em campo
+  // Motor Central de Otimização Tática (0ms Instantâneo Euclidiano + Refinamento OSRM ATSP)
+  const runRouteOptimization = async (overrideLat = null, overrideLng = null, isSilent = true) => {
+    if (pendingHydrants.length === 0) return;
+    setIsOptimizing(true);
+
+    let anchorLat = overrideLat;
+    let anchorLng = overrideLng;
+
+    // 1. Prioriza coordenadas passadas expressamente ou do GPS atual / cache síncrono
+    if (anchorLat === null || anchorLng === null) {
+      const loc = userLocation || propUserLocation || getLastKnownLocation();
+      if (loc && typeof loc.lat === 'number' && typeof loc.lng === 'number') {
+        anchorLat = loc.lat;
+        anchorLng = loc.lng;
+        hasRealGpsAnchorRef.current = true;
+      }
+    }
+
+    // 2. Se ainda não possui GPS confiável, busca fix rápido com timeout curto
+    if (anchorLat === null || anchorLng === null) {
+      const fresh = await getFreshLocation(2500);
+      if (fresh && typeof fresh.lat === 'number' && typeof fresh.lng === 'number') {
+        anchorLat = fresh.lat;
+        anchorLng = fresh.lng;
+        setUserLocation(fresh);
+        hasRealGpsAnchorRef.current = true;
+      }
+    }
+
+    // 3. Fallback seguro somente se o GPS estiver estritamente desligado ou negado
+    if (anchorLat === null || anchorLng === null) {
+      anchorLat = lastInspectedCoords?.lat || pendingHydrants[0]?.numLatitude;
+      anchorLng = lastInspectedCoords?.lng || pendingHydrants[0]?.numLongitude;
+    }
+
+    if (anchorLat === null || anchorLng === null) {
+      setIsOptimizing(false);
+      return;
+    }
+
+    lastAnchorLocationRef.current = { lat: anchorLat, lng: anchorLng };
+
+    // 1. Ordenação Instantânea Euclidiana (0ms) a partir da localização REAL do vistoriador
+    const fastOrdered = optimizeRouteEuclidean(pendingHydrants, anchorLat, anchorLng);
+    setPendingRoute(fastOrdered);
+    const sig = pendingHydrants.map(h => h.codHidrante || h._internalId || h.nomHidrante).join(',');
+    lastOptimizedIdsRef.current = sig;
+
+    if (onUpdateMission) {
+      onUpdateMission({ orderedIds: fastOrdered.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
+    }
+
+    // 2. Refinamento OSRM ATSP com sentidos de vias e trânsito real
+    const CHUNK_LIMIT = 30;
+    const immediateBatch = fastOrdered.slice(0, CHUNK_LIMIT);
+    const remainingBatch = fastOrdered.slice(CHUNK_LIMIT);
+
+    try {
+      const osrmResult = await fetchOSRMAndOptimizeRoute(immediateBatch, anchorLat, anchorLng);
+      if (osrmResult.route && osrmResult.route.length > 0) {
+        const updatedRoute = [...osrmResult.route, ...remainingBatch];
+        setPendingRoute(updatedRoute);
+        setDrivingMetrics(osrmResult.drivingMetrics);
+        setIsTrafficOptimized(osrmResult.isTrafficMode);
+        if (onUpdateMission) {
+          onUpdateMission({ orderedIds: updatedRoute.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
+        }
+        if (!isSilent) {
+          if (osrmResult.isTrafficMode) {
+            toast.success('🚗 Rota recalculada com sentidos de vias e trânsito real!');
+          } else {
+            toast.info('⚡ Rota recalculada por proximidade instantânea.');
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao otimizar rota com OSRM:', err);
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
+  const currentMissionId = currentMission?.id;
+
+  // Auto-otimização instantânea na abertura da rota ou troca de missão
   useEffect(() => {
     if (pendingHydrants.length === 0) {
       setPendingRoute([]);
@@ -156,9 +224,8 @@ const MissionRoutePanel = ({
       pendingHydrants.map(h => String(h.codHidrante || h._internalId || h.nomHidrante))
     );
 
-    // 1. Preservação de Rota Existente:
-    // Se a rota pendente já existe e nenhum hidrante novo foi adicionado (apenas hidrantes concluídos foram removidos),
-    // mantemos rigorosamente a ordem atual dos hidrantes restantes para prevenir qualquer reordenação da lista.
+    // 1. Preservação de Rota em Andamento:
+    // Se o vistoriador estiver realizando vistorias na mesma sessão, mantém rigorosamente a ordem dos restantes
     if (pendingRoute.length > 0) {
       const remainingRoute = pendingRoute.filter(h => {
         const k = String(h.codHidrante || h._internalId || h.nomHidrante);
@@ -176,164 +243,39 @@ const MissionRoutePanel = ({
       }
     }
 
-    // 2. Se a rota atual estiver vazia mas a missão já possui orderedIds salvos, inicializa respeitando essa ordem
-    if (pendingRoute.length === 0 && currentMission?.orderedIds && currentMission.orderedIds.length > 0) {
-      const orderedMap = new Map();
-      pendingHydrants.forEach(h => {
-        const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-        const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-        const k3 = h._internalId ? String(h._internalId) : null;
-        if (k1) orderedMap.set(k1, h);
-        if (k2) orderedMap.set(k2, h);
-        if (k3) orderedMap.set(k3, h);
-      });
+    // 2. Abertura da Rota / Troca de Missão / Novos Hidrantes Adicionados:
+    // Executa automaticamente o cálculo mais otimizado a partir do GPS real do vistoriador
+    const sig = pendingHydrants.map(h => h.codHidrante || h._internalId || h.nomHidrante).join(',');
+    if (lastOptimizedIdsRef.current !== sig || isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      runRouteOptimization(null, null, true);
+    }
+  }, [pendingHydrants, currentMissionId]);
 
-      const preOrdered = [];
-      const seen = new Set();
-      currentMission.orderedIds.forEach(id => {
-        const h = orderedMap.get(String(id));
-        if (h && !seen.has(h)) {
-          seen.add(h);
-          preOrdered.push(h);
-        }
-      });
-      pendingHydrants.forEach(h => {
-        if (!seen.has(h)) {
-          seen.add(h);
-          preOrdered.push(h);
-        }
-      });
-
-      if (preOrdered.length === pendingHydrants.length && preOrdered.length > 0) {
-        setPendingRoute(preOrdered);
+  // Se a rota inicial foi traçada antes da fixação do GPS (cold start),
+  // recalcula automaticamente assim que o primeiro sinal de GPS real chegar
+  useEffect(() => {
+    if (!hasRealGpsAnchorRef.current && userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
+      if (pendingHydrants.length > 0) {
+        hasRealGpsAnchorRef.current = true;
+        runRouteOptimization(userLocation.lat, userLocation.lng, true);
       }
     }
+  }, [userLocation]);
 
-    const startLat = userLocation?.lat || lastInspectedCoords?.lat || pendingHydrants[0].numLatitude;
-    const startLng = userLocation?.lng || lastInspectedCoords?.lng || pendingHydrants[0].numLongitude;
-
-    const pendingSignature = pendingHydrants.map(h => h.codHidrante || h._internalId || h.nomHidrante).join(',');
-
-    // Se já calculamos para este conjunto exato de hidrantes, não reordena!
-    if (lastOptimizedIdsRef.current === pendingSignature) {
-      return;
-    }
-
-    // 3. Primeira Carga / Novo Conjunto: Ordenação inicial rápida espacial
-    const fastOrdered = optimizeRouteEuclidean(pendingHydrants, startLat, startLng);
-    setPendingRoute(fastOrdered);
-    lastOptimizedIdsRef.current = pendingSignature;
-    lastAnchorLocationRef.current = { lat: startLat, lng: startLng };
-
-    if (onUpdateMission) {
-      onUpdateMission({ orderedIds: fastOrdered.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
-    }
-
-    let isCancelled = false;
-    const refineWithATSP = async () => {
-      setIsOptimizing(true);
-      const CHUNK_LIMIT = 30;
-      const immediateBatch = fastOrdered.slice(0, CHUNK_LIMIT);
-      const remainingBatch = fastOrdered.slice(CHUNK_LIMIT);
-
-      try {
-        const osrmResult = await fetchOSRMAndOptimizeRoute(immediateBatch, startLat, startLng);
-        
-        if (!isCancelled) {
-          if (osrmResult.route && osrmResult.route.length > 0) {
-            const refinedRoute = [...osrmResult.route, ...remainingBatch];
-            setPendingRoute(refinedRoute);
-            setDrivingMetrics(osrmResult.drivingMetrics);
-            setIsTrafficOptimized(osrmResult.isTrafficMode);
-            if (onUpdateMission) {
-              onUpdateMission({ orderedIds: refinedRoute.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Erro ao otimizar rota com OSRM:', err);
-      } finally {
-        if (!isCancelled) {
-          setIsOptimizing(false);
-        }
-      }
-    };
-
-    const timer = setTimeout(refineWithATSP, 300);
-    return () => {
-      isCancelled = true;
-      clearTimeout(timer);
-    };
-  }, [pendingHydrants, lastInspectedCoords?.lat, lastInspectedCoords?.lng]);
-
-  // Função para forçar recálculo tático com base no GPS atual e trânsito
-  const handleRecalculateRoute = () => {
+  // Função para forçar recálculo tático manual
+  const handleRecalculateRoute = async () => {
     if (pendingHydrants.length === 0) return;
-    lastOptimizedIdsRef.current = '';
-    lastAnchorLocationRef.current = null;
     setIsOptimizing(true);
+    lastOptimizedIdsRef.current = '';
 
-    const executeRecalculation = async (lat, lng) => {
-      lastAnchorLocationRef.current = { lat, lng };
-      const fastOrdered = optimizeRouteEuclidean(pendingHydrants, lat, lng);
-      setPendingRoute(fastOrdered);
-      if (onUpdateMission) {
-        onUpdateMission({ orderedIds: fastOrdered.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
-      }
-
-      const CHUNK_LIMIT = 30;
-      const immediateBatch = fastOrdered.slice(0, CHUNK_LIMIT);
-      const remainingBatch = fastOrdered.slice(CHUNK_LIMIT);
-
-      try {
-        const osrmResult = await fetchOSRMAndOptimizeRoute(immediateBatch, lat, lng);
-        if (osrmResult.route && osrmResult.route.length > 0) {
-          const updatedRoute = [...osrmResult.route, ...remainingBatch];
-          setPendingRoute(updatedRoute);
-          setDrivingMetrics(osrmResult.drivingMetrics);
-          setIsTrafficOptimized(osrmResult.isTrafficMode);
-          lastOptimizedIdsRef.current = pendingHydrants.map(h => h.codHidrante || h._internalId || h.nomHidrante).join(',');
-          if (onUpdateMission) {
-            onUpdateMission({ orderedIds: updatedRoute.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
-          }
-          if (osrmResult.isTrafficMode) {
-            toast.success('🚗 Rota recalculada com sentidos de vias e trânsito real!');
-          } else {
-            toast.info('⚡ Rota recalculada por proximidade instantânea.');
-          }
-        }
-      } catch (e) {
-        console.warn('Erro ao recalcular rota:', e);
-      } finally {
-        setIsOptimizing(false);
-      }
-    };
-
-    // Tenta obter GPS fresco e imediato do militar
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (pos?.coords) {
-            const freshLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            setUserLocation(freshLoc);
-            executeRecalculation(freshLoc.lat, freshLoc.lng);
-          } else {
-            const lat = userLocation?.lat || lastInspectedCoords?.lat || pendingHydrants[0].numLatitude;
-            const lng = userLocation?.lng || lastInspectedCoords?.lng || pendingHydrants[0].numLongitude;
-            executeRecalculation(lat, lng);
-          }
-        },
-        () => {
-          const lat = userLocation?.lat || lastInspectedCoords?.lat || pendingHydrants[0].numLatitude;
-          const lng = userLocation?.lng || lastInspectedCoords?.lng || pendingHydrants[0].numLongitude;
-          executeRecalculation(lat, lng);
-        },
-        { enableHighAccuracy: true, timeout: 3500 }
-      );
+    const fresh = await getFreshLocation(3500);
+    if (fresh && typeof fresh.lat === 'number' && typeof fresh.lng === 'number') {
+      setUserLocation(fresh);
+      hasRealGpsAnchorRef.current = true;
+      await runRouteOptimization(fresh.lat, fresh.lng, false);
     } else {
-      const lat = userLocation?.lat || lastInspectedCoords?.lat || pendingHydrants[0].numLatitude;
-      const lng = userLocation?.lng || lastInspectedCoords?.lng || pendingHydrants[0].numLongitude;
-      executeRecalculation(lat, lng);
+      await runRouteOptimization(null, null, false);
     }
   };
 

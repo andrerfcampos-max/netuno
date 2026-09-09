@@ -6,6 +6,7 @@ import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, E
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
+import { setCachedLocation, getLastKnownLocation } from '../utils/geoTracker';
 
 // Fix para ícones padrão do Leaflet não quebrarem
 delete L.Icon.Default.prototype._getIconUrl;
@@ -678,12 +679,14 @@ const MapComponent = ({
   onTriggerRouteFit = null,
   isRouteActiveOnMap = false,
   onCloseRouteOnMap = null,
-  onOpenInspectionHistory = null
+  onOpenInspectionHistory = null,
+  userLocation: propUserLocation = null
 }) => {
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [selectedHydrant, setSelectedHydrant] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
+  const [internalUserLocation, setInternalUserLocation] = useState(() => propUserLocation || getLastKnownLocation());
+  const userLocation = propUserLocation || internalUserLocation;
   const [dragOffsetY, setDragOffsetY] = useState(0);
   const touchStartY = useRef(0);
   const isDragging = useRef(false);
@@ -778,7 +781,8 @@ const MapComponent = ({
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             if (pos && pos.coords && typeof pos.coords.latitude === 'number' && typeof pos.coords.longitude === 'number') {
-              setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+              setInternalUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+              setCachedLocation(pos.coords);
             }
           },
           (err) => console.warn('Erro getCurrentPosition no MapComponent', err),
@@ -788,7 +792,8 @@ const MapComponent = ({
         watchId = navigator.geolocation.watchPosition(
           (pos) => {
             if (pos && pos.coords && typeof pos.coords.latitude === 'number' && typeof pos.coords.longitude === 'number') {
-              setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+              setInternalUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+              setCachedLocation(pos.coords);
             }
           },
           (err) => console.warn('Erro GPS no MapComponent', err),
