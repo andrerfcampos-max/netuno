@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-25",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -247,20 +247,40 @@
       "seq": 25,
       "conversationId": "112d918e-cd74-49ce-9a09-d556ef2f9c73",
       "description": "Comparar e ajustar relatorios PDF vs Tela incluindo coluna Waze",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-09T20:27:38.071Z",
       "startedAt": "2026-09-09T20:35:09.479Z",
-      "completedAt": null
+      "completedAt": "2026-09-09T20:40:01.346Z"
     },
     {
       "id": "TASK-26",
       "seq": 26,
       "conversationId": "f3105e12-a7f4-4eb7-b897-feb9557d45cc",
       "description": "Fix distance calculation oscillation and list reordering",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-09T20:30:47.341Z",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-09-09T20:40:02.074Z",
+      "completedAt": "2026-09-09T20:42:49.005Z"
+    },
+    {
+      "id": "TASK-27",
+      "seq": 27,
+      "conversationId": "1b8ecea8-c62b-4a8c-a1bc-41b8b704149c",
+      "description": "Refinamento do modo rota no mapa: plotagem condicional a rota aberta, aviso visual de rota ativa no mapa com botao fechar e remocao de hidrantes vistoriados da plotagem especial",
+      "status": "completed",
+      "createdAt": "2026-09-09T20:40:57.313Z",
+      "startedAt": "2026-09-09T20:42:51.569Z",
+      "completedAt": "2026-09-09T20:46:44.590Z"
+    },
+    {
+      "id": "TASK-28",
+      "seq": 28,
+      "conversationId": "7e1cade9-8741-40cc-a8f9-82ad52f5432e",
+      "description": "Fix distance calculation jitter and list reordering",
+      "status": "completed",
+      "createdAt": "2026-09-09T20:41:18.794Z",
+      "startedAt": "2026-09-09T20:46:46.004Z",
+      "completedAt": "2026-09-09T20:49:52.049Z"
     }
   ]
 }
