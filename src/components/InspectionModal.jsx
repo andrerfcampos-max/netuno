@@ -46,7 +46,7 @@ const DEFEITOS_OFICIAIS = [
   "Vazamento no flange (operante)"
 ];
 
-const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, currentUser, onDeleteHydrant }) => {
+const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, currentUser, onDeleteHydrant, onDeleteInspection }) => {
   // Pré-processamento dos dados existentes caso seja modo edição
   const initialData = useMemo(() => {
     // Se for cadastro de nova vistoria, SEMPRE inicia em branco
@@ -303,8 +303,13 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
 
     const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
 
-    if (!isHidranteNaoEncontrado && fotos.length === 0 && !isGestor && !isEditing) {
-      alert("⚠️ FOTO OBRIGATÓRIA: O vistoriador deve obrigatoriamente cadastrar a foto da vistoria (registre ao menos uma foto do problema ou do hidrante durante a descarga de água).");
+    // Regra: Perfil vistoriador deve cadastrar foto da vistoria obrigatoriamente no momento de cadastrar a vistoria. Gestor não.
+    if (!isGestor && !isEditing && (!fotos || fotos.filter(Boolean).length === 0)) {
+      if (isHidranteNaoEncontrado) {
+        alert("⚠️ FOTO OBRIGATÓRIA: O perfil vistoriador deve obrigatoriamente anexar ao menos uma foto comprobatória do local (mostrando a ausência ou remoção do hidrante).");
+      } else {
+        alert("⚠️ FOTO OBRIGATÓRIA: O perfil vistoriador deve obrigatoriamente cadastrar a foto da vistoria (registre ao menos uma foto do problema ou do hidrante durante a descarga de água).");
+      }
       return;
     }
 
@@ -637,7 +642,13 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
           <div className="flex flex-col gap-2.5 bg-slate-900/40 p-3 rounded-xl border border-slate-700/50">
             <div className="flex flex-col">
               <label className="font-bold text-slate-300 text-sm flex items-center justify-between">
-                <span>Registro Fotográfico {!isGestor && !isEditing && !isHidranteNaoEncontrado && <span className="text-red-500 font-bold ml-1">* (Obrigatório)</span>}</span>
+                <span>
+                  Registro Fotográfico {!isGestor && !isEditing ? (
+                    <span className="text-red-500 font-bold ml-1">* (Obrigatório)</span>
+                  ) : (
+                    <span className="text-slate-400 font-normal text-xs ml-1">(Opcional para Gestor)</span>
+                  )}
+                </span>
                 {fotos.length > 0 && (
                   <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/40">
                     {fotos.length} {fotos.length === 1 ? 'foto anexada' : 'fotos anexadas'}
@@ -645,9 +656,15 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
                 )}
               </label>
               <p className="text-xs text-amber-300/90 font-medium mt-0.5">
-                {isHidranteNaoEncontrado 
-                  ? 'Opcional: se desejar, registre foto do local onde o hidrante ficava.' 
-                  : 'Registre uma ou mais fotos do problema ou do hidrante durante a descarga de água.'}
+                {!isGestor && !isEditing ? (
+                  isHidranteNaoEncontrado 
+                    ? '⚠️ Obrigatório para vistoriador: registre foto comprobatória do local (mostrando ausência ou remoção do hidrante).' 
+                    : '⚠️ Obrigatório para vistoriador: registre ao menos uma foto do problema ou do hidrante durante a descarga de água.'
+                ) : (
+                  isHidranteNaoEncontrado 
+                    ? 'Opcional para Gestor: se desejar, registre foto do local onde o hidrante ficava.' 
+                    : 'Opcional para Gestor: adicione fotos do hidrante ou problemas identificados se desejar.'
+                )}
               </p>
             </div>
 
@@ -720,6 +737,22 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
         </div>
 
         <div className="p-3.5 bg-slate-900 border-t border-slate-700/80 flex gap-3 sticky bottom-0 z-10 shrink-0">
+          {isEditing && isGestor && onDeleteInspection && (
+            <button 
+              type="button"
+              onClick={() => {
+                if (window.confirm('Tem certeza de que deseja reverter/excluir o registro desta vistoria?')) {
+                  onDeleteInspection(hidrante);
+                  onClose();
+                }
+              }}
+              className="py-2.5 px-3 rounded-lg font-bold text-rose-400 bg-rose-950/40 border border-rose-500/40 hover:bg-rose-900/60 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              title="Excluir/Reverter esta vistoria"
+            >
+              <Trash2 size={16} />
+              <span className="hidden sm:inline">Excluir Vistoria</span>
+            </button>
+          )}
           <button 
             type="button"
             onClick={onClose}
