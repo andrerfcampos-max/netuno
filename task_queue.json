@@ -281,6 +281,16 @@
       "createdAt": "2026-09-09T20:41:18.794Z",
       "startedAt": "2026-09-09T20:46:46.004Z",
       "completedAt": "2026-09-09T20:49:52.049Z"
+    },
+    {
+      "id": "TASK-29",
+      "seq": 29,
+      "conversationId": "fb33e5eb-817e-4f47-be28-5d6f65f04be8",
+      "description": "Fix ReferenceError X is not defined",
+      "status": "completed",
+      "createdAt": "2026-09-09T21:00:20.946Z",
+      "startedAt": "2026-09-09T21:00:24.022Z",
+      "completedAt": "2026-09-09T21:01:09.821Z"
     }
   ]
 }
