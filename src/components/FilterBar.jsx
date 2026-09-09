@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, MapPin, AlertCircle, SlidersHorizontal, X, Check, Filter } from 'lucide-react';
-import SearchableSelect from './SearchableSelect';
 
 const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problemasAtivos = [], isVisible, currentUser, onLogout, filteredCount = null }) => {
   const filters = useMemo(() => {
@@ -15,16 +14,6 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
       problema: activeFilters?.problema || ''
     };
   }, [activeFilters]);
-
-  const cityOptions = useMemo(() => {
-    return [
-      { value: '', label: '🎯 DF Completo (Todas as Cidades / RAs)' },
-      ...(regions || []).map(r => {
-        const name = typeof r === 'object' && r ? r.name : r;
-        return { value: name, label: name };
-      })
-    ];
-  }, [regions]);
 
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
@@ -234,14 +223,21 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
                     </span>
                   )}
                 </div>
-                <SearchableSelect
-                  options={cityOptions}
+                <select 
+                  className="w-full h-8 px-2.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 truncate font-medium"
                   value={filters.ra}
-                  onChange={(val) => handleChange('ra', val)}
-                  placeholder="Buscar Cidade / RA (digite para filtrar)..."
-                  icon={MapPin}
-                  clearable={true}
-                />
+                  onChange={(e) => handleChange('ra', e.target.value)}
+                >
+                  <option value="">🎯 DF Completo (Todas as Cidades / RAs)</option>
+                  {regions.map(r => {
+                    const name = typeof r === 'object' && r ? r.name : r;
+                    return (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
 
               {/* 2. Busca Livre no Drawer */}
@@ -433,8 +429,8 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
           {/* 1. Filtro por RA */}
           <div className="flex flex-col gap-0.5 sm:col-span-1 lg:col-span-3">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 text-emerald-400">
-                <MapPin size={13} className="text-emerald-400 animate-pulse" />
+              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <MapPin size={12} className="text-emerald-400" />
                 Cidade / RA
               </label>
               {filters.ra ? (
@@ -447,14 +443,21 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
                 </span>
               )}
             </div>
-            <SearchableSelect
-              options={cityOptions}
+            <select 
+              className="min-h-[38px] px-2.5 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 truncate"
               value={filters.ra}
-              onChange={(val) => handleChange('ra', val)}
-              placeholder="Buscar Cidade / RA (ex: Ceilândia, Taguatinga)..."
-              icon={MapPin}
-              clearable={true}
-            />
+              onChange={(e) => handleChange('ra', e.target.value)}
+            >
+              <option value="">🎯 DF Completo (Todas as Cidades / RAs)</option>
+              {regions.map(r => {
+                const name = typeof r === 'object' && r ? r.name : r;
+                return (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                );
+              })}
+            </select>
           </div>
 
           {/* 2. Busca Textual (Geral) */}
