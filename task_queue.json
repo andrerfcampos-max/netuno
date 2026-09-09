@@ -330,10 +330,10 @@
       "seq": 33,
       "conversationId": "dd15cfc2-9ea7-4a35-9723-83ac76910da5",
       "description": "Sobreposicao de vistorias e historico restrito a gestores",
-      "status": "failed",
+      "status": "completed",
       "createdAt": "2026-09-09T21:08:54.306Z",
       "startedAt": "2026-09-09T21:12:57.151Z",
-      "completedAt": "2026-09-09T21:13:02.766Z",
+      "completedAt": "2026-09-09T21:20:29.849Z",
       "error": "Timed out waiting in queue"
     },
     {
