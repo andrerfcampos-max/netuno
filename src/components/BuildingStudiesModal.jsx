@@ -817,10 +817,11 @@ const BuildingTacticalCard = React.memo(function BuildingTacticalCard({
               href={`https://waze.com/ul?ll=${study.numLatitude},${study.numLongitude}&navigate=yes`}
               target="_blank"
               rel="noreferrer"
-              className="p-2 bg-sky-950/80 hover:bg-sky-900 border border-sky-500/40 text-sky-300 rounded-lg text-xs font-bold transition-all"
+              style={{ backgroundColor: '#2563eb' }}
+              className="p-2 bg-blue-600 hover:bg-blue-500 active:scale-95 border border-blue-400/40 text-white rounded-lg text-xs font-bold transition-all shadow"
               title="Navegar via Waze"
             >
-              <Navigation size={14} />
+              <Navigation size={14} className="text-white fill-white/20" />
             </a>
             <a
               href={`https://maps.google.com/?q=${study.numLatitude},${study.numLongitude}`}
@@ -890,14 +891,23 @@ function BuildingTacticalViewModal({
     if (!study) return [];
     if (study.hidrantesProximos && study.hidrantesProximos.length > 0) {
       const enriched = study.hidrantesProximos.map(h => {
-        if (h.lat && h.lng) return h;
+        let currentH = { ...h };
         if (Array.isArray(allHydrantes) && allHydrantes.length > 0) {
           const match = allHydrantes.find(ah => (ah.nomHidrante === h.codigo || ah.codHidrante === h.codigo));
-          if (match && isValidDFCoordinate(match.numLatitude, match.numLongitude)) {
-            return { ...h, lat: match.numLatitude, lng: match.numLongitude };
+          if (match) {
+            if ((!currentH.lat || !currentH.lng) && isValidDFCoordinate(match.numLatitude, match.numLongitude)) {
+              currentH.lat = match.numLatitude;
+              currentH.lng = match.numLongitude;
+            }
+            if (!currentH.pontoReferencia && (match.dscPontoReferencia || match.pontoReferencia)) {
+              currentH.pontoReferencia = (match.dscPontoReferencia || match.pontoReferencia).trim();
+            }
+            if (!currentH.endereco && match.dscEndereco) {
+              currentH.endereco = `${match.dscLocalidade || ''} - ${match.dscEndereco || ''}`.trim();
+            }
           }
         }
-        return h;
+        return currentH;
       });
       if (enriched.length >= 3 || !isValidDFCoordinate(study.numLatitude, study.numLongitude)) {
         return enriched.slice(0, 3);
@@ -1125,11 +1135,12 @@ function BuildingTacticalViewModal({
                     href={`https://waze.com/ul?ll=${study.numLatitude},${study.numLongitude}&navigate=yes`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-700 hover:bg-sky-600 text-white font-bold text-xs rounded-lg shadow-md transition-all active:scale-95"
+                    style={{ backgroundColor: '#2563eb' }}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-extrabold text-xs rounded-lg shadow-md transition-all border border-blue-400/40"
                     title="Navegar com viatura via Waze"
                   >
-                    <Navigation size={14} />
-                    <span>Waze</span>
+                    <Navigation size={14} className="text-white fill-white/20" />
+                    <span className="font-black text-white">Waze</span>
                   </a>
                 </div>
               </div>
@@ -1293,9 +1304,18 @@ function BuildingTacticalViewModal({
                             {h.distancia || '-'}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-300 leading-snug line-clamp-2" title={h.endereco}>
-                          {h.endereco}
-                        </p>
+                        <div className="space-y-1">
+                          <p className="text-[11px] text-slate-300 leading-snug" title={h.endereco}>
+                            <span className="text-slate-400 font-medium">📍 Endereço: </span>
+                            {h.endereco || '-'}
+                          </p>
+                          {(h.pontoReferencia || h.dscPontoReferencia) && (
+                            <p className="text-[11px] text-amber-300/95 leading-snug bg-amber-950/30 border border-amber-500/30 rounded-md px-2 py-1 flex items-start gap-1" title={h.pontoReferencia || h.dscPontoReferencia}>
+                              <span className="text-amber-400 font-bold shrink-0">🚩 Ref:</span>
+                              <span className="font-medium text-amber-200">{h.pontoReferencia || h.dscPontoReferencia}</span>
+                            </p>
+                          )}
+                        </div>
                       </div>
                       
                       {h.lat && h.lng ? (
@@ -1303,11 +1323,12 @@ function BuildingTacticalViewModal({
                           href={`https://waze.com/ul?ll=${h.lat},${h.lng}&navigate=yes`}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center justify-center gap-1.5 w-full py-1.5 px-2 bg-sky-950 hover:bg-sky-900 border border-sky-500/40 hover:border-sky-400 text-sky-300 rounded-lg text-xs font-bold transition-all active:scale-95 shadow"
+                          style={{ backgroundColor: '#2563eb' }}
+                          className="flex items-center justify-center gap-1.5 w-full py-2 px-2.5 bg-blue-600 hover:bg-blue-500 active:scale-98 text-white rounded-lg text-xs font-extrabold transition-all shadow-md border border-blue-400/40 tracking-wide mt-1"
                           title={`Navegar no Waze até o hidrante ${h.codigo}`}
                         >
-                          <Navigation size={13} className="text-sky-400" />
-                          <span>Navegar no Waze</span>
+                          <Navigation size={14} className="shrink-0 text-white fill-white/20" />
+                          <span className="truncate font-black text-white">NAVEGAR NO WAZE</span>
                         </a>
                       ) : (
                         <span className="text-[10px] text-slate-500 italic text-center py-1">-</span>
@@ -1661,6 +1682,7 @@ function BuildingStudyFormModal({
       hidrantesProximos: nearest.map(h => ({
         codigo: h.codigo,
         endereco: h.endereco,
+        pontoReferencia: h.pontoReferencia || '',
         distancia: h.distancia,
         diametro: h.diametro,
         status: h.status,
@@ -2309,6 +2331,11 @@ function BuildingStudyFormModal({
                           </span>
                         </div>
                         <p className="text-slate-400 text-[11px] truncate mt-0.5">{h.endereco}</p>
+                        {(h.pontoReferencia || h.dscPontoReferencia) && (
+                          <p className="text-amber-300/90 text-[10px] truncate mt-0.5 font-medium">
+                            <span className="text-amber-400 font-bold">Ref: </span>{h.pontoReferencia || h.dscPontoReferencia}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-cyan-300 font-bold bg-cyan-950 px-2 py-0.5 rounded border border-cyan-500/30">
@@ -2319,10 +2346,11 @@ function BuildingStudyFormModal({
                             href={`https://waze.com/ul?ll=${h.lat},${h.lng}&navigate=yes`}
                             target="_blank"
                             rel="noreferrer"
-                            className="p-1.5 bg-sky-950 hover:bg-sky-900 border border-sky-500/40 text-sky-300 rounded-lg text-xs font-bold transition-all shadow"
+                            style={{ backgroundColor: '#2563eb' }}
+                            className="p-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white border border-blue-400/40 rounded-lg text-xs font-bold transition-all shadow"
                             title={`Abrir Waze para ${h.codigo}`}
                           >
-                            <Navigation size={13} />
+                            <Navigation size={13} className="text-white" />
                           </a>
                         )}
                       </div>

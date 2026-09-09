@@ -345,9 +345,11 @@ export const findNearestHydrantsForBuilding = (lat, lng, allHydrants = [], limit
   
   const hydrantsWithDist = validHydrants.map(h => {
     const dist = calculateDistanceMeters(lat, lng, h.numLatitude, h.numLongitude);
+    const pontoRef = (h.dscPontoReferencia || h.pontoReferencia || '').trim();
     return {
       codigo: h.nomHidrante || h.codHidrante || 'S/C',
-      endereco: `${h.dscLocalidade || ''} - ${h.dscEndereco || ''} ${h.pontoReferencia ? `(${h.pontoReferencia})` : ''}`.trim(),
+      endereco: `${h.dscLocalidade || ''} - ${h.dscEndereco || ''}`.trim(),
+      pontoReferencia: pontoRef,
       distancia: dist < 1000 ? `${Math.round(dist)}m` : `${(dist / 1000).toFixed(2)}km`,
       distanciaNum: dist,
       diametro: h.diametro || '100mm',
