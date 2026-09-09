@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, Suspense, lazy } from 'react';
-import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw, FileSpreadsheet, Bell, History } from 'lucide-react';
+import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw, FileSpreadsheet, Bell, History, Route as RouteIcon, X } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
@@ -318,6 +318,16 @@ function App() {
   // Centraliza o hidrante no mapa e sincroniza automaticamente a cidade (RA) do filtro
   const handleFocusHydrantOnMap = (h) => {
     if (!h) return;
+    const isPartOfActiveRoute = Boolean(
+      isRouteActiveOnMap && allMissionRouteHydrants?.some(mh => 
+        (mh._internalId && h._internalId && mh._internalId === h._internalId) ||
+        (mh.codHidrante && h.codHidrante && mh.codHidrante === h.codHidrante) ||
+        (mh.nomHidrante && h.nomHidrante && mh.nomHidrante === h.nomHidrante)
+      )
+    );
+    if (!isPartOfActiveRoute && isRouteActiveOnMap) {
+      setIsRouteActiveOnMap(false);
+    }
     const hydrantRA = normalizeRAName(h.dscLocalidade);
     if (hydrantRA && activeFilters?.ra !== hydrantRA) {
       const newFilters = { ...activeFilters, ra: hydrantRA };
@@ -374,22 +384,26 @@ function App() {
   }, [activeFilters?.ra]);
 
   const mapHidrantes = useMemo(() => {
-    let list = isCitySelected ? [...filteredList] : [];
-
-    // Plotagem especial dos hidrantes da rota: APENAS se a rota estiver ativa/aberta no mapa
-    // Inclui TODOS os hidrantes da missão ativa (concluídos e faltantes)
+    // REGRA DE EXCLUSIVIDADE MÚTUA ESTREITA:
+    // Se a Rota de Missão estiver ativa no mapa, o mapa plota ESTRITAMENTE os hidrantes da missão ativa (concluídos e faltantes).
+    // Nenhum hidrante de filtros externos (outras cidades/RAs) é plotado para garantir zero confusão ao operador.
     if (isRouteActiveOnMap && allMissionRouteHydrants && allMissionRouteHydrants.length > 0) {
-      allMissionRouteHydrants.forEach(mh => {
+      let list = [...allMissionRouteHydrants];
+      if (mapCenterPosition) {
         const alreadyInList = list.some(h => 
-          (h._internalId && mh._internalId && h._internalId === mh._internalId) ||
-          (h.codHidrante && mh.codHidrante && h.codHidrante === mh.codHidrante) ||
-          (h.nomHidrante && mh.nomHidrante && h.nomHidrante === mh.nomHidrante)
+          (h._internalId && mapCenterPosition._internalId && h._internalId === mapCenterPosition._internalId) ||
+          (h.codHidrante && mapCenterPosition.codHidrante && h.codHidrante === mapCenterPosition.codHidrante) ||
+          (h.nomHidrante && mapCenterPosition.nomHidrante && h.nomHidrante === mapCenterPosition.nomHidrante)
         );
         if (!alreadyInList) {
-          list.push(mh);
+          list.push(mapCenterPosition);
         }
-      });
+      }
+      return list;
     }
+
+    // MODO EXPLORAÇÃO / FILTROS GERAIS:
+    let list = isCitySelected ? [...filteredList] : [];
 
     if (mapCenterPosition) {
       const alreadyInList = list.some(h => 
@@ -1004,6 +1018,9 @@ function App() {
 
   const handleFilterChange = (filters) => {
     setMapCenterPosition(null);
+    if (isRouteActiveOnMap) {
+      setIsRouteActiveOnMap(false);
+    }
     setActiveFilters(filters);
     try {
       localStorage.setItem('netuno_saved_filters', JSON.stringify(filters));
@@ -1927,21 +1944,87 @@ function App() {
 
 
 
-      {/* MÓDULO 1: BARRA DE FILTROS FIXA NO TOPO (OCULTA APENAS NA TELA DE ROTA PARA GANHO DE ESPAÇO) */}
+      {/* MÓDULO 1: BARRA DE FILTROS OU PAINEL TÁTICO DE ROTA NO TOPO */}
       {!isMapFullscreen && activeView !== 'route' && (
-        <div className="flex-shrink-0 px-2 pt-1.5 z-20 w-full">
-          <FilterBar 
-            activeFilters={activeFilters}
-            onFilterChange={handleFilterChange} 
-            regions={regions} 
-            anos={anosVistoria} 
-            problemasAtivos={problemasVistoria} 
-            isVisible={!isMapFullscreen} 
-            currentUser={currentUser} 
-            onLogout={handleLogout}
-            filteredCount={filteredList.length}
-          />
-        </div>
+        isRouteActiveOnMap && currentMission ? (
+          <div className="flex-shrink-0 px-2 pt-1.5 z-20 w-full">
+            <div className="bg-slate-900/98 border border-cyan-500/80 shadow-xl rounded-xl p-2.5 sm:px-4 sm:py-2.5 flex flex-wrap items-center justify-between gap-2.5 backdrop-blur-md">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="relative flex h-3.5 w-3.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-cyan-500"></span>
+                </span>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-400">Modo Rota de Missão</span>
+                    <span className="text-slate-600 hidden sm:inline">•</span>
+                    <span className="text-xs sm:text-sm font-extrabold text-white truncate max-w-[150px] sm:max-w-[280px]">
+                      {currentMission.name || 'Missão Ativa'}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-300 font-medium truncate">
+                    Exibindo exclusivamente os {allMissionRouteHydrants?.length || 0} hidrantes desta rota no mapa
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <span className="bg-emerald-950/90 border border-emerald-500/60 text-emerald-300 text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm">
+                    ✓ {completedMissionIds.filter(id => (currentMission?.selectedIds || []).map(String).includes(String(id))).length} concluídos
+                  </span>
+                  <span className="bg-cyan-950/90 border border-cyan-500/60 text-cyan-300 text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm">
+                    {pendingRouteHydrants.length} faltantes
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setRouteFitTrigger(Date.now())}
+                  className="flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
+                  title="Centralizar no seu GPS e nos hidrantes mais próximos da rota"
+                >
+                  <Navigation size={13} className="text-cyan-400" />
+                  <span className="hidden sm:inline">Focar Próximos</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveView('route')}
+                  className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
+                  title="Abrir lista completa da missão"
+                >
+                  <RouteIcon size={13} className="text-cyan-300" />
+                  <span className="hidden sm:inline">Lista da Rota</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsRouteActiveOnMap(false)}
+                  className="flex items-center gap-1.5 bg-rose-950/90 hover:bg-rose-900 border border-rose-500/80 hover:border-rose-400 text-rose-200 px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-black transition-all cursor-pointer shadow-md active:scale-95"
+                  title="Sair do modo rota e reativar a navegação por filtros de cidades"
+                >
+                  <X size={14} className="text-rose-300" />
+                  <span>Sair da Rota / Ver Cidades</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-shrink-0 px-2 pt-1.5 z-20 w-full">
+            <FilterBar 
+              activeFilters={activeFilters}
+              onFilterChange={handleFilterChange} 
+              regions={regions} 
+              anos={anosVistoria} 
+              problemasAtivos={problemasVistoria} 
+              isVisible={!isMapFullscreen} 
+              currentUser={currentUser} 
+              onLogout={handleLogout}
+              filteredCount={filteredList.length}
+            />
+          </div>
+        )
       )}
 
       {/* CONTROLES DE VISUALIZAÇÃO NO DESKTOP (LOGO ABAIXO DOS FILTROS) */}

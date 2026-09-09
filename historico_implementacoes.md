@@ -683,4 +683,19 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - O seletor `pendingRouteHydrants` filtra exclusivamente os hidrantes da missão que ainda não foram concluídos (`completedIds`).
   - À medida que uma vistoria é realizada, o hidrante concluído é retirado na hora da plotagem especial da rota e do traçado (`Polyline`), mantendo o mapa limpo e o percurso atualizado apenas com as paradas faltantes.
 
+### [09/09/2026] Exclusividade Mútua Estrita no Mapa: Separação Total entre Filtros Gerais e Rota de Missão com Header Tático de Comando
+- **1. Exclusividade Mútua na Plotagem (`App.jsx`):**
+  - O `mapHidrantes` foi desacoplado: quando o modo rota está ativo (`isRouteActiveOnMap === true`), o mapa renderiza **estrita e exclusivamente** os hidrantes da missão ativa (`allMissionRouteHydrants`), sem qualquer mesclagem com hidrantes de filtros externos de outras cidades/RAs.
+  - Elimina completamente o cenário de confusão em que hidrantes de duas cidades distintas (ex: rota em Arniqueiras e filtro em Brazlândia) apareciam misturados no mesmo mapa.
+- **2. Substituição da Barra de Filtros pelo Header Tático de Rota (`App.jsx`):**
+  - No topo da tela (onde fica a `FilterBar`), a barra de filtros gerais de cidades é **substituída por um Header Tático de Rota** quando a rota está aberta no mapa.
+  - O Header exibe o status de rota ativa em ciano neon com animação de pulso, o nome da missão, a contagem de hidrantes concluídos/faltantes, botão "Focar Próximos", botão "Lista da Rota" e botão em destaque **"✕ Sair da Rota / Ver Cidades"**.
+  - Evita qualquer clique ou troca acidental de cidades durante a condução da rota de missão.
+- **3. Auto-Desativação de Rota ao Interagir com Filtros Gerais (`App.jsx`):**
+  - Em `handleFilterChange`: caso o usuário altere qualquer filtro geral (seja via URL, deep link ou seleção externa), a visualização da rota é desativada preventivamente (`isRouteActiveOnMap = false`), voltando a focar na cidade selecionada sem travar a interface.
+  - Em `handleFocusHydrantOnMap`: ao centralizar um hidrante vindo da tabela geral (fora da rota), o sistema desativa automaticamente a rota no mapa para focar com precisão no hidrante solicitado.
+- **4. Desduplicação do Banner em Tela Cheia (`MapComponent.jsx`):**
+  - O banner flutuante interno do `MapComponent` foi condicionado exclusivamente ao modo de tela cheia (`isMapFullscreen`), mantendo a visão do mapa 100% limpa e desobstruída durante a navegação padrão onde o header tático já está acoplado no topo.
+
+
 

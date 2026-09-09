@@ -989,8 +989,8 @@ const MapComponent = ({
   return (
     <div className={isMapFullscreen ? "fixed inset-0 z-[100] bg-slate-900" : "h-full min-h-[300px] w-full relative rounded-xl overflow-hidden border border-slate-700 shadow-inner z-0"}>
       
-      {/* AVISO VISUAL CLARO: MODO ROTA ATIVA PLOTADA NO MAPA COM BOTÃO FECHAR */}
-      {hasActiveRoute && activeMission && (
+      {/* AVISO VISUAL CLARO: MODO ROTA ATIVA PLOTADA NO MAPA COM BOTÃO FECHAR (EM TELA CHEIA) */}
+      {hasActiveRoute && activeMission && isMapFullscreen && (
         <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-cyan-400/90 shadow-2xl rounded-2xl sm:rounded-full px-3.5 py-2 sm:px-4 sm:py-2 flex items-center justify-between sm:justify-start gap-2.5 sm:gap-4 backdrop-blur-md max-w-[96vw] pointer-events-auto">
           <div className="flex items-center gap-2 min-w-0">
             <span className="relative flex h-2.5 w-2.5 shrink-0">
