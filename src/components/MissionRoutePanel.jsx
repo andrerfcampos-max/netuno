@@ -153,6 +153,9 @@ const MissionRoutePanel = ({
     // 1. ORDENAÇÃO INSTANTÂNEA ESPACIAL (0ms): Rota pronta imediatamente
     const fastOrdered = optimizeRouteEuclidean(pendingHydrants, startLat, startLng);
     setPendingRoute(fastOrdered);
+    if (onUpdateMission) {
+      onUpdateMission({ orderedIds: fastOrdered.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
+    }
 
     // Assinatura única baseada em coordenadas de início e lista de pendentes
     const pendingSignature = `${startLat.toFixed(4)},${startLng.toFixed(4)}|` + 
@@ -175,9 +178,13 @@ const MissionRoutePanel = ({
       if (!isCancelled) {
         lastOptimizedIdsRef.current = pendingSignature;
         if (osrmResult.route && osrmResult.route.length > 0) {
-          setPendingRoute([...osrmResult.route, ...remainingBatch]);
+          const refinedRoute = [...osrmResult.route, ...remainingBatch];
+          setPendingRoute(refinedRoute);
           setDrivingMetrics(osrmResult.drivingMetrics);
           setIsTrafficOptimized(osrmResult.isTrafficMode);
+          if (onUpdateMission) {
+            onUpdateMission({ orderedIds: refinedRoute.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
+          }
         }
         setIsOptimizing(false);
       }
@@ -199,6 +206,9 @@ const MissionRoutePanel = ({
     const executeRecalculation = async (lat, lng) => {
       const fastOrdered = optimizeRouteEuclidean(pendingHydrants, lat, lng);
       setPendingRoute(fastOrdered);
+      if (onUpdateMission) {
+        onUpdateMission({ orderedIds: fastOrdered.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
+      }
 
       const CHUNK_LIMIT = 30;
       const immediateBatch = fastOrdered.slice(0, CHUNK_LIMIT);
@@ -207,9 +217,13 @@ const MissionRoutePanel = ({
       try {
         const osrmResult = await fetchOSRMAndOptimizeRoute(immediateBatch, lat, lng);
         if (osrmResult.route && osrmResult.route.length > 0) {
-          setPendingRoute([...osrmResult.route, ...remainingBatch]);
+          const updatedRoute = [...osrmResult.route, ...remainingBatch];
+          setPendingRoute(updatedRoute);
           setDrivingMetrics(osrmResult.drivingMetrics);
           setIsTrafficOptimized(osrmResult.isTrafficMode);
+          if (onUpdateMission) {
+            onUpdateMission({ orderedIds: updatedRoute.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
+          }
           if (osrmResult.isTrafficMode) {
             toast.success('🚗 Rota recalculada com sentidos de vias e trânsito real!');
           } else {
@@ -681,6 +695,17 @@ const MissionRoutePanel = ({
             <RotateCcw size={15} className={isOptimizing ? "animate-spin text-amber-400" : ""} />
           </button>
 
+          {/* Botão Ver no Mapa com Foco Próximo */}
+          <button 
+            type="button"
+            onClick={onClose} 
+            title="Ver Hidrantes da Rota no Mapa (Foco na sua posição + hidrantes próximos)" 
+            className="h-7.5 px-2 sm:h-8 flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/70 hover:border-cyan-400 text-cyan-300 text-[11px] sm:text-xs font-bold rounded-lg shadow-sm transition-all shrink-0 cursor-pointer active:scale-95"
+          >
+            <MapIcon size={14} className="text-cyan-400 shrink-0" />
+            <span className="hidden sm:inline">Ver no Mapa</span>
+          </button>
+
           {/* Divisor Visual de Segurança para Prevenir Toque Acidental no Fechar */}
           <div className="h-4.5 w-[1px] bg-slate-700/90 mx-0.5 sm:mx-1 shrink-0" />
 
@@ -689,7 +714,7 @@ const MissionRoutePanel = ({
             type="button"
             onClick={onClose} 
             className="h-7.5 w-7.5 sm:h-8 sm:w-8 flex items-center justify-center bg-slate-800/80 hover:bg-rose-950/60 border border-slate-700/70 hover:border-rose-500/50 text-slate-400 hover:text-rose-300 rounded-lg transition-all shrink-0 cursor-pointer active:scale-90" 
-            title="Fechar Rota de Missão"
+            title="Fechar Rota de Missão e voltar ao Mapa"
           >
             <X size={16} />
           </button>

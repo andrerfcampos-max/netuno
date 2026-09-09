@@ -655,3 +655,19 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **4. Validação e Qualidade:**
   - Validado caso de teste real do Aeroporto Internacional de Brasília confirmando a aderência ao sentido viário ascendente (`LAS00087` -> `LAS00084` -> `LAS00096` -> `LAS00086` -> `LAS00085` -> `LAS00083`).
   - Compilação do Vite validada com 100% de sucesso (`npm run build`).
+
+### [09/09/2026] Plotagem Automática de Hidrantes da Rota e Zoom Tático nos Mais Próximos ao Voltar ao Mapa
+- **1. Plotagem Automática Garantida dos Hidrantes da Rota (`App.jsx`):**
+  - Integração da lista de hidrantes da missão ativa (`activeMissionHydrants`) diretamente no `mapHidrantes`, assegurando que todos os hidrantes do itinerário sejam sempre renderizados no mapa, independentemente do filtro de Região Administrativa (cidade) estar selecionado ou não.
+- **2. Algoritmo de Zoom Tático de Proximidade (`RouteNearbyAutoFitter` em `MapComponent.jsx`):**
+  - Ao abrir uma rota e retornar à tela do mapa (via botão de fechar rota, atalho "Ver no Mapa" ou abas de navegação), o mapa enquadra automaticamente a posição em tempo real do militar (`userLocation`) e os 4 a 5 hidrantes da rota mais próximos da viatura.
+  - O enquadramento (`fitBounds`) utiliza padding inteligente responsivo e teto de zoom (`maxZoom: 17`), evitando aproximações excessivas que ocultem o traçado das vias vizinhas.
+  - Fallback resiliente: caso o GPS ainda esteja em aquisição ou sem permissão, o enquadramento posiciona suavemente nos 5 primeiros hidrantes da rota planejada.
+- **3. Marcadores de Rota com Numeração de Paradas e Traçado Viário (`MapComponent.jsx`):**
+  - Marcadores de hidrantes pertencentes à rota ativa exibem anel ciano neon de alto contraste e numeração da parada (1, 2, 3...) de acordo com o itinerário otimizado.
+  - Hidrantes da missão já vistoriados passam a exibir indicador verde esmeralda com símbolo de check (`✓`).
+  - Renderização de polilinha tática (`Polyline`) conectando a sequência de paradas planejadas no mapa.
+- **4. Controles Táticos Flutuantes no Mapa (`TacticalMapControls`):**
+  - Adicionado botão flutuante com ícone de navegação (`Navigation`) sobre o mapa quando há uma rota ativa, permitindo ao operador em campo re-enquadrar sua posição e os hidrantes mais próximos a qualquer momento com um único toque.
+  - Adicionado botão explícito "Ver no Mapa" no cabeçalho do `MissionRoutePanel`.
+

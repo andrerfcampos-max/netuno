@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Edit3, Minimize2, Maximize2, Plus, Share2, AlertTriangle, Wrench } from 'lucide-react';
+import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Edit3, Minimize2, Maximize2, Plus, Share2, AlertTriangle, Wrench, Route as RouteIcon, Check } from 'lucide-react';
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
@@ -16,7 +16,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // Estilização dos Marcadores (Design Consistente com Desktop e Mobile)
-const createDivIcon = (isOperante, isSelected, isInspected) => {
+const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = false, missionOrder = null, isMissionCompleted = false) => {
   const statusColor = isOperante ? '#10b981' : '#ef4444'; // Verde Esmeralda ou Vermelho Sólido
   
   if (isInspected) {
@@ -76,8 +76,97 @@ const createDivIcon = (isOperante, isSelected, isInspected) => {
     });
   }
 
+  // HIDRANTE DA ROTA DA MISSÃO ATIVA
+  if (isMissionItem) {
+    if (isMissionCompleted) {
+      // Hidrante da Rota Já Vistoriado: Verde Esmeralda escuro com borda neon e checkmark
+      return L.divIcon({
+        className: 'custom-div-icon',
+        html: `
+          <div style="
+            position: relative;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <div style="
+              background-color: #064e3b;
+              width: 28px;
+              height: 28px;
+              border-radius: 50%;
+              border: 2.5px solid #10b981;
+              box-shadow: 0 0 12px rgba(16, 185, 129, 0.8), 0 2px 5px rgba(0,0,0,0.7);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #ffffff;
+              font-weight: 900;
+              font-size: 15px;
+              line-height: 1;
+            ">
+              ✓
+            </div>
+          </div>
+        `,
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+      });
+    }
+
+    // Hidrante da Rota Pendente: Marcador Ciano Neon com a ordem de parada na rota (1, 2, 3...)
+    const orderLabel = missionOrder !== null && missionOrder !== undefined ? String(missionOrder) : '';
+    return L.divIcon({
+      className: 'custom-div-icon',
+      html: `
+        <div style="
+          position: relative;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <!-- Pulso sutil de hidrante ativo da rota -->
+          <div style="
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #00ffff;
+            opacity: 0.6;
+            animation: ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+          "></div>
+          <div style="
+            background-color: #0f172a;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 14px #00ffff, 0 3px 8px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00ffff;
+            font-family: monospace, sans-serif;
+            font-weight: 900;
+            font-size: ${orderLabel.length > 2 ? '10px' : '12px'};
+            line-height: 1;
+            position: relative;
+            z-index: 2;
+          ">
+            ${orderLabel ? orderLabel : `<div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor};"></div>`}
+          </div>
+        </div>
+      `,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    });
+  }
+
   if (isSelected) {
-    // Hidrante adicionado à rota de missão: anel ciano neon destacado
+    // Hidrante adicionado à seleção do carrinho: anel ciano neon destacado
     return L.divIcon({
       className: 'custom-div-icon',
       html: `
@@ -156,13 +245,14 @@ const RecenterMap = ({ centerPosition, selectedHydrant }) => {
   return null;
 };
 
-const AutoFitFilteredBounds = ({ hidrantes, centerPosition, selectedHydrant }) => {
+const AutoFitFilteredBounds = ({ hidrantes, centerPosition, selectedHydrant, hasActiveRoute }) => {
   const map = useMap();
   const prevCountRef = React.useRef(null);
   const prevFirstIdRef = React.useRef(null);
 
   useEffect(() => {
-    if (centerPosition || selectedHydrant) return;
+    // Não força ajuste geral se houver hidrante selecionado ou rota ativa em execução
+    if (centerPosition || selectedHydrant || hasActiveRoute) return;
 
     if (hidrantes && hidrantes.length > 0) {
       const firstId = hidrantes[0]?.codHidrante || hidrantes[0]?.nomHidrante;
@@ -183,7 +273,125 @@ const AutoFitFilteredBounds = ({ hidrantes, centerPosition, selectedHydrant }) =
         }
       }
     }
-  }, [hidrantes, centerPosition, selectedHydrant, map]);
+  }, [hidrantes, centerPosition, selectedHydrant, hasActiveRoute, map]);
+
+  return null;
+};
+
+// COMPONENTE DE ZOOM TÁTICO: Centraliza no usuário e nos 4 ou 5 hidrantes mais próximos da rota ativa
+const RouteNearbyAutoFitter = ({ 
+  routeFitTrigger, 
+  activeMissionHydrants, 
+  completedMissionIds = [], 
+  userLocation, 
+  centerPosition, 
+  selectedHydrant 
+}) => {
+  const map = useMap();
+  const lastTriggerRef = useRef(null);
+  const pendingFitRef = useRef(false);
+
+  const executeFit = (userLoc) => {
+    if (!activeMissionHydrants || activeMissionHydrants.length === 0) return;
+
+    const validHydrants = activeMissionHydrants.filter(h => 
+      isValidDFCoordinate(h.numLatitude, h.numLongitude)
+    );
+    if (validHydrants.length === 0) return;
+
+    const completedSet = new Set((completedMissionIds || []).map(String));
+    
+    // Prioriza hidrantes pendentes da rota
+    let targets = validHydrants.filter(h => {
+      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
+      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+      const k3 = h._internalId ? String(h._internalId) : null;
+      return !((k1 && completedSet.has(k1)) || (k2 && completedSet.has(k2)) || (k3 && completedSet.has(k3)));
+    });
+
+    if (targets.length === 0) {
+      targets = validHydrants;
+    }
+
+    const hasUserLoc = userLoc && typeof userLoc.lat === 'number' && typeof userLoc.lng === 'number' &&
+      !isNaN(userLoc.lat) && !isNaN(userLoc.lng);
+
+    const isMobile = window.innerWidth < 768;
+
+    if (hasUserLoc) {
+      // Ordena os hidrantes da rota pela proximidade euclidiana com a posição do usuário
+      const sortedByDistance = [...targets].sort((a, b) => {
+        const dLatA = a.numLatitude - userLoc.lat;
+        const dLngA = a.numLongitude - userLoc.lng;
+        const dLatB = b.numLatitude - userLoc.lat;
+        const dLngB = b.numLongitude - userLoc.lng;
+        return (dLatA * dLatA + dLngA * dLngA) - (dLatB * dLatB + dLngB * dLngB);
+      });
+
+      // Pega até 5 hidrantes da rota mais próximos da localização do usuário
+      const nearest5 = sortedByDistance.slice(0, 5);
+
+      // Enquadra a posição do usuário + os 4 ou 5 hidrantes mais próximos
+      const points = [
+        [userLoc.lat, userLoc.lng],
+        ...nearest5.map(h => [h.numLatitude, h.numLongitude])
+      ];
+
+      const bounds = L.latLngBounds(points);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, {
+          paddingTopLeft: isMobile ? [40, 40] : [60, 60],
+          paddingBottomRight: isMobile ? [40, 95] : [60, 60],
+          maxZoom: 17,
+          animate: true,
+          duration: 0.8
+        });
+      }
+    } else {
+      // Fallback gracioso sem GPS: enquadra os 5 primeiros hidrantes da rota
+      const first5 = targets.slice(0, 5);
+      const points = first5.map(h => [h.numLatitude, h.numLongitude]);
+      const bounds = L.latLngBounds(points);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, {
+          padding: isMobile ? [40, 40] : [60, 60],
+          maxZoom: 16,
+          animate: true,
+          duration: 0.8
+        });
+      }
+    }
+  };
+
+  // Dispara quando routeFitTrigger for acionado (ao voltar da rota para o mapa)
+  useEffect(() => {
+    if (!routeFitTrigger || routeFitTrigger === lastTriggerRef.current) return;
+    if (centerPosition || selectedHydrant) return;
+
+    lastTriggerRef.current = routeFitTrigger;
+
+    if (userLocation && typeof userLocation.lat === 'number') {
+      executeFit(userLocation);
+      pendingFitRef.current = false;
+    } else {
+      pendingFitRef.current = true;
+      const timer = setTimeout(() => {
+        if (pendingFitRef.current) {
+          pendingFitRef.current = false;
+          executeFit(null);
+        }
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [routeFitTrigger, centerPosition, selectedHydrant, activeMissionHydrants, completedMissionIds]);
+
+  // Se o GPS atualizou e estávamos aguardando o foco inicial
+  useEffect(() => {
+    if (pendingFitRef.current && userLocation && typeof userLocation.lat === 'number') {
+      pendingFitRef.current = false;
+      executeFit(userLocation);
+    }
+  }, [userLocation]);
 
   return null;
 };
@@ -240,7 +448,7 @@ const MapResizer = ({ isMapFullscreen, activeView }) => {
   return null;
 };
 
-const UserLocationTracker = ({ userLocation, centerPosition, selectedHydrant, hasFilter }) => {
+const UserLocationTracker = ({ userLocation, centerPosition, selectedHydrant, hasFilter, hasActiveRoute }) => {
   const map = useMap();
   const hasCenteredRef = React.useRef(false);
 
@@ -249,7 +457,7 @@ const UserLocationTracker = ({ userLocation, centerPosition, selectedHydrant, ha
       map.setMinZoom(0);
       map.setMaxZoom(20);
       
-      if (userLocation && !hasCenteredRef.current && !centerPosition && !selectedHydrant && !hasFilter) {
+      if (userLocation && !hasCenteredRef.current && !centerPosition && !selectedHydrant && !hasFilter && !hasActiveRoute) {
         if (typeof userLocation.lat === 'number' && !isNaN(userLocation.lat) && 
             typeof userLocation.lng === 'number' && !isNaN(userLocation.lng)) {
           hasCenteredRef.current = true;
@@ -259,11 +467,11 @@ const UserLocationTracker = ({ userLocation, centerPosition, selectedHydrant, ha
     } catch (e) {
       console.warn('Erro ao atualizar visualização do usuário', e);
     }
-  }, [userLocation, centerPosition, selectedHydrant, hasFilter, map]);
+  }, [userLocation, centerPosition, selectedHydrant, hasFilter, hasActiveRoute, map]);
   return null;
 };
 
-const GpsControl = ({ userLocation, isSheetOpen }) => {
+const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocusRoute }) => {
   const map = useMap();
   const [isLocating, setIsLocating] = useState(false);
 
@@ -299,8 +507,25 @@ const GpsControl = ({ userLocation, isSheetOpen }) => {
   };
 
   return (
-    <div className={`leaflet-bottom leaflet-right !right-4 !pointer-events-auto z-[1000] transition-all duration-300 ${isSheetOpen ? '!bottom-[275px] sm:!bottom-6' : '!bottom-6'}`}>
+    <div className={`leaflet-bottom leaflet-right !right-4 !pointer-events-auto z-[1000] flex flex-col gap-2.5 items-end transition-all duration-300 ${isSheetOpen ? '!bottom-[275px] sm:!bottom-6' : '!bottom-6'}`}>
+      {/* Botão Tático: Focar na Rota Próxima (Você + hidrantes mais próximos) */}
+      {hasActiveRoute && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onFocusRoute) onFocusRoute();
+          }}
+          title="Focar na sua posição e nos hidrantes mais próximos da rota"
+          className="p-2.5 sm:p-3 bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 border border-cyan-400/80 hover:border-cyan-300 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer backdrop-blur-md group"
+        >
+          <Navigation size={20} className="text-cyan-300 group-hover:text-cyan-200 transition-transform group-hover:rotate-12" />
+        </button>
+      )}
+
+      {/* Botão GPS Padrão */}
       <button
+        type="button"
         onClick={handleCenterUser}
         title="Centralizar na Minha Posição (GPS)"
         className={`p-3 bg-slate-900/90 hover:bg-slate-800 text-cyan-400 border border-cyan-500/50 hover:border-cyan-400 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer backdrop-blur-md ${isLocating ? 'animate-pulse' : ''}`}
@@ -311,7 +536,30 @@ const GpsControl = ({ userLocation, isSheetOpen }) => {
   );
 };
 
-const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPosition, onDeselectHydrant, selectedMissionIds = [], onToggleMission, isCartOpen = false, currentUser, onMapClick, onOpenFilters, isMapFullscreen, activeView, isCitySelected = true, selectedCity = '', hasFilter = false }) => {
+const MapComponent = ({ 
+  hidrantes, 
+  onInspect, 
+  onEdit, 
+  onEditInspection, 
+  centerPosition, 
+  onDeselectHydrant, 
+  selectedMissionIds = [], 
+  onToggleMission, 
+  isCartOpen = false, 
+  currentUser, 
+  onMapClick, 
+  onOpenFilters, 
+  isMapFullscreen, 
+  activeView, 
+  isCitySelected = true, 
+  selectedCity = '', 
+  hasFilter = false,
+  activeMission = null,
+  activeMissionHydrants = [],
+  completedMissionIds = [],
+  routeFitTrigger = null,
+  onTriggerRouteFit = null
+}) => {
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [selectedHydrant, setSelectedHydrant] = useState(null);
@@ -449,6 +697,28 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPo
     window.open(waUrl, '_blank');
   };
 
+  const hasActiveRoute = Boolean(activeMission && activeMissionHydrants && activeMissionHydrants.length > 0);
+
+  const missionOrderMap = useMemo(() => {
+    const map = {};
+    if (!activeMission) return map;
+    const ordered = (activeMission.orderedIds && activeMission.orderedIds.length > 0) 
+      ? activeMission.orderedIds 
+      : (activeMission.selectedIds || []);
+    ordered.forEach((id, idx) => {
+      map[String(id)] = idx + 1;
+    });
+    return map;
+  }, [activeMission]);
+
+  const completedMissionSet = useMemo(() => {
+    return new Set((completedMissionIds || []).map(String));
+  }, [completedMissionIds]);
+
+  const activeMissionIdsSet = useMemo(() => {
+    return new Set((activeMission?.selectedIds || []).map(String));
+  }, [activeMission?.selectedIds]);
+
   const renderMarkers = () => {
     return validHidrantes.map((h, i) => {
       const id = h.codHidrante || h._internalId || h.nomHidrante || `hid-${i}`;
@@ -461,12 +731,34 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPo
         )
       );
 
+      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
+      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+      const k3 = h._internalId ? String(h._internalId) : null;
+
+      const isMissionItem = Boolean(
+        hasActiveRoute && (
+          (k1 && activeMissionIdsSet.has(k1)) ||
+          (k2 && activeMissionIdsSet.has(k2)) ||
+          (k3 && activeMissionIdsSet.has(k3))
+        )
+      );
+
+      const isMissionCompleted = isMissionItem && Boolean(
+        (k1 && completedMissionSet.has(k1)) ||
+        (k2 && completedMissionSet.has(k2)) ||
+        (k3 && completedMissionSet.has(k3))
+      );
+
+      const missionOrder = isMissionItem
+        ? ((k1 && missionOrderMap[k1]) || (k2 && missionOrderMap[k2]) || (k3 && missionOrderMap[k3]) || null)
+        : null;
+
       return (
         <Marker 
           key={id} 
           position={[h.numLatitude, h.numLongitude]}
-          icon={createDivIcon(h.flgAtivo, isSelected, isCurrentActive)}
-          zIndexOffset={isCurrentActive ? 2500 : (isSelected ? 500 : 0)}
+          icon={createDivIcon(h.flgAtivo, isSelected, isCurrentActive, isMissionItem, missionOrder, isMissionCompleted)}
+          zIndexOffset={isCurrentActive ? 2500 : (isMissionItem ? 1200 : (isSelected ? 500 : 0))}
           ref={(marker) => {
             if (marker) {
               markerRefs.current[id] = marker;
@@ -540,12 +832,45 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPo
         />
         
         <RecenterMap centerPosition={centerPosition} selectedHydrant={selectedHydrant} />
-        <AutoFitFilteredBounds hidrantes={hidrantes} centerPosition={centerPosition} selectedHydrant={selectedHydrant} />
+        <AutoFitFilteredBounds hidrantes={hidrantes} centerPosition={centerPosition} selectedHydrant={selectedHydrant} hasActiveRoute={hasActiveRoute} />
+        <RouteNearbyAutoFitter 
+          routeFitTrigger={routeFitTrigger} 
+          activeMissionHydrants={activeMissionHydrants} 
+          completedMissionIds={completedMissionIds} 
+          userLocation={userLocation} 
+          centerPosition={centerPosition} 
+          selectedHydrant={selectedHydrant} 
+        />
         <MapMemory />
         <ScrollBehavior />
         <MapClickHandler selectedHydrant={selectedHydrant} onSelectHydrant={handleCloseHydrant} />
         <MapResizer isMapFullscreen={isMapFullscreen} activeView={activeView} />
-        <UserLocationTracker userLocation={userLocation} centerPosition={centerPosition} selectedHydrant={selectedHydrant} hasFilter={hasFilter || isCitySelected} />
+        <UserLocationTracker userLocation={userLocation} centerPosition={centerPosition} selectedHydrant={selectedHydrant} hasFilter={hasFilter || isCitySelected} hasActiveRoute={hasActiveRoute} />
+
+        {/* Traçado Tático da Rota Conectando os Hidrantes da Missão Ativa */}
+        {hasActiveRoute && activeMissionHydrants.length > 1 && (
+          <Polyline 
+            positions={(() => {
+              const ordered = (activeMission.orderedIds && activeMission.orderedIds.length > 0)
+                ? [...activeMissionHydrants].sort((a, b) => {
+                    const idxA = activeMission.orderedIds.indexOf(a.codHidrante || a._internalId || a.nomHidrante);
+                    const idxB = activeMission.orderedIds.indexOf(b.codHidrante || b._internalId || b.nomHidrante);
+                    return (idxA >= 0 ? idxA : 999) - (idxB >= 0 ? idxB : 999);
+                  })
+                : activeMissionHydrants;
+              return ordered
+                .filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude))
+                .map(h => [h.numLatitude, h.numLongitude]);
+            })()}
+            pathOptions={{
+              color: '#00ffff',
+              weight: 3.5,
+              opacity: 0.65,
+              dashArray: '8, 8',
+              lineCap: 'round'
+            }}
+          />
+        )}
 
         {/* Plotagem direta de todos os hidrantes */}
         {renderMarkers()}
@@ -570,20 +895,35 @@ const MapComponent = ({ hidrantes, onInspect, onEdit, onEditInspection, centerPo
           />
         )}
 
-        {/* Botão Flutuante de GPS (Centralizar Posição Atual) */}
-        <GpsControl userLocation={userLocation} isSheetOpen={Boolean(selectedHydrant)} />
+        {/* Controles Flutuantes Táticos do Mapa (Foco de Rota Próxima + GPS) */}
+        <TacticalMapControls 
+          userLocation={userLocation} 
+          isSheetOpen={Boolean(selectedHydrant)} 
+          hasActiveRoute={hasActiveRoute}
+          onFocusRoute={() => {
+            if (onTriggerRouteFit) {
+              onTriggerRouteFit();
+            }
+          }}
+        />
       </MapContainer>
 
       {/* Legenda Tática do Mapa */}
       <div className={`absolute bottom-6 left-3 z-[1000] bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl flex items-center gap-3 text-[11px] font-bold text-slate-200 pointer-events-auto select-none transition-all duration-300 ${selectedHydrant ? 'hidden sm:flex' : 'flex'}`}>
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-[#10b981] border border-white shadow-sm inline-block shrink-0"></span>
-          <span className="text-emerald-400">Hidrante operante</span>
+          <span className="text-emerald-400">Operante</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-[#ef4444] border border-white shadow-sm inline-block shrink-0"></span>
-          <span className="text-red-400">Hidrante inoperante</span>
+          <span className="text-red-400">Inoperante</span>
         </div>
+        {hasActiveRoute && (
+          <div className="flex items-center gap-1.5 border-l border-slate-700 pl-2">
+            <span className="w-3.5 h-3.5 rounded-full border-2 border-cyan-400 bg-slate-900 text-cyan-300 font-mono text-[9px] flex items-center justify-center font-bold inline-block shrink-0 leading-none">1</span>
+            <span className="text-cyan-300">Rota ({activeMission.name || 'Missão'})</span>
+          </div>
+        )}
       </div>
 
       {/* ======================================================== */}
