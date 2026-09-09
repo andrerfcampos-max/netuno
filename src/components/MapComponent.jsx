@@ -97,34 +97,34 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
     });
   }
 
-  // HIDRANTE DA ROTA DA MISSÃO ATIVA
+  // HIDRANTE DA ROTA DA MISSÃO ATIVA (Design limpo e discreto idêntico aos tradicionais, diferenciado pela cor)
   if (isMissionItem) {
     if (isMissionCompleted) {
-      // Hidrante da Rota Já Vistoriado: Verde Esmeralda escuro com borda neon e checkmark
+      // Hidrante da Rota Já Vistoriado: Verde com borda branca e checkmark simples
       return L.divIcon({
         className: 'custom-div-icon',
         html: `
           <div style="
             position: relative;
-            width: 34px;
-            height: 34px;
+            width: 24px;
+            height: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
           ">
             <div style="
-              background-color: #064e3b;
-              width: 28px;
-              height: 28px;
+              background-color: #059669;
+              width: 18px;
+              height: 18px;
               border-radius: 50%;
-              border: 2.5px solid #10b981;
-              box-shadow: 0 0 12px rgba(16, 185, 129, 0.8), 0 2px 5px rgba(0,0,0,0.7);
+              border: 2px solid white;
+              box-shadow: 0 0 5px rgba(0,0,0,0.7);
               display: flex;
               align-items: center;
               justify-content: center;
               color: #ffffff;
               font-weight: 900;
-              font-size: 15px;
+              font-size: 10px;
               line-height: 1;
             ">
               ✓
@@ -132,99 +132,91 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             ${showPinCode && pinCode ? `
               <div style="
                 position: absolute;
-                top: 32px;
+                top: 22px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: #064e3b;
+                background: rgba(15, 23, 42, 0.92);
                 color: #a7f3d0;
                 font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
                 font-size: 10px;
-                font-weight: 900;
-                padding: 1px 5px;
+                font-weight: 800;
+                padding: 1px 4px;
                 border-radius: 4px;
-                border: 1px solid #10b981;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.85);
+                border: 1px solid rgba(16, 185, 129, 0.5);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.85);
                 white-space: nowrap;
                 pointer-events: none;
-                z-index: 25;
+                z-index: 20;
                 line-height: 1.2;
+                letter-spacing: 0.2px;
               ">${pinCode}</div>
             ` : ''}
           </div>
         `,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17]
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
       });
     }
 
-    // Hidrante da Rota Pendente: Marcador Ciano Neon com a ordem de parada na rota (1, 2, 3...)
+    // Hidrante da Rota Pendente: Azul tático elegante (#0284c7), dimensões tradicionais, sem efeitos cintilantes
     const orderLabel = missionOrder !== null && missionOrder !== undefined ? String(missionOrder) : '';
+    const routeColor = '#0284c7';
     return L.divIcon({
       className: 'custom-div-icon',
       html: `
         <div style="
           position: relative;
-          width: 36px;
-          height: 36px;
+          width: 24px;
+          height: 24px;
           display: flex;
           align-items: center;
           justify-content: center;
         ">
-          <!-- Pulso sutil de hidrante ativo da rota -->
           <div style="
-            position: absolute;
-            width: 32px;
-            height: 32px;
+            background-color: ${routeColor};
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            border: 2px solid #00ffff;
-            opacity: 0.6;
-            animation: ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-          "></div>
-          <div style="
-            background-color: #0f172a;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            border: 3px solid #00ffff;
-            box-shadow: 0 0 14px #00ffff, 0 3px 8px rgba(0,0,0,0.8);
+            border: 2px solid white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.7);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #00ffff;
-            font-family: monospace, sans-serif;
-            font-weight: 900;
-            font-size: ${orderLabel.length > 2 ? '10px' : '12px'};
+            color: #ffffff;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-weight: 800;
+            font-size: ${orderLabel.length > 2 ? '8px' : orderLabel.length > 1 ? '9px' : '10px'};
             line-height: 1;
-            position: relative;
-            z-index: 2;
+            transition: transform 0.2s ease;
           ">
-            ${orderLabel ? orderLabel : `<div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor};"></div>`}
+            ${orderLabel}
           </div>
           ${showPinCode && pinCode ? `
             <div style="
               position: absolute;
-              top: 34px;
+              top: 22px;
               left: 50%;
               transform: translateX(-50%);
-              background: #0f172a;
-              color: #00ffff;
+              background: rgba(15, 23, 42, 0.92);
+              color: #38bdf8;
               font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
               font-size: 10px;
-              font-weight: 900;
-              padding: 1px 5px;
+              font-weight: 800;
+              padding: 1px 4px;
               border-radius: 4px;
-              border: 1px solid #00ffff;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 8px rgba(0,255,255,0.4);
+              border: 1px solid rgba(56, 189, 248, 0.5);
+              box-shadow: 0 2px 5px rgba(0,0,0,0.85);
               white-space: nowrap;
               pointer-events: none;
-              z-index: 25;
+              z-index: 20;
               line-height: 1.2;
+              letter-spacing: 0.2px;
             ">${pinCode}</div>
           ` : ''}
         </div>
       `,
-      iconSize: [36, 36],
-      iconAnchor: [18, 18]
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
     });
   }
 
