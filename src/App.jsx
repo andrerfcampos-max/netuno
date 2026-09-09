@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, Suspense, lazy } from 'react';
-import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw, FileSpreadsheet } from 'lucide-react';
+import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw, FileSpreadsheet, Bell, History } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { parseHydrantsCSV } from './utils/csvParser';
@@ -19,6 +19,8 @@ const TechnicalStudyModal = lazy(() => import('./components/TechnicalStudyModal'
 const BuildingStudiesModal = lazy(() => import('./components/BuildingStudiesModal'));
 const InconsistentHydrantsModal = lazy(() => import('./components/InconsistentHydrantsModal'));
 const CloudConfigModal = lazy(() => import('./components/CloudConfigModal'));
+const SystemHistoryModal = lazy(() => import('./components/SystemHistoryModal'));
+import { logAuditEvent, getUnreadAuditCount } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers } from './utils/storage';
 import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime } from './services/syncService';
@@ -246,21 +248,32 @@ function App() {
   const selectedMissionIds = useMemo(() => currentMission?.selectedIds || [], [currentMission?.selectedIds]);
   const completedMissionIds = useMemo(() => currentMission?.completedIds || [], [currentMission?.completedIds]);
 
-  // Extrai APENAS os hidrantes PENDENTES (não vistoriados) da rota da missão ativa para plotagem especial
-  const pendingRouteHydrants = useMemo(() => {
+  // Extrai TODOS os hidrantes da rota da missão ativa (concluídos e faltantes)
+  const allMissionRouteHydrants = useMemo(() => {
     if (!currentMission || !currentMission.selectedIds || currentMission.selectedIds.length === 0) return [];
     const idSet = new Set(currentMission.selectedIds.map(String));
-    const compSet = new Set((currentMission.completedIds || []).map(String));
 
     return hidrantes.filter(h => {
       const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
       const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
       const k3 = h._internalId ? String(h._internalId) : null;
-      const isInMission = (k1 && idSet.has(k1)) || (k2 && idSet.has(k2)) || (k3 && idSet.has(k3));
-      const isCompleted = (k1 && compSet.has(k1)) || (k2 && compSet.has(k2)) || (k3 && compSet.has(k3));
-      return isInMission && !isCompleted;
+      return (k1 && idSet.has(k1)) || (k2 && idSet.has(k2)) || (k3 && idSet.has(k3));
     });
   }, [currentMission, hidrantes]);
+
+  // Extrai APENAS os hidrantes PENDENTES (não vistoriados) da rota da missão ativa
+  const pendingRouteHydrants = useMemo(() => {
+    if (!allMissionRouteHydrants || allMissionRouteHydrants.length === 0) return [];
+    const compSet = new Set((currentMission?.completedIds || []).map(String));
+
+    return allMissionRouteHydrants.filter(h => {
+      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
+      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+      const k3 = h._internalId ? String(h._internalId) : null;
+      const isCompleted = (k1 && compSet.has(k1)) || (k2 && compSet.has(k2)) || (k3 && compSet.has(k3));
+      return !isCompleted;
+    });
+  }, [allMissionRouteHydrants, currentMission?.completedIds]);
 
   // Fecha a rota no mapa caso a missão ativa seja limpa ou fechada
   useEffect(() => {
@@ -284,9 +297,21 @@ function App() {
   const [isBuildingStudiesOpen, setIsBuildingStudiesOpen] = useState(false);
   const [isInconsistentModalOpen, setIsInconsistentModalOpen] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
+  const [isSystemHistoryOpen, setIsSystemHistoryOpen] = useState(false);
+  const [unreadAuditCount, setUnreadAuditCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [pendingDeleteHydrant, setPendingDeleteHydrant] = useState(null);
   const menuRef = useRef(null);
+
+  // Monitora contagem de logs de auditoria não lidos
+  useEffect(() => {
+    const updateUnread = () => {
+      setUnreadAuditCount(getUnreadAuditCount());
+    };
+    updateUnread();
+    window.addEventListener('netuno_audit_updated', updateUnread);
+    return () => window.removeEventListener('netuno_audit_updated', updateUnread);
+  }, []);
 
   // Centraliza o hidrante no mapa e sincroniza automaticamente a cidade (RA) do filtro
   const handleFocusHydrantOnMap = (h) => {
@@ -350,9 +375,9 @@ function App() {
     let list = isCitySelected ? [...filteredList] : [];
 
     // Plotagem especial dos hidrantes da rota: APENAS se a rota estiver ativa/aberta no mapa
-    // E apenas os hidrantes PENDENTES (hidrantes vistoriados são retirados da plotagem especial)
-    if (isRouteActiveOnMap && pendingRouteHydrants && pendingRouteHydrants.length > 0) {
-      pendingRouteHydrants.forEach(mh => {
+    // Inclui TODOS os hidrantes da missão ativa (concluídos e faltantes)
+    if (isRouteActiveOnMap && allMissionRouteHydrants && allMissionRouteHydrants.length > 0) {
+      allMissionRouteHydrants.forEach(mh => {
         const alreadyInList = list.some(h => 
           (h._internalId && mh._internalId && h._internalId === mh._internalId) ||
           (h.codHidrante && mh.codHidrante && h.codHidrante === mh.codHidrante) ||
@@ -375,7 +400,7 @@ function App() {
       }
     }
     return list;
-  }, [isCitySelected, mapCenterPosition, filteredList, isRouteActiveOnMap, pendingRouteHydrants]);
+  }, [isCitySelected, mapCenterPosition, filteredList, isRouteActiveOnMap, allMissionRouteHydrants]);
 
   // Suporte a abertura direta de modais e deep links de hidrante (?hid=...) via URL parameter
   useEffect(() => {
@@ -392,6 +417,8 @@ function App() {
       setIsUserManagerOpen(true);
     } else if (modal === 'inconsistentes' && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
       setIsInconsistentModalOpen(true);
+    } else if ((modal === 'historico' || modal === 'history' || modal === 'auditoria') && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
+      setIsSystemHistoryOpen(true);
     } else if (modal === 'central-missoes' || modal === 'missoes' || modal === 'missions') {
       setIsMissionManagerOpen(true);
     }
@@ -1043,6 +1070,22 @@ function App() {
     setInspectingHidrante(null);
     syncInspectionToCloud(sanitized);
     syncHydrantMutationToCloud('update', sanitized);
+
+    // Registra ação no Histórico de Auditoria do Gestor
+    logAuditEvent({
+      entityType: 'vistoria',
+      action: isEditing ? 'edit' : 'create',
+      title: isEditing 
+        ? `Vistoria Atualizada: ${sanitized.nomHidrante || sanitized.codHidrante || 'Hidrante'}`
+        : `Nova Vistoria Realizada: ${sanitized.nomHidrante || sanitized.codHidrante || 'Hidrante'}`,
+      entityId: String(sanitized.codHidrante || sanitized._internalId || sanitized.nomHidrante || ''),
+      entityName: `${sanitized.nomHidrante || sanitized.codHidrante || 'Hidrante'} - ${sanitized.dscEndereco || ''}`.trim(),
+      location: sanitized.dscLocalidade || '',
+      author: currentUser,
+      details: `Status: ${sanitized.flgAtivo ? 'Operante' : 'Inoperante'} ${sanitized.problemasHidrante ? `| Problemas: ${sanitized.problemasHidrante}` : ''}`,
+      coords: (sanitized.numLatitude && sanitized.numLongitude) ? { lat: Number(sanitized.numLatitude), lng: Number(sanitized.numLongitude) } : null
+    });
+
     toast.success(isEditing ? 'Vistoria atualizada com sucesso e sincronizada!' : 'Vistoria salva com sucesso e sincronizada!');
 
     // Se for perfil gestor/admin e o hidrante estiver marcado como removido/não encontrado, pergunta se deseja remover da base
@@ -1050,6 +1093,64 @@ function App() {
     if (isGestor && isHidranteRemovido(sanitized)) {
       setPendingDeleteHydrant(sanitized);
     }
+  };
+
+  const handleDeleteInspection = (hidranteToRevert) => {
+    if (!hidranteToRevert) return;
+    const sanitized = { ...hidranteToRevert };
+    const historico = Array.isArray(sanitized.HISTORICO_VISTORIAS) ? [...sanitized.HISTORICO_VISTORIAS] : [];
+    
+    // Remove a vistoria mais recente
+    if (historico.length > 0) {
+      historico.pop();
+    }
+
+    const previousVistoria = historico.length > 0 ? historico[historico.length - 1] : null;
+
+    const reverted = {
+      ...sanitized,
+      HISTORICO_VISTORIAS: historico,
+      datHoraUltimaVistoria: previousVistoria ? previousVistoria.datHoraVistoria : null,
+      problemasHidrante: previousVistoria ? previousVistoria.problemasHidrante : '',
+      flgAtivo: previousVistoria !== null ? previousVistoria.flgAtivo : true,
+      fotoVistoria: previousVistoria ? previousVistoria.fotoVistoria : null,
+      fotosVistoria: previousVistoria ? previousVistoria.fotosVistoria : [],
+      vistoriadorNome: previousVistoria ? previousVistoria.vistoriadorNome : null,
+      vistoriadorMatricula: previousVistoria ? previousVistoria.vistoriadorMatricula : null,
+      flgRemovido: false,
+      isInconsistent: false
+    };
+
+    const newHidrantes = hidrantes.map(h => {
+      if (h._internalId === reverted._internalId || 
+         (h.nomHidrante === reverted.nomHidrante && h.codHidrante === reverted.codHidrante)) {
+        return reverted;
+      }
+      return h;
+    });
+    setHidrantes(newHidrantes);
+
+    const changes = loadHydrantChanges();
+    const idKey = reverted._internalId || reverted.codHidrante || reverted.nomHidrante;
+    changes.updated[idKey] = reverted;
+    saveHydrantChanges(changes);
+
+    syncHydrantMutationToCloud('update', reverted);
+
+    logAuditEvent({
+      entityType: 'vistoria',
+      action: 'delete',
+      title: `Vistoria Excluída/Revertida: ${reverted.nomHidrante || reverted.codHidrante || 'Hidrante'}`,
+      entityId: String(reverted.codHidrante || reverted._internalId || reverted.nomHidrante || ''),
+      entityName: `${reverted.nomHidrante || reverted.codHidrante || 'Hidrante'} - ${reverted.dscEndereco || ''}`.trim(),
+      location: reverted.dscLocalidade || '',
+      author: currentUser,
+      details: 'Registro de vistoria revertido e excluído do histórico pelo gestor.',
+      coords: (reverted.numLatitude && reverted.numLongitude) ? { lat: Number(reverted.numLatitude), lng: Number(reverted.numLongitude) } : null
+    });
+
+    setInspectingHidrante(null);
+    toast.success('Vistoria revertida com sucesso!');
   };
 
   const handleSaveEdit = (updatedHidrante) => {
@@ -1113,6 +1214,24 @@ function App() {
     setHidrantes(newHidrantes);
     handleCloseEditHydrant();
     syncHydrantMutationToCloud(isExisting ? 'update' : 'add', newlyCreatedEntity || sanitized);
+
+    // Registra ação de hidrante no Histórico de Auditoria
+    const finalSaved = newlyCreatedEntity || sanitized;
+    const isNew = !exists;
+    logAuditEvent({
+      entityType: 'hidrante',
+      action: isNew ? 'create' : 'edit',
+      title: isNew 
+        ? `Novo Hidrante Cadastrado: ${finalSaved.nomHidrante || finalSaved.codHidrante || 'Hidrante'}`
+        : `Hidrante Atualizado: ${finalSaved.nomHidrante || finalSaved.codHidrante || 'Hidrante'}`,
+      entityId: String(finalSaved.codHidrante || finalSaved._internalId || finalSaved.nomHidrante || ''),
+      entityName: `${finalSaved.nomHidrante || finalSaved.codHidrante || 'Hidrante'} - ${finalSaved.dscEndereco || ''}`.trim(),
+      location: finalSaved.dscLocalidade || '',
+      author: currentUser,
+      details: `Status: ${finalSaved.flgAtivo ? 'Operante' : 'Inoperante'} | Vazão: ${finalSaved.numVazao || 'N/I'} | Pressão: ${finalSaved.numPressao || 'N/I'}`,
+      coords: (finalSaved.numLatitude && finalSaved.numLongitude) ? { lat: Number(finalSaved.numLatitude), lng: Number(finalSaved.numLongitude) } : null
+    });
+
     toast.success('Hidrante salvo com sucesso e sincronizado!');
   };
 
@@ -1137,6 +1256,20 @@ function App() {
 
     setHidrantes(newHidrantes);
     syncHydrantMutationToCloud('delete', delId);
+
+    // Registra ação de exclusão no Histórico de Auditoria
+    logAuditEvent({
+      entityType: 'hidrante',
+      action: 'delete',
+      title: `Hidrante Removido da Base: ${hydrantToDelete.nomHidrante || hydrantToDelete.codHidrante || 'Hidrante'}`,
+      entityId: String(hydrantToDelete.codHidrante || hydrantToDelete._internalId || hydrantToDelete.nomHidrante || ''),
+      entityName: `${hydrantToDelete.nomHidrante || hydrantToDelete.codHidrante || 'Hidrante'} - ${hydrantToDelete.dscEndereco || ''}`.trim(),
+      location: hydrantToDelete.dscLocalidade || '',
+      author: currentUser,
+      details: 'Hidrante removido permanentemente da base ativa de dados pelo gestor.',
+      coords: (hydrantToDelete.numLatitude && hydrantToDelete.numLongitude) ? { lat: Number(hydrantToDelete.numLatitude), lng: Number(hydrantToDelete.numLongitude) } : null
+    });
+
     toast.success('Hidrante excluído da base com sucesso!');
   };
 
@@ -1366,6 +1499,7 @@ function App() {
             onSave={(updated, isEditing) => handleSaveInspection(updated, isEditing)}
             currentUser={currentUser}
             onDeleteHydrant={handleDeleteHydrant}
+            onDeleteInspection={handleDeleteInspection}
           />
         </Suspense>
       )}
@@ -1397,6 +1531,20 @@ function App() {
             hidrantes={hidrantes}
             onEditHydrant={(h) => setEditingHydrante(h)}
             onDeleteHydrant={handleDeleteHydrant}
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
+
+      {isSystemHistoryOpen && (
+        <Suspense fallback={null}>
+          <SystemHistoryModal
+            isOpen={isSystemHistoryOpen}
+            onClose={() => setIsSystemHistoryOpen(false)}
+            onFocusLocation={(coords) => {
+              setActiveView('map');
+              setMapCenterPosition({ ...coords, _ts: Date.now() });
+            }}
             currentUser={currentUser}
           />
         </Suspense>
@@ -1465,6 +1613,23 @@ function App() {
             </span>
           </div>
 
+          {/* Botão de Histórico e Notificações de Auditoria (Apenas Gestor e Admin) */}
+          {(currentUser?.role === 'gestor' || currentUser?.role === 'admin') && (
+            <button
+              type="button"
+              onClick={() => setIsSystemHistoryOpen(true)}
+              className="relative flex items-center justify-center p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 border border-slate-700 rounded shadow-sm transition-all"
+              title="Histórico e Notificações de Ações do Sistema"
+            >
+              <Bell size={19} />
+              {unreadAuditCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-black text-slate-950 shadow-md animate-pulse">
+                  {unreadAuditCount > 99 ? '99+' : unreadAuditCount}
+                </span>
+              )}
+            </button>
+          )}
+
           <button 
             onClick={handleLogout} 
             className="flex items-center justify-center p-2 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 border border-slate-700 rounded shadow-sm transition-all"
@@ -1498,7 +1663,7 @@ function App() {
                 className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm cursor-pointer hover:bg-slate-700 active:scale-95 transition-all relative select-none"
               >
                 <span className="hidden sm:inline">Menu</span>
-                {inconsistentCount > 0 && (
+                {(inconsistentCount > 0 || unreadAuditCount > 0) && (
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping absolute top-2 right-2"></span>
                 )}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -1535,6 +1700,39 @@ function App() {
                           </span>
                           <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
                             Gestão de usuários, acessos e permissões
+                          </span>
+                        </div>
+                      </a>
+                    )}
+
+                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                      <a 
+                        href="?modal=historico"
+                        onClick={(e) => {
+                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                            e.preventDefault();
+                            setIsSystemHistoryOpen(true);
+                            setIsMenuOpen(false);
+                          }
+                        }}
+                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
+                          <History size={17} />
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                              Histórico de Ações
+                            </span>
+                            {unreadAuditCount > 0 && (
+                              <span className="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/40 font-bold">
+                                {unreadAuditCount}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                            Auditoria de vistorias, hidrantes e PREPOP
                           </span>
                         </div>
                       </a>
@@ -1822,7 +2020,8 @@ function App() {
               hasFilter={Boolean(isCitySelected || hasSecondaryFilter)}
               isRouteActiveOnMap={isRouteActiveOnMap}
               activeMission={isRouteActiveOnMap ? currentMission : null}
-              activeMissionHydrants={isRouteActiveOnMap ? pendingRouteHydrants : []}
+              activeMissionHydrants={isRouteActiveOnMap ? allMissionRouteHydrants : []}
+              pendingRouteHydrants={isRouteActiveOnMap ? pendingRouteHydrants : []}
               completedMissionIds={completedMissionIds}
               routeFitTrigger={routeFitTrigger}
               onTriggerRouteFit={() => setRouteFitTrigger(Date.now())}

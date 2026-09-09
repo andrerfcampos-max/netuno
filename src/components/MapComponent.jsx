@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Edit3, Minimize2, Maximize2, Plus, Share2, AlertTriangle, Wrench, Route as RouteIcon, Check, X } from 'lucide-react';
+import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Edit3, Minimize2, Maximize2, Plus, Share2, AlertTriangle, Wrench, Route as RouteIcon, Check, X, History } from 'lucide-react';
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
@@ -560,7 +560,8 @@ const MapComponent = ({
   routeFitTrigger = null,
   onTriggerRouteFit = null,
   isRouteActiveOnMap = false,
-  onCloseRouteOnMap = null
+  onCloseRouteOnMap = null,
+  onOpenInspectionHistory = null
 }) => {
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
@@ -701,21 +702,64 @@ const MapComponent = ({
 
   const hasActiveRoute = Boolean(isRouteActiveOnMap && activeMission && activeMissionHydrants && activeMissionHydrants.length > 0);
 
+  const completedIdsSet = useMemo(() => {
+    return new Set((completedMissionIds || []).map(String));
+  }, [completedMissionIds]);
+
   const missionOrderMap = useMemo(() => {
     const map = {};
     if (!activeMission) return map;
     const ordered = (activeMission.orderedIds && activeMission.orderedIds.length > 0) 
       ? activeMission.orderedIds 
       : (activeMission.selectedIds || []);
-    ordered.forEach((id, idx) => {
+    
+    // Numera apenas os hidrantes pendentes/faltantes da rota
+    const pendingOrdered = ordered.filter(id => !completedIdsSet.has(String(id)));
+    pendingOrdered.forEach((id, idx) => {
       map[String(id)] = idx + 1;
     });
     return map;
-  }, [activeMission]);
+  }, [activeMission, completedIdsSet]);
 
   const activeMissionIdsSet = useMemo(() => {
     return new Set((activeMission?.selectedIds || []).map(String));
   }, [activeMission?.selectedIds]);
+
+  const { missionCompletedCount, missionPendingCount } = useMemo(() => {
+    if (!hasActiveRoute || !activeMissionHydrants) return { missionCompletedCount: 0, missionPendingCount: 0 };
+    let comp = 0;
+    let pend = 0;
+    activeMissionHydrants.forEach(h => {
+      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
+      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+      const k3 = h._internalId ? String(h._internalId) : null;
+      if ((k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3))) {
+        comp++;
+      } else {
+        pend++;
+      }
+    });
+    return { missionCompletedCount: comp, missionPendingCount: pend };
+  }, [hasActiveRoute, activeMissionHydrants, completedIdsSet]);
+
+  const selectedHydrantMissionStatus = useMemo(() => {
+    if (!hasActiveRoute || !selectedHydrant) return null;
+    const k1 = selectedHydrant.codHidrante !== undefined && selectedHydrant.codHidrante !== null ? String(selectedHydrant.codHidrante) : null;
+    const k2 = selectedHydrant.nomHidrante ? String(selectedHydrant.nomHidrante) : null;
+    const k3 = selectedHydrant._internalId ? String(selectedHydrant._internalId) : null;
+    const isCompleted = Boolean((k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3)));
+    const isMission = Boolean(
+      (k1 && activeMissionIdsSet.has(k1)) ||
+      (k2 && activeMissionIdsSet.has(k2)) ||
+      (k3 && activeMissionIdsSet.has(k3)) ||
+      (k1 && activeMissionHydrants.some(mh => String(mh.codHidrante) === k1)) ||
+      (k2 && activeMissionHydrants.some(mh => mh.nomHidrante === k2)) ||
+      (k3 && activeMissionHydrants.some(mh => mh._internalId === k3))
+    );
+    if (!isMission) return null;
+    const order = !isCompleted ? ((k1 && missionOrderMap[k1]) || (k2 && missionOrderMap[k2]) || (k3 && missionOrderMap[k3])) : null;
+    return { isCompleted, order };
+  }, [hasActiveRoute, selectedHydrant, completedIdsSet, activeMissionIdsSet, activeMissionHydrants, missionOrderMap]);
 
   const renderMarkers = () => {
     return validHidrantes.map((h, i) => {
@@ -733,16 +777,25 @@ const MapComponent = ({
       const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
       const k3 = h._internalId ? String(h._internalId) : null;
 
-      // Hidrante só recebe plotagem especial se a rota estiver ativa no mapa E o hidrante estiver entre os PENDENTES
+      const isMissionCompleted = Boolean(
+        (k1 && completedIdsSet.has(k1)) ||
+        (k2 && completedIdsSet.has(k2)) ||
+        (k3 && completedIdsSet.has(k3))
+      );
+
+      // Hidrante pertence à missão ativa se a rota estiver ativa no mapa
       const isMissionItem = Boolean(
         hasActiveRoute && (
           (k1 && activeMissionHydrants.some(mh => String(mh.codHidrante) === k1)) ||
           (k2 && activeMissionHydrants.some(mh => mh.nomHidrante === k2)) ||
-          (k3 && activeMissionHydrants.some(mh => mh._internalId === k3))
+          (k3 && activeMissionHydrants.some(mh => mh._internalId === k3)) ||
+          (k1 && activeMissionIdsSet.has(k1)) ||
+          (k2 && activeMissionIdsSet.has(k2)) ||
+          (k3 && activeMissionIdsSet.has(k3))
         )
       );
 
-      const missionOrder = isMissionItem
+      const missionOrder = (isMissionItem && !isMissionCompleted)
         ? ((k1 && missionOrderMap[k1]) || (k2 && missionOrderMap[k2]) || (k3 && missionOrderMap[k3]) || null)
         : null;
 
@@ -750,8 +803,8 @@ const MapComponent = ({
         <Marker 
           key={id} 
           position={[h.numLatitude, h.numLongitude]}
-          icon={createDivIcon(h.flgAtivo, isSelected, isCurrentActive, isMissionItem, missionOrder, false)}
-          zIndexOffset={isCurrentActive ? 2500 : (isMissionItem ? 1200 : (isSelected ? 500 : 0))}
+          icon={createDivIcon(h.flgAtivo, isSelected, isCurrentActive, isMissionItem, missionOrder, isMissionCompleted)}
+          zIndexOffset={isCurrentActive ? 2500 : (isMissionItem ? (isMissionCompleted ? 1100 : 1500) : (isSelected ? 500 : 0))}
           ref={(marker) => {
             if (marker) {
               markerRefs.current[id] = marker;
@@ -805,9 +858,14 @@ const MapComponent = ({
                 {activeMission.name || 'Missão'}
               </span>
             </div>
-            <span className="bg-cyan-950/90 border border-cyan-500/50 text-cyan-300 text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shrink-0">
-              {activeMissionHydrants.length} {activeMissionHydrants.length === 1 ? 'pendente' : 'pendentes'}
-            </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="bg-emerald-950/90 border border-emerald-500/60 text-emerald-300 text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm">
+                <span>✓</span> {missionCompletedCount} {missionCompletedCount === 1 ? 'concluído' : 'concluídos'}
+              </span>
+              <span className="bg-cyan-950/90 border border-cyan-500/60 text-cyan-300 text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm">
+                {missionPendingCount} {missionPendingCount === 1 ? 'faltante' : 'faltantes'}
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
@@ -890,29 +948,45 @@ const MapComponent = ({
         <MapResizer isMapFullscreen={isMapFullscreen} activeView={activeView} />
         <UserLocationTracker userLocation={userLocation} centerPosition={centerPosition} selectedHydrant={selectedHydrant} hasFilter={hasFilter || isCitySelected} hasActiveRoute={hasActiveRoute} />
 
-        {/* Traçado Tático da Rota Conectando os Hidrantes da Missão Ativa */}
-        {hasActiveRoute && activeMissionHydrants.length > 1 && (
-          <Polyline 
-            positions={(() => {
-              const ordered = (activeMission.orderedIds && activeMission.orderedIds.length > 0)
-                ? [...activeMissionHydrants].sort((a, b) => {
-                    const idxA = activeMission.orderedIds.indexOf(a.codHidrante || a._internalId || a.nomHidrante);
-                    const idxB = activeMission.orderedIds.indexOf(b.codHidrante || b._internalId || b.nomHidrante);
-                    return (idxA >= 0 ? idxA : 999) - (idxB >= 0 ? idxB : 999);
-                  })
-                : activeMissionHydrants;
-              return ordered
-                .filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude))
-                .map(h => [h.numLatitude, h.numLongitude]);
-            })()}
-            pathOptions={{
-              color: '#00ffff',
-              weight: 3.5,
-              opacity: 0.65,
-              dashArray: '8, 8',
-              lineCap: 'round'
-            }}
-          />
+        {/* Traçado Tático da Rota Conectando os Hidrantes Pendentes/Faltantes da Missão Ativa */}
+        {hasActiveRoute && (
+          (() => {
+            const pendingList = activeMissionHydrants.filter(h => {
+              const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
+              const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+              const k3 = h._internalId ? String(h._internalId) : null;
+              return !((k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3)));
+            });
+
+            if (pendingList.length <= 1) return null;
+
+            const ordered = (activeMission.orderedIds && activeMission.orderedIds.length > 0)
+              ? [...pendingList].sort((a, b) => {
+                  const idxA = activeMission.orderedIds.indexOf(a.codHidrante || a._internalId || a.nomHidrante);
+                  const idxB = activeMission.orderedIds.indexOf(b.codHidrante || b._internalId || b.nomHidrante);
+                  return (idxA >= 0 ? idxA : 999) - (idxB >= 0 ? idxB : 999);
+                })
+              : pendingList;
+
+            const positions = ordered
+              .filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude))
+              .map(h => [h.numLatitude, h.numLongitude]);
+
+            if (positions.length <= 1) return null;
+
+            return (
+              <Polyline 
+                positions={positions}
+                pathOptions={{
+                  color: '#00ffff',
+                  weight: 3.5,
+                  opacity: 0.75,
+                  dashArray: '8, 8',
+                  lineCap: 'round'
+                }}
+              />
+            );
+          })()
         )}
 
         {/* Plotagem direta de todos os hidrantes */}
@@ -962,10 +1036,16 @@ const MapComponent = ({
           <span className="text-red-400">Inoperante</span>
         </div>
         {hasActiveRoute && (
-          <div className="flex items-center gap-1.5 border-l border-slate-700 pl-2">
-            <span className="w-3.5 h-3.5 rounded-full border-2 border-cyan-400 bg-slate-900 text-cyan-300 font-mono text-[9px] flex items-center justify-center font-bold inline-block shrink-0 leading-none">1</span>
-            <span className="text-cyan-300">Rota ({activeMission.name || 'Missão'})</span>
-          </div>
+          <>
+            <div className="flex items-center gap-1.5 border-l border-slate-700 pl-2">
+              <span className="w-3.5 h-3.5 rounded-full border-2 border-cyan-400 bg-slate-900 text-cyan-300 font-mono text-[9px] flex items-center justify-center font-bold shrink-0 leading-none">1</span>
+              <span className="text-cyan-300">Faltante</span>
+            </div>
+            <div className="flex items-center gap-1.5 border-l border-slate-700 pl-2">
+              <span className="w-3.5 h-3.5 rounded-full border-2 border-emerald-400 bg-emerald-950 text-emerald-300 font-mono text-[10px] flex items-center justify-center font-black shrink-0 leading-none">✓</span>
+              <span className="text-emerald-300">Concluído</span>
+            </div>
+          </>
         )}
       </div>
 
@@ -1063,12 +1143,29 @@ const MapComponent = ({
 
               <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-700/50 text-[10px]">
                 <div>
-                  <span className="text-slate-400 block font-medium">Última Vistoria:</span>
-                  <span className="text-slate-200 font-semibold">{selectedHydrant.datHoraUltimaVistoria ? String(selectedHydrant.datHoraUltimaVistoria).split(' ')[0] : 'Sem vistoria'}</span>
+                  <span className="text-slate-400 block font-medium">Vistoria Vigente:</span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shrink-0"></span>
+                    <span className="text-slate-200 font-semibold">{selectedHydrant.datHoraUltimaVistoria ? String(selectedHydrant.datHoraUltimaVistoria).split(' ')[0] : 'Sem vistoria'}</span>
+                  </div>
+                  {isGestor && onOpenInspectionHistory && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenInspectionHistory(selectedHydrant);
+                      }}
+                      className="mt-1 px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[9.5px] font-bold flex items-center gap-1 transition-all active:scale-95 shadow-sm"
+                      title="Auditar Histórico de Vistorias Anteriores (Exclusivo Gestor)"
+                    >
+                      <History size={11} className="text-amber-400 shrink-0" />
+                      <span>Histórico ({Array.isArray(selectedHydrant.HISTORICO_VISTORIAS) ? selectedHydrant.HISTORICO_VISTORIAS.length : (selectedHydrant.datHoraUltimaVistoria ? 1 : 0)})</span>
+                    </button>
+                  )}
                 </div>
                 <div>
                   <span className="text-slate-400 block font-medium">Coordenadas:</span>
-                  <span className="text-slate-200 font-mono">{typeof selectedHydrant.numLatitude === 'number' ? selectedHydrant.numLatitude.toFixed(5) : selectedHydrant.numLatitude}, {typeof selectedHydrant.numLongitude === 'number' ? selectedHydrant.numLongitude.toFixed(5) : selectedHydrant.numLongitude}</span>
+                  <span className="text-slate-200 font-mono mt-0.5 block">{typeof selectedHydrant.numLatitude === 'number' ? selectedHydrant.numLatitude.toFixed(6) : selectedHydrant.numLatitude}, {typeof selectedHydrant.numLongitude === 'number' ? selectedHydrant.numLongitude.toFixed(6) : selectedHydrant.numLongitude}</span>
                 </div>
               </div>
             </div>
@@ -1255,12 +1352,29 @@ const MapComponent = ({
 
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-700/50 text-[11px]">
                 <div>
-                  <span className="text-slate-400 block font-medium">Última Vistoria:</span>
-                  <span className="text-slate-200 font-semibold">{selectedHydrant.datHoraUltimaVistoria ? String(selectedHydrant.datHoraUltimaVistoria).split(' ')[0] : 'Sem vistoria'}</span>
+                  <span className="text-slate-400 block font-medium">Vistoria Vigente:</span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shrink-0"></span>
+                    <span className="text-slate-200 font-semibold">{selectedHydrant.datHoraUltimaVistoria ? String(selectedHydrant.datHoraUltimaVistoria).split(' ')[0] : 'Sem vistoria'}</span>
+                  </div>
+                  {isGestor && onOpenInspectionHistory && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenInspectionHistory(selectedHydrant);
+                      }}
+                      className="mt-1.5 px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 shadow-sm"
+                      title="Auditar Histórico de Vistorias Anteriores (Exclusivo Gestor)"
+                    >
+                      <History size={12} className="text-amber-400 shrink-0" />
+                      <span>Histórico de Vistorias ({Array.isArray(selectedHydrant.HISTORICO_VISTORIAS) ? selectedHydrant.HISTORICO_VISTORIAS.length : (selectedHydrant.datHoraUltimaVistoria ? 1 : 0)})</span>
+                    </button>
+                  )}
                 </div>
                 <div>
                   <span className="text-slate-400 block font-medium">Coordenadas:</span>
-                  <span className="text-slate-200 font-mono text-[10px]">{typeof selectedHydrant.numLatitude === 'number' ? selectedHydrant.numLatitude.toFixed(5) : selectedHydrant.numLatitude}, {typeof selectedHydrant.numLongitude === 'number' ? selectedHydrant.numLongitude.toFixed(5) : selectedHydrant.numLongitude}</span>
+                  <span className="text-slate-200 font-mono text-[10px] mt-0.5 block">{typeof selectedHydrant.numLatitude === 'number' ? selectedHydrant.numLatitude.toFixed(6) : selectedHydrant.numLatitude}, {typeof selectedHydrant.numLongitude === 'number' ? selectedHydrant.numLongitude.toFixed(6) : selectedHydrant.numLongitude}</span>
                 </div>
               </div>
             </div>

@@ -39,6 +39,7 @@ import {
 } from '../utils/buildingStudiesStorage';
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { printBuildingStudyReport } from '../utils/officialPrintUtils';
+import { logAuditEvent } from '../utils/auditLogger';
 
 const OCCUPANCY_TYPES = [
   'Residencial',
@@ -125,8 +126,22 @@ export default function BuildingStudiesModal({
 
   // Salvar novo/editado
   const handleSaveStudy = (formData, keepOpen = false) => {
+    const isEdit = Boolean(formData.id);
     const res = saveBuildingStudy(formData);
     if (res.success) {
+      const nomeEdif = formData.nomeFantasia || formData.razaoSocial || formData.nomeEstabelecimento || 'Edificação';
+      logAuditEvent({
+        entityType: 'prepop',
+        action: isEdit ? 'edit' : 'create',
+        title: isEdit ? `Estudo PREPOP Atualizado: ${nomeEdif}` : `Novo Estudo PREPOP Cadastrado: ${nomeEdif}`,
+        entityId: res.studyId || formData.id || '',
+        entityName: nomeEdif,
+        location: `${formData.ra || ''} - ${formData.endereco || ''}`.trim(),
+        author: currentUser,
+        details: `Ocupação: ${formData.ocupacao || 'N/I'} | Carga de Incêndio: ${formData.cargaIncendio || 'N/I'}`,
+        coords: (formData.numLatitude && formData.numLongitude) ? { lat: Number(formData.numLatitude), lng: Number(formData.numLongitude) } : null
+      });
+
       setStudies(res.data);
       if (!keepOpen) {
         setIsFormOpen(false);
@@ -148,8 +163,22 @@ export default function BuildingStudiesModal({
 
   // Excluir estudo
   const handleDeleteStudy = (id) => {
+    const toDel = studies.find(s => s.id === id);
     const res = deleteBuildingStudy(id);
     if (res.success) {
+      const nomeEdif = toDel?.nomeFantasia || toDel?.razaoSocial || toDel?.nomeEstabelecimento || 'Edificação';
+      logAuditEvent({
+        entityType: 'prepop',
+        action: 'delete',
+        title: `Estudo PREPOP Excluído: ${nomeEdif}`,
+        entityId: String(id),
+        entityName: nomeEdif,
+        location: `${toDel?.ra || ''} - ${toDel?.endereco || ''}`.trim(),
+        author: currentUser,
+        details: 'Ficha de estudo PREPOP removida da base de dados.',
+        coords: (toDel?.numLatitude && toDel?.numLongitude) ? { lat: Number(toDel.numLatitude), lng: Number(toDel.numLongitude) } : null
+      });
+
       setStudies(res.data);
       setDeleteConfirmId(null);
       if (tacticalViewStudy && tacticalViewStudy.id === id) {

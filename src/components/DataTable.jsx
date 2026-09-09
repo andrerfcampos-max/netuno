@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, Edit3, MessageSquareText, AlertTriangle, Wrench } from 'lucide-react';
+import { Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, Edit3, MessageSquareText, AlertTriangle, Wrench, History } from 'lucide-react';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
 import { isHydrantSelected } from '../utils/geoUtils';
@@ -38,7 +38,7 @@ const parseDateToTimestamp = (dateStr) => {
   return -Infinity;
 };
 
-const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser }) => {
+const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser, onOpenInspectionHistory }) => {
   const [sortConfig, setSortConfig] = useState({ key: 'datHoraUltimaVistoria', direction: 'descending' });
   const [displayCount, setDisplayCount] = useState(50);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
@@ -266,7 +266,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
                   <div className="text-xs text-slate-300 space-y-0.5">
                     <div className="flex items-center justify-between text-slate-400 text-[11px]">
                       <span className="font-bold text-slate-200">📍 {fixEncoding(h.dscLocalidade)}</span>
-                      <span className="text-[10px]">📅 {dataFormatada}</span>
+                      <span className="text-[10px]">📅 Vigente: {dataFormatada}</span>
                     </div>
 
                     {(sanitizedProb || h.dscObservacao || h.observacoes || (!h.flgAtivo && !h.problemasHidrante)) && (
@@ -355,6 +355,18 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
                         >
                           <Wrench size={12} className="text-cyan-400" />
                           <span className="truncate uppercase font-extrabold text-slate-100">EDIT HIDR.</span>
+                        </button>
+                      )}
+
+                      {/* Histórico para Gestor */}
+                      {isGestor && onOpenInspectionHistory && Boolean((h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') || (h.HISTORICO_VISTORIAS && h.HISTORICO_VISTORIAS.length > 0)) && (
+                        <button
+                          onClick={() => onOpenInspectionHistory(h)}
+                          className="h-8 px-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 rounded-lg font-bold flex items-center justify-center gap-1 shadow-sm transition-all text-[10px] min-w-0"
+                          title="Auditar Histórico de Vistorias Anteriores (Exclusivo Gestor)"
+                        >
+                          <History size={12} className="text-amber-400 shrink-0" />
+                          <span className="hidden sm:inline">Histórico</span>
                         </button>
                       )}
 
@@ -546,6 +558,16 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
                           >
                             <Wrench size={13} className="text-cyan-400" />
                             <span className="hidden lg:inline text-slate-100">EDIT HIDR.</span>
+                          </button>
+                        )}
+
+                        {isGestor && onOpenInspectionHistory && Boolean((h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-') || (h.HISTORICO_VISTORIAS && h.HISTORICO_VISTORIAS.length > 0)) && (
+                          <button
+                            onClick={() => onOpenInspectionHistory(h)}
+                            title="Auditar Histórico de Vistorias Anteriores (Exclusivo Gestor)"
+                            className="p-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 rounded-lg transition-colors active:scale-95 border border-amber-500/30"
+                          >
+                            <History size={14} className="text-amber-400" />
                           </button>
                         )}
 

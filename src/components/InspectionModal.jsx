@@ -3,6 +3,7 @@ import { Camera, Image as ImageIcon, Trash2, ClipboardCheck, X, Edit3 } from 'lu
 import { fixEncoding } from '../utils/textUtils';
 import { calculateDistanceMeters } from '../utils/geoUtils';
 import SearchableSelect from './SearchableSelect';
+import { logAuditEvent } from '../utils/auditLogger';
 
 // Lista configurável e modular de problemas que tornam o hidrante automaticamente inativo
 export const PROBLEMAS_INATIVADORES = [
@@ -365,7 +366,24 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       const dataFormatada = agora.toLocaleString('pt-BR');
       const fotoPrincipal = fotos[0] || null;
 
-      let updatedHistorico = [...(hidrante.HISTORICO_VISTORIAS || [])];
+      let updatedHistorico = Array.isArray(hidrante.HISTORICO_VISTORIAS) ? [...hidrante.HISTORICO_VISTORIAS] : [];
+
+      // Se for uma nova vistoria e o histórico estiver vazio, mas o hidrante já possuía uma vistoria anterior na base,
+      // arquiva a vistoria anterior no histórico antes de registrar a nova
+      if (!isEditing && updatedHistorico.length === 0 && hidrante.datHoraUltimaVistoria && hidrante.datHoraUltimaVistoria !== '-') {
+        updatedHistorico.push({
+          idVistoria: `vist_prev_${Date.now() - 1000}`,
+          datHoraVistoria: hidrante.datHoraUltimaVistoria,
+          problemasHidrante: hidrante.problemasHidrante || 'Sem defeitos registrados',
+          flgAtivo: hidrante.flgAtivo !== undefined ? hidrante.flgAtivo : true,
+          fotoVistoria: hidrante.fotoVistoria || null,
+          fotosVistoria: Array.isArray(hidrante.fotosVistoria) ? hidrante.fotosVistoria : (hidrante.fotoVistoria ? [hidrante.fotoVistoria] : []),
+          vistoriadorNome: hidrante.vistoriadorNome || 'Registro Anterior',
+          vistoriadorMatricula: hidrante.vistoriadorMatricula || '-',
+          dscObservacao: hidrante.dscObservacao || hidrante.observacoes || ''
+        });
+      }
+
       if (isEditing && updatedHistorico.length > 0) {
         const lastIdx = updatedHistorico.length - 1;
         updatedHistorico[lastIdx] = {
@@ -374,28 +392,35 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
           flgAtivo: statusFinal,
           fotoVistoria: fotoPrincipal,
           fotosVistoria: fotos,
-          datHoraEdicao: dataFormatada
+          dscObservacao: q7.trim(),
+          datHoraEdicao: dataFormatada,
+          vistoriadorNome: currentUser?.nome || updatedHistorico[lastIdx].vistoriadorNome,
+          vistoriadorMatricula: currentUser?.matricula || updatedHistorico[lastIdx].vistoriadorMatricula
         };
       } else if (isEditing) {
         updatedHistorico = [{
+          idVistoria: `vist_${Date.now()}`,
           datHoraVistoria: hidrante.datHoraUltimaVistoria || dataFormatada,
           problemasHidrante: problemaFinal,
           flgAtivo: statusFinal,
           fotoVistoria: fotoPrincipal,
           fotosVistoria: fotos,
-          vistoriadorNome: hidrante.vistoriadorNome || currentUser?.nome,
-          vistoriadorMatricula: hidrante.vistoriadorMatricula || currentUser?.matricula,
+          dscObservacao: q7.trim(),
+          vistoriadorNome: currentUser?.nome || hidrante.vistoriadorNome || 'Vistoriador',
+          vistoriadorMatricula: currentUser?.matricula || hidrante.vistoriadorMatricula || '-',
           datHoraEdicao: dataFormatada
         }];
       } else {
         updatedHistorico.push({
+          idVistoria: `vist_${Date.now()}`,
           datHoraVistoria: dataFormatada,
           problemasHidrante: problemaFinal,
           flgAtivo: statusFinal,
           fotoVistoria: fotoPrincipal,
           fotosVistoria: fotos,
-          vistoriadorNome: currentUser?.nome,
-          vistoriadorMatricula: currentUser?.matricula
+          dscObservacao: q7.trim(),
+          vistoriadorNome: currentUser?.nome || 'Militar Vistoriador',
+          vistoriadorMatricula: currentUser?.matricula || '-'
         });
       }
 
@@ -403,18 +428,38 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
         ...hidrante,
         flgAtivo: statusFinal,
         problemasHidrante: problemaFinal,
+        dscObservacao: q7.trim(),
+        observacoes: q7.trim(),
+        obsVistoria: q7.trim(),
         datHoraUltimaVistoria: isEditing ? (hidrante.datHoraUltimaVistoria || dataFormatada) : dataFormatada,
         datHoraEdicao: isEditing ? dataFormatada : undefined,
         fotoVistoria: fotoPrincipal,
         fotosVistoria: fotos,
-        vistoriadorNome: hidrante.vistoriadorNome || currentUser?.nome,
-        vistoriadorMatricula: hidrante.vistoriadorMatricula || currentUser?.matricula,
+        vistoriadorNome: currentUser?.nome || hidrante.vistoriadorNome || 'Vistoriador',
+        vistoriadorMatricula: currentUser?.matricula || hidrante.vistoriadorMatricula || '-',
         HISTORICO_VISTORIAS: updatedHistorico,
         // Caso marcado como removido, sinaliza flags para histórico e gestão
         isInconsistent: isHidranteNaoEncontrado ? true : (hidrante.isInconsistent || false),
         flgRemovido: isHidranteNaoEncontrado ? true : (hidrante.flgRemovido || false),
         motivoInconsistencia: isHidranteNaoEncontrado ? 'Hidrante removido em vistoria de campo' : (hidrante.motivoInconsistencia || undefined)
       };
+
+      // Registra evento de auditoria
+      try {
+        logAuditEvent({
+          entityType: 'vistoria',
+          action: isEditing ? 'edit' : 'create',
+          title: isEditing ? `Vistoria editada em ${hidrante.nomHidrante || hidrante.codHidrante}` : `Nova vistoria cadastrada em ${hidrante.nomHidrante || hidrante.codHidrante}`,
+          entityId: hidrante._internalId || hidrante.codHidrante,
+          entityName: hidrante.nomHidrante || hidrante.codHidrante,
+          location: hidrante.dscLocalidade,
+          author: currentUser,
+          details: `Status: ${statusFinal ? 'Operante' : 'Inoperante'} | Defeitos: ${problemaFinal || 'Nenhum'}`,
+          coords: { lat: hidrante.numLatitude, lng: hidrante.numLongitude }
+        });
+      } catch (e) {
+        console.warn('Erro ao registrar log de auditoria da vistoria:', e);
+      }
 
       onSave(vistoriaAtualizada, isEditing);
     };
