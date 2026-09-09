@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-35",
+  "activeTaskId": "TASK-36",
   "queue": [
     {
       "id": "TASK-1",
@@ -319,10 +319,10 @@
       "seq": 32,
       "conversationId": "e8d1564b-9035-4448-a456-2fe83e0a4fcb",
       "description": "Criar secao de historico de auditoria e notificacoes para gestor",
-      "status": "failed",
+      "status": "completed",
       "createdAt": "2026-09-09T21:05:25.664Z",
       "startedAt": "2026-09-09T21:12:35.152Z",
-      "completedAt": "2026-09-09T21:12:54.491Z",
+      "completedAt": "2026-09-09T21:17:37.897Z",
       "error": "Timed out waiting in queue"
     },
     {
@@ -351,19 +351,19 @@
       "seq": 35,
       "conversationId": "c7c78c22-7e67-4c57-a425-46e13489d822",
       "description": "Ver pinos concluidos e faltantes no mapa da rota de missao",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-09T21:09:54.942Z",
       "startedAt": "2026-09-09T21:14:21.525Z",
-      "completedAt": null
+      "completedAt": "2026-09-09T21:19:39.515Z"
     },
     {
       "id": "TASK-36",
       "seq": 36,
       "conversationId": "97a0d11d-d664-4ee3-8594-3e46bc63aa4e",
       "description": "Ajustar espacamento tela cadastro hidrante mobile",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-09-09T21:10:49.597Z",
-      "startedAt": null,
+      "startedAt": "2026-09-09T21:19:41.361Z",
       "completedAt": null
     },
     {
