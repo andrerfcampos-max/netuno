@@ -671,3 +671,16 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - Adicionado botão flutuante com ícone de navegação (`Navigation`) sobre o mapa quando há uma rota ativa, permitindo ao operador em campo re-enquadrar sua posição e os hidrantes mais próximos a qualquer momento com um único toque.
   - Adicionado botão explícito "Ver no Mapa" no cabeçalho do `MissionRoutePanel`.
 
+### [09/09/2026] Refinamento do Modo Rota no Mapa: Plotagem Condicional, Banner com Botão Fechar e Exclusão Dinâmica de Hidrantes Vistoriados
+- **1. Plotagem Condicional Exclusiva para Rota Aberta (`App.jsx`, `MapComponent.jsx`):**
+  - Criado o estado `isRouteActiveOnMap`: os hidrantes da rota e seu traçado são renderizados no mapa **estritamente quando a rota for aberta para visualização**.
+  - Ao fechar a rota (pelo botão "X" do painel de rota, botão "Fechar Rota" no mapa ou ao fechar a missão), toda a plotagem especial é instantaneamente removida e o mapa retorna à navegação normal por filtros de cidade e busca.
+- **2. Aviso Visual Claro de Rota Plotada com Ação de Fechamento (`MapComponent.jsx`):**
+  - Implementado banner tático de alto contraste flutuante no topo do mapa (`Rota Ativa: [Nome] | [N] pendentes`).
+  - Inclui botão de ação direta **"✕ Fechar Rota"** para o militar restaurar os filtros e a visualização padrão a qualquer momento com um toque.
+  - Inclui botão **"Focar Próximos"** para re-enquadrar rapidamente na viatura e nos hidrantes vizinhos.
+- **3. Exclusão Imediata de Hidrantes Vistoriados da Plotagem Especial (`App.jsx`):**
+  - O seletor `pendingRouteHydrants` filtra exclusivamente os hidrantes da missão que ainda não foram concluídos (`completedIds`).
+  - À medida que uma vistoria é realizada, o hidrante concluído é retirado na hora da plotagem especial da rota e do traçado (`Polyline`), mantendo o mapa limpo e o percurso atualizado apenas com as paradas faltantes.
+
+

@@ -33,6 +33,7 @@ const MissionRoutePanel = ({
   completedMissionIds = [], 
   currentMission = null, 
   onUpdateMission, 
+  onViewOnMap,
   onClose, 
   onBackToManager, 
   onClearMission, 
@@ -757,7 +758,7 @@ const MissionRoutePanel = ({
           {/* Botão Ver no Mapa com Foco Próximo */}
           <button 
             type="button" 
-            onClick={onClose} 
+            onClick={onViewOnMap || onClose} 
             title="Ver Hidrantes da Rota no Mapa (Foco na sua posição + hidrantes próximos)" 
             className="h-7.5 px-2 sm:h-8 flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/70 hover:border-cyan-400 text-cyan-300 text-[11px] sm:text-xs font-bold rounded-lg shadow-sm transition-all shrink-0 cursor-pointer active:scale-95"
           >

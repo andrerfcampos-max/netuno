@@ -239,28 +239,41 @@ function App() {
   const [openMissionIds, setOpenMissionIds] = useState(initialActiveId ? [initialActiveId] : []);
   const [activeMissionId, setActiveMissionId] = useState(initialActiveId);
   const [routeFitTrigger, setRouteFitTrigger] = useState(null);
+  const [isRouteActiveOnMap, setIsRouteActiveOnMap] = useState(false);
 
   // Derivações da Missão Ativa
   const currentMission = useMemo(() => missions.find(m => m.id === activeMissionId), [missions, activeMissionId]);
   const selectedMissionIds = useMemo(() => currentMission?.selectedIds || [], [currentMission?.selectedIds]);
   const completedMissionIds = useMemo(() => currentMission?.completedIds || [], [currentMission?.completedIds]);
 
-  // Extrai os hidrantes completos da rota da missão ativa
-  const activeMissionHydrants = useMemo(() => {
+  // Extrai APENAS os hidrantes PENDENTES (não vistoriados) da rota da missão ativa para plotagem especial
+  const pendingRouteHydrants = useMemo(() => {
     if (!currentMission || !currentMission.selectedIds || currentMission.selectedIds.length === 0) return [];
     const idSet = new Set(currentMission.selectedIds.map(String));
+    const compSet = new Set((currentMission.completedIds || []).map(String));
+
     return hidrantes.filter(h => {
       const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
       const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
       const k3 = h._internalId ? String(h._internalId) : null;
-      return (k1 && idSet.has(k1)) || (k2 && idSet.has(k2)) || (k3 && idSet.has(k3));
+      const isInMission = (k1 && idSet.has(k1)) || (k2 && idSet.has(k2)) || (k3 && idSet.has(k3));
+      const isCompleted = (k1 && compSet.has(k1)) || (k2 && compSet.has(k2)) || (k3 && compSet.has(k3));
+      return isInMission && !isCompleted;
     });
   }, [currentMission, hidrantes]);
 
-  // Dispara o zoom tático na rota ao retornar para a tela de mapa
+  // Fecha a rota no mapa caso a missão ativa seja limpa ou fechada
+  useEffect(() => {
+    if (!activeMissionId) {
+      setIsRouteActiveOnMap(false);
+    }
+  }, [activeMissionId]);
+
+  // Dispara o zoom tático na rota ao retornar para a tela de mapa vindo de route
   const prevViewRef = useRef(activeView);
   useEffect(() => {
     if (prevViewRef.current === 'route' && activeView === 'map' && activeMissionId) {
+      setIsRouteActiveOnMap(true);
       setRouteFitTrigger(Date.now());
     }
     prevViewRef.current = activeView;
@@ -336,9 +349,10 @@ function App() {
   const mapHidrantes = useMemo(() => {
     let list = isCitySelected ? [...filteredList] : [];
 
-    // Garante que TODOS os hidrantes da rota ativa sejam sempre plotados no mapa
-    if (activeMissionHydrants && activeMissionHydrants.length > 0) {
-      activeMissionHydrants.forEach(mh => {
+    // Plotagem especial dos hidrantes da rota: APENAS se a rota estiver ativa/aberta no mapa
+    // E apenas os hidrantes PENDENTES (hidrantes vistoriados são retirados da plotagem especial)
+    if (isRouteActiveOnMap && pendingRouteHydrants && pendingRouteHydrants.length > 0) {
+      pendingRouteHydrants.forEach(mh => {
         const alreadyInList = list.some(h => 
           (h._internalId && mh._internalId && h._internalId === mh._internalId) ||
           (h.codHidrante && mh.codHidrante && h.codHidrante === mh.codHidrante) ||
@@ -361,7 +375,7 @@ function App() {
       }
     }
     return list;
-  }, [isCitySelected, mapCenterPosition, filteredList, activeMissionHydrants]);
+  }, [isCitySelected, mapCenterPosition, filteredList, isRouteActiveOnMap, pendingRouteHydrants]);
 
   // Suporte a abertura direta de modais e deep links de hidrante (?hid=...) via URL parameter
   useEffect(() => {
@@ -1806,12 +1820,13 @@ function App() {
               activeView={activeView}
               isCitySelected={isCitySelected}
               hasFilter={Boolean(isCitySelected || hasSecondaryFilter)}
-              selectedCity={activeFilters?.ra}
-              activeMission={currentMission}
-              activeMissionHydrants={activeMissionHydrants}
+              isRouteActiveOnMap={isRouteActiveOnMap}
+              activeMission={isRouteActiveOnMap ? currentMission : null}
+              activeMissionHydrants={isRouteActiveOnMap ? pendingRouteHydrants : []}
               completedMissionIds={completedMissionIds}
               routeFitTrigger={routeFitTrigger}
               onTriggerRouteFit={() => setRouteFitTrigger(Date.now())}
+              onCloseRouteOnMap={() => setIsRouteActiveOnMap(false)}
             />
           </ErrorBoundary>
         </div>
@@ -1866,8 +1881,13 @@ function App() {
               completedMissionIds={completedMissionIds}
               currentMission={currentMission}
               onUpdateMission={(updates) => updateCurrentMission(updates)}
-              onClose={() => {
+              onViewOnMap={() => {
+                setIsRouteActiveOnMap(true);
                 setRouteFitTrigger(Date.now());
+                setActiveView('map');
+              }}
+              onClose={() => {
+                setIsRouteActiveOnMap(false);
                 setActiveView('map');
               }}
               onBackToManager={() => currentUser?.role === 'vistoriador' ? setActiveView('missions') : setIsMissionManagerOpen(true)}

@@ -558,7 +558,9 @@ const MapComponent = ({
   activeMissionHydrants = [],
   completedMissionIds = [],
   routeFitTrigger = null,
-  onTriggerRouteFit = null
+  onTriggerRouteFit = null,
+  isRouteActiveOnMap = false,
+  onCloseRouteOnMap = null
 }) => {
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
@@ -697,7 +699,7 @@ const MapComponent = ({
     window.open(waUrl, '_blank');
   };
 
-  const hasActiveRoute = Boolean(activeMission && activeMissionHydrants && activeMissionHydrants.length > 0);
+  const hasActiveRoute = Boolean(isRouteActiveOnMap && activeMission && activeMissionHydrants && activeMissionHydrants.length > 0);
 
   const missionOrderMap = useMemo(() => {
     const map = {};
@@ -710,10 +712,6 @@ const MapComponent = ({
     });
     return map;
   }, [activeMission]);
-
-  const completedMissionSet = useMemo(() => {
-    return new Set((completedMissionIds || []).map(String));
-  }, [completedMissionIds]);
 
   const activeMissionIdsSet = useMemo(() => {
     return new Set((activeMission?.selectedIds || []).map(String));
@@ -735,18 +733,13 @@ const MapComponent = ({
       const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
       const k3 = h._internalId ? String(h._internalId) : null;
 
+      // Hidrante só recebe plotagem especial se a rota estiver ativa no mapa E o hidrante estiver entre os PENDENTES
       const isMissionItem = Boolean(
         hasActiveRoute && (
-          (k1 && activeMissionIdsSet.has(k1)) ||
-          (k2 && activeMissionIdsSet.has(k2)) ||
-          (k3 && activeMissionIdsSet.has(k3))
+          (k1 && activeMissionHydrants.some(mh => String(mh.codHidrante) === k1)) ||
+          (k2 && activeMissionHydrants.some(mh => mh.nomHidrante === k2)) ||
+          (k3 && activeMissionHydrants.some(mh => mh._internalId === k3))
         )
-      );
-
-      const isMissionCompleted = isMissionItem && Boolean(
-        (k1 && completedMissionSet.has(k1)) ||
-        (k2 && completedMissionSet.has(k2)) ||
-        (k3 && completedMissionSet.has(k3))
       );
 
       const missionOrder = isMissionItem
@@ -757,7 +750,7 @@ const MapComponent = ({
         <Marker 
           key={id} 
           position={[h.numLatitude, h.numLongitude]}
-          icon={createDivIcon(h.flgAtivo, isSelected, isCurrentActive, isMissionItem, missionOrder, isMissionCompleted)}
+          icon={createDivIcon(h.flgAtivo, isSelected, isCurrentActive, isMissionItem, missionOrder, false)}
           zIndexOffset={isCurrentActive ? 2500 : (isMissionItem ? 1200 : (isSelected ? 500 : 0))}
           ref={(marker) => {
             if (marker) {
@@ -798,7 +791,57 @@ const MapComponent = ({
   return (
     <div className={isMapFullscreen ? "fixed inset-0 z-[100] bg-slate-900" : "h-full min-h-[300px] w-full relative rounded-xl overflow-hidden border border-slate-700 shadow-inner z-0"}>
       
-      {validHidrantes.length === 0 && (
+      {/* AVISO VISUAL CLARO: MODO ROTA ATIVA PLOTADA NO MAPA COM BOTÃO FECHAR */}
+      {hasActiveRoute && activeMission && (
+        <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-cyan-400/90 shadow-2xl rounded-2xl sm:rounded-full px-3.5 py-2 sm:px-4 sm:py-2 flex items-center justify-between sm:justify-start gap-2.5 sm:gap-4 backdrop-blur-md max-w-[96vw] pointer-events-auto">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+            </span>
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="text-[11px] sm:text-xs font-bold text-cyan-300">Rota Ativa:</span>
+              <span className="text-xs sm:text-sm font-extrabold text-white truncate max-w-[140px] sm:max-w-[240px]">
+                {activeMission.name || 'Missão'}
+              </span>
+            </div>
+            <span className="bg-cyan-950/90 border border-cyan-500/50 text-cyan-300 text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shrink-0">
+              {activeMissionHydrants.length} {activeMissionHydrants.length === 1 ? 'pendente' : 'pendentes'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Botão de Foco nos mais próximos */}
+            {onTriggerRouteFit && (
+              <button
+                type="button"
+                onClick={onTriggerRouteFit}
+                className="hidden xs:flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer active:scale-95"
+                title="Centralizar em você e nos hidrantes mais próximos da rota"
+              >
+                <Navigation size={12} className="text-cyan-400" />
+                <span className="hidden sm:inline">Focar Próximos</span>
+              </button>
+            )}
+
+            {/* Botão Fechar Rota e Restaurar Navegação por Filtros */}
+            {onCloseRouteOnMap && (
+              <button
+                type="button"
+                onClick={onCloseRouteOnMap}
+                className="flex items-center gap-1 bg-rose-950/90 hover:bg-rose-900 border border-rose-500/80 hover:border-rose-400 text-rose-200 px-2.5 py-1 sm:px-3 rounded-full text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+                title="Fechar visualização da rota e voltar à navegação normal por filtros"
+              >
+                <X size={14} className="text-rose-300" />
+                <span>Fechar Rota</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Dica de Filtro de Cidade (apenas quando NÃO houver rota ativa plotada) */}
+      {!hasActiveRoute && validHidrantes.length === 0 && (
         <div 
           onClick={() => {
             if (onOpenFilters) onOpenFilters();
