@@ -724,6 +724,33 @@ const MissionRoutePanel = ({
     );
   };
 
+  // Se nenhuma missão estiver aberta, exibe a tela de rota limpa (em branco) com indicação para a Central de Missões
+  if (!currentMission) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full bg-slate-900 p-6 text-center select-none">
+        <div className="w-16 h-16 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-center mb-4 shadow-xl">
+          <GitMerge size={32} className="text-emerald-400" />
+        </div>
+        <h2 className="text-lg sm:text-xl font-extrabold text-slate-100 mb-2">
+          Nenhuma Rota de Missão Aberta
+        </h2>
+        <p className="text-xs sm:text-sm text-slate-400 max-w-md mb-6 leading-relaxed">
+          Nenhuma rota está carregada no momento. Para iniciar as vistorias em campo ou traçar o trajeto tático, acesse a <strong>Central de Missões</strong> e abra a missão desejada.
+        </p>
+        {onBackToManager && (
+          <button
+            type="button"
+            onClick={onBackToManager}
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold rounded-xl shadow-lg shadow-emerald-950/50 transition-all active:scale-95 cursor-pointer flex items-center gap-2"
+          >
+            <FolderOpen size={16} />
+            <span>Acessar Central de Missões</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col p-2 sm:p-3 w-full h-full bg-slate-900 relative overflow-hidden">
 
@@ -782,9 +809,13 @@ const MissionRoutePanel = ({
           {/* Botão Fechar Isolado */}
           <button 
             type="button" 
-            onClick={onClose} 
+            onClick={() => {
+              if (window.confirm(`Deseja fechar a rota "${currentMission?.name || 'da missão'}"? Ela continuará salva na Central de Missões.`)) {
+                onClose();
+              }
+            }} 
             className="h-7.5 w-7.5 sm:h-8 sm:w-8 flex items-center justify-center bg-slate-800/80 hover:bg-rose-950/60 border border-slate-700/70 hover:border-rose-500/50 text-slate-400 hover:text-rose-300 rounded-lg transition-all shrink-0 cursor-pointer active:scale-90" 
-            title="Fechar Rota de Missão e voltar ao Mapa"
+            title="Fechar e descarregar rota de missão"
           >
             <X size={16} />
           </button>

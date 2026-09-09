@@ -285,15 +285,14 @@ function App() {
     }
   }, [activeMissionId]);
 
-  // Dispara o zoom tático na rota ao retornar para a tela de mapa vindo de route
+  // Dispara o zoom tático na rota ao retornar para a tela de mapa quando o modo rota estiver ativo
   const prevViewRef = useRef(activeView);
   useEffect(() => {
-    if (prevViewRef.current === 'route' && activeView === 'map' && activeMissionId) {
-      setIsRouteActiveOnMap(true);
+    if (prevViewRef.current === 'route' && activeView === 'map' && activeMissionId && isRouteActiveOnMap) {
       setRouteFitTrigger(Date.now());
     }
     prevViewRef.current = activeView;
-  }, [activeView, activeMissionId]);
+  }, [activeView, activeMissionId, isRouteActiveOnMap]);
   const [isMissionManagerOpen, setIsMissionManagerOpen] = useState(false);
   const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
   const [isTechnicalStudyOpen, setIsTechnicalStudyOpen] = useState(false);
@@ -1318,13 +1317,22 @@ function App() {
   const handleOpenMission = (id) => {
     setOpenMissionIds([id]);
     setActiveMissionId(id);
+    setIsRouteActiveOnMap(true);
+    setRouteFitTrigger(Date.now());
     setActiveView('route');
   };
 
-  const handleCloseTab = (id) => {
+  const handleCloseActiveMission = () => {
+    setActiveMissionId(null);
     setOpenMissionIds([]);
-    if (activeMissionId === id) {
-      setActiveMissionId(null);
+    setIsRouteActiveOnMap(false);
+    saveActiveMissionState({ openMissionIds: [], activeMissionId: null });
+    toast.info('Rota de missão fechada com sucesso.');
+  };
+
+  const handleCloseTab = (id) => {
+    if (!id || activeMissionId === id) {
+      handleCloseActiveMission();
     }
   };
 
@@ -2039,7 +2047,39 @@ function App() {
             </div>
           </div>
         ) : (
-          <div className="flex-shrink-0 px-2 pt-1.5 z-20 w-full">
+          <div className="flex-shrink-0 px-2 pt-1.5 z-20 w-full flex flex-col gap-1.5">
+            {activeMissionId && currentMission && activeView === 'map' && (
+              <div className="bg-slate-900/98 border border-emerald-500/60 shadow-md rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 backdrop-blur-md">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
+                  <span className="text-xs text-slate-200 truncate">
+                    Rota aberta em 2º plano: <strong className="text-emerald-300">{currentMission.name}</strong> ({selectedMissionIds.length} hidrantes)
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRouteActiveOnMap(true);
+                      setRouteFitTrigger(Date.now());
+                    }}
+                    className="bg-cyan-900/90 hover:bg-cyan-800 border border-cyan-500/60 text-cyan-200 text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm active:scale-95"
+                    title="Plota e foca exclusivamente nos hidrantes desta rota"
+                  >
+                    <Navigation size={12} className="text-cyan-400" />
+                    <span>Focar Rota no Mapa</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCloseActiveMission}
+                    className="bg-slate-800 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500/60 text-slate-400 hover:text-rose-300 text-[11px] font-semibold px-2 py-1 rounded-lg transition-all cursor-pointer active:scale-95"
+                    title="Fechar e descarregar esta rota"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            )}
             <FilterBar 
               activeFilters={activeFilters}
               onFilterChange={handleFilterChange} 
@@ -2184,7 +2224,9 @@ function App() {
               onClose={() => setActiveView('map')}
               onOpenMission={(id) => {
                 handleOpenMission(id);
-                setActiveView('route');
+              }}
+              onCloseMission={(id) => {
+                handleCloseActiveMission();
               }}
               onNewMission={handleNewMission}
               onDeleteMission={handleDeleteMission}
@@ -2211,8 +2253,7 @@ function App() {
                 setActiveView('map');
               }}
               onClose={() => {
-                setIsRouteActiveOnMap(false);
-                setActiveView('map');
+                handleCloseActiveMission();
               }}
               onBackToManager={() => currentUser?.role === 'vistoriador' ? setActiveView('missions') : setIsMissionManagerOpen(true)}
               onClearMission={() => updateCurrentMission({ selectedIds: [], completedIds: [] })}
@@ -2368,12 +2409,12 @@ function App() {
             className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all relative ${
               activeView === 'route' 
                 ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-400 font-bold' 
-                : (selectedMissionIds.length === 0 ? 'text-slate-400 hover:text-slate-200' : 'text-slate-300 hover:text-slate-200')
+                : (!activeMissionId || selectedMissionIds.length === 0 ? 'text-slate-400 hover:text-slate-200' : 'text-slate-300 hover:text-slate-200')
             }`}
           >
             <Navigation size={20} className={activeView === 'route' ? 'text-emerald-400' : ''} />
             <span className="text-[10px] font-semibold mt-0.5">Rota de Missão</span>
-            {selectedMissionIds.length > 0 && (
+            {activeMissionId && selectedMissionIds.length > 0 && (
               <span className="absolute top-0.5 right-3 bg-emerald-500 text-slate-950 font-black text-[9px] px-1.5 py-0.2 rounded-full min-w-[16px] text-center shadow">
                 {selectedMissionIds.length}
               </span>
@@ -2397,7 +2438,7 @@ function App() {
       {/* Barramento de Seleção Inferior (Desktop apenas) */}
       <footer className={isMapFullscreen ? "hidden" : "hidden md:flex bg-slate-900 border-t border-slate-700 p-3 justify-between items-center z-20"}>
         <div className="flex flex-col">
-          {activeMissionId && (
+          {activeMissionId && currentMission && (
             <div className="text-sm font-semibold text-slate-400">
               <span className="text-emerald-400 font-bold">{selectedMissionIds.length}</span> hidrantes na {currentMission?.name} 
               {completedMissionIds.length > 0 && ` (${completedMissionIds.length} concluídos)`}
@@ -2419,6 +2460,7 @@ function App() {
             hidrantes={hidrantes}
             onClose={() => setIsMissionManagerOpen(false)}
             onOpenMission={handleOpenMission}
+            onCloseMission={handleCloseActiveMission}
             onNewMission={handleNewMission}
             onDeleteMission={handleDeleteMission}
             onFoldersChange={handleFoldersChange}

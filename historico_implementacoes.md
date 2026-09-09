@@ -702,3 +702,21 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 
 ### [09/09/2026] Etapa 77 Concluída Automaticamente
 - **Exportação Global de Dados (CSV Sanitizado) no Menu Principal** foi executada e validada com sucesso pelo agente.
+
+### [09/09/2026] Etapa 78 Concluída: Controle Unificado de 1 Rota de Missão Ativa por Vez (Ciclo Abrir, Fechar, Plotar no Mapa, Estado Vazio e Badge Sincronizado)
+- **1. Regra Estrita de 1 Rota Ativa por Vez (`App.jsx`, `MissionManagerModal.jsx`):**
+  - O sistema agora opera estritamente no modelo de 1 rota ativa de trabalho por vez (ou nenhuma).
+  - Ao abrir qualquer rota na Central de Missões (`handleOpenMission`), ela assume o posto de única rota ativa, fechando automaticamente qualquer rota anterior.
+  - A Central de Missões agora exibe claramente o status da missão: a rota ativa recebe a tag **"Aberta"** com indicador pulsante verde, botão **"Ver Rota Aberta"** e botão de ação direta **"Fechar"**. As demais rotas exibem o botão **"Abrir Rota"**.
+- **2. Descarregamento Real da Missão pelo Botão 'X' e Botão 'Fechar' (`App.jsx`, `MissionRoutePanel.jsx`):**
+  - Criada a função unificada `handleCloseActiveMission` que redefine `activeMissionId = null`, `openMissionIds = []`, `isRouteActiveOnMap = false` e limpa o localStorage.
+  - O botão 'X' no cabeçalho do `MissionRoutePanel` agora possui diálogo de confirmação claro e descarrega de fato a missão, eliminando o comportamento antigo onde a rota permanecia eternamente viva no mapa e na memória.
+- **3. Estado Vazio (Em Branco) na Tela de Rota (`MissionRoutePanel.jsx`):**
+  - Quando nenhuma rota estiver aberta (`!currentMission`), a tela de Rota agora exibe um **Empty State elegante e limpo** ("Nenhuma Rota de Missão Aberta"), sem cabeçalhos quebrados ou contadores fantasmas, com botão direto para navegar até a Central de Missões.
+- **4. Sincronização Perfeita de Badges e Rodapé (`App.jsx`):**
+  - O badge numérico da aba "Rota de Missão" na barra inferior só é exibido se houver uma missão ativa (`activeMissionId && selectedMissionIds.length > 0`). Ao fechar a rota, o badge zera e desaparece na hora.
+  - O rodapé da tela desktop também só exibe os dados da missão quando uma rota estiver ativa.
+- **5. Controle Transparente no Mapa e Eliminação de Loops (`App.jsx`):**
+  - O `prevViewRef` foi corrigido para não forçar `isRouteActiveOnMap(true)` quando o militar não solicitou a rota.
+  - Quando uma missão estiver aberta mas o militar optar por navegar livremente no mapa de cidades, o mapa exibe uma **barra de rota em 2º plano** informando o nome da missão e hidrantes com botões rápidos para **"Focar Rota no Mapa"** ou **"Fechar"**.
+

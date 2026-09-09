@@ -5,7 +5,7 @@ import { syncMissionToCloud, syncFolderToCloud } from '../services/syncService';
 import { printMissionDraft } from '../utils/draftPrintUtils';
 import { executePrintHtml } from '../utils/officialPrintUtils';
 
-const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, hidrantes = [], onClose, onOpenMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser, isEmbedded = false }) => {
+const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, hidrantes = [], onClose, onOpenMission, onCloseMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser, isEmbedded = false }) => {
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [activeTab, setActiveTab] = useState('todas'); // todas, nao_iniciadas, em_andamento, finalizadas, dashboard_comando
   const [searchTerm, setSearchTerm] = useState('');
@@ -957,7 +957,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
           })}
 
           {activeTab !== 'dashboard_comando' && filteredMissions.map(mission => {
-            const isOpen = (mission.id === activeMissionId) || (Array.isArray(openMissionIds) && openMissionIds.includes(mission.id));
+            const isOpen = (mission.id === activeMissionId);
             const total = (mission.selectedIds || []).length;
             const completed = (mission.completedIds || []).filter(id => (mission.selectedIds || []).includes(id)).length;
             const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
@@ -966,12 +966,20 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
             return (
               <div 
                 key={mission.id} 
-                className="bg-slate-700/50 border border-slate-600 rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:bg-slate-700 transition-all w-full relative select-none"
+                className={`border rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between transition-all w-full relative select-none ${
+                  isOpen ? 'bg-slate-700/80 border-emerald-500/70 shadow-lg ring-1 ring-emerald-500/30' : 'bg-slate-700/50 border-slate-600 hover:bg-slate-700'
+                }`}
               >
                 <div className="flex-1 w-full min-w-0 overflow-hidden">
                   <h3 className="font-bold text-lg text-slate-200 truncate flex items-center gap-2">
                     {isCompleted ? <CheckCircle size={18} className="text-emerald-500 shrink-0" /> : <Target size={18} className="text-amber-500 shrink-0" />}
                     <span className="truncate">{mission.name}</span>
+                    {isOpen && (
+                      <span className="bg-emerald-950 border border-emerald-500/70 text-emerald-300 text-[10px] uppercase font-black px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Aberta
+                      </span>
+                    )}
                     {mission.isDraft && (
                        <span className="bg-amber-900/50 text-amber-500 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border border-amber-800 shrink-0">Rascunho</span>
                     )}
@@ -1012,15 +1020,44 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
                     <span>Imprimir rascunho</span>
                   </button>
 
-                  <button 
-                    onClick={() => {
-                      onOpenMission(mission.id);
-                      onClose();
-                    }}
-                    className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors cursor-pointer text-xs sm:text-sm"
-                  >
-                    {isOpen ? 'Já Aberta' : 'Abrir'}
-                  </button>
+                  {isOpen ? (
+                    <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          onOpenMission(mission.id);
+                          onClose();
+                        }}
+                        className="flex-1 sm:flex-none px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors cursor-pointer text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm"
+                        title="Ver a rota aberta desta missão"
+                      >
+                        <CheckCircle2 size={15} />
+                        <span>Ver Rota Aberta</span>
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          if (onCloseMission) onCloseMission(mission.id);
+                        }}
+                        className="px-2.5 py-2 bg-slate-800 hover:bg-rose-950/80 border border-slate-600 hover:border-rose-500/60 text-slate-300 hover:text-rose-200 font-bold rounded-lg transition-colors cursor-pointer text-xs sm:text-sm"
+                        title="Fechar e descarregar esta rota de missão"
+                      >
+                        Fechar
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        onOpenMission(mission.id);
+                        onClose();
+                      }}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-emerald-700/90 hover:bg-emerald-600 text-white font-bold rounded-lg transition-all cursor-pointer text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                    >
+                      <Target size={15} />
+                      <span>Abrir Rota</span>
+                    </button>
+                  )}
                   {isGestor && !isMoveMode && (
                     <>
                       <button onClick={() => handleMoveMission(mission)} className="p-2 bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer" title="Mover para...">

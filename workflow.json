@@ -462,6 +462,12 @@
       "status": "completed",
       "name": "Exportação Global de Dados (CSV Sanitizado) no Menu Principal",
       "prompt": "Atue como Engenheiro de Software Sênior. Adicione uma funcionalidade de \"Baixar Base de Dados Completa\" no menu principal do sistema (não restrito ao pré pop). O export deve gerar um arquivo CSV sanitizado de forma organizada, contendo todas as informações do sistema consolidadas (vistorias, transações, pré pop, pareceres técnicos, etc.). O layout do CSV deve ser limpo e pronto para análise. Responda \"ETAPA CONCLUIDA\" quando finalizar e aprovar os testes em localhost."
+    },
+    {
+      "id": 78,
+      "status": "completed",
+      "name": "Controle Unificado de 1 Rota de Missão Ativa por Vez (Ciclo Abrir, Fechar, Plotar no Mapa, Estado Vazio e Badge Sincronizado)",
+      "prompt": "Implementar controle unificado de no máximo 1 rota aberta por vez no sistema Netuno:\n1. Ajustar ciclo de abertura e fechamento para que o botão 'X' no MissionRoutePanel e o botão 'Fechar' na Central de Missões descarreguem a rota ativa (activeMissionId = null, isRouteActiveOnMap = false).\n2. Exibir estado vazio (em branco) elegante no MissionRoutePanel quando nenhuma missão estiver ativa, com botão convidativo para a Central de Missões.\n3. Ocultar o badge numérico na barra inferior e o footer desktop quando não houver missão ativa.\n4. No mapa, exibir banner tático de rota aberta quando plotando, e barra sutil de rota em 2º plano quando navegando livremente pelas cidades com botão para focar na rota ou fechar.\n5. Eliminar ativação indesejada via prevViewRef e validar com npm run build."
     }
   ]
 }
