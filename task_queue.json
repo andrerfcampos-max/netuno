@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-23",
+  "activeTaskId": "TASK-25",
   "queue": [
     {
       "id": "TASK-1",
@@ -227,18 +227,38 @@
       "seq": 23,
       "conversationId": "1b8ecea8-c62b-4a8c-a1bc-41b8b704149c",
       "description": "Zoom e plotagem automatica dos hidrantes da rota proximos a localizacao do usuario ao retornar ao mapa",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-09T20:21:56.381Z",
       "startedAt": "2026-09-09T20:24:13.831Z",
-      "completedAt": null
+      "completedAt": "2026-09-09T20:30:33.440Z"
     },
     {
       "id": "TASK-24",
       "seq": 24,
       "conversationId": "0e45eabb-2060-4ed3-b56c-5ce482217740",
       "description": "Fix toast overlapping bottom nav and route name header truncation",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-09T20:23:41.122Z",
+      "startedAt": "2026-09-09T20:30:35.194Z",
+      "completedAt": "2026-09-09T20:35:09.085Z"
+    },
+    {
+      "id": "TASK-25",
+      "seq": 25,
+      "conversationId": "112d918e-cd74-49ce-9a09-d556ef2f9c73",
+      "description": "Comparar e ajustar relatorios PDF vs Tela incluindo coluna Waze",
+      "status": "running",
+      "createdAt": "2026-09-09T20:27:38.071Z",
+      "startedAt": "2026-09-09T20:35:09.479Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-26",
+      "seq": 26,
+      "conversationId": "f3105e12-a7f4-4eb7-b897-feb9557d45cc",
+      "description": "Fix distance calculation oscillation and list reordering",
+      "status": "queued",
+      "createdAt": "2026-09-09T20:30:47.341Z",
       "startedAt": null,
       "completedAt": null
     }
