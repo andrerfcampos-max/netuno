@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-23",
   "queue": [
     {
       "id": "TASK-1",
@@ -121,6 +121,126 @@
       "createdAt": "2026-09-03T19:09:15.645Z",
       "startedAt": "2026-09-03T19:09:21.956Z",
       "completedAt": "2026-09-03T19:17:08.090Z"
+    },
+    {
+      "id": "TASK-13",
+      "seq": 13,
+      "conversationId": "d45eb638-fb9b-4fb3-b685-c15d1eac96ed",
+      "description": "Ajustes Vistoria: combobox z-index/bg, remover card topo removido, modal gestor pos-vistoria, nome PDF relatorio e % defeitos sobre hidrantes",
+      "status": "completed",
+      "createdAt": "2026-09-03T19:46:18.219Z",
+      "startedAt": "2026-09-03T19:46:22.567Z",
+      "completedAt": "2026-09-03T19:55:37.971Z"
+    },
+    {
+      "id": "TASK-14",
+      "seq": 14,
+      "conversationId": "4948bf3d-2bef-4dc3-b5f7-5e46b9a5a1a7",
+      "description": "Ajustar cabeçalho institucional do relatório PDF da CAESB para ser igual ao Relatório Geral (Corpo de Bombeiros Militar do Distrito Federal)",
+      "status": "completed",
+      "createdAt": "2026-09-03T19:54:59.087Z",
+      "startedAt": "2026-09-03T19:55:38.633Z",
+      "completedAt": "2026-09-03T19:58:20.135Z"
+    },
+    {
+      "id": "TASK-15",
+      "seq": 15,
+      "conversationId": "4948bf3d-2bef-4dc3-b5f7-5e46b9a5a1a7",
+      "description": "Igualar cabecalho do relatorio CAESB exatamente ao do Relatorio Geral",
+      "status": "completed",
+      "createdAt": "2026-09-03T21:16:01.579Z",
+      "startedAt": "2026-09-03T21:16:29.162Z",
+      "completedAt": "2026-09-03T21:21:11.365Z"
+    },
+    {
+      "id": "TASK-16",
+      "seq": 16,
+      "conversationId": "dab594b9-3906-4c41-9839-30d49f82e19a",
+      "description": "Correções de rota, oscilação, vistoria e relatório WhatsApp",
+      "status": "completed",
+      "createdAt": "2026-09-09T17:19:00.292Z",
+      "startedAt": "2026-09-09T17:19:15.637Z",
+      "completedAt": "2026-09-09T17:37:39.350Z"
+    },
+    {
+      "id": "TASK-17",
+      "seq": 17,
+      "conversationId": "c6ded54c-8a84-466b-ab06-caab93f72e15",
+      "description": "Fix ReferenceError isMulti is not defined",
+      "status": "completed",
+      "createdAt": "2026-09-09T19:53:35.576Z",
+      "startedAt": "2026-09-09T19:53:40.910Z",
+      "completedAt": "2026-09-09T19:54:27.238Z"
+    },
+    {
+      "id": "TASK-18",
+      "seq": 18,
+      "conversationId": "dab594b9-3906-4c41-9839-30d49f82e19a",
+      "description": "Reverter regras especificas de rota e formular regra geral de otimizacao viaria",
+      "status": "completed",
+      "createdAt": "2026-09-09T19:58:37.535Z",
+      "startedAt": "2026-09-09T19:58:50.079Z",
+      "completedAt": "2026-09-09T20:01:44.539Z"
+    },
+    {
+      "id": "TASK-19",
+      "seq": 19,
+      "conversationId": "8e486f9b-f012-4e7d-bd7a-cb647315b78f",
+      "description": "Fix city filter dropdown on desktop",
+      "status": "completed",
+      "createdAt": "2026-09-09T20:00:41.602Z",
+      "startedAt": "2026-09-09T20:01:54.391Z",
+      "completedAt": "2026-09-09T20:03:55.074Z"
+    },
+    {
+      "id": "TASK-20",
+      "seq": 20,
+      "conversationId": "9ad66178-106b-462f-ba55-6341cf61a668",
+      "description": "Revisar calculo de sequencia de rota com vias de sentido unico no trecho do Aeroporto",
+      "status": "completed",
+      "createdAt": "2026-09-09T20:02:21.931Z",
+      "startedAt": "2026-09-09T20:03:55.892Z",
+      "completedAt": "2026-09-09T20:04:04.182Z"
+    },
+    {
+      "id": "TASK-21",
+      "seq": 21,
+      "conversationId": "8e486f9b-f012-4e7d-bd7a-cb647315b78f",
+      "description": "Restaurar padrao nativo select no filtro de cidade desktop",
+      "status": "completed",
+      "createdAt": "2026-09-09T20:12:49.263Z",
+      "startedAt": "2026-09-09T20:12:53.728Z",
+      "completedAt": "2026-09-09T20:14:08.848Z"
+    },
+    {
+      "id": "TASK-22",
+      "seq": 22,
+      "conversationId": "9ad66178-106b-462f-ba55-6341cf61a668",
+      "description": "Etapa 75: Otimizacao de Rota ATSP 2-Opt OSRM com Sentido Unico e Recalculo Dinamico",
+      "status": "completed",
+      "createdAt": "2026-09-09T20:19:19.447Z",
+      "startedAt": "2026-09-09T20:19:25.896Z",
+      "completedAt": "2026-09-09T20:24:10.750Z"
+    },
+    {
+      "id": "TASK-23",
+      "seq": 23,
+      "conversationId": "1b8ecea8-c62b-4a8c-a1bc-41b8b704149c",
+      "description": "Zoom e plotagem automatica dos hidrantes da rota proximos a localizacao do usuario ao retornar ao mapa",
+      "status": "running",
+      "createdAt": "2026-09-09T20:21:56.381Z",
+      "startedAt": "2026-09-09T20:24:13.831Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-24",
+      "seq": 24,
+      "conversationId": "0e45eabb-2060-4ed3-b56c-5ce482217740",
+      "description": "Fix toast overlapping bottom nav and route name header truncation",
+      "status": "queued",
+      "createdAt": "2026-09-09T20:23:41.122Z",
+      "startedAt": null,
+      "completedAt": null
     }
   ]
 }

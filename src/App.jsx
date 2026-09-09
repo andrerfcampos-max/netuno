@@ -969,9 +969,12 @@ function App() {
           const idsToAdd = candidateKeys.filter(k => curSel.includes(k));
           const finalIdToAdd = idsToAdd.length > 0 ? idsToAdd : [candidateKeys[0]];
           
+          // Se o militar encontrou o hidrante no caminho e vistoriou, inclui na missão e marca como concluído
+          const newSelected = matchedInMission ? curSel : Array.from(new Set([...curSel, finalIdToAdd[0]]));
           const newCompleted = Array.from(new Set([...curComp, ...finalIdToAdd]));
           const updatedMission = {
             ...currentM,
+            selectedIds: newSelected,
             completedIds: newCompleted,
             updatedAt: new Date().toISOString()
           };
@@ -1022,19 +1025,43 @@ function App() {
       }
     }
 
+    let newlyCreatedEntity = null;
     if (!exists) {
       const newEntity = {
         ...sanitized,
         _internalId: `hid_new_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
       };
+      newlyCreatedEntity = newEntity;
       newHidrantes = isExisting ? [...newHidrantes, newEntity] : [...hidrantes, newEntity];
       changes.added.push(newEntity);
+
+      // Se houver missão ativa ao cadastrar novo hidrante, inclui na rota de missão e recalcula
+      if (activeMissionId) {
+        const currentM = missions.find(m => m.id === activeMissionId);
+        if (currentM) {
+          const curSel = (currentM.selectedIds || []).map(x => String(x));
+          const newKey = String(newEntity._internalId || newEntity.codHidrante || newEntity.nomHidrante);
+          if (newKey && !curSel.includes(newKey)) {
+            const updatedMission = {
+              ...currentM,
+              selectedIds: [...curSel, newKey],
+              updatedAt: new Date().toISOString()
+            };
+            setMissions(prev => {
+              const updated = prev.map(m => m.id === updatedMission.id ? updatedMission : m);
+              saveMissions(updated);
+              return updated;
+            });
+            syncMissionToCloud(updatedMission);
+          }
+        }
+      }
     }
     
     saveHydrantChanges(changes);
     setHidrantes(newHidrantes);
     handleCloseEditHydrant();
-    syncHydrantMutationToCloud(isExisting ? 'update' : 'add', sanitized);
+    syncHydrantMutationToCloud(isExisting ? 'update' : 'add', newlyCreatedEntity || sanitized);
     toast.success('Hidrante salvo com sucesso e sincronizado!');
   };
 

@@ -640,5 +640,18 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **4. Padronização do Título da Tela de Vistoria (`InspectionModal.jsx`):**
   - O título do modal para novos cadastros foi atualizado pontualmente para **"Cadastrar nova vistoria"**.
 
-
-
+### [09/09/2026] Etapa 75 Concluída: Otimização de Rota ATSP 2-Opt OSRM para Vias de Sentido Único e Recálculo Dinâmico (Botão de Recálculo, Novo Hidrante e Nova Vistoria)
+- **1. Motor de Otimização ATSP Direcionado (`src/utils/routeOptimization.js`):**
+  - Implementado o resolvedor para o *Asymmetric Traveling Salesperson Problem (ATSP)* utilizando matrizes direcionadas de durações e distâncias viárias do OSRM.
+  - Heurística de construção por **Inserção Mais Barata Direcionada (Cheapest Directed Insertion)** combinada com refinamento local via **Or-Opt (Node Relocation / 1-Shift e 2-Shift)** e **2-Opt Direcionado**.
+  - Respeito estrito a mãos únicas (`oneway`), canteiros centrais e alças de acesso (ex: circuito viário do Aeroporto de Brasília / DF-047), impedindo a geração de rotas em contrafluxo.
+  - Fallback instantâneo euclidiano com métricas estimadas caso a rede fique offline.
+- **2. Integração no Painel de Rota de Missão (`MissionRoutePanel.jsx`):**
+  - Atualizado para processar lotes viários ampliados (até 30 hidrantes por requisição OSRM) e ordenar pelo motor ATSP.
+  - Botão de recálculo (`RotateCcw`) acoplado à leitura de GPS fresco (`navigator.geolocation.getCurrentPosition`), permitindo reordenar imediatamente o trajeto a partir do ponto em que a viatura se encontra em caso de desvio de rota ou engarrafamento.
+- **3. Recálculo Automático por Novos Hidrantes e Vistorias Intermediárias (`App.jsx`):**
+  - Ao cadastrar um novo hidrante em campo durante uma missão ativa, o hidrante é automaticamente inserido na lista `selectedIds` da missão, acionando a re-otimização do percurso.
+  - Ao realizar uma vistoria em qualquer hidrante durante o percurso (mesmo não previsto inicialmente), ele é incorporado à missão, marcado em `completedIds` e suas coordenadas definem o ponto de partida (`lastInspectedCoords`) para o recálculo do itinerário restante.
+- **4. Validação e Qualidade:**
+  - Validado caso de teste real do Aeroporto Internacional de Brasília confirmando a aderência ao sentido viário ascendente (`LAS00087` -> `LAS00084` -> `LAS00096` -> `LAS00086` -> `LAS00085` -> `LAS00083`).
+  - Compilação do Vite validada com 100% de sucesso (`npm run build`).

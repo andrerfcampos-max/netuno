@@ -1,120 +1,18 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Navigation, LocateFixed, GitMerge, Share2, MapPin, Map as MapIcon, RotateCcw, Plus, Save, Edit, CheckCircle, FolderOpen, CheckCircle2, ClipboardCheck, AlertTriangle } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { sanitizeProblem, extractProblemsList } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
 import { normalizeRAName } from '../utils/raList';
+import { 
+  calculateDistanceMeters, 
+  optimizeRouteEuclidean, 
+  fetchOSRMAndOptimizeRoute 
+} from '../utils/routeOptimization';
 
-// Fórmula de Haversine para cálculo de distância geodésica ultra-rápida (retorna km)
+// Fórmula de Haversine em km para compatibilidade interna
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return 999;
-  const R = 6371; // Raio da Terra em km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-};
-
-// Algoritmo Vizinho Mais Próximo (Nearest Neighbor - TSP Instantâneo - 0ms de latência)
-const optimizeRouteTSP = (hidrantes, startLat, startLng) => {
-  if (!hidrantes || hidrantes.length === 0) return [];
-  
-  let unvisited = [...hidrantes];
-  let route = [];
-  let currentLat = startLat;
-  let currentLng = startLng;
-
-  while (unvisited.length > 0) {
-    let nearestIdx = 0;
-    let minDistance = Infinity;
-
-    for (let i = 0; i < unvisited.length; i++) {
-      const h = unvisited[i];
-      const dist = calculateDistance(currentLat, currentLng, h.numLatitude, h.numLongitude);
-      if (dist < minDistance) {
-        minDistance = dist;
-        nearestIdx = i;
-      }
-    }
-
-    const nextHydrant = unvisited.splice(nearestIdx, 1)[0];
-    route.push(nextHydrant);
-    currentLat = nextHydrant.numLatitude;
-    currentLng = nextHydrant.numLongitude;
-  }
-
-  return route;
-};
-
-// Refinamento Viário OSRM em Segundo Plano (Apenas para o lote inicial de até 15 hidrantes imediatos)
-const fetchOSRMInitialChunk = async (chunkHydrants, startLat, startLng) => {
-  if (!chunkHydrants || chunkHydrants.length === 0) {
-    return { route: [], drivingMetrics: {}, isTrafficMode: false };
-  }
-
-  try {
-    const coords = [[startLng, startLat], ...chunkHydrants.map(h => [h.numLongitude, h.numLatitude])];
-    const coordsString = coords.map(c => `${c[0]},${c[1]}`).join(';');
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500); 
-
-    const response = await fetch(`https://router.project-osrm.org/table/v1/driving/${coordsString}?annotations=duration,distance`, { signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) throw new Error("OSRM API respondeu com erro");
-    const data = await response.json();
-    if (data.code !== 'Ok' || !data.durations) throw new Error("OSRM API retornou payload inválido");
-
-    const durations = data.durations;
-    const distances = data.distances || [];
-    let unvisited = chunkHydrants.map((h, i) => ({ hydrant: h, matrixIndex: i + 1 }));
-    let route = [];
-    let currentIndex = 0;
-    const drivingMetrics = {};
-
-    while (unvisited.length > 0) {
-      let nearestIdx = 0;
-      let minDuration = Infinity;
-
-      for (let i = 0; i < unvisited.length; i++) {
-        const targetIndex = unvisited[i].matrixIndex;
-        const duration = durations[currentIndex][targetIndex];
-        
-        if (duration !== null && duration < minDuration) {
-          minDuration = duration;
-          nearestIdx = i;
-        }
-      }
-
-      if (minDuration === Infinity) nearestIdx = 0;
-
-      const nextNode = unvisited.splice(nearestIdx, 1)[0];
-      const targetHydrant = nextNode.hydrant;
-      const targetIdx = nextNode.matrixIndex;
-      
-      const distMeters = distances[currentIndex] ? distances[currentIndex][targetIdx] : null;
-      const durSec = durations[currentIndex] ? durations[currentIndex][targetIdx] : null;
-      
-      const keys = [targetHydrant.codHidrante, targetHydrant._internalId, targetHydrant.nomHidrante].filter(Boolean);
-      keys.forEach(k => {
-        drivingMetrics[String(k)] = {
-          distanceMeters: distMeters,
-          durationSeconds: durSec,
-          legFromPrevious: currentIndex !== 0
-        };
-      });
-
-      route.push(targetHydrant);
-      currentIndex = nextNode.matrixIndex;
-    }
-    
-    return { route, drivingMetrics, isTrafficMode: true };
-  } catch (error) {
-    return { route: chunkHydrants, drivingMetrics: {}, isTrafficMode: false };
-  }
+  return calculateDistanceMeters(lat1, lon1, lat2, lon2) / 1000;
 };
 
 // Helper para obter nome curto da RA evitando quebra de layout
@@ -239,7 +137,7 @@ const MissionRoutePanel = ({
     });
   }, [missionHydrants, completedIdsSet]);
 
-  // Algoritmo Híbrido de Alta Performance (Instantâneo TSP + OSRM para o lote imediato)
+  // Algoritmo Híbrido de Alta Performance (Instantâneo Euclidiano + OSRM ATSP 2-Opt com Mãos Únicas)
   useEffect(() => {
     if (pendingHydrants.length === 0) {
       setPendingRoute([]);
@@ -249,94 +147,108 @@ const MissionRoutePanel = ({
       return;
     }
 
-    const startLat = userLocation?.lat || pendingHydrants[0].numLatitude;
-    const startLng = userLocation?.lng || pendingHydrants[0].numLongitude;
+    const startLat = userLocation?.lat || lastInspectedCoords?.lat || pendingHydrants[0].numLatitude;
+    const startLng = userLocation?.lng || lastInspectedCoords?.lng || pendingHydrants[0].numLongitude;
 
     // 1. ORDENAÇÃO INSTANTÂNEA ESPACIAL (0ms): Rota pronta imediatamente
-    const fastOrdered = optimizeRouteTSP(pendingHydrants, startLat, startLng);
+    const fastOrdered = optimizeRouteEuclidean(pendingHydrants, startLat, startLng);
     setPendingRoute(fastOrdered);
 
-    // 2. MICRO-OTIMIZAÇÃO OSRM EM BACKGROUND (Apenas para os primeiros 15 hidrantes)
-    const pendingSignature = pendingHydrants.map(h => h.codHidrante || h._internalId || h.nomHidrante).join(',');
+    // Assinatura única baseada em coordenadas de início e lista de pendentes
+    const pendingSignature = `${startLat.toFixed(4)},${startLng.toFixed(4)}|` + 
+      pendingHydrants.map(h => h.codHidrante || h._internalId || h.nomHidrante).join(',');
+
     if (lastOptimizedIdsRef.current === pendingSignature) {
       return;
     }
 
     let isCancelled = false;
-    const refineWithOSRM = async () => {
+    const refineWithATSP = async () => {
       setIsOptimizing(true);
-      const CHUNK_LIMIT = 15;
+      // Otimiza até 30 hidrantes por requisição OSRM com matriz direcionada
+      const CHUNK_LIMIT = 30;
       const immediateBatch = fastOrdered.slice(0, CHUNK_LIMIT);
       const remainingBatch = fastOrdered.slice(CHUNK_LIMIT);
 
-      const osrmResult = await fetchOSRMInitialChunk(immediateBatch, startLat, startLng);
+      const osrmResult = await fetchOSRMAndOptimizeRoute(immediateBatch, startLat, startLng);
       
       if (!isCancelled) {
         lastOptimizedIdsRef.current = pendingSignature;
-        if (osrmResult.isTrafficMode && osrmResult.route.length > 0) {
+        if (osrmResult.route && osrmResult.route.length > 0) {
           setPendingRoute([...osrmResult.route, ...remainingBatch]);
           setDrivingMetrics(osrmResult.drivingMetrics);
-          setIsTrafficOptimized(true);
-        } else {
-          // Preenche métricas estimadas geodésicas instantâneas
-          const estimatedMetrics = {};
-          let prevLat = startLat;
-          let prevLng = startLng;
-          fastOrdered.forEach((h, idx) => {
-            const distKm = calculateDistance(prevLat, prevLng, h.numLatitude, h.numLongitude);
-            const k1 = String(h.codHidrante || '');
-            const k2 = String(h.nomHidrante || '');
-            const k3 = String(h._internalId || '');
-            const metric = {
-              distanceMeters: Math.round(distKm * 1000),
-              durationSeconds: Math.round((distKm / 35) * 3600),
-              legFromPrevious: idx !== 0,
-              isEstimated: true
-            };
-            if (k1) estimatedMetrics[k1] = metric;
-            if (k2) estimatedMetrics[k2] = metric;
-            if (k3) estimatedMetrics[k3] = metric;
-            prevLat = h.numLatitude;
-            prevLng = h.numLongitude;
-          });
-          setDrivingMetrics(estimatedMetrics);
-          setIsTrafficOptimized(false);
+          setIsTrafficOptimized(osrmResult.isTrafficMode);
         }
         setIsOptimizing(false);
       }
     };
 
-    const timer = setTimeout(refineWithOSRM, 250);
+    const timer = setTimeout(refineWithATSP, 200);
     return () => {
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [pendingHydrants, userLocation?.lat, userLocation?.lng]);
+  }, [pendingHydrants, userLocation?.lat, userLocation?.lng, lastInspectedCoords?.lat, lastInspectedCoords?.lng]);
 
-  // Função para forçar recálculo tático
+  // Função para forçar recálculo tático com base no GPS atual e trânsito
   const handleRecalculateRoute = () => {
     if (pendingHydrants.length === 0) return;
     lastOptimizedIdsRef.current = '';
-    const startLat = userLocation?.lat || pendingHydrants[0].numLatitude;
-    const startLng = userLocation?.lng || pendingHydrants[0].numLongitude;
-    const fastOrdered = optimizeRouteTSP(pendingHydrants, startLat, startLng);
-    setPendingRoute(fastOrdered);
     setIsOptimizing(true);
-    
-    const CHUNK_LIMIT = 15;
-    const immediateBatch = fastOrdered.slice(0, CHUNK_LIMIT);
-    const remainingBatch = fastOrdered.slice(CHUNK_LIMIT);
 
-    fetchOSRMInitialChunk(immediateBatch, startLat, startLng).then(osrmResult => {
-      if (osrmResult.isTrafficMode && osrmResult.route.length > 0) {
-        setPendingRoute([...osrmResult.route, ...remainingBatch]);
-        setDrivingMetrics(osrmResult.drivingMetrics);
-        setIsTrafficOptimized(true);
+    const executeRecalculation = async (lat, lng) => {
+      const fastOrdered = optimizeRouteEuclidean(pendingHydrants, lat, lng);
+      setPendingRoute(fastOrdered);
+
+      const CHUNK_LIMIT = 30;
+      const immediateBatch = fastOrdered.slice(0, CHUNK_LIMIT);
+      const remainingBatch = fastOrdered.slice(CHUNK_LIMIT);
+
+      try {
+        const osrmResult = await fetchOSRMAndOptimizeRoute(immediateBatch, lat, lng);
+        if (osrmResult.route && osrmResult.route.length > 0) {
+          setPendingRoute([...osrmResult.route, ...remainingBatch]);
+          setDrivingMetrics(osrmResult.drivingMetrics);
+          setIsTrafficOptimized(osrmResult.isTrafficMode);
+          if (osrmResult.isTrafficMode) {
+            toast.success('🚗 Rota recalculada com sentidos de vias e trânsito real!');
+          } else {
+            toast.info('⚡ Rota recalculada por proximidade instantânea.');
+          }
+        }
+      } catch (e) {
+        console.warn('Erro ao recalcular rota:', e);
+      } finally {
+        setIsOptimizing(false);
       }
-      setIsOptimizing(false);
-    }).catch(() => {
-      setIsOptimizing(false);
-    });
+    };
+
+    // Tenta obter GPS fresco e imediato do militar
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (pos?.coords) {
+            const freshLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            setUserLocation(freshLoc);
+            executeRecalculation(freshLoc.lat, freshLoc.lng);
+          } else {
+            const lat = userLocation?.lat || lastInspectedCoords?.lat || pendingHydrants[0].numLatitude;
+            const lng = userLocation?.lng || lastInspectedCoords?.lng || pendingHydrants[0].numLongitude;
+            executeRecalculation(lat, lng);
+          }
+        },
+        () => {
+          const lat = userLocation?.lat || lastInspectedCoords?.lat || pendingHydrants[0].numLatitude;
+          const lng = userLocation?.lng || lastInspectedCoords?.lng || pendingHydrants[0].numLongitude;
+          executeRecalculation(lat, lng);
+        },
+        { enableHighAccuracy: true, timeout: 3500 }
+      );
+    } else {
+      const lat = userLocation?.lat || lastInspectedCoords?.lat || pendingHydrants[0].numLatitude;
+      const lng = userLocation?.lng || lastInspectedCoords?.lng || pendingHydrants[0].numLongitude;
+      executeRecalculation(lat, lng);
+    }
   };
 
   const handleShareWhatsApp = () => {
