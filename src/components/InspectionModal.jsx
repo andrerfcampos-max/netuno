@@ -57,7 +57,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
         q3: null,
         q4: null,
         q5: null,
-        q6: '',
+        q6: [],
         q7: '',
         fotos: []
       };
@@ -113,8 +113,8 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       initialQ7 = hidrante.dscObservacao.trim();
     }
 
-    // Q6: Algum outro problema
-    let initialQ6 = '';
+    // Q6: Algum outro problema (múltiplos defeitos)
+    let initialQ6 = [];
     for (const p of rawProbs) {
       const pNorm = p.trim();
       const isKnownButton = 
@@ -130,8 +130,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
 
       if (!isKnownButton && pNorm) {
         const match = DEFEITOS_OFICIAIS.find(d => d.toLowerCase() === pNorm.toLowerCase() || pNorm.toLowerCase().includes(d.toLowerCase()));
-        initialQ6 = match || pNorm;
-        break;
+        initialQ6.push(match || pNorm);
       }
     }
 
@@ -162,7 +161,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
   const [q3, setQ3] = useState(initialData.q3); // Tampa da caixa: 'SEM ALTERAÇÃO' | 'LACRADA' | 'QUEBRADA' | 'REMOVIDA'
   const [q4, setQ4] = useState(initialData.q4); // Tampões: 'SIM' | 'FALTA 1 TAMPÃO' | 'FALTAM 2 TAMPÕES' | 'FALTAM TODOS OS TAMPÕES'
   const [q5, setQ5] = useState(initialData.q5); // Operante
-  const [q6, setQ6] = useState(initialData.q6); // Algum outro problema
+  const [q6, setQ6] = useState(initialData.q6 || []); // Algum outro problema (array de strings)
   const [q7, setQ7] = useState(initialData.q7); // Observações
   
   const [fotos, setFotos] = useState(initialData.fotos || []);
@@ -177,7 +176,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       setQ3(null);
       setQ4(null);
       setQ5(null);
-      setQ6('');
+      setQ6([]);
       setQ7('');
       setFotos([]);
     } else {
@@ -186,7 +185,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       setQ3(initialData.q3);
       setQ4(initialData.q4);
       setQ5(initialData.q5);
-      setQ6(initialData.q6);
+      setQ6(initialData.q6 || []);
       setQ7(initialData.q7);
       setFotos(initialData.fotos || []);
     }
@@ -195,9 +194,11 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
 
   const isHidranteNaoEncontrado = useMemo(() => {
-    if (!q6) return false;
-    const lower = q6.toLowerCase();
-    return lower.includes('removido') || lower.includes('não encontrado') || lower.includes('nao encontrado');
+    if (!q6 || q6.length === 0) return false;
+    return q6.some(p => {
+      const lower = (p || '').toLowerCase();
+      return lower.includes('removido') || lower.includes('não encontrado') || lower.includes('nao encontrado');
+    });
   }, [q6]);
 
   // Determina se há problemas que forçam o hidrante a ser inoperante
@@ -207,7 +208,8 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
     if (q2 === 'EMPERRADO') return 'Registro está emperrado';
     if (q3 === 'LACRADA') return 'Tampa da caixa está lacrada';
     if (q4 === 'FALTAM 2 TAMPÕES' || q4 === 'FALTAM TODOS OS TAMPÕES') return 'Faltam 2 ou mais tampões';
-    if (q6 && PROBLEMAS_INATIVADORES.includes(q6)) return `Problema selecionado: "${q6}"`;
+    const inativador = (q6 || []).find(item => PROBLEMAS_INATIVADORES.includes(item));
+    if (inativador) return `Problema selecionado: "${inativador}"`;
     return null;
   }, [isHidranteNaoEncontrado, q2, q3, q4, q6]);
 
@@ -329,8 +331,14 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       else if (q4 === 'FALTAM 2 TAMPÕES') problemas.push("Faltam dois tampões de 2 1/2");
       else if (q4 === 'FALTAM TODOS OS TAMPÕES') problemas.push("Faltam todos os tampões");
 
-      // q6: Outro (inclui 'Hidrante removido ou não encontrado')
-      if (q6) problemas.push(q6);
+      // q6: Outros problemas selecionados (múltiplos defeitos)
+      if (Array.isArray(q6)) {
+        q6.forEach(item => {
+          if (item && item.trim()) problemas.push(item.trim());
+        });
+      } else if (q6 && q6.trim()) {
+        problemas.push(q6.trim());
+      }
 
       // q7: Observações
       if (q7.trim() !== '') problemas.push(`Obs: ${q7.trim()}`);
@@ -586,19 +594,28 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
 
           {/* Pergunta 6 */}
           <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">6) ALGUM OUTRO PROBLEMA? (Opcional)</label>
+            <div className="flex items-center justify-between">
+              <label className="font-bold text-slate-300 text-sm">6) OUTROS PROBLEMAS CONSTATADOS (Opcional)</label>
+              {Array.isArray(q6) && q6.length > 0 && (
+                <span className="text-[11px] font-mono font-bold text-amber-300 bg-amber-950/70 border border-amber-500/40 px-2 py-0.5 rounded-full">
+                  {q6.length} {q6.length === 1 ? 'defeito selecionado' : 'defeitos selecionados'}
+                </span>
+              )}
+            </div>
             <SearchableSelect
-              options={[
-                { value: '', label: 'Nenhum outro defeito constatado' },
-                ...DEFEITOS_OFICIAIS.map(d => ({ value: d, label: d }))
-              ]}
+              isMulti={true}
+              options={DEFEITOS_OFICIAIS.map(d => ({ value: d, label: d }))}
               value={q6}
-              placeholder="Selecione ou digite para filtrar defeitos (ex: vazamento, pressão, abelhas)..."
+              placeholder="Selecione um ou mais defeitos (ex: vazamento, pressão, abelhas)..."
               allowCustom={true}
               clearable={true}
-              onChange={(val) => {
-                setQ6(val);
-                if (PROBLEMAS_INATIVADORES.includes(val) || (val && val.toLowerCase().includes('removido'))) {
+              onChange={(vals) => {
+                const list = Array.isArray(vals) ? vals : (vals ? [vals] : []);
+                setQ6(list);
+                const hasInativador = list.some(val => 
+                  PROBLEMAS_INATIVADORES.includes(val) || (val && val.toLowerCase().includes('removido'))
+                );
+                if (hasInativador) {
                   setQ5('NÃO');
                 }
               }}

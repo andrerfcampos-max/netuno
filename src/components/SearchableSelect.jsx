@@ -47,9 +47,18 @@ const SearchableSelect = ({
     });
   }, [options]);
 
+  const selectedList = useMemo(() => {
+    if (isMulti) {
+      if (Array.isArray(value)) return value;
+      return value ? [value] : [];
+    }
+    return [];
+  }, [isMulti, value]);
+
   const selectedOption = useMemo(() => {
+    if (isMulti) return null;
     return normalizedOptions.find(opt => opt.value === value) || null;
-  }, [normalizedOptions, value]);
+  }, [normalizedOptions, value, isMulti]);
 
   const filteredOptions = useMemo(() => {
     if (!searchQuery.trim()) return normalizedOptions;
@@ -64,16 +73,20 @@ const SearchableSelect = ({
 
   useEffect(() => {
     if (!isOpen) {
-      if (selectedOption) {
-        setSearchQuery(selectedOption.label);
-      } else if (value && allowCustom) {
-        setSearchQuery(String(value));
+      if (!isMulti) {
+        if (selectedOption) {
+          setSearchQuery(selectedOption.label);
+        } else if (value && allowCustom) {
+          setSearchQuery(String(value));
+        } else {
+          setSearchQuery('');
+        }
       } else {
         setSearchQuery('');
       }
       setHighlightedIndex(-1);
     }
-  }, [isOpen, selectedOption, value, allowCustom]);
+  }, [isOpen, selectedOption, value, allowCustom, isMulti]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -90,13 +103,32 @@ const SearchableSelect = ({
   }, []);
 
   const handleSelect = (optionValue) => {
-    onChange && onChange(optionValue);
-    setIsOpen(false);
+    if (isMulti) {
+      const currentList = Array.isArray(value) ? value : (value ? [value] : []);
+      if (currentList.includes(optionValue)) {
+        onChange && onChange(currentList.filter(v => v !== optionValue));
+      } else {
+        onChange && onChange([...currentList, optionValue]);
+      }
+      setSearchQuery('');
+      if (inputRef.current) inputRef.current.focus();
+    } else {
+      onChange && onChange(optionValue);
+      setIsOpen(false);
+    }
+  };
+
+  const handleRemoveChip = (e, chipValue) => {
+    e.stopPropagation();
+    if (isMulti) {
+      const currentList = Array.isArray(value) ? value : [];
+      onChange && onChange(currentList.filter(v => v !== chipValue));
+    }
   };
 
   const handleClear = (e) => {
     e.stopPropagation();
-    onChange && onChange('');
+    onChange && onChange(isMulti ? [] : '');
     setSearchQuery('');
     if (inputRef.current) inputRef.current.focus();
   };
@@ -104,7 +136,7 @@ const SearchableSelect = ({
   const handleInputFocus = () => {
     if (!disabled) {
       setIsOpen(true);
-      if (inputRef.current) inputRef.current.select();
+      // NUNCA chamar inputRef.current.select() no mobile/touch, pois abre a barra de seleção nativa
     }
   };
 
@@ -113,7 +145,7 @@ const SearchableSelect = ({
     setSearchQuery(text);
     if (!isOpen) setIsOpen(true);
     setHighlightedIndex(0);
-    if (allowCustom && text.trim() === '') {
+    if (!isMulti && allowCustom && text.trim() === '') {
       onChange && onChange('');
     }
   };
@@ -148,11 +180,35 @@ const SearchableSelect = ({
     }
   };
 
-  const hasValue = Boolean(value || (allowCustom && searchQuery.trim()));
+  const hasValue = isMulti 
+    ? selectedList.length > 0 
+    : Boolean(value || (allowCustom && searchQuery.trim()));
   const isCustomTyped = allowCustom && searchQuery.trim() && !normalizedOptions.some(opt => normalizeText(opt.value) === normalizeText(searchQuery));
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
+      {/* Grade de Badges/Chips no modo Multi-Seleção */}
+      {isMulti && selectedList.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 p-2 bg-slate-800/90 rounded-lg border border-slate-700/80 mb-2">
+          {selectedList.map((item, idx) => (
+            <span 
+              key={idx} 
+              className="inline-flex items-center gap-1.5 bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 text-xs font-semibold px-2.5 py-1 rounded-md shadow-xs"
+            >
+              <span className="truncate max-w-[240px]">{item}</span>
+              <button
+                type="button"
+                onClick={(e) => handleRemoveChip(e, item)}
+                className="text-emerald-400 hover:text-red-400 p-0.5 rounded-full cursor-pointer transition-colors"
+                title="Remover defeito"
+              >
+                <X size={13} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       <div 
         className={`flex items-center w-full rounded-lg transition-all border ${
           isOpen
@@ -160,11 +216,11 @@ const SearchableSelect = ({
             : hasValue
             ? 'border-emerald-500/60 bg-slate-800'
             : 'border-slate-700 bg-slate-800/80 hover:border-slate-600'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-text'}`}
+        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         onClick={() => {
-          if (!disabled && inputRef.current) {
-            inputRef.current.focus();
-            setIsOpen(true);
+          if (!disabled) {
+            setIsOpen(prev => !prev);
+            if (inputRef.current) inputRef.current.focus();
           }
         }}
       >
@@ -177,12 +233,16 @@ const SearchableSelect = ({
           name={name}
           type="text"
           disabled={disabled}
-          value={isOpen ? searchQuery : (selectedOption ? selectedOption.label : (allowCustom ? value : ''))}
+          value={isOpen ? searchQuery : (isMulti ? '' : (selectedOption ? selectedOption.label : (allowCustom ? value : '')))}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!isOpen) setIsOpen(true);
+          }}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className="w-full h-8 sm:h-9 bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none pr-1 truncate font-medium"
+          placeholder={isMulti && selectedList.length > 0 ? "+ Adicionar outro problema..." : placeholder}
+          className="w-full h-8 sm:h-9 bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none pr-1 truncate font-medium cursor-text"
           autoComplete="off"
         />
 
@@ -191,7 +251,7 @@ const SearchableSelect = ({
             type="button"
             onClick={handleClear}
             className="p-1 text-slate-400 hover:text-red-400 transition-colors rounded-full shrink-0 cursor-pointer mr-0.5"
-            title="Limpar seleção"
+            title={isMulti ? "Limpar todos os defeitos selecionados" : "Limpar seleção"}
           >
             <X size={13} />
           </button>
@@ -214,7 +274,7 @@ const SearchableSelect = ({
       {isOpen && !disabled && (
         <div 
           ref={listRef}
-          className={`absolute left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[250] py-1 text-xs sm:text-sm animate-fadeIn ${dropdownClassName}`}
+          className={`absolute left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[10000] py-1 text-xs sm:text-sm animate-fadeIn ${dropdownClassName}`}
           style={{ scrollbarWidth: 'thin', backgroundColor: '#0f172a' }}
         >
           {isCustomTyped && (
@@ -238,7 +298,9 @@ const SearchableSelect = ({
             </div>
           ) : (
             filteredOptions.map((opt, idx) => {
-              const isSelected = opt.value === value;
+              const isSelected = isMulti 
+                ? selectedList.includes(opt.value)
+                : opt.value === value;
               const isHighlighted = idx === highlightedIndex;
               return (
                 <div

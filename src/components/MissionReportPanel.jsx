@@ -574,7 +574,9 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
         const id = h.nomHidrante || h.codHidrante;
         const probs = extractProblemsList(h.problemasHidrante);
         const probText = probs.length > 0 ? ` - ${probs.join(', ')}` : '';
-        const status = h.flgAtivo ? '🟢 Operante' : `🔴 Inoperante${probText}`;
+        const status = h.flgAtivo 
+          ? (probs.length > 0 ? `🟢 Operante (Avarias: ${probs.join(', ')})` : '🟢 Operante')
+          : `🔴 Inoperante${probText}`;
         text += `• ${id} (${status})\n`;
       });
       text += `\n`;
