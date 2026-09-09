@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-38",
+  "activeTaskId": "TASK-43",
   "queue": [
     {
       "id": "TASK-1",
@@ -381,18 +381,89 @@
       "seq": 38,
       "conversationId": "bc814177-b05c-4c00-8edc-bdd8b003fa3a",
       "description": "baixar base de dados prepop em csv (gestor)",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-09T21:12:04.632Z",
       "startedAt": "2026-09-09T21:23:28.305Z",
-      "completedAt": null
+      "completedAt": "2026-09-09T21:26:12.188Z"
     },
     {
       "id": "TASK-39",
       "seq": 39,
       "conversationId": "fcd5dbde-9422-44a2-90d1-f4ef59f6096b",
       "description": "Adicionar visualizacao dos codigos dos pinos no mapa",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-09T21:13:55.876Z",
+      "startedAt": "2026-09-09T21:26:12.667Z",
+      "completedAt": "2026-09-09T22:22:44.424Z"
+    },
+    {
+      "id": "TASK-40",
+      "seq": 40,
+      "conversationId": "b89167c9-da8d-490f-ae09-542623aa35b3",
+      "description": "Foto de fachada no PrePop",
+      "status": "failed",
+      "createdAt": "2026-09-09T21:24:01.501Z",
+      "startedAt": "2026-09-09T22:20:17.302Z",
+      "completedAt": "2026-09-09T22:20:26.429Z",
+      "error": "Processo abandonado por inatividade (>30 min)"
+    },
+    {
+      "id": "TASK-41",
+      "seq": 41,
+      "conversationId": "5f70afa9-557b-495a-8dc1-528c9f454cd0",
+      "description": "Remover botao google maps duplicado na ficha completa prepop e manter no endereco com amarelo tradicional",
+      "status": "completed",
+      "createdAt": "2026-09-09T21:25:56.637Z",
+      "startedAt": "2026-09-09T22:20:29.457Z",
+      "completedAt": "2026-09-09T22:21:45.107Z"
+    },
+    {
+      "id": "TASK-42",
+      "seq": 42,
+      "conversationId": "fe9af20f-c7a8-412c-b534-5dd12eea32db",
+      "description": "Bateria de testes e procura de bugs",
+      "status": "completed",
+      "createdAt": "2026-09-09T21:26:48.270Z",
+      "startedAt": "2026-09-09T22:21:48.918Z",
+      "completedAt": "2026-09-09T22:22:18.223Z"
+    },
+    {
+      "id": "TASK-43",
+      "seq": 43,
+      "conversationId": "45e370b2-4b47-4826-ac0e-76c88bfaa677",
+      "description": "add workflow step for complete database download",
+      "status": "running",
+      "createdAt": "2026-09-09T22:20:05.094Z",
+      "startedAt": "2026-09-09T22:22:21.874Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-44",
+      "seq": 44,
+      "conversationId": "cbebc0b9-0325-469a-b360-08d0d8762962",
+      "description": "Aba Hidrantes Pre-POP: ponto de referencia e botao Waze estilizado",
+      "status": "queued",
+      "createdAt": "2026-09-09T22:20:13.189Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-45",
+      "seq": 45,
+      "conversationId": "ff01e478-76c2-4915-817d-41cc4de59a05",
+      "description": "Exclusividade Mútua na Plotagem do Mapa (Filtros vs Rota de Missão) e Header Tático",
+      "status": "queued",
+      "createdAt": "2026-09-09T22:21:17.788Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-46",
+      "seq": 46,
+      "conversationId": "fe9af20f-c7a8-412c-b534-5dd12eea32db",
+      "description": "Aguardar todas as conversas finalizarem (Fim da fila)",
+      "status": "queued",
+      "createdAt": "2026-09-09T22:22:41.730Z",
       "startedAt": null,
       "completedAt": null
     }
