@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Edit3, Minimize2, Maximize2, Plus, Share2, AlertTriangle, Wrench, Route as RouteIcon, Check, X, History } from 'lucide-react';
+import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Edit3, Minimize2, Maximize2, Plus, Share2, AlertTriangle, Wrench, Route as RouteIcon, Check, X, History, Hash } from 'lucide-react';
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
@@ -16,7 +16,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // Estilização dos Marcadores (Design Consistente com Desktop e Mobile)
-const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = false, missionOrder = null, isMissionCompleted = false) => {
+const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = false, missionOrder = null, isMissionCompleted = false, showPinCode = false, pinCode = '') => {
   const statusColor = isOperante ? '#10b981' : '#ef4444'; // Verde Esmeralda ou Vermelho Sólido
   
   if (isInspected) {
@@ -69,6 +69,27 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
           ">
             <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #ffffff; box-shadow: 0 0 4px rgba(0,0,0,0.8);"></div>
           </div>
+          ${showPinCode && pinCode ? `
+            <div style="
+              position: absolute;
+              top: 45px;
+              left: 50%;
+              transform: translateX(-50%);
+              background: #0f172a;
+              color: #fbbf24;
+              font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+              font-size: 10px;
+              font-weight: 900;
+              padding: 1px 6px;
+              border-radius: 4px;
+              border: 1.5px solid #f59e0b;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 10px rgba(245, 158, 11, 0.5);
+              white-space: nowrap;
+              pointer-events: none;
+              z-index: 30;
+              line-height: 1.25;
+            ">${pinCode}</div>
+          ` : ''}
         </div>
       `,
       iconSize: [56, 56],
@@ -108,6 +129,27 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             ">
               ✓
             </div>
+            ${showPinCode && pinCode ? `
+              <div style="
+                position: absolute;
+                top: 32px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #064e3b;
+                color: #a7f3d0;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                font-size: 10px;
+                font-weight: 900;
+                padding: 1px 5px;
+                border-radius: 4px;
+                border: 1px solid #10b981;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.85);
+                white-space: nowrap;
+                pointer-events: none;
+                z-index: 25;
+                line-height: 1.2;
+              ">${pinCode}</div>
+            ` : ''}
           </div>
         `,
         iconSize: [34, 34],
@@ -158,6 +200,27 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
           ">
             ${orderLabel ? orderLabel : `<div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor};"></div>`}
           </div>
+          ${showPinCode && pinCode ? `
+            <div style="
+              position: absolute;
+              top: 34px;
+              left: 50%;
+              transform: translateX(-50%);
+              background: #0f172a;
+              color: #00ffff;
+              font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+              font-size: 10px;
+              font-weight: 900;
+              padding: 1px 5px;
+              border-radius: 4px;
+              border: 1px solid #00ffff;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 8px rgba(0,255,255,0.4);
+              white-space: nowrap;
+              pointer-events: none;
+              z-index: 25;
+              line-height: 1.2;
+            ">${pinCode}</div>
+          ` : ''}
         </div>
       `,
       iconSize: [36, 36],
@@ -171,6 +234,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
       className: 'custom-div-icon',
       html: `
         <div style="
+          position: relative;
           width: 36px;
           height: 36px;
           display: flex;
@@ -190,6 +254,27 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
           ">
             <div style="width: 9px; height: 9px; border-radius: 50%; background-color: ${statusColor};"></div>
           </div>
+          ${showPinCode && pinCode ? `
+            <div style="
+              position: absolute;
+              top: 34px;
+              left: 50%;
+              transform: translateX(-50%);
+              background: #0f172a;
+              color: #38bdf8;
+              font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+              font-size: 10px;
+              font-weight: 900;
+              padding: 1px 5px;
+              border-radius: 4px;
+              border: 1px solid #38bdf8;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.85);
+              white-space: nowrap;
+              pointer-events: none;
+              z-index: 25;
+              line-height: 1.2;
+            ">${pinCode}</div>
+          ` : ''}
         </div>
       `,
       iconSize: [36, 36],
@@ -202,6 +287,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
     className: 'custom-div-icon',
     html: `
       <div style="
+        position: relative;
         width: 24px;
         height: 24px;
         display: flex;
@@ -217,6 +303,28 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
           box-shadow: 0 0 5px rgba(0,0,0,0.7);
           transition: transform 0.2s ease;
         "></div>
+        ${showPinCode && pinCode ? `
+          <div style="
+            position: absolute;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.92);
+            color: #ffffff;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 1px 4px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.85);
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 20;
+            line-height: 1.2;
+            letter-spacing: 0.2px;
+          ">${pinCode}</div>
+        ` : ''}
       </div>
     `,
     iconSize: [24, 24],
@@ -471,7 +579,7 @@ const UserLocationTracker = ({ userLocation, centerPosition, selectedHydrant, ha
   return null;
 };
 
-const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocusRoute }) => {
+const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocusRoute, showPinCodes, onTogglePinCodes }) => {
   const map = useMap();
   const [isLocating, setIsLocating] = useState(false);
 
@@ -523,6 +631,23 @@ const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocu
         </button>
       )}
 
+      {/* Botão Tático: Alternar Exibição dos Códigos dos Pinos (Padrão Argos) */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onTogglePinCodes) onTogglePinCodes();
+        }}
+        title={showPinCodes ? "Ocultar códigos dos hidrantes no mapa" : "Exibir códigos dos hidrantes no mapa (Padrão Argos)"}
+        className={`p-2.5 sm:p-3 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer backdrop-blur-md border ${
+          showPinCodes 
+            ? 'bg-cyan-600 text-white border-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.6)] ring-2 ring-cyan-400/50' 
+            : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-cyan-300 border-slate-700 hover:border-cyan-500/50'
+        }`}
+      >
+        <Hash size={20} className={showPinCodes ? "text-white font-bold" : "text-cyan-400"} />
+      </button>
+
       {/* Botão GPS Padrão */}
       <button
         type="button"
@@ -571,6 +696,24 @@ const MapComponent = ({
   const touchStartY = useRef(0);
   const isDragging = useRef(false);
   const markerRefs = useRef({});
+
+  const [showPinCodes, setShowPinCodes] = useState(() => {
+    try {
+      return localStorage.getItem('netuno_show_pin_codes') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const handleTogglePinCodes = () => {
+    setShowPinCodes(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('netuno_show_pin_codes', String(next));
+      } catch (e) {}
+      return next;
+    });
+  };
 
   const validHidrantes = useMemo(() => {
     const list = hidrantes.filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude));

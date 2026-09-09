@@ -28,7 +28,8 @@ import {
   Radio,
   CheckCircle2,
   AlertCircle,
-  Download
+  Download,
+  Camera
 } from 'lucide-react';
 import { RA_LIST, normalizeRAName } from '../utils/raList';
 import { 
@@ -684,19 +685,26 @@ const BuildingTacticalCard = React.memo(function BuildingTacticalCard({
             </h3>
           </div>
 
-          {/* Miniatura da Fachada se houver */}
-          {study.fotoFachada && (
+          {/* Miniatura da Fachada estilo avatar de perfil */}
+          {study.fotoFachada ? (
             <button
               type="button"
               onClick={() => onOpenZoom(study.fotoFachada)}
-              className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-700 shrink-0 group shadow-md"
-              title="Ver foto da fachada"
+              className="relative w-13 h-13 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-emerald-500/60 hover:border-emerald-400 shrink-0 group shadow-md transition-transform hover:scale-105"
+              title="Ver foto da fachada (Clique para ampliar)"
             >
               <img src={study.fotoFachada} alt="Fachada" className="w-full h-full object-cover group-hover:scale-110 transition-all" />
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Maximize2 size={12} className="text-white" />
               </div>
             </button>
+          ) : (
+            <div 
+              className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-slate-800/70 border border-slate-700/80 flex items-center justify-center text-slate-500 shrink-0 shadow-inner"
+              title="Sem foto de fachada cadastrada"
+            >
+              <Building2 size={20} className="opacity-60" />
+            </div>
           )}
         </div>
 
@@ -957,6 +965,33 @@ function BuildingTacticalViewModal({
             >
               ← Voltar
             </button>
+
+            {/* FOTO DA FACHADA ESTILO PERFIL DE REDE SOCIAL */}
+            {study.fotoFachada ? (
+              <button
+                type="button"
+                onClick={() => onOpenZoom(study.fotoFachada)}
+                className="relative group shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.35)] ring-2 ring-slate-900 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                title="Foto da fachada principal (Toque para ampliar)"
+              >
+                <img 
+                  src={study.fotoFachada} 
+                  alt={study.nomeFantasia || 'Fachada do Estabelecimento'} 
+                  className="w-full h-full object-cover group-hover:brightness-110 transition-all"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Maximize2 size={16} className="text-white drop-shadow" />
+                </div>
+              </button>
+            ) : (
+              <div 
+                className="shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-800 border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-400 shadow-inner ring-2 ring-slate-900"
+                title="Sem foto da fachada cadastrada"
+              >
+                <Building2 size={20} className="text-slate-400 sm:w-6 sm:h-6" />
+                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter sm:block hidden mt-0.5">Sem Foto</span>
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <div className="hidden sm:flex items-center gap-2 flex-wrap mb-1">
                 <span className="px-2.5 py-0.5 bg-emerald-600 text-white font-extrabold text-[11px] rounded uppercase tracking-wider shadow">
@@ -979,18 +1014,6 @@ function BuildingTacticalViewModal({
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            {isValidDFCoordinate(study.numLatitude, study.numLongitude) && (
-              <a
-                href={`https://maps.google.com/?q=${study.numLatitude},${study.numLongitude}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow-md transition-all active:scale-95"
-                title="Abrir no Google Maps (Coordenadas Reais)"
-              >
-                <MapPin size={15} />
-                <span className="hidden sm:inline">Google Maps</span>
-              </a>
-            )}
             <button
               type="button"
               onClick={onShareWhatsApp}
@@ -1091,12 +1114,12 @@ function BuildingTacticalViewModal({
                     href={`https://maps.google.com/?q=${study.numLatitude},${study.numLongitude}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg shadow-md transition-all active:scale-95"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg shadow-md transition-all active:scale-95 border border-amber-400"
                     title="Conferir fachada e satélite no Google Maps"
                   >
-                    <MapPin size={14} />
+                    <MapPin size={14} className="text-slate-950" />
                     <span>Ver no Google Maps</span>
-                    <ExternalLink size={12} />
+                    <ExternalLink size={12} className="text-slate-950" />
                   </a>
                   <a
                     href={`https://waze.com/ul?ll=${study.numLatitude},${study.numLongitude}&navigate=yes`}
@@ -1844,6 +1867,83 @@ function BuildingStudyFormModal({
             <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm sm:text-base pb-2 border-b border-slate-800">
               <Building2 size={18} />
               <span>A. Identificação, Ocupação e Contatos</span>
+            </div>
+
+            {/* FOTO DA FACHADA ESTILO PERFIL (CADASTRO/EDIÇÃO IMEDIATA) */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-center gap-4 shadow-md">
+              <div className="relative group shrink-0">
+                {formData.fotoFachada ? (
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)] ring-2 ring-slate-800">
+                    <img 
+                      src={formData.fotoFachada} 
+                      alt="Fachada Principal" 
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleChange('fotoFachada', '')}
+                      className="absolute inset-0 bg-red-950/80 text-red-200 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity font-bold text-xs cursor-pointer"
+                      title="Remover foto da fachada"
+                    >
+                      <Trash2 size={16} />
+                      <span className="text-[10px] mt-0.5">Remover</span>
+                    </button>
+                  </div>
+                ) : (
+                  <label 
+                    htmlFor="foto-fachada-input-sec-A"
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-800 hover:bg-slate-750 border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 flex flex-col items-center justify-center text-slate-400 hover:text-emerald-300 cursor-pointer transition-all shadow-inner group ring-2 ring-slate-800"
+                    title="Adicionar ou fotografar fachada"
+                  >
+                    <Camera size={24} className="group-hover:scale-110 transition-transform text-emerald-400" />
+                    <span className="text-[9px] font-bold mt-1 text-center leading-tight">Adicionar Foto</span>
+                  </label>
+                )}
+                <input
+                  id="foto-fachada-input-sec-A"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, 'fotoFachada')}
+                  className="sr-only"
+                />
+              </div>
+
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                  <span className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                    <Camera size={15} className="text-emerald-400" />
+                    Foto de Perfil da Fachada (Identificação Visual Rápida)
+                  </span>
+                  {formData.fotoFachada && (
+                    <span className="px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold rounded">
+                      Foto anexada
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] sm:text-xs text-slate-400 mt-1 leading-relaxed">
+                  Semelhante à foto de perfil em redes sociais, essa foto é o primeiro elemento visual exibido na ficha completa para garantir que a equipe de socorro identifique a edificação com rapidez e segurança.
+                </p>
+                <div className="flex items-center justify-center sm:justify-start gap-2 mt-2.5">
+                  <label
+                    htmlFor="foto-fachada-input-sec-A"
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-lg shadow cursor-pointer transition-all flex items-center gap-1.5"
+                  >
+                    <Camera size={13} />
+                    <span>{formData.fotoFachada ? 'Trocar Foto da Fachada' : 'Tirar / Enviar Foto da Fachada'}</span>
+                  </label>
+                  {formData.fotoFachada && (
+                    <button
+                      type="button"
+                      onClick={() => handleChange('fotoFachada', '')}
+                      className="px-2.5 py-1.5 bg-red-950/60 hover:bg-red-900/80 active:scale-95 text-red-300 hover:text-red-200 border border-red-800/50 font-bold text-xs rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                      title="Excluir foto atual"
+                    >
+                      <Trash2 size={13} />
+                      <span>Remover</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-3">
