@@ -456,6 +456,12 @@
       "status": "completed",
       "name": "Visualização dos Códigos dos Pinos no Mapa (Padrão Argos) com Persistência LocalStorage e Controles Táticos",
       "prompt": "Adicionar opção tática de visualização dos códigos dos hidrantes nos pinos do mapa (semelhante ao sistema Argos):\n1. Adicionar botão tático flutuante com ícone '#' e atalho na legenda do mapa para alternar exibição.\n2. Salvar preferência no localStorage ('netuno_show_pin_codes').\n3. Renderizar badges de alto contraste monoespaçados sob os marcadores com alinhamento perfeito e sem deslocamento da âncora geográfica.\n4. Manter realces visuais para hidrante focado/selecionado, rotas ativas e itens concluídos.\n5. Validar compilação e enviar para produção via git push origin main."
+    },
+    {
+      "id": 77,
+      "status": "pending",
+      "name": "Exportação Global de Dados (CSV Sanitizado) no Menu Principal",
+      "prompt": "Atue como Engenheiro de Software Sênior. Adicione uma funcionalidade de \"Baixar Base de Dados Completa\" no menu principal do sistema (não restrito ao pré pop). O export deve gerar um arquivo CSV sanitizado de forma organizada, contendo todas as informações do sistema consolidadas (vistorias, transações, pré pop, pareceres técnicos, etc.). O layout do CSV deve ser limpo e pronto para análise. Responda \"ETAPA CONCLUIDA\" quando finalizar e aprovar os testes em localhost."
     }
   ]
 }
