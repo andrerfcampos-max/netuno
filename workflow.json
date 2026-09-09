@@ -459,7 +459,7 @@
     },
     {
       "id": 77,
-      "status": "pending",
+      "status": "completed",
       "name": "Exportação Global de Dados (CSV Sanitizado) no Menu Principal",
       "prompt": "Atue como Engenheiro de Software Sênior. Adicione uma funcionalidade de \"Baixar Base de Dados Completa\" no menu principal do sistema (não restrito ao pré pop). O export deve gerar um arquivo CSV sanitizado de forma organizada, contendo todas as informações do sistema consolidadas (vistorias, transações, pré pop, pareceres técnicos, etc.). O layout do CSV deve ser limpo e pronto para análise. Responda \"ETAPA CONCLUIDA\" quando finalizar e aprovar os testes em localhost."
     }

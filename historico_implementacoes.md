@@ -699,3 +699,6 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 
 
 
+
+### [09/09/2026] Etapa 77 Concluída Automaticamente
+- **Exportação Global de Dados (CSV Sanitizado) no Menu Principal** foi executada e validada com sucesso pelo agente.

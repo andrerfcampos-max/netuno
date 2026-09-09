@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-43",
+  "activeTaskId": "TASK-49",
   "queue": [
     {
       "id": "TASK-1",
@@ -432,38 +432,89 @@
       "seq": 43,
       "conversationId": "45e370b2-4b47-4826-ac0e-76c88bfaa677",
       "description": "add workflow step for complete database download",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-09T22:20:05.094Z",
       "startedAt": "2026-09-09T22:22:21.874Z",
-      "completedAt": null
+      "completedAt": "2026-09-09T22:23:52.126Z"
     },
     {
       "id": "TASK-44",
       "seq": 44,
       "conversationId": "cbebc0b9-0325-469a-b360-08d0d8762962",
       "description": "Aba Hidrantes Pre-POP: ponto de referencia e botao Waze estilizado",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-09T22:20:13.189Z",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-09-09T22:23:56.132Z",
+      "completedAt": "2026-09-09T22:26:17.236Z"
     },
     {
       "id": "TASK-45",
       "seq": 45,
       "conversationId": "ff01e478-76c2-4915-817d-41cc4de59a05",
       "description": "Exclusividade Mútua na Plotagem do Mapa (Filtros vs Rota de Missão) e Header Tático",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-09T22:21:17.788Z",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-09-09T22:26:20.309Z",
+      "completedAt": "2026-09-09T22:30:40.851Z"
     },
     {
       "id": "TASK-46",
       "seq": 46,
       "conversationId": "fe9af20f-c7a8-412c-b534-5dd12eea32db",
       "description": "Aguardar todas as conversas finalizarem (Fim da fila)",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-09T22:22:41.730Z",
+      "startedAt": "2026-09-09T22:30:43.790Z",
+      "completedAt": "2026-09-09T22:30:51.510Z"
+    },
+    {
+      "id": "TASK-47",
+      "seq": 47,
+      "conversationId": "45e370b2-4b47-4826-ac0e-76c88bfaa677",
+      "description": "run automation step 77",
+      "status": "completed",
+      "createdAt": "2026-09-09T22:24:31.938Z",
+      "startedAt": "2026-09-09T22:30:54.278Z",
+      "completedAt": "2026-09-09T22:31:15.740Z"
+    },
+    {
+      "id": "TASK-48",
+      "seq": 48,
+      "conversationId": "run_automation",
+      "description": "Orquestrador Etapa 77: Exportação Global de Dados (CSV Sanitizado) no Menu Principal",
+      "status": "failed",
+      "createdAt": "2026-09-09T22:31:03.163Z",
+      "startedAt": null,
+      "completedAt": "2026-09-09T22:31:03.198Z",
+      "error": "Falha durante execução do agente"
+    },
+    {
+      "id": "TASK-49",
+      "seq": 49,
+      "conversationId": "45e370b2-4b47-4826-ac0e-76c88bfaa677",
+      "description": "Implement step 77 - Baixar Base de Dados Completa",
+      "status": "running",
+      "createdAt": "2026-09-09T22:31:21.925Z",
+      "startedAt": "2026-09-09T22:31:26.662Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-50",
+      "seq": 50,
+      "conversationId": "7be9c21e-41d9-40e9-9ba3-02a580f5f38c",
+      "description": "Simplificar pino do hidrante da rota no mapa removendo efeitos cintilantes e tornando semelhante aos tradicionais com cor diferenciada",
+      "status": "queued",
+      "createdAt": "2026-09-09T22:31:45.263Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-51",
+      "seq": 51,
+      "conversationId": "f6f48cf1-cc28-4d4f-9d0e-88f591352744",
+      "description": "Controle unificado de 1 rota ativa por vez (abrir, fechar, plotar no mapa e badge)",
+      "status": "queued",
+      "createdAt": "2026-09-09T22:34:35.942Z",
       "startedAt": null,
       "completedAt": null
     }

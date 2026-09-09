@@ -30,6 +30,7 @@ import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
 import { extractProblemsList, isHidranteRemovido } from './utils/problemUtils';
 import { fixEncoding } from './utils/textUtils';
+import { exportGlobalDatabaseCSV } from './utils/exportGlobalCsv';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Raio da Terra em km
@@ -1901,6 +1902,33 @@ function App() {
                         </span>
                       </div>
                     </a>
+
+                    <button 
+                      type="button"
+                      onClick={async () => {
+                        setIsMenuOpen(false);
+                        try {
+                          await exportGlobalDatabaseCSV(hidrantes);
+                          toast.success('Download da base completa iniciado!');
+                        } catch (err) {
+                          toast.error('Erro ao exportar base completa.');
+                          console.error(err);
+                        }
+                      }}
+                      className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-blue-950/40 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0 mt-0.5 group-hover:border-blue-500/60 transition-colors">
+                        <FileSpreadsheet size={17} />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                          Baixar Base Completa
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                          Exportação CSV / XLSX sanitizada
+                        </span>
+                      </div>
+                    </button>
 
                     <div className="pt-2 mt-2 border-t border-slate-700/60 flex flex-col gap-1.5 items-center select-none">
                       <button
