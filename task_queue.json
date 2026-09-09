@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-37",
+  "activeTaskId": "TASK-38",
   "queue": [
     {
       "id": "TASK-1",
@@ -371,19 +371,19 @@
       "seq": 37,
       "conversationId": "d0240435-bca6-45f6-8f05-7fdcef855ef3",
       "description": "Exibir nome do usuario no topo no mobile",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-09T21:11:18.051Z",
       "startedAt": "2026-09-09T21:22:03.039Z",
-      "completedAt": null
+      "completedAt": "2026-09-09T21:23:25.104Z"
     },
     {
       "id": "TASK-38",
       "seq": 38,
       "conversationId": "bc814177-b05c-4c00-8edc-bdd8b003fa3a",
       "description": "baixar base de dados prepop em csv (gestor)",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-09-09T21:12:04.632Z",
-      "startedAt": null,
+      "startedAt": "2026-09-09T21:23:28.305Z",
       "completedAt": null
     },
     {

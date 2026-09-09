@@ -1615,12 +1615,12 @@ function App() {
           </span>
         </div>
         
-        <div className="relative z-50 flex items-center gap-2 shrink-0">
-          <div className="hidden md:flex flex-col items-end mr-2">
-            <span className="text-[10px] uppercase tracking-wider text-slate-300 font-bold">
+        <div className="relative z-50 flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex flex-col items-end mr-1 sm:mr-2 text-right min-w-0 max-w-[95px] xs:max-w-[130px] sm:max-w-[180px] md:max-w-none">
+            <span className="text-[10px] uppercase tracking-wider text-slate-300 font-bold truncate max-w-full" title={currentUser.nome}>
               {currentUser.nome}
             </span>
-            <span className="text-[9px] text-emerald-500">
+            <span className="text-[9px] text-emerald-500 font-medium leading-tight truncate max-w-full">
               {currentUser.role === 'gestor' ? 'Gestor' : currentUser.role === 'admin' ? 'Admin' : 'Vistoriador'}
             </span>
           </div>
@@ -1630,7 +1630,7 @@ function App() {
             <button
               type="button"
               onClick={() => setIsSystemHistoryOpen(true)}
-              className="relative flex items-center justify-center p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 border border-slate-700 rounded shadow-sm transition-all"
+              className="relative flex items-center justify-center p-1.5 sm:p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 border border-slate-700 rounded shadow-sm transition-all"
               title="Histórico e Notificações de Ações do Sistema"
             >
               <Bell size={19} />
@@ -1644,10 +1644,10 @@ function App() {
 
           <button 
             onClick={handleLogout} 
-            className="flex items-center justify-center p-2 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 border border-slate-700 rounded shadow-sm transition-all"
+            className="flex items-center justify-center p-1.5 sm:p-2 bg-slate-800 hover:bg-red-900/50 hover:text-red-400 text-slate-400 border border-slate-700 rounded shadow-sm transition-all"
             title="Sair do sistema"
           >
-            <LogOut size={20} />
+            <LogOut size={19} />
           </button>
 
           {/* Vistoriador visualiza apenas a Central de Missões diretamente */}
