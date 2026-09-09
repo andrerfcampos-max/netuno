@@ -636,8 +636,8 @@ const MissionRoutePanel = ({
   return (
     <div className="flex flex-col p-2 sm:p-3 w-full h-full bg-slate-900 relative overflow-hidden">
 
-      {/* CABEÇALHO DA ROTA (OTIMIZADO PARA MOBILE COM STATUS VISÍVEL) */}
-      <div className="flex justify-between items-center mb-1.5 pb-1.5 border-b border-slate-700/80 relative shrink-0 gap-1.5">
+      {/* CABEÇALHO DA ROTA: LINHA 1 - NOME COMPLETO DA ROTA E CONTROLES */}
+      <div className="flex items-center justify-between gap-2 pb-1 relative shrink-0">
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {onBackToManager && (
             <button 
@@ -651,43 +651,33 @@ const MissionRoutePanel = ({
             </button>
           )}
           
-          <div className="flex items-center gap-1.5 min-w-0">
-            <GitMerge size={17} className="text-emerald-400 shrink-0" />
-            <span className="font-extrabold text-sm sm:text-base text-slate-100 drop-shadow-sm truncate" title={currentMission?.name || "Rota de Missão"}>
-              {currentMission?.name || "Rota de Missão"}
-            </span>
-          </div>
-
-          {/* BADGE DE EXECUÇÃO RATIO X/TOTAL (Ex: 1/5 (20%)) */}
-          <span className="bg-emerald-950/90 border border-emerald-500/80 text-emerald-300 font-mono font-bold text-[11px] sm:text-xs px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 shrink-0" title="Hidrantes concluídos / Total">
-            <span>{completedCount}/{totalCount}</span>
-            <span className="text-[10px] text-emerald-400 font-normal">({progressPercent}%)</span>
-          </span>
-        </div>
-        
-        {/* Lado Direito: Status de Cálculo 100% Visível no Mobile + Recalcular + Fechar */}
-        <div className="flex items-center gap-1 shrink-0">
-          {isOptimizing ? (
-            <span className="flex items-center gap-1 bg-amber-950/80 border border-amber-500/60 text-amber-300 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full shadow animate-pulse shrink-0" title="Calculando trânsito e rotas viárias">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping shrink-0" />
-              <span>Calculando...</span>
-            </span>
-          ) : (
-            <span 
-              className={`flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
-                isTrafficOptimized 
-                  ? 'bg-blue-950/80 border-blue-500/60 text-blue-300' 
-                  : 'bg-emerald-950/80 border-emerald-500/60 text-emerald-300'
-              }`}
-              title={isTrafficOptimized ? "Rota calculada com estimativa de trânsito viário" : "Rota pronta por proximidade instantânea"}
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <GitMerge size={18} className="text-emerald-400 shrink-0" />
+            <h2 
+              className="font-extrabold text-sm sm:text-base text-slate-100 drop-shadow-sm truncate leading-tight" 
+              title={currentMission?.name || "Rota de Missão"}
             >
-              <span>{isTrafficOptimized ? '🚗 Trânsito' : '⚡ Rota Pronta'}</span>
-            </span>
-          )}
+              {currentMission?.name || "Rota de Missão"}
+            </h2>
+          </div>
+        </div>
+
+        {/* Controles da Rota: Ver no Mapa, Recalcular e Fechar */}
+        <div className="flex items-center gap-1 shrink-0">
+          {/* Botão Ver no Mapa com Foco Próximo */}
+          <button 
+            type="button" 
+            onClick={onClose} 
+            title="Ver Hidrantes da Rota no Mapa (Foco na sua posição + hidrantes próximos)" 
+            className="h-7.5 px-2 sm:h-8 flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/70 hover:border-cyan-400 text-cyan-300 text-[11px] sm:text-xs font-bold rounded-lg shadow-sm transition-all shrink-0 cursor-pointer active:scale-95"
+          >
+            <MapIcon size={14} className="text-cyan-400 shrink-0" />
+            <span>Mapa</span>
+          </button>
 
           {/* Botão Ergonômico de Atualização de Rota */}
           <button 
-            type="button"
+            type="button" 
             onClick={handleRecalculateRoute} 
             title="Recalcular Rota com base no GPS Atual" 
             className="h-7.5 w-7.5 sm:h-8 sm:w-8 flex items-center justify-center bg-slate-800 hover:bg-slate-700 active:scale-90 text-slate-200 hover:text-emerald-300 border border-slate-600/90 rounded-lg shadow-sm transition-all shrink-0 cursor-pointer"
@@ -695,23 +685,12 @@ const MissionRoutePanel = ({
             <RotateCcw size={15} className={isOptimizing ? "animate-spin text-amber-400" : ""} />
           </button>
 
-          {/* Botão Ver no Mapa com Foco Próximo */}
-          <button 
-            type="button"
-            onClick={onClose} 
-            title="Ver Hidrantes da Rota no Mapa (Foco na sua posição + hidrantes próximos)" 
-            className="h-7.5 px-2 sm:h-8 flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/70 hover:border-cyan-400 text-cyan-300 text-[11px] sm:text-xs font-bold rounded-lg shadow-sm transition-all shrink-0 cursor-pointer active:scale-95"
-          >
-            <MapIcon size={14} className="text-cyan-400 shrink-0" />
-            <span className="hidden sm:inline">Ver no Mapa</span>
-          </button>
-
-          {/* Divisor Visual de Segurança para Prevenir Toque Acidental no Fechar */}
-          <div className="h-4.5 w-[1px] bg-slate-700/90 mx-0.5 sm:mx-1 shrink-0" />
+          {/* Divisor Visual de Segurança */}
+          <div className="h-4.5 w-[1px] bg-slate-700/90 mx-0.5 shrink-0" />
 
           {/* Botão Fechar Isolado */}
           <button 
-            type="button"
+            type="button" 
             onClick={onClose} 
             className="h-7.5 w-7.5 sm:h-8 sm:w-8 flex items-center justify-center bg-slate-800/80 hover:bg-rose-950/60 border border-slate-700/70 hover:border-rose-500/50 text-slate-400 hover:text-rose-300 rounded-lg transition-all shrink-0 cursor-pointer active:scale-90" 
             title="Fechar Rota de Missão e voltar ao Mapa"
@@ -719,6 +698,34 @@ const MissionRoutePanel = ({
             <X size={16} />
           </button>
         </div>
+      </div>
+
+      {/* CABEÇALHO DA ROTA: LINHA 2 - BADGES DE EXECUÇÃO E STATUS DO TRÂNSITO/CÁLCULO */}
+      <div className="flex items-center justify-between gap-2 pb-1.5 mb-1.5 border-b border-slate-700/80 shrink-0">
+        {/* BADGE DE EXECUÇÃO */}
+        <span className="bg-emerald-950/90 border border-emerald-500/80 text-emerald-300 font-mono font-bold text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-md flex items-center gap-1 shrink-0" title="Hidrantes concluídos / Total">
+          <span>{completedCount}/{totalCount} hidrantes</span>
+          <span className="text-[10px] text-emerald-400 font-normal">({progressPercent}%)</span>
+        </span>
+
+        {/* STATUS DE CÁLCULO / TRÂNSITO */}
+        {isOptimizing ? (
+          <span className="flex items-center gap-1 bg-amber-950/80 border border-amber-500/60 text-amber-300 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full shadow animate-pulse shrink-0" title="Calculando trânsito e rotas viárias">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping shrink-0" />
+            <span>Calculando...</span>
+          </span>
+        ) : (
+          <span 
+            className={`flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+              isTrafficOptimized 
+                ? 'bg-blue-950/80 border-blue-500/60 text-blue-300' 
+                : 'bg-emerald-950/80 border-emerald-500/60 text-emerald-300'
+            }`}
+            title={isTrafficOptimized ? "Rota calculada com estimativa de trânsito viário" : "Rota pronta por proximidade instantânea"}
+          >
+            <span>{isTrafficOptimized ? '🚗 Sentido e Trânsito' : '⚡ Rota Pronta'}</span>
+          </span>
+        )}
       </div>
 
       {/* BARRA DE PROGRESSO VISUAL DA MISSÃO */}

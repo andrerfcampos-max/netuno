@@ -1326,7 +1326,7 @@ function App() {
           <p className="text-[11px] text-slate-500 text-center mt-5 font-medium tracking-wide select-none">
             Desenvolvido por Sgt Roméro
           </p>
-          <ToastContainer theme="dark" position="bottom-center" />
+          <ToastContainer theme="dark" position="top-center" autoClose={2500} />
         </div>
       </div>
     );
@@ -2128,8 +2128,17 @@ function App() {
         isMapFullscreen={isMapFullscreen}
       />
 
-      {/* Toasts */}
-      <ToastContainer theme="dark" position="bottom-center" />
+      {/* Toasts (Top-center para nunca sobrepor o menu de navegação inferior) */}
+      <ToastContainer 
+        theme="dark" 
+        position="top-center" 
+        autoClose={2500} 
+        hideProgressBar={false} 
+        newestOnTop 
+        closeOnClick 
+        pauseOnHover 
+        limit={3} 
+      />
 
       {isTechnicalStudyOpen && (
         <Suspense fallback={null}>

@@ -163,3 +163,22 @@
   }
 }
 
+/* Toast Container Superior (Sem sobrepor menu inferior mobile) */
+.Toastify__toast-container--top-center {
+  top: max(12px, env(safe-area-inset-top, 12px)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: min(92vw, 420px) !important;
+  padding: 4px !important;
+  z-index: 99999 !important;
+}
+
+.Toastify__toast {
+  border-radius: 12px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+  margin-bottom: 8px !important;
+  min-height: 48px !important;
+}
+
