@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { History, ShieldAlert, CheckCircle2, AlertTriangle, User, Calendar, X, ArrowLeft, ZoomIn } from 'lucide-react';
-import { fixEncoding } from '../utils/encoding';
+import { fixEncoding } from '../utils/textUtils';
 
 /**
  * Utilitário para formatar datas no padrão brasileiro

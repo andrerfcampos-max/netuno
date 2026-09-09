@@ -1101,7 +1101,18 @@ const MapComponent = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                {selectedHydrantMissionStatus && (
+                  selectedHydrantMissionStatus.isCompleted ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 shadow-sm shrink-0">
+                      <span>✓</span> Concluído
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-500/60 shadow-sm shrink-0">
+                      <span>#{selectedHydrantMissionStatus.order || ''}</span> Faltante
+                    </span>
+                  )
+                )}
                 <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black tracking-wide border shadow-sm ${
                   selectedHydrant.flgAtivo 
                     ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/60' 
@@ -1310,7 +1321,18 @@ const MapComponent = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                {selectedHydrantMissionStatus && (
+                  selectedHydrantMissionStatus.isCompleted ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 shadow-sm shrink-0">
+                      <span>✓</span> Concluído
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-500/60 shadow-sm shrink-0">
+                      <span>#{selectedHydrantMissionStatus.order || ''}</span> Faltante
+                    </span>
+                  )
+                )}
                 <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black tracking-wide border shadow-sm ${
                   selectedHydrant.flgAtivo 
                     ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/60' 

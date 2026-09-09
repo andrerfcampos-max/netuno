@@ -20,6 +20,7 @@ const BuildingStudiesModal = lazy(() => import('./components/BuildingStudiesModa
 const InconsistentHydrantsModal = lazy(() => import('./components/InconsistentHydrantsModal'));
 const CloudConfigModal = lazy(() => import('./components/CloudConfigModal'));
 const SystemHistoryModal = lazy(() => import('./components/SystemHistoryModal'));
+const InspectionHistoryModal = lazy(() => import('./components/InspectionHistoryModal'));
 import { logAuditEvent, getUnreadAuditCount } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers } from './utils/storage';
@@ -227,6 +228,7 @@ function App() {
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [inspectingHidrante, setInspectingHidrante] = useState(null);
   const [editingHydrante, setEditingHydrante] = useState(null);
+  const [historyHidrante, setHistoryHidrante] = useState(null);
   const [lastInspectedCoords, setLastInspectedCoords] = useState(null);
   const [mapCenterPosition, setMapCenterPosition] = useState(null);
   const [cartSelectionIds, setCartSelectionIds] = useState([]);
@@ -1503,6 +1505,16 @@ function App() {
           />
         </Suspense>
       )}
+
+      {historyHidrante && (
+        <Suspense fallback={null}>
+          <InspectionHistoryModal 
+            hidrante={historyHidrante}
+            onClose={() => setHistoryHidrante(null)}
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
       
       {editingHydrante && (
         <Suspense fallback={null}>
@@ -2026,6 +2038,7 @@ function App() {
               routeFitTrigger={routeFitTrigger}
               onTriggerRouteFit={() => setRouteFitTrigger(Date.now())}
               onCloseRouteOnMap={() => setIsRouteActiveOnMap(false)}
+              onOpenInspectionHistory={(h) => setHistoryHidrante(h)}
             />
           </ErrorBoundary>
         </div>
@@ -2043,6 +2056,7 @@ function App() {
               onToggleMission={toggleCartSelection}
               onSelectAllMission={selectAllCart}
               currentUser={currentUser}
+              onOpenInspectionHistory={(h) => setHistoryHidrante(h)}
             />
           </div>
         )}
