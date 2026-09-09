@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-49",
+  "activeTaskId": "TASK-53",
   "queue": [
     {
       "id": "TASK-1",
@@ -493,29 +493,49 @@
       "seq": 49,
       "conversationId": "45e370b2-4b47-4826-ac0e-76c88bfaa677",
       "description": "Implement step 77 - Baixar Base de Dados Completa",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-09T22:31:21.925Z",
       "startedAt": "2026-09-09T22:31:26.662Z",
-      "completedAt": null
+      "completedAt": "2026-09-09T22:35:17.497Z"
     },
     {
       "id": "TASK-50",
       "seq": 50,
       "conversationId": "7be9c21e-41d9-40e9-9ba3-02a580f5f38c",
       "description": "Simplificar pino do hidrante da rota no mapa removendo efeitos cintilantes e tornando semelhante aos tradicionais com cor diferenciada",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-09T22:31:45.263Z",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-09-09T22:35:20.324Z",
+      "completedAt": "2026-09-09T22:36:36.871Z"
     },
     {
       "id": "TASK-51",
       "seq": 51,
       "conversationId": "f6f48cf1-cc28-4d4f-9d0e-88f591352744",
       "description": "Controle unificado de 1 rota ativa por vez (abrir, fechar, plotar no mapa e badge)",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-09T22:34:35.942Z",
-      "startedAt": null,
+      "startedAt": "2026-09-09T22:36:40.367Z",
+      "completedAt": "2026-09-09T22:40:43.013Z"
+    },
+    {
+      "id": "TASK-52",
+      "seq": 52,
+      "conversationId": "0b78a6fa-ca5f-43fd-baad-0d89b3819f18",
+      "description": "Auto otimizacao inicial de rota de hidrantes",
+      "status": "completed",
+      "createdAt": "2026-09-09T22:41:20.952Z",
+      "startedAt": "2026-09-09T22:41:23.301Z",
+      "completedAt": "2026-09-09T22:48:03.127Z"
+    },
+    {
+      "id": "TASK-53",
+      "seq": 53,
+      "conversationId": "fe9af20f-c7a8-412c-b534-5dd12eea32db",
+      "description": "Implementação das correções de QA (Etapa 3)",
+      "status": "running",
+      "createdAt": "2026-09-09T22:43:24.815Z",
+      "startedAt": "2026-09-09T22:48:06.540Z",
       "completedAt": null
     }
   ]

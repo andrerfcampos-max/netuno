@@ -19,7 +19,7 @@ class ErrorBoundary extends React.Component {
   handleReload = () => {
     try {
       localStorage.removeItem('netuno_map_state');
-    } catch (e) {}
+    } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
     window.location.reload();
   };
 
@@ -29,7 +29,7 @@ class ErrorBoundary extends React.Component {
       localStorage.removeItem('netuno_saved_filters');
       localStorage.removeItem('netuno_active_view');
       localStorage.removeItem('lastReportType');
-    } catch (e) {}
+    } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
     window.location.href = window.location.pathname;
   };
 

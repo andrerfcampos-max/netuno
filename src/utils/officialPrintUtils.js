@@ -88,7 +88,7 @@ export const executePrintHtml = (html, docTitle = '') => {
     const prevMainTitle = document.title;
     document.title = standardTitle;
     setTimeout(() => {
-      try { document.title = prevMainTitle; } catch (e) {}
+      try { document.title = prevMainTitle; } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
     }, 20000);
 
     // 3. Estilos e Barra Superior do Leitor de PDF (ativa em tela, oculta na impressão física/PDF)
@@ -320,7 +320,7 @@ export const fallbackPopupPrint = (html) => {
   printWindow.document.close();
   printWindow.focus();
   printWindow.addEventListener('afterprint', () => {
-    try { printWindow.close(); } catch (e) {}
+    try { printWindow.close(); } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
   });
 };
 

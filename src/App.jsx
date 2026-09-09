@@ -1,8 +1,7 @@
 import { useState, useMemo, useEffect, useRef, Suspense, lazy } from 'react';
-import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw, FileSpreadsheet, Bell, History, Route as RouteIcon, X } from 'lucide-react';
+import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw, Bell, History, Route as RouteIcon, X } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { parseHydrantsCSV } from './utils/csvParser';
 import MapComponent from './components/MapComponent';
 import FilterBar from './components/FilterBar';
 import DataTable from './components/DataTable';
@@ -348,7 +347,7 @@ function App() {
       setActiveFilters(newFilters);
       try {
         localStorage.setItem('netuno_saved_filters', JSON.stringify(newFilters));
-      } catch (e) {}
+      } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
     }
     setMapCenterPosition({ ...h, _ts: Date.now() });
     setActiveView('map');
@@ -742,7 +741,7 @@ function App() {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
-  }, [hidrantes.length, missions.length]);
+  }, [hidrantes.length, missions.length, currentUser?.matricula, currentUser?.nome]);
 
   const updateCurrentMission = (updates) => {
     if (!activeMissionId) return;
@@ -1054,7 +1053,7 @@ function App() {
     setActiveFilters(filters);
     try {
       localStorage.setItem('netuno_saved_filters', JSON.stringify(filters));
-    } catch (e) {}
+    } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
   };
 
   const handleSaveInspection = (updatedHidrante, isEditing = false) => {

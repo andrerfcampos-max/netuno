@@ -64,7 +64,7 @@ export const logAuditEvent = ({
       try {
         const savedUser = localStorage.getItem('netuno_auth_user');
         if (savedUser) finalAuthor = JSON.parse(savedUser);
-      } catch (e) {}
+      } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
     }
 
     const newEntry = {

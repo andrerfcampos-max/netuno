@@ -56,7 +56,7 @@ export const setCachedLocation = (coords) => {
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('netuno_last_known_gps', JSON.stringify(updated));
     }
-  } catch (e) {}
+  } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
 
   listeners.forEach((fn) => {
     try {

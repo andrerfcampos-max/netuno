@@ -517,14 +517,6 @@ const MapMemory = () => {
   return null;
 };
 
-const ScrollBehavior = () => {
-  const map = useMap();
-  useEffect(() => {
-    map.scrollWheelZoom.enable();
-  }, [map]);
-  return null;
-};
-
 const MapClickHandler = ({ selectedHydrant, onSelectHydrant }) => {
   useMapEvents({
     click: (e) => {
@@ -705,7 +697,7 @@ const MapComponent = ({
       const next = !prev;
       try {
         localStorage.setItem('netuno_show_pin_codes', String(next));
-      } catch (e) {}
+      } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
       return next;
     });
   };
@@ -807,7 +799,7 @@ const MapComponent = ({
       if (watchId && 'geolocation' in navigator) {
         try {
           navigator.geolocation.clearWatch(watchId);
-        } catch (e) {}
+        } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
       }
     };
   }, []);
@@ -1064,7 +1056,7 @@ const MapComponent = ({
         center={initialCenter} 
         zoom={initialZoom} 
         style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={true}
+        scrollWheelZoom={!L.Browser.mobile}
         preferCanvas={true}
       >
         {/* Camada OBRIGATÓRIA Google Satélite Híbrido */}
@@ -1085,7 +1077,6 @@ const MapComponent = ({
           selectedHydrant={selectedHydrant} 
         />
         <MapMemory />
-        <ScrollBehavior />
         <MapClickHandler selectedHydrant={selectedHydrant} onSelectHydrant={handleCloseHydrant} />
         <MapResizer isMapFullscreen={isMapFullscreen} activeView={activeView} />
         <UserLocationTracker userLocation={userLocation} centerPosition={centerPosition} selectedHydrant={selectedHydrant} hasFilter={hasFilter || isCitySelected} hasActiveRoute={hasActiveRoute} />

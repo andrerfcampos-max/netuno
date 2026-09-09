@@ -1502,7 +1502,6 @@ function BuildingTacticalViewModal({
 // FORMULÁRIO COMPLETO DE CADASTRO E EDIÇÃO DE EDIFICAÇÃO (PPO CBMDF)
 // --------------------------------------------------------------------------------------
 function BuildingStudyFormModal({ 
-  isOpen, 
   onClose, 
   studyData, 
   onSave, 
