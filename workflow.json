@@ -450,6 +450,12 @@
       "status": "completed",
       "name": "Otimização de Rota ATSP 2-Opt OSRM para Vias de Sentido Único e Recálculo Dinâmico (Botão de Recálculo, Novo Hidrante e Nova Vistoria)",
       "prompt": "Implementar motor de roteamento ATSP (Asymmetric TSP com 2-Opt Direcionado) no Netuno:\n1. Criar routeOptimization.js com algoritmos para matrizes viárias direcionadas (Cheapest Directed Insertion, Or-Opt Relocation e 2-Opt Direcionado), respeitando estritamente o sentido único de vias (oneway) retornado pelo OSRM.\n2. Integrar no MissionRoutePanel.jsx para calcular a sequência viária ótima real de trânsito.\n3. Recálculo ao clicar no botão de Recalcular Rota, com GPS fresco da viatura e re-otimização a partir da posição atual do militar.\n4. Recálculo ao cadastrar novo hidrante: integrar à missão ativa e reordenar a rota.\n5. Recálculo ao vistoriar hidrante: marcar como concluído na missão e recalcular o trajeto restante a partir do hidrante vistoriado ou GPS.\n6. Validar com npm run build e enviar via git push origin main."
+    },
+    {
+      "id": 76,
+      "status": "completed",
+      "name": "Visualização dos Códigos dos Pinos no Mapa (Padrão Argos) com Persistência LocalStorage e Controles Táticos",
+      "prompt": "Adicionar opção tática de visualização dos códigos dos hidrantes nos pinos do mapa (semelhante ao sistema Argos):\n1. Adicionar botão tático flutuante com ícone '#' e atalho na legenda do mapa para alternar exibição.\n2. Salvar preferência no localStorage ('netuno_show_pin_codes').\n3. Renderizar badges de alto contraste monoespaçados sob os marcadores com alinhamento perfeito e sem deslocamento da âncora geográfica.\n4. Manter realces visuais para hidrante focado/selecionado, rotas ativas e itens concluídos.\n5. Validar compilação e enviar para produção via git push origin main."
     }
   ]
 }

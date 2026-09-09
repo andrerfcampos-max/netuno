@@ -942,11 +942,13 @@ const MapComponent = ({
         ? ((k1 && missionOrderMap[k1]) || (k2 && missionOrderMap[k2]) || (k3 && missionOrderMap[k3]) || null)
         : null;
 
+      const pinCode = fixEncoding(h.nomHidrante) || (h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : '');
+
       return (
         <Marker 
           key={id} 
           position={[h.numLatitude, h.numLongitude]}
-          icon={createDivIcon(h.flgAtivo, isSelected, isCurrentActive, isMissionItem, missionOrder, isMissionCompleted)}
+          icon={createDivIcon(h.flgAtivo, isSelected, isCurrentActive, isMissionItem, missionOrder, isMissionCompleted, showPinCodes, pinCode)}
           zIndexOffset={isCurrentActive ? 2500 : (isMissionItem ? (isMissionCompleted ? 1100 : 1500) : (isSelected ? 500 : 0))}
           ref={(marker) => {
             if (marker) {
@@ -1155,7 +1157,7 @@ const MapComponent = ({
           />
         )}
 
-        {/* Controles Flutuantes Táticos do Mapa (Foco de Rota Próxima + GPS) */}
+        {/* Controles Flutuantes Táticos do Mapa (Foco de Rota Próxima + Códigos + GPS) */}
         <TacticalMapControls 
           userLocation={userLocation} 
           isSheetOpen={Boolean(selectedHydrant)} 
@@ -1165,11 +1167,13 @@ const MapComponent = ({
               onTriggerRouteFit();
             }
           }}
+          showPinCodes={showPinCodes}
+          onTogglePinCodes={handleTogglePinCodes}
         />
       </MapContainer>
 
       {/* Legenda Tática do Mapa */}
-      <div className={`absolute bottom-6 left-3 z-[1000] bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl flex items-center gap-3 text-[11px] font-bold text-slate-200 pointer-events-auto select-none transition-all duration-300 ${selectedHydrant ? 'hidden sm:flex' : 'flex'}`}>
+      <div className={`absolute bottom-6 left-3 z-[1000] bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl flex items-center gap-2.5 sm:gap-3 text-[11px] font-bold text-slate-200 pointer-events-auto select-none transition-all duration-300 ${selectedHydrant ? 'hidden sm:flex' : 'flex'}`}>
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-[#10b981] border border-white shadow-sm inline-block shrink-0"></span>
           <span className="text-emerald-400">Operante</span>
@@ -1190,6 +1194,20 @@ const MapComponent = ({
             </div>
           </>
         )}
+        {/* Toggle rápido de Códigos na Legenda (Padrão Argos) */}
+        <button
+          type="button"
+          onClick={handleTogglePinCodes}
+          className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-bold transition-all cursor-pointer active:scale-95 border-l border-slate-700 ml-0.5 ${
+            showPinCodes
+              ? 'bg-cyan-950/90 border-cyan-400 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]'
+              : 'bg-slate-800/90 border-slate-600 text-slate-400 hover:text-slate-200'
+          }`}
+          title="Alternar visualização dos códigos dos hidrantes nos pinos (Padrão Argos)"
+        >
+          <Hash size={11} className={showPinCodes ? 'text-cyan-400 font-bold' : 'text-slate-400'} />
+          <span>{showPinCodes ? 'Códigos ON' : 'Códigos'}</span>
+        </button>
       </div>
 
       {/* ======================================================== */}
