@@ -27,7 +27,8 @@ import {
   LocateFixed,
   Radio,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import { RA_LIST, normalizeRAName } from '../utils/raList';
 import { 
@@ -37,6 +38,7 @@ import {
   deleteBuildingStudy, 
   findNearestHydrantsForBuilding 
 } from '../utils/buildingStudiesStorage';
+import { exportPrepopToCSV } from '../utils/exportPrepopCsv';
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { printBuildingStudyReport } from '../utils/officialPrintUtils';
 import { logAuditEvent } from '../utils/auditLogger';
@@ -76,6 +78,26 @@ export default function BuildingStudiesModal({
   const [tacticalViewStudy, setTacticalViewStudy] = useState(null);
   const [zoomImage, setZoomImage] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  
+  // Controle de Permissão e Exportação CSV (Perfil Gestor/Admin)
+  const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
+  const [exportFeedback, setExportFeedback] = useState('');
+
+  const handleExportCsv = () => {
+    try {
+      setIsExportingCsv(true);
+      const allToExport = (studies && studies.length > 0) ? studies : getBuildingStudies();
+      exportPrepopToCSV(allToExport);
+      setExportFeedback(`Exportados ${allToExport.length} registros com sucesso!`);
+      setTimeout(() => setExportFeedback(''), 4500);
+    } catch (err) {
+      console.error('Erro ao exportar base PREPOP para CSV:', err);
+      alert('Erro ao exportar base PREPOP: ' + (err?.message || 'Falha desconhecida'));
+    } finally {
+      setIsExportingCsv(false);
+    }
+  };
 
   // Recarregar estudos
   useEffect(() => {
@@ -281,6 +303,26 @@ _Gerado via Netuno CBMDF - Sistema Tático Operacional_`;
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {exportFeedback && (
+              <span className="hidden md:inline text-xs font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-1 rounded-lg animate-fadeIn">
+                {exportFeedback}
+              </span>
+            )}
+
+            {isGestor && (
+              <button
+                type="button"
+                onClick={handleExportCsv}
+                disabled={isExportingCsv || studies.length === 0}
+                className="h-9 px-2.5 sm:px-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600 text-xs sm:text-sm font-semibold rounded-lg shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                title="Baixar Base de Dados PREPOP em formato CSV (Acesso Gestor para Desenvolvimento)"
+              >
+                <Download size={16} className={`text-emerald-400 ${isExportingCsv ? 'animate-bounce' : ''}`} />
+                <span className="hidden sm:inline">Baixar PrePOP (CSV)</span>
+                <span className="sm:hidden text-xs">CSV</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => {
