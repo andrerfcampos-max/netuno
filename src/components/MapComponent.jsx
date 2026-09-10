@@ -1711,11 +1711,11 @@ const MapComponent = ({
       </button>
       {fullscreenPhoto && (
         <div 
-          className="fixed inset-0 bg-black/95 z-[999999] flex flex-col p-4"
+          className="fixed inset-0 bg-black/95 z-[999999] flex flex-col p-4 pb-24 overflow-y-auto"
           onClick={() => setFullscreenPhoto(null)}
         >
           {/* Header do Lightbox */}
-          <div className="flex items-center justify-between w-full pt-2 pb-4">
+          <div className="flex items-center justify-between w-full pt-2 pb-4 shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-slate-800/80 flex items-center justify-center border border-slate-700">
                 <MapPin size={16} className="text-emerald-400" />
@@ -1740,7 +1740,7 @@ const MapComponent = ({
           </div>
 
           {/* Área da Imagem */}
-          <div className="flex-1 flex items-center justify-center overflow-hidden relative">
+          <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden relative mb-4">
             {fullscreenPhoto === 'placeholder' ? (
               <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/50 rounded-2xl border border-slate-800 max-w-sm w-full">
                 <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4 border border-slate-700">
@@ -1763,14 +1763,14 @@ const MapComponent = ({
           </div>
 
           {/* Footer de Ações do Lightbox */}
-          <div className="flex flex-col gap-3 pt-4 pb-6 w-full max-w-md mx-auto">
+          <div className="flex flex-col gap-3 w-full max-w-md mx-auto shrink-0 pb-10">
             {selectedHydrant && (
               <a 
                 href={`https://maps.google.com/maps?q=&layer=c&cbll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
                 target="_blank" 
                 rel="noreferrer" 
                 onClick={(e) => e.stopPropagation()}
-                className="w-full h-12 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all border border-amber-400/40"
+                className="w-full h-14 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all border border-amber-400/40"
               >
                 <MapPin size={18} className="text-amber-200 shrink-0" />
                 <span>EXPLORAR NO STREET VIEW 360°</span>
@@ -1784,7 +1784,7 @@ const MapComponent = ({
                   alert('Aviso enviado! O administrador foi notificado para revisar o enquadramento desta imagem.');
                   setFullscreenPhoto(null);
                 }}
-                className="w-full h-10 bg-slate-800/80 hover:bg-slate-700 active:scale-98 text-slate-300 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition-all border border-slate-700"
+                className="w-full h-11 bg-slate-800/80 hover:bg-slate-700 active:scale-98 text-slate-300 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition-all border border-slate-700"
               >
                 <AlertTriangle size={14} className="text-rose-400 shrink-0" />
                 <span>Reportar foto incorreta / obstruída</span>
