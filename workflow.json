@@ -474,6 +474,12 @@
       "status": "completed",
       "name": "Implementação da UI Hero Banner (Foto de Perfil do Hidrante) no Bottom Sheet",
       "prompt": "Modificar MapComponent.jsx para exibir um 'Hero Banner' para os hidrantes selecionados. Regras estritas: 1. Topo panorâmico (16:9, altura max 120px) sem margens. 2. Placeholder elegante em caso de foto faltante. 3. Status (OPERANTE/INOPERANTE) sobreposto no canto superior esquerdo. 4. Ao clicar no placeholder, abrir modal Lightbox Fullscreen com opção de explorar no Street View 360 e reportar foto incorreta."
+    },
+    {
+      "id": 80,
+      "status": "completed",
+      "name": "Vincular Pasta Favorita da Central de Missões ao Perfil do Usuário",
+      "prompt": "Modifique o comportamento da pasta favorita na Central de Missões para que ela seja vinculada ao perfil do usuário logado:\n1. Em `App.jsx`, passe a prop `currentUser` para o componente `<SelectionCart>`.\n2. Em `MissionManagerModal.jsx` e `SelectionCart.jsx`, altere o armazenamento do localStorage de `netuno_default_folder` para usar uma chave vinculada à matrícula do usuário (ex: `netuno_default_folder_${currentUser?.matricula}`).\n3. Garanta que a pasta favorita persista corretamente entre logins diferentes e que permaneça favoritada a menos que o próprio usuário a remova.\nResponda 'ETAPA CONCLUIDA' quando finalizar e testar o funcionamento."
     }
   ]
 }

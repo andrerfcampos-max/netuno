@@ -1323,7 +1323,8 @@ function App() {
 
   // ---- Controle de Missões ----
   const handleNewMission = (parentFolderId = null) => {
-    const defaultFolder = localStorage.getItem('netuno_default_folder') || null;
+    const defaultFolderKey = currentUser?.matricula ? `netuno_default_folder_${currentUser.matricula}` : 'netuno_default_folder';
+    const defaultFolder = localStorage.getItem(defaultFolderKey) || null;
     const targetFolderId = parentFolderId !== null ? parentFolderId : defaultFolder;
     const folder = folders.find(f => f.id === targetFolderId);
     let cityName = 'Brasília';
@@ -2525,6 +2526,7 @@ function App() {
 
       {/* Carrinho / Balão Flutuante de Seleção Desacoplado */}
       <SelectionCart 
+        currentUser={currentUser}
         selectedIds={cartSelectionIds}
         hidrantes={hidrantes}
         isOpen={isCartOpen}

@@ -9,13 +9,14 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [activeTab, setActiveTab] = useState('todas'); // todas, nao_iniciadas, em_andamento, finalizadas, dashboard_comando
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const defaultFolderKey = currentUser?.matricula ? `netuno_default_folder_${currentUser.matricula}` : 'netuno_default_folder';
+
   const [defaultFolderId, setDefaultFolderId] = useState(() => {
-    return localStorage.getItem('netuno_default_folder') || null;
+    return localStorage.getItem(defaultFolderKey) || null;
   });
 
   const [currentFolderId, setCurrentFolderId] = useState(() => {
-    return localStorage.getItem('netuno_default_folder') || null;
+    return localStorage.getItem(defaultFolderKey) || null;
   });
 
   const [isMoveMode, setIsMoveMode] = useState(false);
@@ -27,10 +28,10 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
   // Set default (favorite) folder
   const handleSetDefaultFolder = () => {
     if (currentFolderId === defaultFolderId) {
-      localStorage.removeItem('netuno_default_folder');
+      localStorage.removeItem(defaultFolderKey);
       setDefaultFolderId(null);
     } else {
-      localStorage.setItem('netuno_default_folder', currentFolderId || '');
+      localStorage.setItem(defaultFolderKey, currentFolderId || '');
       setDefaultFolderId(currentFolderId);
     }
   };

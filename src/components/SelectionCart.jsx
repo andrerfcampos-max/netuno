@@ -43,13 +43,13 @@ const SelectionCart = ({
   // ==========================================
   const [modalView, setModalView] = useState('list'); // 'list' | 'create' | 'add'
   const [newMissionName, setNewMissionName] = useState('');
+  const defaultFolderId = currentUser?.matricula ? localStorage.getItem(`netuno_default_folder_${currentUser.matricula}`) || '' : localStorage.getItem('netuno_default_folder') || '';
+
   const [selectedFolderId, setSelectedFolderId] = useState(() => {
-    return localStorage.getItem('netuno_default_folder') || '';
+    return defaultFolderId;
   });
   const [missionSearchTerm, setMissionSearchTerm] = useState('');
   const [selectedTargetMissionId, setSelectedTargetMissionId] = useState(activeMission?.id || '');
-
-  const defaultFolderId = localStorage.getItem('netuno_default_folder') || '';
 
   const sortedFolders = useMemo(() => {
     return [...folders].sort((a, b) => {
@@ -81,10 +81,10 @@ const SelectionCart = ({
       if (activeMission?.id) {
         setSelectedTargetMissionId(activeMission.id);
       }
-      const favFolder = localStorage.getItem('netuno_default_folder') || '';
+      const favFolder = currentUser?.matricula ? localStorage.getItem(`netuno_default_folder_${currentUser.matricula}`) || '' : localStorage.getItem('netuno_default_folder') || '';
       setSelectedFolderId(favFolder);
     }
-  }, [isOpen, activeMission?.id]);
+  }, [isOpen, activeMission?.id, currentUser?.matricula]);
 
   // ==========================================
   // ESTADOS DE ARRASTO DO BALÃO FLUTUANTE (DRAG & DROP)
