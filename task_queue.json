@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-59",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -594,10 +594,20 @@
       "seq": 59,
       "conversationId": "c1322d0e-a981-4d21-8202-a750ed2de40f",
       "description": "Fix sobreposição do botão laranja na Lightbox",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-10T18:00:55.349Z",
       "startedAt": "2026-09-10T18:01:08.024Z",
-      "completedAt": null
+      "completedAt": "2026-09-10T18:01:43.271Z"
+    },
+    {
+      "id": "TASK-60",
+      "seq": 60,
+      "conversationId": "89063166-952e-4325-a617-9fea6e504b80",
+      "description": "Ajustar pinos da rota de missao com borda escura, status interior verde/vermelho e linha pontilhada escura",
+      "status": "completed",
+      "createdAt": "2026-09-10T18:06:44.795Z",
+      "startedAt": "2026-09-10T18:06:52.914Z",
+      "completedAt": "2026-09-10T18:08:46.444Z"
     }
   ]
 }

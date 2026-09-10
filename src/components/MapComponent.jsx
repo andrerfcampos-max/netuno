@@ -98,10 +98,11 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
     });
   }
 
-  // HIDRANTE DA ROTA DA MISSÃO ATIVA (Design limpo e discreto idêntico aos tradicionais, diferenciado pela cor)
+  // HIDRANTE DA ROTA DA MISSÃO ATIVA:
+  // Borda escura (#0f172a), interior verde ou vermelho indicando status operacional
   if (isMissionItem) {
     if (isMissionCompleted) {
-      // Hidrante da Rota Já Vistoriado: Verde Esmeralda com borda sólida branca de 3px e checkmark
+      // Hidrante da Rota Já Vistoriado: Verde Esmeralda com borda escura e checkmark
       return L.divIcon({
         className: 'custom-div-icon',
         html: `
@@ -118,8 +119,8 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
               width: 20px;
               height: 20px;
               border-radius: 50%;
-              border: 3px solid #ffffff;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+              border: 2.5px solid #0f172a;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.65);
               display: flex;
               align-items: center;
               justify-content: center;
@@ -159,9 +160,8 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
       });
     }
 
-    // Hidrante da Rota Pendente: Azul tático (#0284c7), borda sólida branca de 3px com o número da parada
+    // Hidrante da Rota Pendente: Interior verde ou vermelho (statusColor), borda escura (#0f172a) e número da parada
     const orderLabel = missionOrder !== null && missionOrder !== undefined ? String(missionOrder) : '';
-    const routeColor = '#0284c7';
     return L.divIcon({
       className: 'custom-div-icon',
       html: `
@@ -174,12 +174,12 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
           justify-content: center;
         ">
           <div style="
-            background-color: ${routeColor};
+            background-color: ${statusColor};
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            border: 3px solid #ffffff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            border: 2.5px solid #0f172a;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.65);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -188,6 +188,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             font-weight: 900;
             font-size: ${orderLabel.length > 2 ? '8px' : orderLabel.length > 1 ? '9px' : '11px'};
             line-height: 1;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.9);
           ">
             ${orderLabel}
           </div>
@@ -198,13 +199,13 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
               left: 50%;
               transform: translateX(-50%);
               background: rgba(15, 23, 42, 0.95);
-              color: #38bdf8;
+              color: #f8fafc;
               font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
               font-size: 10px;
               font-weight: 800;
               padding: 1px 5px;
               border-radius: 4px;
-              border: 1px solid rgba(56, 189, 248, 0.6);
+              border: 1px solid rgba(255, 255, 255, 0.4);
               box-shadow: 0 2px 5px rgba(0,0,0,0.85);
               white-space: nowrap;
               pointer-events: none;
@@ -1122,9 +1123,9 @@ const MapComponent = ({
               <Polyline 
                 positions={positions}
                 pathOptions={{
-                  color: '#00ffff',
+                  color: '#0f172a',
                   weight: 3.5,
-                  opacity: 0.75,
+                  opacity: 0.95,
                   dashArray: '8, 8',
                   lineCap: 'round'
                 }}
@@ -1184,11 +1185,11 @@ const MapComponent = ({
         {hasActiveRoute && (
           <>
             <div className="flex items-center gap-1.5 border-l border-slate-700 pl-2">
-              <span className="w-3.5 h-3.5 rounded-full border-2 border-cyan-400 bg-slate-900 text-cyan-300 font-mono text-[9px] flex items-center justify-center font-bold shrink-0 leading-none">1</span>
-              <span className="text-cyan-300">Faltante</span>
+              <span className="w-3.5 h-3.5 rounded-full border-2 border-[#0f172a] bg-[#10b981] text-white font-mono text-[9px] flex items-center justify-center font-black shrink-0 leading-none shadow-sm">1</span>
+              <span className="text-slate-200">Rota (Nº)</span>
             </div>
             <div className="flex items-center gap-1.5 border-l border-slate-700 pl-2">
-              <span className="w-3.5 h-3.5 rounded-full border-2 border-emerald-400 bg-emerald-950 text-emerald-300 font-mono text-[10px] flex items-center justify-center font-black shrink-0 leading-none">✓</span>
+              <span className="w-3.5 h-3.5 rounded-full border-2 border-[#0f172a] bg-[#059669] text-white font-mono text-[10px] flex items-center justify-center font-black shrink-0 leading-none shadow-sm">✓</span>
               <span className="text-emerald-300">Concluído</span>
             </div>
           </>
