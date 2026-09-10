@@ -16,13 +16,13 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Estilização dos Marcadores (Design Consistente com Desktop e Mobile)
+// Estilização dos Marcadores (Design Consistente com Desktop e Mobile - Alto Contraste Satélite)
 const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = false, missionOrder = null, isMissionCompleted = false, showPinCode = false, pinCode = '') => {
   const statusColor = isOperante ? '#10b981' : '#ef4444'; // Verde Esmeralda ou Vermelho Sólido
   
   if (isInspected) {
-    // SUPER-DESTAQUE quando o hidrante está selecionado (dialog/detalhe aberto):
-    // Halo pulsante estilo sonar/radar de 56px + anel de alto contraste + ponto de mira
+    // SUPER-DESTAQUE quando o hidrante está com o painel aberto:
+    // Halo pulsante estilo sonar/radar de 56px + anel ciano brilhante + borda branca pura de 3.5px
     return L.divIcon({
       className: 'custom-div-icon',
       html: `
@@ -35,40 +35,40 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
           justify-content: center;
           pointer-events: none;
         ">
-          <!-- Onda 1 do Radar (Âmbar Vivo) -->
+          <!-- Onda 1 do Radar (Ciano Elétrico) -->
           <div style="
             position: absolute;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            border: 3px solid #f59e0b;
+            border: 2.5px solid #00ffff;
             animation: netunoRadarPulse 1.8s cubic-bezier(0, 0.2, 0.8, 1) infinite;
           "></div>
-          <!-- Onda 2 do Radar (Ciano Elétrico com delay) -->
+          <!-- Onda 2 do Radar (Branco Puro com delay) -->
           <div style="
             position: absolute;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            border: 2px solid #38bdf8;
+            border: 2px solid #ffffff;
             animation: netunoRadarPulse 1.8s cubic-bezier(0, 0.2, 0.8, 1) infinite 0.7s;
           "></div>
-          <!-- Pino Central em Evidência Máxima com Borda Dupla e Glow -->
+          <!-- Pino Central em Evidência Máxima com Borda Branca Pura e Halo Ciano -->
           <div style="
             background-color: ${statusColor};
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
-            border: 3px solid #ffffff;
-            outline: 2.5px solid #f59e0b;
-            animation: netunoActiveGlow 2s ease-in-out infinite;
+            border: 3.5px solid #ffffff;
+            outline: 3px solid #00ffff;
+            box-shadow: 0 0 14px #00ffff, 0 3px 8px rgba(0,0,0,0.6);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 20;
             pointer-events: auto;
           ">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #ffffff; box-shadow: 0 0 4px rgba(0,0,0,0.8);"></div>
+            <div style="width: 7px; height: 7px; border-radius: 50%; background-color: #ffffff; box-shadow: 0 0 3px rgba(0,0,0,0.6);"></div>
           </div>
           ${showPinCode && pinCode ? `
             <div style="
@@ -77,14 +77,14 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
               left: 50%;
               transform: translateX(-50%);
               background: #0f172a;
-              color: #fbbf24;
+              color: #38bdf8;
               font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
               font-size: 10px;
               font-weight: 900;
               padding: 1px 6px;
               border-radius: 4px;
-              border: 1.5px solid #f59e0b;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 10px rgba(245, 158, 11, 0.5);
+              border: 1.5px solid #00ffff;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 10px rgba(0, 255, 255, 0.5);
               white-space: nowrap;
               pointer-events: none;
               z-index: 30;
@@ -101,31 +101,31 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
   // HIDRANTE DA ROTA DA MISSÃO ATIVA (Design limpo e discreto idêntico aos tradicionais, diferenciado pela cor)
   if (isMissionItem) {
     if (isMissionCompleted) {
-      // Hidrante da Rota Já Vistoriado: Verde com borda branca e checkmark simples
+      // Hidrante da Rota Já Vistoriado: Verde Esmeralda com borda sólida branca de 3px e checkmark
       return L.divIcon({
         className: 'custom-div-icon',
         html: `
           <div style="
             position: relative;
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             display: flex;
             align-items: center;
             justify-content: center;
           ">
             <div style="
               background-color: #059669;
-              width: 18px;
-              height: 18px;
+              width: 20px;
+              height: 20px;
               border-radius: 50%;
-              border: 2px solid white;
-              box-shadow: 0 0 5px rgba(0,0,0,0.7);
+              border: 3px solid #ffffff;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.5);
               display: flex;
               align-items: center;
               justify-content: center;
               color: #ffffff;
               font-weight: 900;
-              font-size: 10px;
+              font-size: 11px;
               line-height: 1;
             ">
               ✓
@@ -133,17 +133,17 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             ${showPinCode && pinCode ? `
               <div style="
                 position: absolute;
-                top: 22px;
+                top: 24px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: rgba(15, 23, 42, 0.92);
+                background: rgba(15, 23, 42, 0.95);
                 color: #a7f3d0;
                 font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
                 font-size: 10px;
                 font-weight: 800;
-                padding: 1px 4px;
+                padding: 1px 5px;
                 border-radius: 4px;
-                border: 1px solid rgba(16, 185, 129, 0.5);
+                border: 1px solid rgba(16, 185, 129, 0.6);
                 box-shadow: 0 2px 5px rgba(0,0,0,0.85);
                 white-space: nowrap;
                 pointer-events: none;
@@ -154,12 +154,12 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             ` : ''}
           </div>
         `,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12]
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
       });
     }
 
-    // Hidrante da Rota Pendente: Azul tático elegante (#0284c7), dimensões tradicionais, sem efeitos cintilantes
+    // Hidrante da Rota Pendente: Azul tático (#0284c7), borda sólida branca de 3px com o número da parada
     const orderLabel = missionOrder !== null && missionOrder !== undefined ? String(missionOrder) : '';
     const routeColor = '#0284c7';
     return L.divIcon({
@@ -167,45 +167,44 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
       html: `
         <div style="
           position: relative;
-          width: 24px;
-          height: 24px;
+          width: 26px;
+          height: 26px;
           display: flex;
           align-items: center;
           justify-content: center;
         ">
           <div style="
             background-color: ${routeColor};
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 0 5px rgba(0,0,0,0.7);
+            border: 3px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-weight: 800;
-            font-size: ${orderLabel.length > 2 ? '8px' : orderLabel.length > 1 ? '9px' : '10px'};
+            font-weight: 900;
+            font-size: ${orderLabel.length > 2 ? '8px' : orderLabel.length > 1 ? '9px' : '11px'};
             line-height: 1;
-            transition: transform 0.2s ease;
           ">
             ${orderLabel}
           </div>
           ${showPinCode && pinCode ? `
             <div style="
               position: absolute;
-              top: 22px;
+              top: 24px;
               left: 50%;
               transform: translateX(-50%);
-              background: rgba(15, 23, 42, 0.92);
+              background: rgba(15, 23, 42, 0.95);
               color: #38bdf8;
               font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
               font-size: 10px;
               font-weight: 800;
-              padding: 1px 4px;
+              padding: 1px 5px;
               border-radius: 4px;
-              border: 1px solid rgba(56, 189, 248, 0.5);
+              border: 1px solid rgba(56, 189, 248, 0.6);
               box-shadow: 0 2px 5px rgba(0,0,0,0.85);
               white-space: nowrap;
               pointer-events: none;
@@ -216,41 +215,53 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
           ` : ''}
         </div>
       `,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12]
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
     });
   }
 
   if (isSelected) {
-    // Hidrante adicionado à seleção do carrinho: anel ciano neon destacado
+    // Hidrante adicionado à seleção/carrinho: Preenchimento com statusColor + borda branca pura de 3px + anel externo ciano neon
     return L.divIcon({
       className: 'custom-div-icon',
       html: `
         <div style="
           position: relative;
-          width: 36px;
-          height: 36px;
+          width: 32px;
+          height: 32px;
           display: flex;
           align-items: center;
           justify-content: center;
         ">
+          <!-- Anel externo Ciano Neon -->
           <div style="
-            background-color: rgba(0,0,0,0.55);
-            width: 30px;
-            height: 30px;
+            position: absolute;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
-            border: 3.5px solid #00FFFF;
-            box-shadow: 0 0 15px #00FFFF, 0 0 5px rgba(0,0,0,0.9);
+            border: 2.5px solid #00ffff;
+            box-shadow: 0 0 10px #00ffff, 0 0 4px rgba(0,255,255,0.8);
+          "></div>
+          <!-- Pino com cor de status (verde/vermelho) e borda branca de alto contraste -->
+          <div style="
+            background-color: ${statusColor};
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.6);
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            z-index: 2;
           ">
-            <div style="width: 9px; height: 9px; border-radius: 50%; background-color: ${statusColor};"></div>
+            <div style="width: 5px; height: 5px; border-radius: 50%; background-color: #ffffff;"></div>
           </div>
           ${showPinCode && pinCode ? `
             <div style="
               position: absolute;
-              top: 34px;
+              top: 28px;
               left: 50%;
               transform: translateX(-50%);
               background: #0f172a;
@@ -260,7 +271,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
               font-weight: 900;
               padding: 1px 5px;
               border-radius: 4px;
-              border: 1px solid #38bdf8;
+              border: 1px solid #00ffff;
               box-shadow: 0 2px 6px rgba(0,0,0,0.85);
               white-space: nowrap;
               pointer-events: none;
@@ -270,46 +281,46 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
           ` : ''}
         </div>
       `,
-      iconSize: [36, 36],
-      iconAnchor: [18, 18]
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
     });
   }
 
-  // Marcador Padrão no Mapa
+  // Marcador Padrão no Mapa: Alto contraste cromático com borda sólida branca pura de 3px (Padrão Satélite)
   return L.divIcon({
     className: 'custom-div-icon',
     html: `
       <div style="
         position: relative;
-        width: 24px;
-        height: 24px;
+        width: 26px;
+        height: 26px;
         display: flex;
         align-items: center;
         justify-content: center;
       ">
         <div style="
           background-color: ${statusColor};
-          width: 18px;
-          height: 18px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
-          border: 2px solid white;
-          box-shadow: 0 0 5px rgba(0,0,0,0.7);
+          border: 3px solid #ffffff;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.55);
           transition: transform 0.2s ease;
         "></div>
         ${showPinCode && pinCode ? `
           <div style="
             position: absolute;
-            top: 22px;
+            top: 24px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.92);
+            background: rgba(15, 23, 42, 0.95);
             color: #ffffff;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             font-size: 10px;
             font-weight: 800;
-            padding: 1px 4px;
+            padding: 1px 5px;
             border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.6);
             box-shadow: 0 2px 5px rgba(0,0,0,0.85);
             white-space: nowrap;
             pointer-events: none;
@@ -320,8 +331,8 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
         ` : ''}
       </div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
+    iconSize: [26, 26],
+    iconAnchor: [13, 13]
   });
 };
 

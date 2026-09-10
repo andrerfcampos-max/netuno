@@ -1224,7 +1224,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                             {/* Hidrantes Adjacentes */}
                             {(results.adjacentHydrants || []).map(h => (
                               <React.Fragment key={h.codHidrante || h._internalId || h.nomHidrante}>
-                                <Marker position={[h.numLatitude, h.numLongitude]} icon={customDivIcon('#000000', '#ffffff', '3.5px')}>
+                                <Marker position={[h.numLatitude, h.numLongitude]} icon={customDivIcon('#0284c7', '#ffffff', '3.5px')}>
                                   <Popup>
                                     <strong>{h.nomHidrante || h.codHidrante}</strong>
                                     <br />
@@ -1239,10 +1239,10 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                                   center={[h.numLatitude, h.numLongitude]} 
                                   radius={results.radius} 
                                   pathOptions={{ 
-                                    color: '#000000', 
+                                    color: '#0284c7', 
                                     weight: 2.5, 
-                                    fillColor: '#000000', 
-                                    fillOpacity: 0.05, 
+                                    fillColor: '#0284c7', 
+                                    fillOpacity: 0.08, 
                                     dashArray: '6, 6' 
                                   }} 
                                 />

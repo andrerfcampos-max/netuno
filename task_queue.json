@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-53",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -533,10 +533,30 @@
       "seq": 53,
       "conversationId": "fe9af20f-c7a8-412c-b534-5dd12eea32db",
       "description": "Implementação das correções de QA (Etapa 3)",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-09T22:43:24.815Z",
       "startedAt": "2026-09-09T22:48:06.540Z",
-      "completedAt": null
+      "completedAt": "2026-09-09T22:50:55.337Z"
+    },
+    {
+      "id": "TASK-54",
+      "seq": 54,
+      "conversationId": "e484f719-083c-4e70-8bc4-951aac4853df",
+      "description": "Fix ReferenceError: FileSpreadsheet is not defined",
+      "status": "completed",
+      "createdAt": "2026-09-10T17:38:27.693Z",
+      "startedAt": "2026-09-10T17:38:31.822Z",
+      "completedAt": "2026-09-10T17:39:55.394Z"
+    },
+    {
+      "id": "TASK-55",
+      "seq": 55,
+      "conversationId": "89063166-952e-4325-a617-9fea6e504b80",
+      "description": "Padronizar formula visual dos pinos no mapa com borda branca pura e sem pinos pretos",
+      "status": "completed",
+      "createdAt": "2026-09-10T17:52:08.969Z",
+      "startedAt": "2026-09-10T17:52:16.790Z",
+      "completedAt": "2026-09-10T17:54:19.160Z"
     }
   ]
 }
