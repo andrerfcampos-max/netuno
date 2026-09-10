@@ -2034,45 +2034,48 @@ function App() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap justify-between sm:justify-end w-full sm:w-auto">
                 <div className="flex items-center gap-1.5">
-                  <span className="bg-emerald-950/90 border border-emerald-500/60 text-emerald-300 text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm">
+                  <span className="bg-emerald-950/90 border border-emerald-500/60 text-emerald-300 text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm whitespace-nowrap">
                     ✓ {completedMissionIds.filter(id => (currentMission?.selectedIds || []).map(String).includes(String(id))).length} concluídos
                   </span>
-                  <span className="bg-cyan-950/90 border border-cyan-500/60 text-cyan-300 text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm">
+                  <span className="bg-cyan-950/90 border border-cyan-500/60 text-cyan-300 text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm whitespace-nowrap">
                     {pendingRouteHydrants.length} faltantes
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setRouteFitTrigger(Date.now())}
-                  className="flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
-                  title="Centralizar no seu GPS e nos hidrantes mais próximos da rota"
-                >
-                  <Navigation size={13} className="text-cyan-400" />
-                  <span className="hidden sm:inline">Focar Próximos</span>
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setRouteFitTrigger(Date.now())}
+                    className="flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 px-2 py-1.5 sm:px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
+                    title="Centralizar no seu GPS e nos hidrantes mais próximos da rota"
+                  >
+                    <Navigation size={13} className="text-cyan-400" />
+                    <span className="hidden sm:inline">Focar Próximos</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setActiveView('route')}
-                  className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
-                  title="Abrir lista completa da missão"
-                >
-                  <RouteIcon size={13} className="text-cyan-300" />
-                  <span className="hidden sm:inline">Lista da Rota</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveView('route')}
+                    className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-2 py-1.5 sm:px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
+                    title="Abrir lista completa da missão"
+                  >
+                    <RouteIcon size={13} className="text-cyan-300" />
+                    <span className="hidden sm:inline">Lista da Rota</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setIsRouteActiveOnMap(false)}
-                  className="flex items-center gap-1.5 bg-rose-950/90 hover:bg-rose-900 border border-rose-500/80 hover:border-rose-400 text-rose-200 px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-black transition-all cursor-pointer shadow-md active:scale-95"
-                  title="Sair do modo rota e reativar a navegação por filtros de cidades"
-                >
-                  <X size={14} className="text-rose-300" />
-                  <span>Sair da Rota / Ver Cidades</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsRouteActiveOnMap(false)}
+                    className="flex items-center gap-1 bg-rose-950/90 hover:bg-rose-900 border border-rose-500/80 hover:border-rose-400 text-rose-200 px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-black transition-all cursor-pointer shadow-md active:scale-95 shrink-0"
+                    title="Sair do modo rota e reativar a navegação por filtros de cidades"
+                  >
+                    <X size={14} className="text-rose-300 shrink-0" />
+                    <span className="hidden sm:inline">Sair da Rota / Ver Cidades</span>
+                    <span className="sm:hidden">Sair</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -2093,11 +2096,12 @@ function App() {
                       setIsRouteActiveOnMap(true);
                       setRouteFitTrigger(Date.now());
                     }}
-                    className="bg-cyan-900/90 hover:bg-cyan-800 border border-cyan-500/60 text-cyan-200 text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm active:scale-95"
+                    className="bg-cyan-900/90 hover:bg-cyan-800 border border-cyan-500/60 text-cyan-200 text-[11px] font-bold px-2 py-1 sm:px-2.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm active:scale-95"
                     title="Plota e foca exclusivamente nos hidrantes desta rota"
                   >
                     <Navigation size={12} className="text-cyan-400" />
-                    <span>Focar Rota no Mapa</span>
+                    <span className="hidden sm:inline">Focar Rota no Mapa</span>
+                    <span className="sm:hidden">Focar</span>
                   </button>
                   <button
                     type="button"

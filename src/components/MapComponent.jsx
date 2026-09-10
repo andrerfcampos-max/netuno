@@ -178,8 +178,8 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            border: 2.5px solid #0f172a;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.65);
+            border: 2px solid #0f172a;
+            box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0,0,0,0.75);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -612,7 +612,7 @@ const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocu
   };
 
   return (
-    <div className={`leaflet-bottom leaflet-right !right-4 !pointer-events-auto z-[1000] flex flex-col gap-2.5 items-end transition-all duration-300 ${isSheetOpen ? '!bottom-[275px] sm:!bottom-6' : '!bottom-6'}`}>
+    <div className={`leaflet-bottom leaflet-right !right-3 sm:!right-4 !pointer-events-auto z-[1000] flex flex-col gap-2 sm:gap-2.5 items-end transition-all duration-300 ${isSheetOpen ? '!bottom-[280px] sm:!bottom-6' : '!bottom-16 sm:!bottom-6'}`}>
       {/* Botão Tático: Focar na Rota Próxima (Você + hidrantes mais próximos) */}
       {hasActiveRoute && (
         <button
@@ -945,12 +945,16 @@ const MapComponent = ({
 
       const pinCode = fixEncoding(h.nomHidrante) || (h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : '');
 
+      const missionZIndex = isMissionCompleted 
+        ? 1100 
+        : (2500 - Math.min(missionOrder || 999, 999));
+
       return (
         <Marker 
           key={id} 
           position={[h.numLatitude, h.numLongitude]}
           icon={createDivIcon(h.flgAtivo, isSelected, isCurrentActive, isMissionItem, missionOrder, isMissionCompleted, showPinCodes, pinCode)}
-          zIndexOffset={isCurrentActive ? 2500 : (isMissionItem ? (isMissionCompleted ? 1100 : 1500) : (isSelected ? 500 : 0))}
+          zIndexOffset={isCurrentActive ? 3500 : (isMissionItem ? missionZIndex : (isSelected ? 800 : 100))}
           ref={(marker) => {
             if (marker) {
               markerRefs.current[id] = marker;
@@ -992,7 +996,7 @@ const MapComponent = ({
       
       {/* AVISO VISUAL CLARO: MODO ROTA ATIVA PLOTADA NO MAPA COM BOTÃO FECHAR (EM TELA CHEIA) */}
       {hasActiveRoute && activeMission && isMapFullscreen && (
-        <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-cyan-400/90 shadow-2xl rounded-2xl sm:rounded-full px-3.5 py-2 sm:px-4 sm:py-2 flex items-center justify-between sm:justify-start gap-2.5 sm:gap-4 backdrop-blur-md max-w-[96vw] pointer-events-auto">
+        <div className="absolute top-14 sm:top-3 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-cyan-400/90 shadow-2xl rounded-2xl sm:rounded-full px-3.5 py-2 sm:px-4 sm:py-2 flex items-center justify-between sm:justify-start gap-2.5 sm:gap-4 backdrop-blur-md max-w-[94vw] sm:max-w-[85vw] pointer-events-auto">
           <div className="flex items-center gap-2 min-w-0">
             <span className="relative flex h-2.5 w-2.5 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
@@ -1173,32 +1177,32 @@ const MapComponent = ({
       </MapContainer>
 
       {/* Legenda Tática do Mapa */}
-      <div className={`absolute bottom-6 left-3 z-[1000] bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl flex items-center gap-2.5 sm:gap-3 text-[11px] font-bold text-slate-200 pointer-events-auto select-none transition-all duration-300 ${selectedHydrant ? 'hidden sm:flex' : 'flex'}`}>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-[#10b981] border border-white shadow-sm inline-block shrink-0"></span>
+      <div className={`absolute bottom-2 left-2 sm:bottom-4 sm:left-3 z-[1000] bg-slate-900/95 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-slate-700/90 shadow-xl flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] font-bold text-slate-200 pointer-events-auto select-none transition-all duration-300 max-w-[calc(100%-75px)] sm:max-w-none overflow-x-auto no-scrollbar ${selectedHydrant ? 'hidden sm:flex' : 'flex'}`}>
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#10b981] border border-white shadow-sm inline-block shrink-0"></span>
           <span className="text-emerald-400">Operante</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-[#ef4444] border border-white shadow-sm inline-block shrink-0"></span>
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#ef4444] border border-white shadow-sm inline-block shrink-0"></span>
           <span className="text-red-400">Inoperante</span>
         </div>
         {hasActiveRoute && (
           <>
-            <div className="flex items-center gap-1.5 border-l border-slate-700 pl-2">
-              <span className="w-3.5 h-3.5 rounded-full border-2 border-[#0f172a] bg-[#10b981] text-white font-mono text-[9px] flex items-center justify-center font-black shrink-0 leading-none shadow-sm">1</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 border-l border-slate-700 pl-1.5 sm:pl-2 shrink-0">
+              <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border border-white/80 bg-[#10b981] text-white font-mono text-[8px] sm:text-[9px] flex items-center justify-center font-black shrink-0 leading-none shadow-sm">1</span>
               <span className="text-slate-200">Rota (Nº)</span>
             </div>
-            <div className="flex items-center gap-1.5 border-l border-slate-700 pl-2">
-              <span className="w-3.5 h-3.5 rounded-full border-2 border-[#0f172a] bg-[#059669] text-white font-mono text-[10px] flex items-center justify-center font-black shrink-0 leading-none shadow-sm">✓</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 border-l border-slate-700 pl-1.5 sm:pl-2 shrink-0">
+              <span className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border border-white/80 bg-[#059669] text-white font-mono text-[9px] sm:text-[10px] flex items-center justify-center font-black shrink-0 leading-none shadow-sm">✓</span>
               <span className="text-emerald-300">Concluído</span>
             </div>
           </>
         )}
-        {/* Toggle rápido de Códigos na Legenda (Padrão Argos) */}
+        {/* Toggle rápido de Códigos na Legenda (Padrão Argos - visível a partir de sm para economizar espaço no mobile) */}
         <button
           type="button"
           onClick={handleTogglePinCodes}
-          className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-bold transition-all cursor-pointer active:scale-95 border-l border-slate-700 ml-0.5 ${
+          className={`hidden sm:flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-bold transition-all cursor-pointer active:scale-95 border-l border-slate-700 ml-0.5 shrink-0 ${
             showPinCodes
               ? 'bg-cyan-950/90 border-cyan-400 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]'
               : 'bg-slate-800/90 border-slate-600 text-slate-400 hover:text-slate-200'
