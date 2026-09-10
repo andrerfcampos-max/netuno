@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-56",
   "queue": [
     {
       "id": "TASK-1",
@@ -557,6 +557,26 @@
       "createdAt": "2026-09-10T17:52:08.969Z",
       "startedAt": "2026-09-10T17:52:16.790Z",
       "completedAt": "2026-09-10T17:54:19.160Z"
+    },
+    {
+      "id": "TASK-56",
+      "seq": 56,
+      "conversationId": "c1322d0e-a981-4d21-8202-a750ed2de40f",
+      "description": "Implementação da UI da Foto de Perfil do Hidrante (Hero Banner)",
+      "status": "running",
+      "createdAt": "2026-09-10T17:55:19.437Z",
+      "startedAt": "2026-09-10T17:55:33.507Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-57",
+      "seq": 57,
+      "conversationId": "9b85ea11-e63b-4c98-ada8-28bb534fdf33",
+      "description": "Fix favorite folder in central de missoes",
+      "status": "queued",
+      "createdAt": "2026-09-10T17:57:39.821Z",
+      "startedAt": null,
+      "completedAt": null
     }
   ]
 }

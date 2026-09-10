@@ -1230,65 +1230,90 @@ const MapComponent = ({
               <div className="w-12 h-1.5 bg-slate-600 hover:bg-slate-500 rounded-full"></div>
             </div>
 
-            {/* Cabeçalho: Código, Foto, RA, Status e Botão Fechar */}
+            {/* ==================================================== */}
+            {/* HERO BANNER (FOTO DE PERFIL PANORÂMICA 16:9 MOBILE) */}
+            {/* ==================================================== */}
             <div 
+              className="relative w-full h-[120px] shrink-0 bg-slate-900 overflow-hidden cursor-pointer active:opacity-90"
+              onClick={() => setFullscreenPhoto(selectedHydrant.fotoPerfil || 'placeholder')}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2"
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                {selectedHydrant.fotoPerfil ? (
-                  <img 
-                    src={selectedHydrant.fotoPerfil} 
-                    alt="Foto" 
-                    className="w-10 h-10 rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform border border-slate-600 shrink-0 shadow-sm"
-                    onClick={() => setFullscreenPhoto(selectedHydrant.fotoPerfil)}
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-lg shrink-0">
-                    🚒
+              {/* Imagem de Fundo (Real ou Placeholder) */}
+              {selectedHydrant.fotoPerfil ? (
+                <img 
+                  src={selectedHydrant.fotoPerfil} 
+                  alt="Foto do Hidrante e Fachada" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 border-b border-slate-700/50">
+                  <div className="w-10 h-10 rounded-full bg-slate-700/50 flex items-center justify-center mb-1 border border-slate-600">
+                    <MapPin size={18} className="text-slate-400" />
                   </div>
-                )}
-                <div className="flex flex-col min-w-0">
-                  <span className="font-black text-base text-white tracking-tight leading-tight truncate">
-                    {fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante}
-                  </span>
-                  <span className="text-xs text-slate-400 font-semibold flex items-center gap-1 mt-0.5 truncate">
-                    <MapPin size={12} className="text-emerald-400 shrink-0" />
-                    {fixEncoding(selectedHydrant.dscLocalidade) || 'Região DF'}
-                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Foto não disponível</span>
                 </div>
-              </div>
+              )}
 
-              <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                {selectedHydrantMissionStatus && (
-                  selectedHydrantMissionStatus.isCompleted ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 shadow-sm shrink-0">
-                      <span>✓</span> Concluído
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-500/60 shadow-sm shrink-0">
-                      <span>#{selectedHydrantMissionStatus.order || ''}</span> Faltante
-                    </span>
-                  )
-                )}
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black tracking-wide border shadow-sm ${
+              {/* Gradiente Escuro na Base para Contraste do Texto */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent pointer-events-none"></div>
+
+              {/* Badge de Status (Canto Superior Esquerdo) */}
+              <div className="absolute top-2 left-2 z-10 pointer-events-none">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black tracking-widest border shadow-lg backdrop-blur-md ${
                   selectedHydrant.flgAtivo 
-                    ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/60' 
-                    : 'bg-red-950/90 text-red-300 border-red-500/60'
+                    ? 'bg-emerald-900/80 text-emerald-300 border-emerald-500/50' 
+                    : 'bg-red-900/80 text-red-300 border-red-500/50'
                 }`}>
                   {selectedHydrant.flgAtivo ? '● OPERANTE' : '● INOPERANTE'}
                 </span>
-                <button 
-                  onClick={handleCloseHydrant}
-                  className="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 text-xs font-bold border border-slate-700 shadow-sm"
-                  title="Fechar Detalhes"
-                >
-                  ✕
-                </button>
+              </div>
+
+              {/* Badge de Rota (Canto Superior Direito) */}
+              {selectedHydrantMissionStatus && (
+                <div className="absolute top-2 right-10 z-10 pointer-events-none">
+                  {selectedHydrantMissionStatus.isCompleted ? (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 shadow-sm backdrop-blur-md">
+                      ✓ Concluído
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-500/60 shadow-sm backdrop-blur-md">
+                      #{selectedHydrantMissionStatus.order || ''} Faltante
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Botão Fechar Redondo (Canto Superior Direito Absoluto) */}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCloseHydrant();
+                }}
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors active:scale-95 text-xs font-bold border border-white/20 backdrop-blur-md z-20 shadow-lg"
+                title="Fechar Detalhes"
+              >
+                ✕
+              </button>
+
+              {/* Título e Endereço (Sobrepostos na Base do Banner) */}
+              <div className="absolute bottom-2 left-2 right-2 flex flex-col pointer-events-none">
+                <span className="font-black text-lg text-white tracking-tight leading-none drop-shadow-md">
+                  {fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante}
+                </span>
+                <span className="text-[11px] text-slate-300 font-semibold flex items-center gap-1 mt-1 truncate drop-shadow-md">
+                  <MapPin size={10} className="text-emerald-400 shrink-0" />
+                  {fixEncoding(selectedHydrant.dscLocalidade) || 'Região DF'}
+                </span>
+              </div>
+
+              {/* Ícone de Expandir Discreto */}
+              <div className="absolute bottom-2 right-2 pointer-events-none bg-black/40 rounded p-1 border border-white/10 backdrop-blur-sm">
+                <Maximize2 size={12} className="text-white/80" />
               </div>
             </div>
+
 
             {/* Informações Estruturadas (Estilo Ficha Cadastral Argos) */}
             <div className="flex flex-col gap-1.5 bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/60 text-xs">
@@ -1686,14 +1711,86 @@ const MapComponent = ({
       </button>
       {fullscreenPhoto && (
         <div 
-          className="fixed inset-0 bg-black/90 z-[999999] flex items-center justify-center p-4 cursor-pointer"
+          className="fixed inset-0 bg-black/95 z-[999999] flex flex-col p-4"
           onClick={() => setFullscreenPhoto(null)}
         >
-          <img 
-            src={fullscreenPhoto} 
-            alt="Foto Ampliada" 
-            className="max-w-[90%] max-h-[90%] object-contain" 
-          />
+          {/* Header do Lightbox */}
+          <div className="flex items-center justify-between w-full pt-2 pb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-slate-800/80 flex items-center justify-center border border-slate-700">
+                <MapPin size={16} className="text-emerald-400" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-white font-bold text-sm leading-tight">
+                  {selectedHydrant ? (fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante) : 'Hidrante'}
+                </span>
+                <span className="text-slate-400 text-[10px] uppercase">Detalhe da Fachada</span>
+              </div>
+            </div>
+            
+            <button 
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-md active:scale-95 transition-all"
+              onClick={(e) => {
+                e.stopPropagation();
+                setFullscreenPhoto(null);
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Área da Imagem */}
+          <div className="flex-1 flex items-center justify-center overflow-hidden relative">
+            {fullscreenPhoto === 'placeholder' ? (
+              <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/50 rounded-2xl border border-slate-800 max-w-sm w-full">
+                <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4 border border-slate-700">
+                  <MapPin size={24} className="text-slate-500" />
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2">Foto não capturada</h3>
+                <p className="text-slate-400 text-sm">
+                  Este hidrante ainda não possui uma foto de perfil ou a captura automática falhou. 
+                  Você pode usar o botão do Street View abaixo para explorar a área manualmente.
+                </p>
+              </div>
+            ) : (
+              <img 
+                src={fullscreenPhoto} 
+                alt="Foto Ampliada" 
+                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" 
+                onClick={(e) => e.stopPropagation()}
+              />
+            )}
+          </div>
+
+          {/* Footer de Ações do Lightbox */}
+          <div className="flex flex-col gap-3 pt-4 pb-6 w-full max-w-md mx-auto">
+            {selectedHydrant && (
+              <a 
+                href={`https://maps.google.com/maps?q=&layer=c&cbll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
+                target="_blank" 
+                rel="noreferrer" 
+                onClick={(e) => e.stopPropagation()}
+                className="w-full h-12 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all border border-amber-400/40"
+              >
+                <MapPin size={18} className="text-amber-200 shrink-0" />
+                <span>EXPLORAR NO STREET VIEW 360°</span>
+              </a>
+            )}
+
+            {fullscreenPhoto !== 'placeholder' && selectedHydrant && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  alert('Aviso enviado! O administrador foi notificado para revisar o enquadramento desta imagem.');
+                  setFullscreenPhoto(null);
+                }}
+                className="w-full h-10 bg-slate-800/80 hover:bg-slate-700 active:scale-98 text-slate-300 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition-all border border-slate-700"
+              >
+                <AlertTriangle size={14} className="text-rose-400 shrink-0" />
+                <span>Reportar foto incorreta / obstruída</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
