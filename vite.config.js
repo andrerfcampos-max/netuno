@@ -9,7 +9,7 @@ export default defineConfig({
     react(), 
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.svg', 'icons.svg', 'base-de-dados.xlsx'],
       manifest: {
         name: 'Netuno - Sistema de Vistoria',
@@ -34,8 +34,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,xlsx}'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
-        skipWaiting: true,
-        clientsClaim: true
+        cleanupOutdatedCaches: true
       }
     })
   ],

@@ -248,6 +248,55 @@ function App() {
     });
     return () => unsub();
   }, []);
+
+  // Notificação Não Invasiva de Nova Versão do Netuno (PWA)
+  useEffect(() => {
+    const handleUpdateAvailable = () => {
+      toast.info(
+        ({ closeToast }) => (
+          <div className="flex flex-col gap-1.5 text-xs text-slate-100">
+            <span className="font-bold text-cyan-300 flex items-center gap-1.5">
+              <span>🚀</span> Nova versão do Netuno pronta!
+            </span>
+            <span className="text-slate-300 leading-snug">
+              Uma atualização foi baixada em segundo plano. Ela entrará em vigor na próxima vez que abrir o app, ou atualize agora:
+            </span>
+            <div className="flex items-center gap-2 mt-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  closeToast();
+                  if (typeof window.__netuno_update_sw === 'function') {
+                    window.__netuno_update_sw();
+                  } else {
+                    window.location.reload();
+                  }
+                }}
+                className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded text-[11px] shadow-sm transition-colors cursor-pointer"
+              >
+                Atualizar agora
+              </button>
+              <button
+                type="button"
+                onClick={closeToast}
+                className="px-2.5 py-1 bg-slate-700/80 hover:bg-slate-600 text-slate-300 rounded text-[11px] transition-colors cursor-pointer"
+              >
+                Continuar usando
+              </button>
+            </div>
+          </div>
+        ),
+        {
+          autoClose: 12000,
+          closeOnClick: false,
+          toastId: 'pwa-update-available'
+        }
+      );
+    };
+
+    window.addEventListener('netuno-pwa-update-available', handleUpdateAvailable);
+    return () => window.removeEventListener('netuno-pwa-update-available', handleUpdateAvailable);
+  }, []);
   
   // Controle de Missões Persistentes
   const [missions, setMissions] = useState(loadMissions());
