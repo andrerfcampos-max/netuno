@@ -854,10 +854,14 @@ const MapComponent = ({
   const missionOrderMap = useMemo(() => {
     const map = {};
     if (!activeMission) return map;
+    
+    // Apenas usa a rota otimizada (orderedIds). Se não existir, não exibe numeração/linhas desorganizadas no mapa.
     const ordered = (activeMission.orderedIds && activeMission.orderedIds.length > 0) 
       ? activeMission.orderedIds 
-      : (activeMission.selectedIds || []);
+      : null;
     
+    if (!ordered) return map;
+
     // Numera apenas os hidrantes pendentes/faltantes da rota
     const pendingOrdered = ordered.filter(id => !completedIdsSet.has(String(id)));
     pendingOrdered.forEach((id, idx) => {
@@ -1109,9 +1113,9 @@ const MapComponent = ({
             });
 
             if (pendingList.length <= 1) return null;
+            if (!activeMission.orderedIds || activeMission.orderedIds.length === 0) return null;
 
-            const ordered = (activeMission.orderedIds && activeMission.orderedIds.length > 0)
-              ? (() => {
+            const ordered = (() => {
                   const orderedStrList = activeMission.orderedIds.map(String);
                   return [...pendingList].sort((a, b) => {
                     const idA = String(a.codHidrante !== undefined && a.codHidrante !== null ? a.codHidrante : (a._internalId || a.nomHidrante || ''));
@@ -1120,8 +1124,7 @@ const MapComponent = ({
                     const idxB = orderedStrList.indexOf(idB);
                     return (idxA >= 0 ? idxA : 999) - (idxB >= 0 ? idxB : 999);
                   });
-                })()
-              : pendingList;
+                })();
 
             const positions = ordered
               .filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude))
