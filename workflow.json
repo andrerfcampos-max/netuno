@@ -489,7 +489,7 @@
     },
     {
       "id": 82,
-      "status": "pending",
+      "status": "completed",
       "name": "Exportar Base de Dados Completa (XLSX Sanitizada)",
       "prompt": "Atue como Desenvolvedor Sênior. O usuário solicitou que o Netuno consiga exportar a base de dados completa sanitizada. Implemente (ou refine, se já existir) a função de Exportar Base de Dados no formato XLSX e CSV no menu principal. O arquivo exportado deve conter todas as colunas de hidrantes (incluindo coordenadas, endereços, status, defeitos, data da última vistoria, etc) para consulta posterior com dados 100% íntegros. Responda ETAPA CONCLUIDA quando finalizar e testar."
     }

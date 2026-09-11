@@ -9,17 +9,17 @@ export const exportGlobalDatabaseCSV = async (hidrantes) => {
 
   // 1. Aba: Hidrantes e Vistorias
   const hidrantesData = hidrantes.map(h => ({
-    'Código': h.codHidrante || '',
+    'Código': h.nomHidrante || h.codHidrante || '',
     'Status': h.flgAtivo ? 'OPERANTE' : 'INOPERANTE',
-    'Latitude': h.lat ? h.lat.toFixed(6) : '',
-    'Longitude': h.lng ? h.lng.toFixed(6) : '',
-    'Cidade / RA': h.ra || '',
-    'Endereço': h.endereco || '',
-    'Ponto de Referência': h.referencia || '',
+    'Latitude': h.numLatitude ? Number(h.numLatitude).toFixed(6) : '',
+    'Longitude': h.numLongitude ? Number(h.numLongitude).toFixed(6) : '',
+    'Cidade / RA': h.dscLocalidade || '',
+    'Endereço': h.dscEndereco || '',
+    'Ponto de Referência': h.dscPontoReferencia || '',
     'Data Última Vistoria': h.datHoraUltimaVistoria || 'Sem vistoria',
     'Problemas Registrados': Array.isArray(h.problemasHidrante) ? h.problemasHidrante.join(' | ') : (h.problemasHidrante || 'Nenhum'),
-    'Observações': h.observacoes || '',
-    'Vistoriador / Matrícula': h.matricula || '',
+    'Observações': h.dscObservacao || '',
+    'Vistoriador / Matrícula': h.vistoriador || h.matricula || '',
   }));
   const wsHidrantes = XLSX.utils.json_to_sheet(hidrantesData);
   XLSX.utils.book_append_sheet(wb, wsHidrantes, "Hidrantes e Vistorias");
@@ -71,4 +71,15 @@ export const exportGlobalDatabaseCSV = async (hidrantes) => {
 
   // Gera o arquivo Excel (.xlsx) que atende a organização exigida
   XLSX.writeFile(wb, "Base_Completa_Netuno.xlsx");
+
+  // Também gera um arquivo CSV contendo a aba principal (Hidrantes)
+  const csvContent = '\uFEFF' + XLSX.utils.sheet_to_csv(wsHidrantes, { FS: ';' });
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", "Base_Completa_Netuno.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
