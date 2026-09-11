@@ -54,7 +54,19 @@ const MissionRoutePanel = ({
   onSaveRouteToFolder, 
   onGenerateReport 
 }) => {
-  const [pendingRoute, setPendingRoute] = useState([]);
+  // Inicializa a rota respeitando a ordenação prévia salva na missão, se houver
+  const [pendingRoute, setPendingRoute] = useState(() => {
+    if (!currentMission?.orderedIds || currentMission.orderedIds.length === 0) return [];
+    const orderedMap = new Map();
+    currentMission.orderedIds.forEach((id, idx) => orderedMap.set(String(id), idx));
+    return [...pendingHydrants].sort((a, b) => {
+      const kA = String(a.codHidrante || a._internalId || a.nomHidrante);
+      const kB = String(b.codHidrante || b._internalId || b.nomHidrante);
+      const idxA = orderedMap.has(kA) ? orderedMap.get(kA) : 999;
+      const idxB = orderedMap.has(kB) ? orderedMap.get(kB) : 999;
+      return idxA - idxB;
+    });
+  });
   const [drivingMetrics, setDrivingMetrics] = useState({});
   const [isTrafficOptimized, setIsTrafficOptimized] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -173,7 +185,7 @@ const MissionRoutePanel = ({
     lastOptimizedIdsRef.current = sig;
 
     if (onUpdateMission) {
-      onUpdateMission({ orderedIds: fastOrdered.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
+      onUpdateMission({ orderedIds: fastOrdered.map(h => String(h.codHidrante || h._internalId || h.nomHidrante)) });
     }
 
     // 2. Refinamento OSRM ATSP com sentidos de vias e trânsito real
@@ -189,15 +201,9 @@ const MissionRoutePanel = ({
         setDrivingMetrics(osrmResult.drivingMetrics);
         setIsTrafficOptimized(osrmResult.isTrafficMode);
         if (onUpdateMission) {
-          onUpdateMission({ orderedIds: updatedRoute.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
+          onUpdateMission({ orderedIds: updatedRoute.map(h => String(h.codHidrante || h._internalId || h.nomHidrante)) });
         }
-        if (!isSilent) {
-          if (osrmResult.isTrafficMode) {
-            toast.success('🚗 Rota recalculada com sentidos de vias e trânsito real!');
-          } else {
-            toast.info('⚡ Rota recalculada por proximidade instantânea.');
-          }
-        }
+        // Mensagem popup no topo removida conforme solicitado pelo usuário (o badge visual e animação do botão já confirmam)
       }
     } catch (err) {
       console.warn('Erro ao otimizar rota com OSRM:', err);
@@ -440,15 +446,15 @@ const MissionRoutePanel = ({
               </div>
             </div>
 
-            {/* Ações de Topo: Mapa, Editar (Gestor) e X (Remover) */}
+            {/* Ações de Topo: Localizar no Mapa, Editar (Gestor) e X (Remover) */}
             <div className="flex items-center gap-1 shrink-0">
               <button 
-                onClick={() => { onCenterMap && onCenterMap(h); onClose(); }} 
+                type="button"
+                onClick={() => { onCenterMap && onCenterMap(h); }} 
                 title="Localizar no Mapa" 
-                className="h-7 px-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-[11px] active:scale-95 transition-all flex items-center gap-1 font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
+                className="h-7 w-7 flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-[11px] active:scale-95 transition-all font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
               >
-                <LocateFixed size={13} className="text-cyan-400" />
-                <span className="text-[10px]">Mapa</span>
+                <LocateFixed size={14} className="text-cyan-400" />
               </button>
 
               {(!isCompleted && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) && (
@@ -597,14 +603,14 @@ const MissionRoutePanel = ({
 
           {/* Botões de Ação Dinâmicos por Perfil */}
           <div className="flex items-center gap-1 shrink-0">
-            {/* Botão Mapa */}
+            {/* Localizar no Mapa */}
             <button 
-              onClick={() => { onCenterMap && onCenterMap(h); onClose(); }} 
+              type="button"
+              onClick={() => { onCenterMap && onCenterMap(h); }} 
               title="Localizar no Mapa" 
-              className="h-6 w-6 sm:h-6 sm:px-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-md text-[10px] active:scale-95 transition-all flex items-center justify-center gap-0.5 font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
+              className="h-6 w-6 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-md active:scale-95 transition-all flex items-center justify-center font-semibold border border-slate-600/60 shadow-sm cursor-pointer"
             >
-              <LocateFixed size={11} className="text-cyan-400" />
-              <span className="hidden sm:inline text-[9px]">Mapa</span>
+              <LocateFixed size={12} className="text-cyan-400" />
             </button>
 
             {/* Botão Waze */}
@@ -724,15 +730,15 @@ const MissionRoutePanel = ({
 
         {/* Controles da Rota: Ver no Mapa, Recalcular e Fechar */}
         <div className="flex items-center gap-1 shrink-0">
-          {/* Botão Ver no Mapa com Foco Próximo */}
+          {/* Botão Ver no Mapa */}
           <button 
             type="button" 
-            onClick={onViewOnMap || onClose} 
-            title="Ver Hidrantes da Rota no Mapa (Foco na sua posição + hidrantes próximos)" 
-            className="h-7.5 px-2 sm:h-8 flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/70 hover:border-cyan-400 text-cyan-300 text-[11px] sm:text-xs font-bold rounded-lg shadow-sm transition-all shrink-0 cursor-pointer active:scale-95"
+            onClick={onViewOnMap} 
+            title="Ver Hidrantes da Rota no Mapa" 
+            className="h-7.5 px-2.5 sm:h-8 flex items-center gap-1.5 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/70 hover:border-cyan-400 text-cyan-300 text-[11px] sm:text-xs font-bold rounded-lg shadow-sm transition-all shrink-0 cursor-pointer active:scale-95"
           >
             <MapIcon size={14} className="text-cyan-400 shrink-0" />
-            <span>Mapa</span>
+            <span>Ver no Mapa</span>
           </button>
 
           {/* Botão Ergonômico de Atualização de Rota */}

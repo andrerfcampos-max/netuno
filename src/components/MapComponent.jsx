@@ -99,10 +99,10 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
   }
 
   // HIDRANTE DA ROTA DA MISSÃO ATIVA:
-  // Borda escura (#0f172a), interior verde ou vermelho indicando status operacional
+  // Borda sólida branca pura (#ffffff) de 2.5px com sombra profunda única, garantindo nitidez absoluta sem sobreposições
   if (isMissionItem) {
     if (isMissionCompleted) {
-      // Hidrante da Rota Já Vistoriado: Verde Esmeralda com borda escura e checkmark
+      // Hidrante da Rota Já Vistoriado: Verde Esmeralda com borda branca pura e checkmark
       return L.divIcon({
         className: 'custom-div-icon',
         html: `
@@ -116,17 +116,17 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
           ">
             <div style="
               background-color: #059669;
-              width: 20px;
-              height: 20px;
+              width: 22px;
+              height: 22px;
               border-radius: 50%;
-              border: 2.5px solid #0f172a;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.65);
+              border: 2.5px solid #ffffff;
+              box-shadow: 0 3px 8px rgba(0,0,0,0.7);
               display: flex;
               align-items: center;
               justify-content: center;
               color: #ffffff;
               font-weight: 900;
-              font-size: 11px;
+              font-size: 12px;
               line-height: 1;
             ">
               ✓
@@ -134,7 +134,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             ${showPinCode && pinCode ? `
               <div style="
                 position: absolute;
-                top: 24px;
+                top: 25px;
                 left: 50%;
                 transform: translateX(-50%);
                 background: rgba(15, 23, 42, 0.95);
@@ -160,7 +160,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
       });
     }
 
-    // Hidrante da Rota Pendente: Interior verde ou vermelho (statusColor), borda escura (#0f172a) e número da parada
+    // Hidrante da Rota Pendente: Interior com cor operacional (statusColor), borda branca sólida nítida de 2.5px e sombra única limpa
     const orderLabel = missionOrder !== null && missionOrder !== undefined ? String(missionOrder) : '';
     return L.divIcon({
       className: 'custom-div-icon',
@@ -175,18 +175,18 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
         ">
           <div style="
             background-color: ${statusColor};
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            border: 2px solid #0f172a;
-            box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0,0,0,0.75);
+            border: 2.5px solid #ffffff;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.7);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             font-weight: 900;
-            font-size: ${orderLabel.length > 2 ? '8px' : orderLabel.length > 1 ? '9px' : '11px'};
+            font-size: ${orderLabel.length > 2 ? '8.5px' : orderLabel.length > 1 ? '9.5px' : '11.5px'};
             line-height: 1;
             text-shadow: 0 1px 2px rgba(0,0,0,0.9);
           ">
@@ -195,7 +195,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
           ${showPinCode && pinCode ? `
             <div style="
               position: absolute;
-              top: 24px;
+              top: 25px;
               left: 50%;
               transform: translateX(-50%);
               background: rgba(15, 23, 42, 0.95);
@@ -684,6 +684,7 @@ const MapComponent = ({
   isRouteActiveOnMap = false,
   onCloseRouteOnMap = null,
   onOpenInspectionHistory = null,
+  onBackToRoute = null,
   userLocation: propUserLocation = null
 }) => {
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
@@ -1110,11 +1111,16 @@ const MapComponent = ({
             if (pendingList.length <= 1) return null;
 
             const ordered = (activeMission.orderedIds && activeMission.orderedIds.length > 0)
-              ? [...pendingList].sort((a, b) => {
-                  const idxA = activeMission.orderedIds.indexOf(a.codHidrante || a._internalId || a.nomHidrante);
-                  const idxB = activeMission.orderedIds.indexOf(b.codHidrante || b._internalId || b.nomHidrante);
-                  return (idxA >= 0 ? idxA : 999) - (idxB >= 0 ? idxB : 999);
-                })
+              ? (() => {
+                  const orderedStrList = activeMission.orderedIds.map(String);
+                  return [...pendingList].sort((a, b) => {
+                    const idA = String(a.codHidrante !== undefined && a.codHidrante !== null ? a.codHidrante : (a._internalId || a.nomHidrante || ''));
+                    const idB = String(b.codHidrante !== undefined && b.codHidrante !== null ? b.codHidrante : (b._internalId || b.nomHidrante || ''));
+                    const idxA = orderedStrList.indexOf(idA);
+                    const idxB = orderedStrList.indexOf(idB);
+                    return (idxA >= 0 ? idxA : 999) - (idxB >= 0 ? idxB : 999);
+                  });
+                })()
               : pendingList;
 
             const positions = ordered
@@ -1275,19 +1281,36 @@ const MapComponent = ({
                 </span>
               </div>
 
-              {/* Badge de Rota (Canto Superior Direito) */}
+              {/* Badge de Rota e Botão de Retorno Direto à Rota (Canto Superior Direito) */}
               {selectedHydrantMissionStatus && (
-                <div className="absolute top-2 right-10 z-10 pointer-events-none">
-                  {selectedHydrantMissionStatus.isCompleted ? (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 shadow-sm backdrop-blur-md">
-                      ✓ Concluído
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-500/60 shadow-sm backdrop-blur-md">
-                      #{selectedHydrantMissionStatus.order || ''} Faltante
-                    </span>
-                  )}
-                </div>
+                onBackToRoute ? (
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBackToRoute();
+                    }}
+                    className="absolute top-2 right-10 z-20 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/70 shadow-sm backdrop-blur-md cursor-pointer active:scale-95 transition-all"
+                    title="Retornar para a tela de Rota de Missão"
+                  >
+                    <span>← Rota</span>
+                    {!selectedHydrantMissionStatus.isCompleted && (
+                      <span className="font-mono text-cyan-400">#{selectedHydrantMissionStatus.order}</span>
+                    )}
+                  </button>
+                ) : (
+                  <div className="absolute top-2 right-10 z-10 pointer-events-none">
+                    {selectedHydrantMissionStatus.isCompleted ? (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 shadow-sm backdrop-blur-md">
+                        ✓ Concluído
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-500/60 shadow-sm backdrop-blur-md">
+                        #{selectedHydrantMissionStatus.order || ''} Faltante
+                      </span>
+                    )}
+                  </div>
+                )
               )}
 
               {/* Botão Fechar Redondo (Canto Superior Direito Absoluto) */}
@@ -1513,14 +1536,28 @@ const MapComponent = ({
 
               <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                 {selectedHydrantMissionStatus && (
-                  selectedHydrantMissionStatus.isCompleted ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 shadow-sm shrink-0">
-                      <span>✓</span> Concluído
-                    </span>
+                  onBackToRoute ? (
+                    <button
+                      type="button"
+                      onClick={onBackToRoute}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/70 shadow-sm shrink-0 cursor-pointer active:scale-95 transition-all"
+                      title="Retornar para a tela de Rota de Missão"
+                    >
+                      <span>← Retornar à Rota</span>
+                      {!selectedHydrantMissionStatus.isCompleted && (
+                        <span className="font-mono text-cyan-400">#{selectedHydrantMissionStatus.order}</span>
+                      )}
+                    </button>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-500/60 shadow-sm shrink-0">
-                      <span>#{selectedHydrantMissionStatus.order || ''}</span> Faltante
-                    </span>
+                    selectedHydrantMissionStatus.isCompleted ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 shadow-sm shrink-0">
+                        <span>✓</span> Concluído
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-500/60 shadow-sm shrink-0">
+                        <span>#{selectedHydrantMissionStatus.order || ''}</span> Faltante
+                      </span>
+                    )
                   )
                 )}
                 <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black tracking-wide border shadow-sm ${

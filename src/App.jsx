@@ -331,16 +331,19 @@ function App() {
   // Centraliza o hidrante no mapa e sincroniza automaticamente a cidade (RA) do filtro
   const handleFocusHydrantOnMap = (h) => {
     if (!h) return;
-    const isPartOfActiveRoute = Boolean(
-      isRouteActiveOnMap && allMissionRouteHydrants?.some(mh => 
+    // Se há uma missão ativa e o hidrante pertence a ela ou estamos navegando a rota, preserva o traçado tático
+    const isPartOfActiveMission = Boolean(
+      activeMissionId && allMissionRouteHydrants?.some(mh => 
         (mh._internalId && h._internalId && mh._internalId === h._internalId) ||
         (mh.codHidrante && h.codHidrante && mh.codHidrante === h.codHidrante) ||
         (mh.nomHidrante && h.nomHidrante && mh.nomHidrante === h.nomHidrante)
       )
     );
-    if (!isPartOfActiveRoute && isRouteActiveOnMap) {
-      setIsRouteActiveOnMap(false);
+
+    if (isPartOfActiveMission || activeMissionId) {
+      setIsRouteActiveOnMap(true);
     }
+
     const hydrantRA = normalizeRAName(h.dscLocalidade);
     if (hydrantRA && activeFilters?.ra !== hydrantRA) {
       const newFilters = { ...activeFilters, ra: hydrantRA };
@@ -746,13 +749,17 @@ function App() {
   const updateCurrentMission = (updates) => {
     if (!activeMissionId) return;
     let target = null;
-    setMissions(prev => prev.map(m => {
-      if (m.id === activeMissionId) {
-        target = { ...m, ...updates, updatedAt: new Date().toISOString() };
-        return target;
-      }
-      return m;
-    }));
+    setMissions(prev => {
+      const updated = prev.map(m => {
+        if (m.id === activeMissionId) {
+          target = { ...m, ...updates, updatedAt: new Date().toISOString() };
+          return target;
+        }
+        return m;
+      });
+      saveMissions(updated);
+      return updated;
+    });
     if (target) {
       syncMissionToCloud(target);
     }
@@ -1455,12 +1462,17 @@ function App() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    const mat = e.target.matricula.value;
-    const senha = e.target.senha.value;
+    const mat = (e.target.matricula.value || '').trim();
+    const senha = (e.target.senha.value || '').trim();
     
     // Simulação do backend
     if (senha !== '123' && senha !== 'senha123' && senha !== 'admin') {
       toast.error('Senha incorreta para testes. (Dica: use 123 ou admin)');
+      return;
+    }
+
+    if (!mat) {
+      toast.error('Informe a matrícula militar para acessar.');
       return;
     }
 
@@ -1470,24 +1482,17 @@ function App() {
 
     if (foundRbac) {
       user = { ...foundRbac };
-    } else if (mat === '123') {
-      user = { matricula: '123', nome: 'Vistoriador Silva', role: 'vistoriador' };
-    } else if (mat === '456') {
-      user = { matricula: '456', nome: 'Gestor Souza', role: 'gestor' };
-    } else if (mat === '789') {
-      user = { matricula: '789', nome: 'Gestor Oliveira', role: 'gestor' };
-    } else if (mat === '1997400') {
-      user = { matricula: '1997400', nome: 'Sgt Roméro', role: 'gestor' };
-    } else if (mat === 'admin') {
-      user = { matricula: 'admin', nome: 'Administrador', role: 'admin' };
+    } else if (mat.toLowerCase() === '1997400') {
+      user = { matricula: '1997400', nome: 'Sgt Roméro', role: 'admin' };
+    } else {
+      // Regra de Negócio CBMDF: A princípio todos os militares entram automaticamente como vistoriador
+      user = { matricula: mat, nome: `Militar ${mat}`, role: 'vistoriador' };
     }
     
     if (user) {
       user.expiresAt = Date.now() + 8 * 60 * 60 * 1000;
       localStorage.setItem('netuno_user', JSON.stringify(user));
       setCurrentUser(user);
-    } else {
-      toast.error('Matrícula inválida. Use 123, 456, 789, admin ou 1997400.');
     }
   };
 
@@ -1504,10 +1509,10 @@ function App() {
                 name="matricula" 
                 type="text" 
                 maxLength={20}
-                defaultValue="456"
+                defaultValue="1997400"
                 autoComplete="off"
                 className="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 font-mono text-center text-lg tracking-widest" 
-                placeholder="Ex: 123, 456, admin, 1997400" 
+                placeholder="Ex: 1997400 ou sua matrícula" 
                 required 
               />
             </div>
@@ -1764,10 +1769,10 @@ function App() {
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                            Painel Administrativo
+                            Níveis de Acesso dos Militares
                           </span>
                           <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                            Gestão de usuários, acessos e permissões
+                            Definir quem é Administrador, Gestor ou Vistoriador
                           </span>
                         </div>
                       </a>
@@ -2225,6 +2230,7 @@ function App() {
               onTriggerRouteFit={() => setRouteFitTrigger(Date.now())}
               onCloseRouteOnMap={() => setIsRouteActiveOnMap(false)}
               onOpenInspectionHistory={(h) => setHistoryHidrante(h)}
+              onBackToRoute={() => setActiveView('route')}
             />
           </ErrorBoundary>
         </div>
