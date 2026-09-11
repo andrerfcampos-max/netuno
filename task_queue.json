@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-65",
   "queue": [
     {
       "id": "TASK-1",
@@ -608,6 +608,56 @@
       "createdAt": "2026-09-10T18:06:44.795Z",
       "startedAt": "2026-09-10T18:06:52.914Z",
       "completedAt": "2026-09-10T18:08:46.444Z"
+    },
+    {
+      "id": "TASK-61",
+      "seq": 61,
+      "conversationId": "646416bc-0bd5-42bc-81bb-6baecd89577d",
+      "description": "Corrigir sobreposicoes de UI no mapa e rota",
+      "status": "completed",
+      "createdAt": "2026-09-10T18:29:17.913Z",
+      "startedAt": "2026-09-10T18:29:25.127Z",
+      "completedAt": "2026-09-10T18:36:58.799Z"
+    },
+    {
+      "id": "TASK-62",
+      "seq": 62,
+      "conversationId": "4e58e536-97cd-4eeb-9f35-9a4a85850354",
+      "description": "Perfil administrador, permissoes por matricula e correcoes da rota de missao",
+      "status": "completed",
+      "createdAt": "2026-09-11T17:33:14.675Z",
+      "startedAt": "2026-09-11T17:33:22.627Z",
+      "completedAt": "2026-09-11T17:42:41.392Z"
+    },
+    {
+      "id": "TASK-63",
+      "seq": 63,
+      "conversationId": "62e11de3-2df8-4614-ac81-47725d8bb409",
+      "description": "Fix relatorio parcial missao nao concluida",
+      "status": "completed",
+      "createdAt": "2026-09-11T17:35:17.626Z",
+      "startedAt": "2026-09-11T17:42:43.400Z",
+      "completedAt": "2026-09-11T17:46:49.418Z"
+    },
+    {
+      "id": "TASK-64",
+      "seq": 64,
+      "conversationId": "dedd3cc5-22ee-4b3d-a96a-705beb93b0bc",
+      "description": "Correcao do recarregamento automatico indevido (reload forcado do PWA/Service Worker)",
+      "status": "completed",
+      "createdAt": "2026-09-11T17:36:41.151Z",
+      "startedAt": "2026-09-11T17:46:52.880Z",
+      "completedAt": "2026-09-11T17:48:37.531Z"
+    },
+    {
+      "id": "TASK-65",
+      "seq": 65,
+      "conversationId": "f5d5c867-bb02-4c88-8229-3503f224c872",
+      "description": "Fix ReferenceError in Mission route",
+      "status": "running",
+      "createdAt": "2026-09-11T17:52:21.169Z",
+      "startedAt": "2026-09-11T17:52:24.053Z",
+      "completedAt": null
     }
   ]
 }

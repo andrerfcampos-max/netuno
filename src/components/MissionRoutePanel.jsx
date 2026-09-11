@@ -54,46 +54,6 @@ const MissionRoutePanel = ({
   onSaveRouteToFolder, 
   onGenerateReport 
 }) => {
-  // Inicializa a rota respeitando a ordenação prévia salva na missão, se houver
-  const [pendingRoute, setPendingRoute] = useState(() => {
-    if (!currentMission?.orderedIds || currentMission.orderedIds.length === 0) return [];
-    const orderedMap = new Map();
-    currentMission.orderedIds.forEach((id, idx) => orderedMap.set(String(id), idx));
-    return [...pendingHydrants].sort((a, b) => {
-      const kA = String(a.codHidrante || a._internalId || a.nomHidrante);
-      const kB = String(b.codHidrante || b._internalId || b.nomHidrante);
-      const idxA = orderedMap.has(kA) ? orderedMap.get(kA) : 999;
-      const idxB = orderedMap.has(kB) ? orderedMap.get(kB) : 999;
-      return idxA - idxB;
-    });
-  });
-  const [drivingMetrics, setDrivingMetrics] = useState({});
-  const [isTrafficOptimized, setIsTrafficOptimized] = useState(false);
-  const [isOptimizing, setIsOptimizing] = useState(false);
-  const [userLocation, setUserLocation] = useState(() => propUserLocation || getLastKnownLocation());
-  const hasRealGpsAnchorRef = useRef(Boolean(propUserLocation || getLastKnownLocation()));
-  const lastOptimizedIdsRef = useRef('');
-  const lastAnchorLocationRef = useRef(null);
-  const isInitialMountRef = useRef(true);
-
-  // Sincronização GPS com prop e rastreador global
-  useEffect(() => {
-    if (propUserLocation && typeof propUserLocation.lat === 'number' && typeof propUserLocation.lng === 'number') {
-      setUserLocation(propUserLocation);
-      hasRealGpsAnchorRef.current = true;
-    }
-  }, [propUserLocation]);
-
-  useEffect(() => {
-    const unsub = subscribeLocation((loc) => {
-      if (loc && typeof loc.lat === 'number' && typeof loc.lng === 'number') {
-        setUserLocation(loc);
-        hasRealGpsAnchorRef.current = true;
-      }
-    });
-    return () => unsub();
-  }, []);
-
   // Conjunto de IDs selecionados normalizados em string
   const selectedIdsSet = useMemo(() => {
     return new Set((selectedMissionIds || []).map(id => String(id)));
@@ -135,6 +95,46 @@ const MissionRoutePanel = ({
       return !isDone;
     });
   }, [missionHydrants, completedIdsSet]);
+
+  // Inicializa a rota respeitando a ordenação prévia salva na missão, se houver
+  const [pendingRoute, setPendingRoute] = useState(() => {
+    if (!currentMission?.orderedIds || currentMission.orderedIds.length === 0) return [];
+    const orderedMap = new Map();
+    currentMission.orderedIds.forEach((id, idx) => orderedMap.set(String(id), idx));
+    return [...pendingHydrants].sort((a, b) => {
+      const kA = String(a.codHidrante || a._internalId || a.nomHidrante);
+      const kB = String(b.codHidrante || b._internalId || b.nomHidrante);
+      const idxA = orderedMap.has(kA) ? orderedMap.get(kA) : 999;
+      const idxB = orderedMap.has(kB) ? orderedMap.get(kB) : 999;
+      return idxA - idxB;
+    });
+  });
+  const [drivingMetrics, setDrivingMetrics] = useState({});
+  const [isTrafficOptimized, setIsTrafficOptimized] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [userLocation, setUserLocation] = useState(() => propUserLocation || getLastKnownLocation());
+  const hasRealGpsAnchorRef = useRef(Boolean(propUserLocation || getLastKnownLocation()));
+  const lastOptimizedIdsRef = useRef('');
+  const lastAnchorLocationRef = useRef(null);
+  const isInitialMountRef = useRef(true);
+
+  // Sincronização GPS com prop e rastreador global
+  useEffect(() => {
+    if (propUserLocation && typeof propUserLocation.lat === 'number' && typeof propUserLocation.lng === 'number') {
+      setUserLocation(propUserLocation);
+      hasRealGpsAnchorRef.current = true;
+    }
+  }, [propUserLocation]);
+
+  useEffect(() => {
+    const unsub = subscribeLocation((loc) => {
+      if (loc && typeof loc.lat === 'number' && typeof loc.lng === 'number') {
+        setUserLocation(loc);
+        hasRealGpsAnchorRef.current = true;
+      }
+    });
+    return () => unsub();
+  }, []);
 
   // Motor Central de Otimização Tática (0ms Instantâneo Euclidiano + Refinamento OSRM ATSP)
   const runRouteOptimization = async (overrideLat = null, overrideLng = null, isSilent = true) => {
@@ -242,7 +242,7 @@ const MissionRoutePanel = ({
         if (remainingRoute.length !== pendingRoute.length) {
           setPendingRoute(remainingRoute);
           if (onUpdateMission) {
-            onUpdateMission({ orderedIds: remainingRoute.map(h => h.codHidrante || h._internalId || h.nomHidrante) });
+            onUpdateMission({ orderedIds: remainingRoute.map(h => String(h.codHidrante || h._internalId || h.nomHidrante)) });
           }
         }
         return;
@@ -250,8 +250,25 @@ const MissionRoutePanel = ({
     }
 
     // 2. Abertura da Rota / Troca de Missão / Novos Hidrantes Adicionados:
+    // Se a missão já possui ordenação prévia salva, prioriza ela
+    const sig = pendingHydrants.map(h => String(h.codHidrante || h._internalId || h.nomHidrante)).join(',');
+    if (currentMission?.orderedIds && currentMission.orderedIds.length > 0) {
+      const orderedMap = new Map();
+      currentMission.orderedIds.forEach((id, idx) => orderedMap.set(String(id), idx));
+      const sortedByMission = [...pendingHydrants].sort((a, b) => {
+        const kA = String(a.codHidrante || a._internalId || a.nomHidrante);
+        const kB = String(b.codHidrante || b._internalId || b.nomHidrante);
+        const idxA = orderedMap.has(kA) ? orderedMap.get(kA) : 999;
+        const idxB = orderedMap.has(kB) ? orderedMap.get(kB) : 999;
+        return idxA - idxB;
+      });
+      setPendingRoute(sortedByMission);
+      lastOptimizedIdsRef.current = sig;
+      isInitialMountRef.current = false;
+      return;
+    }
+
     // Executa automaticamente o cálculo mais otimizado a partir do GPS real do vistoriador
-    const sig = pendingHydrants.map(h => h.codHidrante || h._internalId || h.nomHidrante).join(',');
     if (lastOptimizedIdsRef.current !== sig || isInitialMountRef.current) {
       isInitialMountRef.current = false;
       runRouteOptimization(null, null, true);
