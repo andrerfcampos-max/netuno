@@ -480,6 +480,18 @@
       "status": "completed",
       "name": "Vincular Pasta Favorita da Central de Missões ao Perfil do Usuário",
       "prompt": "Modifique o comportamento da pasta favorita na Central de Missões para que ela seja vinculada ao perfil do usuário logado:\n1. Em `App.jsx`, passe a prop `currentUser` para o componente `<SelectionCart>`.\n2. Em `MissionManagerModal.jsx` e `SelectionCart.jsx`, altere o armazenamento do localStorage de `netuno_default_folder` para usar uma chave vinculada à matrícula do usuário (ex: `netuno_default_folder_${currentUser?.matricula}`).\n3. Garanta que a pasta favorita persista corretamente entre logins diferentes e que permaneça favoritada a menos que o próprio usuário a remova.\nResponda 'ETAPA CONCLUIDA' quando finalizar e testar o funcionamento."
+    },
+    {
+      "id": 81,
+      "status": "completed",
+      "name": "Persistência em Nuvem da Pasta Favorita (Sobrevivência à Limpeza de Cache)",
+      "prompt": "Atue como Desenvolvedor Frontend e Backend Sênior. O usuário reportou que ao limpar os dados do navegador (cache), a pasta salva como favorita desaparece, pois atualmente ela é salva apenas no localStorage. Implemente a persistência dessa preferência no Supabase:\n1. Em `syncService.js`, crie métodos para salvar e carregar preferências do usuário (ex: usar uma tabela como `netuno_user_preferences` com `matricula` e `default_folder_id`).\n2. Em `MissionManagerModal.jsx` e `SelectionCart.jsx`, ao favoritar uma pasta, persista a escolha também na nuvem.\n3. No login/inicialização, puxe essa configuração da nuvem e restaure no localStorage.\nResponda 'ETAPA CONCLUIDA' após finalizar e aprovar os testes em localhost."
+    },
+    {
+      "id": 82,
+      "status": "pending",
+      "name": "Exportar Base de Dados Completa (XLSX Sanitizada)",
+      "prompt": "Atue como Desenvolvedor Sênior. O usuário solicitou que o Netuno consiga exportar a base de dados completa sanitizada. Implemente (ou refine, se já existir) a função de Exportar Base de Dados no formato XLSX e CSV no menu principal. O arquivo exportado deve conter todas as colunas de hidrantes (incluindo coordenadas, endereços, status, defeitos, data da última vistoria, etc) para consulta posterior com dados 100% íntegros. Responda ETAPA CONCLUIDA quando finalizar e testar."
     }
   ]
 }

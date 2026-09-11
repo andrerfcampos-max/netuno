@@ -448,3 +448,69 @@ export const subscribeToCloudRealtime = ({ onMissionsChange, onFoldersChange, on
     return () => {};
   }
 };
+
+// ------------------------------------------------------------------------------
+// 6. PREFERÊNCIAS DO USUÁRIO (PASTA FAVORITA, ETC.)
+// ------------------------------------------------------------------------------
+
+/**
+ * Salva as preferências do usuário no banco em nuvem (Supabase)
+ */
+export const syncUserPreferencesToCloud = async (matricula, preferences) => {
+  const client = getSupabaseClient();
+  if (!client || !matricula) return;
+
+  try {
+    const matStr = String(matricula).trim();
+    // Tenta primeiro carregar payload anterior para mesclar
+    const existing = await fetchUserPreferencesFromCloud(matStr) || {};
+    const updatedPayload = {
+      ...existing,
+      matricula: matStr,
+      ...preferences,
+      updatedAt: new Date().toISOString()
+    };
+
+    const { error } = await client
+      .from('netuno_hydrant_mutations')
+      .upsert({
+        id: `pref_${matStr}`,
+        type: 'user_preference',
+        payload: updatedPayload,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+
+    if (error) {
+      console.warn('Erro ao salvar preferências do usuário na nuvem:', error.message);
+    }
+  } catch (err) {
+    console.warn('Falha ao enviar preferências do usuário para nuvem:', err);
+  }
+};
+
+/**
+ * Busca as preferências do usuário salvas na nuvem
+ */
+export const fetchUserPreferencesFromCloud = async (matricula) => {
+  const client = getSupabaseClient();
+  if (!client || !matricula) return null;
+
+  try {
+    const matStr = String(matricula).trim();
+    const { data, error } = await client
+      .from('netuno_hydrant_mutations')
+      .select('payload')
+      .eq('id', `pref_${matStr}`)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Erro ao buscar preferências do usuário na nuvem:', error.message);
+      return null;
+    }
+
+    return data?.payload || null;
+  } catch (err) {
+    console.warn('Falha ao obter preferências do usuário na nuvem:', err);
+    return null;
+  }
+};

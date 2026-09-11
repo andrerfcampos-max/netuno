@@ -23,7 +23,7 @@ const InspectionHistoryModal = lazy(() => import('./components/InspectionHistory
 import { logAuditEvent, getUnreadAuditCount } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers } from './utils/storage';
-import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime } from './services/syncService';
+import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime, fetchUserPreferencesFromCloud } from './services/syncService';
 import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
@@ -596,6 +596,25 @@ function App() {
   useEffect(() => {
     saveActiveMissionState({ openMissionIds, activeMissionId });
   }, [openMissionIds, activeMissionId]);
+
+  // Sincroniza preferências do usuário (pasta favorita, etc.) com a nuvem (Supabase)
+  useEffect(() => {
+    if (!currentUser?.matricula || !isCloudConfigured()) return;
+
+    fetchUserPreferencesFromCloud(currentUser.matricula).then(prefs => {
+      if (prefs && prefs.defaultFolderId !== undefined) {
+        const defaultFolderKey = `netuno_default_folder_${currentUser.matricula}`;
+        if (prefs.defaultFolderId) {
+          localStorage.setItem(defaultFolderKey, prefs.defaultFolderId);
+        } else {
+          localStorage.removeItem(defaultFolderKey);
+        }
+        window.dispatchEvent(new CustomEvent('netuno_default_folder_changed', { detail: prefs.defaultFolderId }));
+      }
+    }).catch(err => {
+      console.warn('Falha ao restaurar preferências do usuário da nuvem:', err);
+    });
+  }, [currentUser?.matricula]);
 
   // Sincronização com o Banco de Dados em Nuvem (Supabase / Cloud DB)
   useEffect(() => {

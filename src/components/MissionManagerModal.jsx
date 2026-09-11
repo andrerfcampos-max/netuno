@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Target, Plus, CheckCircle, Trash2, FolderOpen, Folder, ChevronRight, Home, CornerUpLeft, FolderInput, FileSpreadsheet, Printer, BarChart3, Activity, Clock, CheckCircle2, Search, ArrowRight, Shield, Layers, Filter, Edit } from 'lucide-react';
 import { createNewFolder } from '../utils/storage';
-import { syncMissionToCloud, syncFolderToCloud } from '../services/syncService';
+import { syncMissionToCloud, syncFolderToCloud, syncUserPreferencesToCloud, fetchUserPreferencesFromCloud } from '../services/syncService';
 import { printMissionDraft } from '../utils/draftPrintUtils';
 import { executePrintHtml } from '../utils/officialPrintUtils';
 
@@ -25,14 +25,43 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
   const [dashboardSearch, setDashboardSearch] = useState('');
   const [dashboardOnlyWithMissions, setDashboardOnlyWithMissions] = useState(false);
 
+  // Restaura da nuvem se o cache local tiver sido limpo e sincroniza eventos
+  useEffect(() => {
+    if (!currentUser?.matricula) return;
+
+    if (!defaultFolderId) {
+      fetchUserPreferencesFromCloud(currentUser.matricula).then(prefs => {
+        if (prefs && prefs.defaultFolderId) {
+          localStorage.setItem(defaultFolderKey, prefs.defaultFolderId);
+          setDefaultFolderId(prefs.defaultFolderId);
+          setCurrentFolderId(prev => (prev === null ? prefs.defaultFolderId : prev));
+        }
+      });
+    }
+
+    const handleFolderChanged = (e) => {
+      setDefaultFolderId(e.detail || null);
+    };
+    window.addEventListener('netuno_default_folder_changed', handleFolderChanged);
+    return () => window.removeEventListener('netuno_default_folder_changed', handleFolderChanged);
+  }, [currentUser?.matricula, defaultFolderKey]);
+
   // Set default (favorite) folder
   const handleSetDefaultFolder = () => {
     if (currentFolderId === defaultFolderId) {
       localStorage.removeItem(defaultFolderKey);
       setDefaultFolderId(null);
+      if (currentUser?.matricula) {
+        syncUserPreferencesToCloud(currentUser.matricula, { defaultFolderId: null });
+      }
+      window.dispatchEvent(new CustomEvent('netuno_default_folder_changed', { detail: null }));
     } else {
       localStorage.setItem(defaultFolderKey, currentFolderId || '');
       setDefaultFolderId(currentFolderId);
+      if (currentUser?.matricula) {
+        syncUserPreferencesToCloud(currentUser.matricula, { defaultFolderId: currentFolderId || null });
+      }
+      window.dispatchEvent(new CustomEvent('netuno_default_folder_changed', { detail: currentFolderId }));
     }
   };
 

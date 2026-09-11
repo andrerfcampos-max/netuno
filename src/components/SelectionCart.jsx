@@ -86,6 +86,16 @@ const SelectionCart = ({
     }
   }, [isOpen, activeMission?.id, currentUser?.matricula]);
 
+  // Atualiza seleção caso a pasta favorita seja restaurada da nuvem ou alterada
+  useEffect(() => {
+    const handleFolderChanged = (e) => {
+      const newFav = e.detail || '';
+      setSelectedFolderId(newFav);
+    };
+    window.addEventListener('netuno_default_folder_changed', handleFolderChanged);
+    return () => window.removeEventListener('netuno_default_folder_changed', handleFolderChanged);
+  }, []);
+
   // ==========================================
   // ESTADOS DE ARRASTO DO BALÃO FLUTUANTE (DRAG & DROP)
   // ==========================================

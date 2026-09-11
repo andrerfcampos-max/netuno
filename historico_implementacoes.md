@@ -720,3 +720,13 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   - O `prevViewRef` foi corrigido para não forçar `isRouteActiveOnMap(true)` quando o militar não solicitou a rota.
   - Quando uma missão estiver aberta mas o militar optar por navegar livremente no mapa de cidades, o mapa exibe uma **barra de rota em 2º plano** informando o nome da missão e hidrantes com botões rápidos para **"Focar Rota no Mapa"** ou **"Fechar"**.
 
+### [11/09/2026] Etapa 81 Concluída: Persistência em Nuvem da Pasta Favorita (Sobrevivência à Limpeza de Cache)
+- **1. Sincronização de Preferências em Nuvem (`syncService.js`):**
+  - Implementadas as funções `syncUserPreferencesToCloud(matricula, preferences)` e `fetchUserPreferencesFromCloud(matricula)` utilizando a infraestrutura de sincronização persistente do Supabase (`netuno_hydrant_mutations` com `type: 'user_preference'`).
+  - Garante armazenamento seguro e isolado por matrícula militar (`pref_${matricula}`) contendo a pasta favorita (`defaultFolderId`), preservando dados em múltiplos dispositivos.
+- **2. Restauração Automática ao Limpar Cache (`App.jsx` e `MissionManagerModal.jsx`):**
+  - Adicionado hook de reidratação em `App.jsx` acionado pela autenticação do usuário (`currentUser.matricula`): caso o militar limpe o cache de navegação, a preferência da pasta favorita é automaticamente resgatada do Supabase e salva no LocalStorage.
+  - No `MissionManagerModal.jsx`, ao favoritar ou desfavoritar uma pasta, a ação é imediatamente enviada à nuvem de forma assíncrona e propaga eventos `netuno_default_folder_changed`.
+- **3. Atualização Reativa no Carrinho de Seleção (`SelectionCart.jsx`):**
+  - Adicionado listener de evento para que o `SelectionCart` atualize instantaneamente a pasta de destino sugerida sem precisar recarregar a tela.
+
