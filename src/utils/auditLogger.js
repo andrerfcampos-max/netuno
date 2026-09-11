@@ -4,14 +4,47 @@ const AUDIT_STORAGE_KEY = 'netuno_audit_logs';
 const MAX_AUDIT_LOGS = 250;
 
 /**
- * Obtém todos os registros de auditoria ordenados do mais recente para o mais antigo.
+ * Obtém todos os registros de auditoria ordenados do mais recente para o mais antigo,
+ * com higienização automática contra duplicidades ocorridas em curto intervalo.
  */
 export const getAuditLogs = () => {
   try {
     const raw = localStorage.getItem(AUDIT_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+
+    // Deduplicação inteligente de registros redundantes gravados com pequeno intervalo (< 6 segundos)
+    const deduplicated = [];
+    for (let i = 0; i < parsed.length; i++) {
+      const current = parsed[i];
+      if (!current || !current.id) continue;
+
+      const isDuplicate = deduplicated.some(existing => {
+        if (existing.entityType !== current.entityType) return false;
+        
+        // Verifica compatibilidade de entidade (mesmo ID ou nome contido)
+        const idMatch = existing.entityId && current.entityId && String(existing.entityId) === String(current.entityId);
+        const nameMatch = existing.entityName && current.entityName && (
+          existing.entityName.includes(current.entityName) || current.entityName.includes(existing.entityName)
+        );
+        if (!idMatch && !nameMatch) return false;
+
+        // Verifica proximidade temporal (< 6 segundos)
+        const timeDiff = Math.abs(new Date(existing.timestamp).getTime() - new Date(current.timestamp).getTime());
+        return !isNaN(timeDiff) && timeDiff < 6000;
+      });
+
+      if (!isDuplicate) {
+        deduplicated.push(current);
+      }
+    }
+
+    if (deduplicated.length !== parsed.length) {
+      localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(deduplicated));
+    }
+
+    return deduplicated;
   } catch (err) {
     console.error('Erro ao ler logs de auditoria:', err);
     return [];
@@ -57,6 +90,26 @@ export const logAuditEvent = ({
 }) => {
   try {
     const currentLogs = getAuditLogs();
+
+    // Evita duplicações em rápida sucessão (< 4 segundos) para a mesma entidade e ação
+    const isRecentDuplicate = currentLogs.slice(0, 10).some(log => {
+      if (log.entityType !== (entityType || 'hidrante')) return false;
+      if (log.action !== (action || 'create')) return false;
+      
+      const idMatch = entityId && log.entityId && String(log.entityId) === String(entityId);
+      const nameMatch = entityName && log.entityName && (
+        log.entityName.includes(entityName) || entityName.includes(log.entityName)
+      );
+      if (!idMatch && !nameMatch) return false;
+
+      const diffMs = Math.abs(Date.now() - new Date(log.timestamp).getTime());
+      return !isNaN(diffMs) && diffMs < 4000;
+    });
+
+    if (isRecentDuplicate) {
+      console.warn('[auditLogger] Evento duplicado prevenido e ignorado:', title);
+      return null;
+    }
     
     // Obter dados do autor da sessão se não fornecido
     let finalAuthor = author;

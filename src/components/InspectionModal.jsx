@@ -3,7 +3,6 @@ import { Camera, Image as ImageIcon, Trash2, ClipboardCheck, X, Edit3 } from 'lu
 import { fixEncoding } from '../utils/textUtils';
 import { calculateDistanceMeters } from '../utils/geoUtils';
 import SearchableSelect from './SearchableSelect';
-import { logAuditEvent } from '../utils/auditLogger';
 
 // Lista configurável e modular de problemas que tornam o hidrante automaticamente inativo
 export const PROBLEMAS_INATIVADORES = [
@@ -443,23 +442,6 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
         flgRemovido: isHidranteNaoEncontrado ? true : (hidrante.flgRemovido || false),
         motivoInconsistencia: isHidranteNaoEncontrado ? 'Hidrante removido em vistoria de campo' : (hidrante.motivoInconsistencia || undefined)
       };
-
-      // Registra evento de auditoria
-      try {
-        logAuditEvent({
-          entityType: 'vistoria',
-          action: isEditing ? 'edit' : 'create',
-          title: isEditing ? `Vistoria editada em ${hidrante.nomHidrante || hidrante.codHidrante}` : `Nova vistoria cadastrada em ${hidrante.nomHidrante || hidrante.codHidrante}`,
-          entityId: hidrante._internalId || hidrante.codHidrante,
-          entityName: hidrante.nomHidrante || hidrante.codHidrante,
-          location: hidrante.dscLocalidade,
-          author: currentUser,
-          details: `Status: ${statusFinal ? 'Operante' : 'Inoperante'} | Defeitos: ${problemaFinal || 'Nenhum'}`,
-          coords: { lat: hidrante.numLatitude, lng: hidrante.numLongitude }
-        });
-      } catch (e) {
-        console.warn('Erro ao registrar log de auditoria da vistoria:', e);
-      }
 
       onSave(vistoriaAtualizada, isEditing);
     };
