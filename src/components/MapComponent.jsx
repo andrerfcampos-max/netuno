@@ -99,10 +99,10 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
   }
 
   // HIDRANTE DA ROTA DA MISSÃO ATIVA:
-  // Borda sólida branca pura (#ffffff) de 2.5px com sombra profunda única, garantindo nitidez absoluta sem sobreposições
+  // Contorno preto (#0f172a, mesma cor do tracejado da rota) para diferenciar com nitidez absoluta dos hidrantes comuns (que possuem contorno branco)
   if (isMissionItem) {
     if (isMissionCompleted) {
-      // Hidrante da Rota Já Vistoriado: Verde Esmeralda com borda branca pura e checkmark
+      // Hidrante da Rota Já Vistoriado: Verde Esmeralda com borda preta sólida (#0f172a) e checkmark
       return L.divIcon({
         className: 'custom-div-icon',
         html: `
@@ -119,8 +119,8 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
               width: 22px;
               height: 22px;
               border-radius: 50%;
-              border: 2.5px solid #ffffff;
-              box-shadow: 0 3px 8px rgba(0,0,0,0.7);
+              border: 2.5px solid #0f172a;
+              box-shadow: 0 3px 8px rgba(0,0,0,0.65);
               display: flex;
               align-items: center;
               justify-content: center;
@@ -160,7 +160,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
       });
     }
 
-    // Hidrante da Rota Pendente: Interior com cor operacional (statusColor), borda branca sólida nítida de 2.5px e sombra única limpa
+    // Hidrante da Rota Pendente: Interior com cor operacional (statusColor), contorno preto (#0f172a) e número da parada
     const orderLabel = missionOrder !== null && missionOrder !== undefined ? String(missionOrder) : '';
     return L.divIcon({
       className: 'custom-div-icon',
@@ -178,8 +178,8 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             width: 22px;
             height: 22px;
             border-radius: 50%;
-            border: 2.5px solid #ffffff;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.7);
+            border: 2.5px solid #0f172a;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.65);
             display: flex;
             align-items: center;
             justify-content: center;
