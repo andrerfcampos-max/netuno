@@ -86,16 +86,33 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
   };
 
   const sortedHidrantesGeral = useMemo(() => {
-    const completedIds = currentMission?.completedIds || [];
+    if (currentMission) {
+      // Para Relatório de Missão (Parcial ou Conclusivo):
+      // Inclui ESTRITAMENTE os hidrantes que foram vistoriados (concluídos) nesta missão!
+      // Nenhum hidrante pendente/não vistoriado da base legada entra no relatório de vistoria.
+      const compSet = new Set((currentMission.completedIds || []).map(id => String(id).trim().toUpperCase()));
+      const completed = hidrantes.filter(h => {
+        const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante).trim().toUpperCase() : null;
+        const k2 = h.nomHidrante ? String(h.nomHidrante).trim().toUpperCase() : null;
+        const k3 = h._internalId ? String(h._internalId).trim().toUpperCase() : null;
+        return (k1 && compSet.has(k1)) || (k2 && compSet.has(k2)) || (k3 && compSet.has(k3));
+      });
+
+      // Ordena rigorosamente da vistoria mais recente para a mais antiga realizada
+      return completed.sort((a, b) => {
+        const dateA = parseDate(a.datHoraUltimaVistoria || a.datHoraVistoria);
+        const dateB = parseDate(b.datHoraUltimaVistoria || b.datHoraVistoria);
+        return dateB - dateA;
+      });
+    }
+
+    // Relatório Global (sem missão ativa):
     const inspected = [];
     const uninspected = [];
 
     hidrantes.forEach(h => {
-      const isCompleted = completedIds.includes(h.codHidrante) || 
-                          completedIds.includes(h.nomHidrante) || 
-                          completedIds.includes(h._internalId);
       const date = parseDate(h.datHoraUltimaVistoria || h.datHoraVistoria);
-      if (isCompleted || date > 0) {
+      if (date > 0) {
         inspected.push(h);
       } else {
         uninspected.push(h);
@@ -109,7 +126,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       return dateB - dateA;
     });
 
-    // 2. Vistorias não realizadas (pendentes): preserva a sequência da rota de missão (do mais próximo ao mais distante)
+    // 2. Vistorias não realizadas (pendentes)
     return [...inspected, ...uninspected];
   }, [hidrantes, currentMission]);
 
@@ -130,6 +147,12 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
   const inoperantes = total - operantes;
   const operantesPercent = total > 0 ? ((operantes / total) * 100).toFixed(1) : 0;
   const inoperantesPercent = total > 0 ? ((inoperantes / total) * 100).toFixed(1) : 0;
+
+  const isPartialMission = Boolean(
+    currentMission && 
+    (currentMission.selectedIds?.length || 0) > currentData.length
+  );
+  const totalMissionPlanned = currentMission?.selectedIds?.length || currentData.length;
 
   const rasPresentes = useMemo(() => {
     const r = new Set(currentData.map(h => normalizeRAName(h.dscLocalidade)).filter(Boolean));
@@ -317,11 +340,13 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
         <h2 style="margin: 0; font-size: 16px; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">Corpo de Bombeiros Militar do Distrito Federal</h2>
         <div style="margin: 2px 0 0 0; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase;">SEHUR / GPCIU</div>
         <h3 style="margin: 4px 0 0 0; font-size: 14px; color: #1e40af; text-transform: uppercase; font-weight: bold;">
-          Relatório de Vistoria de Hidrantes Urbanos
+          ${currentMission 
+            ? (isPartialMission ? `Relatório Parcial de Missão (${currentData.length}/${totalMissionPlanned} Vistoriados)` : `Relatório Conclusivo de Missão (${currentData.length} Vistoriados)`)
+            : 'Relatório de Vistoria de Hidrantes Urbanos'}
         </h3>
         <div style="margin-top: 8px; font-size: 12px; color: #475569;">
           <strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}<br/>
-          ${currentMission ? `<strong>Missão:</strong> ${currentMission.name}<br/>` : ''}
+          ${currentMission ? `<strong>Missão:</strong> ${currentMission.name} ${isPartialMission ? `<span style="color: #b45309; font-weight: bold;">(Relatório Parcial: ${currentData.length} de ${totalMissionPlanned} vistoriados)</span>` : `<span style="color: #15803d; font-weight: bold;">(Conclusiva: ${currentData.length} vistoriados)</span>`}<br/>` : ''}
           <strong>Emissão:</strong> ${nowStr}
         </div>
       </div>`;
@@ -502,10 +527,12 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       // Plain text fallback
       let text = `========================================================\n`;
       text += `CORPO DE BOMBEIROS MILITAR DO DISTRITO FEDERAL\n`;
-      text += `SISTEMA NETUNO - RELATÓRIO DE VISTORIA\n`;
+      text += currentMission 
+        ? (isPartialMission ? `SISTEMA NETUNO - RELATÓRIO PARCIAL DE MISSÃO (${currentData.length}/${totalMissionPlanned})\n` : `SISTEMA NETUNO - RELATÓRIO CONCLUSIVO DE MISSÃO\n`)
+        : `SISTEMA NETUNO - RELATÓRIO DE VISTORIA\n`;
       text += `Emissão: ${nowStr}\n`;
       text += `Regiões: ${rasPresentes || 'Todas as RAs'}\n`;
-      if (currentMission) text += `Missão: ${currentMission.name}\n`;
+      if (currentMission) text += `Missão: ${currentMission.name}${isPartialMission ? ` (Parcial: ${currentData.length}/${totalMissionPlanned} vistoriados)` : ' (Conclusiva)'}\n`;
       text += `========================================================\n\n`;
       text += `RESUMO: Total: ${total} | Operantes: ${operantes} (${operantesPercent}%) | Inoperantes: ${inoperantes} (${inoperantesPercent}%)\n\n`;
       text += `CÓDIGO\tENDEREÇO\tSITUAÇÃO\tPROBLEMAS\n`;
@@ -533,44 +560,29 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
 
   const handleWhatsApp = () => {
     const reportName = currentMission ? currentMission.name : 'Status de Vistoria';
-    
-    // Identificar hidrantes concluídos e faltantes
-    const completedIds = currentMission?.completedIds || [];
-    let completedList = [];
-    let pendingList = [];
-    
-    if (currentMission) {
-      completedList = currentData.filter(h => completedIds.includes(h.codHidrante || h.nomHidrante) || completedIds.includes(h._internalId));
-      pendingList = currentData.filter(h => !completedIds.includes(h.codHidrante || h.nomHidrante) && !completedIds.includes(h._internalId));
-    } else {
-      completedList = currentData.filter(h => h.vistoriadorNome);
-      pendingList = currentData.filter(h => !h.vistoriadorNome);
-      if (completedList.length === 0 && pendingList.length === currentData.length) {
-        completedList = currentData;
-        pendingList = [];
-      }
-    }
 
     // Identificar vistoriadores que executaram as vistorias
     const vistoriadoresUnicos = Array.from(
-      new Set(completedList.map(h => h.vistoriadorNome || h.nomVistoriador).filter(Boolean))
+      new Set(currentData.map(h => h.vistoriadorNome || h.nomVistoriador).filter(Boolean))
     );
     
     let vistoriadorText = 'Pendente de início';
-    if (completedList.length > 0) {
+    if (currentData.length > 0) {
       vistoriadorText = vistoriadoresUnicos.length > 0 
         ? vistoriadoresUnicos.join(', ') 
         : (currentUser?.nome || 'Equipe CBMDF');
     }
 
-    let text = `🚒 *NETUNO - STATUS DE MISSÃO*\n\n`;
-    text += `📋 *Missão:* ${reportName}\n`;
+    let text = isPartialMission 
+      ? `🚒 *NETUNO - RELATÓRIO PARCIAL DE MISSÃO*\n\n`
+      : `🚒 *NETUNO - STATUS DE VISTORIA*\n\n`;
+    text += `📋 *Missão:* ${reportName}${isPartialMission ? ` *(PARCIAL - ${currentData.length}/${totalMissionPlanned})*` : ''}\n`;
     text += `👤 *Vistoriador:* ${vistoriadorText}\n`;
-    text += `📊 *Progresso:* ${completedList.length} Concluídos / ${pendingList.length} Faltantes (Total: ${currentData.length})\n\n`;
+    text += `📊 *Progresso:* ${currentData.length} Hidrantes Vistoriados${isPartialMission ? ` de ${totalMissionPlanned} planejados` : ''}\n\n`;
     
-    if (completedList.length > 0) {
-      text += `✅ *CONCLUÍDOS (${completedList.length}):*\n`;
-      completedList.forEach(h => {
+    if (currentData.length > 0) {
+      text += `✅ *HIDRANTES VISTORIADOS (${currentData.length}):*\n`;
+      currentData.forEach(h => {
         const id = h.nomHidrante || h.codHidrante;
         const probs = extractProblemsList(h.problemasHidrante);
         const probText = probs.length > 0 ? ` - ${probs.join(', ')}` : '';
@@ -582,20 +594,10 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       text += `\n`;
     }
     
-    if (pendingList.length > 0) {
-      text += `⏳ *FALTANTES (${pendingList.length}):*\n`;
-      pendingList.forEach(h => {
-        const id = h.nomHidrante || h.codHidrante;
-        const end = h.dscEndereco ? ` - ${h.dscEndereco}` : (h.dscLocalidade ? ` - ${h.dscLocalidade}` : '');
-        text += `• ${id}${end}\n`;
-      });
-      text += `\n`;
-    }
-    
     if (currentMission) {
       const baseUrl = window.location.origin + window.location.pathname;
       const idsString = currentData.map(h => h.nomHidrante || h.codHidrante).join(',');
-      text += `🔗 *Link da Missão:* ${baseUrl}?ds=${idsString}\n`;
+      text += `🔗 *Link dos Hidrantes Vistoriados:* ${baseUrl}?ds=${idsString}\n`;
     } else {
       text += `🌐 *Netuno Web:* ${window.location.origin}\n`;
     }
@@ -924,16 +926,31 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
             <h1 className="text-lg sm:text-2xl font-bold text-slate-100 print-text-black uppercase tracking-wide">Corpo de Bombeiros Militar do Distrito Federal</h1>
             <div className="text-xs sm:text-sm font-bold text-slate-300 print-text-black uppercase tracking-wider mt-0.5">SEHUR / GPCIU</div>
             <h2 className="text-sm sm:text-base text-blue-400 print-text-black mt-0.5 uppercase font-bold">
-              Relatório de Vistoria de Hidrantes Urbanos
+              {currentMission
+                ? (isPartialMission
+                    ? `Relatório Parcial de Missão (${currentData.length}/${totalMissionPlanned} Vistoriados)`
+                    : `Relatório Conclusivo de Missão (${currentData.length} Vistoriados)`)
+                : 'Relatório de Vistoria de Hidrantes Urbanos'}
             </h2>
             <div className="mt-3 flex flex-col items-center gap-1 text-xs sm:text-sm text-slate-300 print-text-black">
               <span className="bg-slate-700/50 print-bg-transparent px-3 sm:px-4 py-1.5 rounded-full border border-slate-600 print-border-gray shadow-sm">
                 <strong>Localidade / RAs:</strong> {rasPresentes || 'Todas as Cidades / DF Completo'}
               </span>
               {currentMission && (
-                <span className="text-[11px] sm:text-xs text-slate-400 print-text-black font-semibold mt-1">
-                  <strong>Missão:</strong> {currentMission.name}
-                </span>
+                <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+                  <span className="text-[11px] sm:text-xs text-slate-300 print-text-black font-semibold">
+                    <strong>Missão:</strong> {currentMission.name}
+                  </span>
+                  {isPartialMission ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm print-bg-transparent print-text-black print-border">
+                      ⚠️ Relatório Parcial ({currentData.length} de {totalMissionPlanned} hidrantes)
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm print-bg-transparent print-text-black print-border">
+                      ✅ Missão Concluída (100%)
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>

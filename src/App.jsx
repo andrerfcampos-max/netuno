@@ -2308,17 +2308,35 @@ function App() {
               folders={folders}
               onGenerateReport={() => {
                 const currentM = missions.find(m => m.id === activeMissionId);
-                const totalIds = currentM?.selectedIds || selectedMissionIds || [];
-                const compIds = (currentM?.completedIds || completedMissionIds || []).filter(id => 
-                  totalIds.includes(id)
-                );
-                if (compIds.length === 0) {
+                const selSet = new Set((currentM?.selectedIds || selectedMissionIds || []).map(id => String(id).trim().toUpperCase()));
+                const compSet = new Set((currentM?.completedIds || completedMissionIds || []).map(id => String(id).trim().toUpperCase()));
+                
+                // Mapeia hidrantes da rota da missão
+                const missionHydrantsList = hidrantes.filter(h => {
+                  const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante).trim().toUpperCase() : null;
+                  const k2 = h.nomHidrante ? String(h.nomHidrante).trim().toUpperCase() : null;
+                  const k3 = h._internalId ? String(h._internalId).trim().toUpperCase() : null;
+                  return (k1 && selSet.has(k1)) || (k2 && selSet.has(k2)) || (k3 && selSet.has(k3));
+                });
+
+                // Mapeia hidrantes efetivamente vistoriados na missão
+                const compHydrantsList = missionHydrantsList.filter(h => {
+                  const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante).trim().toUpperCase() : null;
+                  const k2 = h.nomHidrante ? String(h.nomHidrante).trim().toUpperCase() : null;
+                  const k3 = h._internalId ? String(h._internalId).trim().toUpperCase() : null;
+                  return (k1 && compSet.has(k1)) || (k2 && compSet.has(k2)) || (k3 && compSet.has(k3));
+                });
+
+                const totalCount = missionHydrantsList.length || selSet.size;
+                const compCount = compHydrantsList.length;
+
+                if (compCount === 0) {
                   toast.warn('Esta missão ainda não foi iniciada. Realize ao menos uma vistoria para gerar o relatório.');
                   return;
                 }
-                if (compIds.length < totalIds.length) {
+                if (compCount < totalCount) {
                   const confirmPartial = window.confirm(
-                    `Missão não concluída (${compIds.length}/${totalIds.length}). Deseja gerar o relatório parcial dos ${compIds.length} hidrantes vistoriados?`
+                    `Missão não concluída (${compCount}/${totalCount}). Deseja gerar o relatório parcial dos ${compCount} hidrantes vistoriados?`
                   );
                   if (!confirmPartial) {
                     return;
@@ -2387,19 +2405,20 @@ function App() {
           <div id="modulo-relatorio" className="w-full h-full max-w-5xl mx-auto flex-1 min-h-0 border border-slate-700 rounded-xl overflow-y-auto bg-slate-800/90 flex flex-col">
             <MissionReportPanel 
               hidrantes={reportMode === 'mission' ? (() => {
-                const ids = currentMission?.selectedIds || selectedMissionIds || [];
-                const map = new Map();
-                hidrantes.forEach(h => {
-                  if (h._internalId) map.set(h._internalId, h);
-                  if (h.codHidrante) map.set(h.codHidrante, h);
-                  if (h.nomHidrante) map.set(h.nomHidrante, h);
+                if (!currentMission) return [];
+                const selSet = new Set((currentMission.selectedIds || []).map(id => String(id).trim().toUpperCase()));
+                const compSet = new Set((currentMission.completedIds || []).map(id => String(id).trim().toUpperCase()));
+                
+                // Em relatório de missão (parcial ou concluído), inclui ESTRITAMENTE os hidrantes
+                // que foram vistoriados na missão atual, evitando poluir o relatório com hidrantes pendentes
+                return hidrantes.filter(h => {
+                  const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante).trim().toUpperCase() : null;
+                  const k2 = h.nomHidrante ? String(h.nomHidrante).trim().toUpperCase() : null;
+                  const k3 = h._internalId ? String(h._internalId).trim().toUpperCase() : null;
+                  const isInMission = (k1 && selSet.has(k1)) || (k2 && selSet.has(k2)) || (k3 && selSet.has(k3));
+                  const isCompleted = (k1 && compSet.has(k1)) || (k2 && compSet.has(k2)) || (k3 && compSet.has(k3));
+                  return isInMission && isCompleted;
                 });
-                const list = [];
-                ids.forEach(id => {
-                  const item = map.get(id);
-                  if (item && !list.includes(item)) list.push(item);
-                });
-                return list.length > 0 ? list : hidrantes.filter(h => ids.includes(h.codHidrante) || ids.includes(h.nomHidrante) || ids.includes(h._internalId));
               })() : filteredList}
               currentMission={reportMode === 'mission' ? currentMission : null}
               onClose={() => { setActiveView('map'); setReportMode('global'); }}

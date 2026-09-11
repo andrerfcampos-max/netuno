@@ -362,7 +362,8 @@ export const buildReportFileName = ({
 
   // 2. Missão (se ativa)
   if (currentMission?.name) {
-    parts.push(`Missao_${currentMission.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    const isPartial = Boolean(currentMission.selectedIds && currentMission.selectedIds.length > currentData.length);
+    parts.push(`Missao_${currentMission.name.replace(/[^a-zA-Z0-9]/g, '_')}${isPartial ? '_Parcial' : ''}`);
   }
 
   // 3. Filtros aplicados
@@ -1175,10 +1176,10 @@ export const printGeneralReport = ({
         <div class="header-title-box">
           <div class="inst-cbmdf">Corpo de Bombeiros Militar do Distrito Federal</div>
           <div class="inst-sub">SEHUR / GPCIU</div>
-          <div class="doc-title">Relatório de Vistoria de Hidrantes Urbanos</div>
+          <div class="doc-title">${currentMission && currentMission.selectedIds && currentMission.selectedIds.length > currentData.length ? 'Relatório Parcial de Vistoria de Hidrantes Urbanos' : 'Relatório de Vistoria de Hidrantes Urbanos'}</div>
           <div class="doc-meta">
             <span><strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
-            ${currentMission ? `<span><strong>Missão:</strong> ${currentMission.name}</span>` : ''}
+            ${currentMission ? `<span><strong>Missão:</strong> ${currentMission.name} ${currentMission.selectedIds && currentMission.selectedIds.length > currentData.length ? `<span style="color: #b45309; font-weight: bold;">(Relatório Parcial: ${currentData.length} de ${currentMission.selectedIds.length} vistoriados)</span>` : `<span style="color: #15803d; font-weight: bold;">(Conclusivo: ${currentData.length} vistoriados)</span>`}</span>` : ''}
             <span><strong>Emissão:</strong> ${nowStr}</span>
           </div>
         </div>
@@ -1980,11 +1981,11 @@ export const printCaesbReport = ({
         <div class="header-title-box">
           <div class="inst-cbmdf">Corpo de Bombeiros Militar do Distrito Federal</div>
           <div class="inst-sub">SEHUR / GPCIU</div>
-          <div class="doc-title">Relatório de Alterações e Manutenção - CAESB</div>
+          <div class="doc-title">${currentMission && currentMission.selectedIds && currentMission.selectedIds.length > currentData.length ? 'Relatório Parcial de Alterações e Manutenção - CAESB' : 'Relatório de Alterações e Manutenção - CAESB'}</div>
           <div class="legal-term">Encaminhamento Institucional para Intervenção Preventiva e Corretiva • CBMDF / CAESB</div>
           <div class="doc-meta">
             <span><strong>Localidade / RAs:</strong> ${rasPresentes || 'Todas as Cidades / DF Completo'}</span>
-            ${currentMission ? `<span><strong>Missão:</strong> ${currentMission.name}</span>` : ''}
+            ${currentMission ? `<span><strong>Missão:</strong> ${currentMission.name} ${currentMission.selectedIds && currentMission.selectedIds.length > currentData.length ? `<span style="color: #b45309; font-weight: bold;">(Relatório Parcial: ${currentData.length} de ${currentMission.selectedIds.length} vistoriados)</span>` : `<span style="color: #15803d; font-weight: bold;">(Conclusivo: ${currentData.length} vistoriados)</span>`}</span>` : ''}
             <span><strong>Emissão:</strong> ${nowStr}</span>
           </div>
         </div>
