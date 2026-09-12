@@ -509,20 +509,21 @@ const RouteNearbyAutoFitter = ({
   return null;
 };
 
-const MapMemory = () => {
+const MapMemory = ({ currentUser }) => {
+  const userKey = `netuno_map_state_${currentUser?.matricula || 'guest'}`;
   const map = useMapEvents({
     moveend: () => {
       try {
         const center = map.getCenter();
         const zoom = map.getZoom();
-        localStorage.setItem('netuno_map_state', JSON.stringify({ lat: center.lat, lng: center.lng, zoom }));
+        localStorage.setItem(userKey, JSON.stringify({ lat: center.lat, lng: center.lng, zoom }));
       } catch(e) {}
     },
     zoomend: () => {
       try {
         const center = map.getCenter();
         const zoom = map.getZoom();
-        localStorage.setItem('netuno_map_state', JSON.stringify({ lat: center.lat, lng: center.lng, zoom }));
+        localStorage.setItem(userKey, JSON.stringify({ lat: center.lat, lng: center.lng, zoom }));
       } catch(e) {}
     }
   });
@@ -699,7 +700,7 @@ const MapComponent = ({
 
   const [showPinCodes, setShowPinCodes] = useState(() => {
     try {
-      return localStorage.getItem('netuno_show_pin_codes') === 'true';
+      return localStorage.getItem(`netuno_show_pin_codes_${currentUser?.matricula || 'guest'}`) === 'true';
     } catch (e) {
       return false;
     }
@@ -709,7 +710,7 @@ const MapComponent = ({
     setShowPinCodes(prev => {
       const next = !prev;
       try {
-        localStorage.setItem('netuno_show_pin_codes', String(next));
+        localStorage.setItem(`netuno_show_pin_codes_${currentUser?.matricula || 'guest'}`, String(next));
       } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
       return next;
     });
@@ -825,7 +826,7 @@ const MapComponent = ({
   let initialZoom = 12;
 
   try {
-    const savedState = localStorage.getItem('netuno_map_state');
+    const savedState = localStorage.getItem(`netuno_map_state_${currentUser?.matricula || 'guest'}`);
     if (savedState) {
       const parsed = JSON.parse(savedState);
       if (parsed.lat && parsed.lng && parsed.zoom) {
@@ -1097,7 +1098,7 @@ const MapComponent = ({
           centerPosition={centerPosition} 
           selectedHydrant={selectedHydrant} 
         />
-        <MapMemory />
+        <MapMemory currentUser={currentUser} />
         <MapClickHandler selectedHydrant={selectedHydrant} onSelectHydrant={handleCloseHydrant} />
         <MapResizer isMapFullscreen={isMapFullscreen} activeView={activeView} />
         <UserLocationTracker userLocation={userLocation} centerPosition={centerPosition} selectedHydrant={selectedHydrant} hasFilter={hasFilter || isCitySelected} hasActiveRoute={hasActiveRoute} />

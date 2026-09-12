@@ -41,7 +41,7 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
       if (newFilters.problema) newFilters.problema = '';
     }
     try {
-      localStorage.setItem('netuno_saved_filters', JSON.stringify(newFilters));
+      localStorage.setItem(`netuno_saved_filters_${currentUser?.matricula || 'guest'}`, JSON.stringify(newFilters));
     } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
     onFilterChange(newFilters);
   };
@@ -57,7 +57,7 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
       problema: ''
     };
     try {
-      localStorage.removeItem('netuno_saved_filters');
+      localStorage.removeItem(`netuno_saved_filters_${currentUser?.matricula || 'guest'}`);
     } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
     onFilterChange(defaultFilters);
   };
@@ -69,7 +69,7 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
        newFilters.dataFim = '';
     }
     try {
-      localStorage.setItem('netuno_saved_filters', JSON.stringify(newFilters));
+      localStorage.setItem(`netuno_saved_filters_${currentUser?.matricula || 'guest'}`, JSON.stringify(newFilters));
     } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
     onFilterChange(newFilters);
   };

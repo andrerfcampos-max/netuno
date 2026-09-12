@@ -23,7 +23,7 @@ const InspectionHistoryModal = lazy(() => import('./components/InspectionHistory
 import { logAuditEvent, getUnreadAuditCount } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers } from './utils/storage';
-import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime, fetchUserPreferencesFromCloud } from './services/syncService';
+import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime, fetchUserPreferencesFromCloud, syncUserPreferencesToCloud } from './services/syncService';
 import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
@@ -178,17 +178,31 @@ function App() {
   });
 
   const [hidrantes, setHidrantes] = useState([]);
+
+  const getUserKey = (base) => `${base}_${currentUser?.matricula || 'guest'}`;
+  
+  // Throttle for sync
+  const syncPrefsThrottle = useRef(null);
+  const syncPreferences = (newPrefs) => {
+    if (!currentUser?.matricula) return;
+    if (syncPrefsThrottle.current) clearTimeout(syncPrefsThrottle.current);
+    syncPrefsThrottle.current = setTimeout(() => {
+      syncUserPreferencesToCloud(currentUser.matricula, newPrefs);
+    }, 2000);
+  };
+
   const [activeView, _setActiveView] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const view = params.get('view');
     if (view && ['map', 'table', 'route', 'report'].includes(view)) return view;
-    return localStorage.getItem('netuno_active_view') || 'map';
+    return localStorage.getItem(`netuno_active_view_${currentUser?.matricula || 'guest'}`) || 'map';
   });
   const [reportMode, setReportMode] = useState('global');
 
   const setActiveView = (view) => {
     _setActiveView(view);
-    localStorage.setItem('netuno_active_view', view);
+    localStorage.setItem(`netuno_active_view_${currentUser?.matricula || 'guest'}`, view);
+syncPreferences({ activeView: view });
     const url = new URL(window.location.href);
     url.searchParams.set('view', view);
     window.history.pushState({ view }, '', url.toString());
@@ -198,12 +212,14 @@ function App() {
     const handlePopState = (event) => {
       if (event.state && event.state.view) {
         _setActiveView(event.state.view);
-        localStorage.setItem('netuno_active_view', event.state.view);
+        localStorage.setItem(`netuno_active_view_${currentUser?.matricula || 'guest'}`, event.state.view);
+syncPreferences({ activeView: event.state.view });
       } else {
         const params = new URLSearchParams(window.location.search);
-        const view = params.get('view') || localStorage.getItem('netuno_active_view') || 'map';
+        const view = params.get('view') || localStorage.getItem(`netuno_active_view_${currentUser?.matricula || 'guest'}`) || 'map';
         _setActiveView(view);
-        localStorage.setItem('netuno_active_view', view);
+        localStorage.setItem(`netuno_active_view_${currentUser?.matricula || 'guest'}`, view);
+syncPreferences({ activeView: view });
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -212,7 +228,7 @@ function App() {
 
   const [activeFilters, setActiveFilters] = useState(() => {
     try {
-      const saved = localStorage.getItem('netuno_saved_filters');
+      const saved = localStorage.getItem(`netuno_saved_filters_${currentUser?.matricula || 'guest'}`);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') return parsed;
@@ -398,7 +414,8 @@ function App() {
       const newFilters = { ...activeFilters, ra: hydrantRA };
       setActiveFilters(newFilters);
       try {
-        localStorage.setItem('netuno_saved_filters', JSON.stringify(newFilters));
+        localStorage.setItem(`netuno_saved_filters_${currentUser?.matricula || 'guest'}`, JSON.stringify(newFilters));
+syncPreferences({ filters: newFilters });
       } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
     }
     setMapCenterPosition({ ...h, _ts: Date.now() });
@@ -1127,7 +1144,8 @@ function App() {
     }
     setActiveFilters(filters);
     try {
-      localStorage.setItem('netuno_saved_filters', JSON.stringify(filters));
+      localStorage.setItem(`netuno_saved_filters_${currentUser?.matricula || 'guest'}`, JSON.stringify(filters));
+syncPreferences({ filters: filters });
     } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
   };
 
@@ -1459,12 +1477,15 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
+    const handleLogout = () => {
     localStorage.removeItem('netuno_user');
+    // Clear state
+    setActiveFilters({});
+    _setActiveView('map');
     setCurrentUser(null);
     setOpenMissionIds([]);
     setActiveMissionId(null);
-    setActiveView('map');
+    setCartSelectionIds([]);
   };
 
   // Sessão de 8h e renovação silenciosa
@@ -1557,10 +1578,30 @@ function App() {
       user = { matricula: mat, nome: `Militar ${mat}`, role: 'vistoriador' };
     }
     
-    if (user) {
+        if (user) {
       user.expiresAt = Date.now() + 8 * 60 * 60 * 1000;
       localStorage.setItem('netuno_user', JSON.stringify(user));
       setCurrentUser(user);
+
+      // PUXAR DA NUVEM
+      fetchUserPreferencesFromCloud(user.matricula).then(prefs => {
+        if (prefs) {
+          if (prefs.activeView) {
+            _setActiveView(prefs.activeView);
+            localStorage.setItem(`netuno_active_view_${user.matricula}`, prefs.activeView);
+          }
+          if (prefs.filters) {
+            setActiveFilters(prefs.filters);
+            localStorage.setItem(`netuno_saved_filters_${user.matricula}`, JSON.stringify(prefs.filters));
+          }
+          if (prefs.mapState) {
+            localStorage.setItem(`netuno_map_state_${user.matricula}`, JSON.stringify(prefs.mapState));
+          }
+          if (prefs.showPinCodes !== undefined) {
+            localStorage.setItem(`netuno_show_pin_codes_${user.matricula}`, String(prefs.showPinCodes));
+          }
+        }
+      }).catch(err => console.warn('Falha sync prefs login', err));
     }
   };
 
