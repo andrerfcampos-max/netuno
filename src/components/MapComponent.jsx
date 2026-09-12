@@ -99,10 +99,10 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
   }
 
   // HIDRANTE DA ROTA DA MISSÃO ATIVA:
-  // Contorno preto (#0f172a, mesma cor do tracejado da rota) para diferenciar com nitidez absoluta dos hidrantes comuns (que possuem contorno branco)
+  // Contorno branco para manter a consistência visual, com diferenciação pelo tamanho e número interno
   if (isMissionItem) {
     if (isMissionCompleted) {
-      // Hidrante da Rota Já Vistoriado: Verde Esmeralda com borda preta sólida (#0f172a) e checkmark
+      // Hidrante da Rota Já Vistoriado: Verde Esmeralda com borda branca e checkmark
       return L.divIcon({
         className: 'custom-div-icon',
         html: `
@@ -119,7 +119,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
               width: 22px;
               height: 22px;
               border-radius: 50%;
-              border: 2.5px solid #0f172a;
+              border: 2.5px solid #ffffff;
               box-shadow: 0 3px 8px rgba(0,0,0,0.65);
               display: flex;
               align-items: center;
@@ -160,7 +160,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
       });
     }
 
-    // Hidrante da Rota Pendente: Interior com cor operacional (statusColor), contorno preto (#0f172a) e número da parada
+    // Hidrante da Rota Pendente: Interior com cor operacional (statusColor), contorno branco e número da parada
     const orderLabel = missionOrder !== null && missionOrder !== undefined ? String(missionOrder) : '';
     return L.divIcon({
       className: 'custom-div-icon',
@@ -178,7 +178,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             width: 22px;
             height: 22px;
             border-radius: 50%;
-            border: 2.5px solid #0f172a;
+            border: 2.5px solid #ffffff;
             box-shadow: 0 3px 8px rgba(0,0,0,0.65);
             display: flex;
             align-items: center;
