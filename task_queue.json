@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-83",
   "queue": [
     {
       "id": "TASK-1",
@@ -658,6 +658,198 @@
       "createdAt": "2026-09-11T17:52:21.169Z",
       "startedAt": "2026-09-11T17:52:24.053Z",
       "completedAt": "2026-09-11T17:54:36.278Z"
+    },
+    {
+      "id": "TASK-66",
+      "seq": 66,
+      "conversationId": "4e58e536-97cd-4eeb-9f35-9a4a85850354",
+      "description": "Contorno preto nos pinos da rota aberta para harmonizar com tracejado",
+      "status": "completed",
+      "createdAt": "2026-09-11T17:59:55.870Z",
+      "startedAt": "2026-09-11T18:00:02.768Z",
+      "completedAt": "2026-09-11T18:01:23.092Z"
+    },
+    {
+      "id": "TASK-67",
+      "seq": 67,
+      "conversationId": "01726071-a64b-47fe-8ff1-934c40f49d89",
+      "description": "Fix map pin sequence optimization issue",
+      "status": "completed",
+      "createdAt": "2026-09-11T18:13:27.034Z",
+      "startedAt": "2026-09-11T18:13:34.619Z",
+      "completedAt": "2026-09-11T18:17:51.578Z"
+    },
+    {
+      "id": "TASK-68",
+      "seq": 68,
+      "conversationId": "01726071-a64b-47fe-8ff1-934c40f49d89",
+      "description": "Fix map pin sequence",
+      "status": "completed",
+      "createdAt": "2026-09-11T18:17:42.700Z",
+      "startedAt": "2026-09-11T18:18:15.007Z",
+      "completedAt": "2026-09-11T18:20:56.838Z"
+    },
+    {
+      "id": "TASK-69",
+      "seq": 69,
+      "conversationId": "9f5b8883-6748-4e59-a6c4-b0ba58e578b4",
+      "description": "Sanitize and update database using Base_Completa_Netuno.xlsx",
+      "status": "completed",
+      "createdAt": "2026-09-11T18:18:46.878Z",
+      "startedAt": "2026-09-11T18:20:57.893Z",
+      "completedAt": "2026-09-11T18:23:18.690Z"
+    },
+    {
+      "id": "TASK-70",
+      "seq": 70,
+      "conversationId": "89e8f638-5490-4c6f-b55b-89d9adfcf10d",
+      "description": "Adicionar step 81 no workflow para persistir favorita em nuvem",
+      "status": "completed",
+      "createdAt": "2026-09-11T18:24:32.507Z",
+      "startedAt": "2026-09-11T18:24:43.323Z",
+      "completedAt": "2026-09-11T18:25:08.175Z"
+    },
+    {
+      "id": "TASK-71",
+      "seq": 71,
+      "conversationId": "9f5b8883-6748-4e59-a6c4-b0ba58e578b4",
+      "description": "Revert database update that removed coords",
+      "status": "completed",
+      "createdAt": "2026-09-11T18:26:31.663Z",
+      "startedAt": "2026-09-11T18:26:38.959Z",
+      "completedAt": "2026-09-11T18:27:27.715Z"
+    },
+    {
+      "id": "TASK-72",
+      "seq": 72,
+      "conversationId": "89e8f638-5490-4c6f-b55b-89d9adfcf10d",
+      "description": "Executar etapa 81 via run_automation.js",
+      "status": "completed",
+      "createdAt": "2026-09-11T18:28:03.818Z",
+      "startedAt": "2026-09-11T18:28:08.118Z",
+      "completedAt": "2026-09-11T18:33:15.352Z"
+    },
+    {
+      "id": "TASK-73",
+      "seq": 73,
+      "conversationId": "9f5b8883-6748-4e59-a6c4-b0ba58e578b4",
+      "description": "Add step to workflow.json to export sanitized database",
+      "status": "completed",
+      "createdAt": "2026-09-11T18:30:27.207Z",
+      "startedAt": null,
+      "completedAt": "2026-09-11T18:31:56.539Z"
+    },
+    {
+      "id": "TASK-74",
+      "seq": 74,
+      "conversationId": "f357b744-246c-45c7-8663-52b0f4f6b8d9",
+      "description": "Corrigir duplicidade de registro no historico de acoes de vistorias",
+      "status": "completed",
+      "createdAt": "2026-09-11T18:33:04.764Z",
+      "startedAt": "2026-09-11T18:33:15.828Z",
+      "completedAt": "2026-09-11T18:36:33.498Z"
+    },
+    {
+      "id": "TASK-75",
+      "seq": 75,
+      "conversationId": "9f5b8883-6748-4e59-a6c4-b0ba58e578b4",
+      "description": "Run automation for Step 82",
+      "status": "completed",
+      "createdAt": "2026-09-11T18:41:07.322Z",
+      "startedAt": "2026-09-11T18:41:13.660Z",
+      "completedAt": "2026-09-11T18:44:35.446Z"
+    },
+    {
+      "id": "TASK-76",
+      "seq": 76,
+      "conversationId": "run_automation",
+      "description": "Orquestrador Etapa 82: Exportar Base de Dados Completa (XLSX Sanitizada)",
+      "status": "failed",
+      "createdAt": "2026-09-11T18:41:20.077Z",
+      "startedAt": null,
+      "completedAt": "2026-09-11T18:41:20.105Z",
+      "error": "Falha durante execução do agente"
+    },
+    {
+      "id": "TASK-77",
+      "seq": 77,
+      "conversationId": "a5eb097b-037c-46a9-969f-74dc8df12cc2",
+      "description": "Fix pin border colors",
+      "status": "completed",
+      "createdAt": "2026-09-12T12:23:58.809Z",
+      "startedAt": "2026-09-12T12:24:05.399Z",
+      "completedAt": "2026-09-12T12:30:39.115Z"
+    },
+    {
+      "id": "TASK-78",
+      "seq": 78,
+      "conversationId": "b3653cde-90a0-47cf-9142-db397692722e",
+      "description": "Isolar memoria de tela por usuario",
+      "status": "completed",
+      "createdAt": "2026-09-12T12:33:09.893Z",
+      "startedAt": "2026-09-12T12:33:16.794Z",
+      "completedAt": "2026-09-12T12:51:26.418Z"
+    },
+    {
+      "id": "TASK-79",
+      "seq": 79,
+      "conversationId": "run_automation",
+      "description": "Orquestrador Etapa 83: Isolamento de Estado de UI por Usuário (Cloud Preferences)",
+      "status": "failed",
+      "createdAt": "2026-09-12T12:34:18.501Z",
+      "startedAt": null,
+      "completedAt": "2026-09-12T12:34:18.570Z",
+      "error": "Falha durante execução do agente"
+    },
+    {
+      "id": "TASK-80",
+      "seq": 80,
+      "conversationId": "9276b25b-be0f-4392-ac40-b4b619dd404f",
+      "description": "Verify workflow and popups",
+      "status": "completed",
+      "createdAt": "2026-09-12T12:34:19.703Z",
+      "startedAt": "2026-09-12T12:48:19.835Z",
+      "completedAt": "2026-09-12T12:49:18.953Z"
+    },
+    {
+      "id": "TASK-81",
+      "seq": 81,
+      "conversationId": "fc4e7268-96b4-4114-a9dc-3667214f66ea",
+      "description": "Isolar Memoria de Tela por usuario",
+      "status": "completed",
+      "createdAt": "2026-09-12T12:35:33.564Z",
+      "startedAt": "2026-09-12T12:49:20.048Z",
+      "completedAt": "2026-09-12T12:50:55.253Z"
+    },
+    {
+      "id": "TASK-82",
+      "seq": 82,
+      "conversationId": "9276b25b-be0f-4392-ac40-b4b619dd404f",
+      "description": "Run automation",
+      "status": "completed",
+      "createdAt": "2026-09-12T12:49:35.032Z",
+      "startedAt": null,
+      "completedAt": "2026-09-12T12:50:10.139Z"
+    },
+    {
+      "id": "TASK-83",
+      "seq": 83,
+      "conversationId": "9276b25b-be0f-4392-ac40-b4b619dd404f",
+      "description": "Run automation step 84",
+      "status": "running",
+      "createdAt": "2026-09-12T12:50:30.420Z",
+      "startedAt": "2026-09-12T12:50:55.583Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-84",
+      "seq": 84,
+      "conversationId": "1ae25ef3-77ce-4d61-a170-7a36945a6fb5",
+      "description": "Investigar e corrigir plotagem de numeros de rota no mapa apos recalcular",
+      "status": "queued",
+      "createdAt": "2026-09-12T12:50:47.368Z",
+      "startedAt": null,
+      "completedAt": null
     }
   ]
 }

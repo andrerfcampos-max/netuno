@@ -730,3 +730,7 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **3. Atualização Reativa no Carrinho de Seleção (`SelectionCart.jsx`):**
   - Adicionado listener de evento para que o `SelectionCart` atualize instantaneamente a pasta de destino sugerida sem precisar recarregar a tela.
 
+ 
+### [12/09/2026] Etapa 84 Conclu�da Automaticamente 
+- **Fechamento Autom�tico de Popups ao Abrir Menu Principal** foi executada e validada com sucesso pelo agente orquestrador. 
+

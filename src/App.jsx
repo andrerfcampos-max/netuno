@@ -1841,7 +1841,11 @@ syncPreferences({ filters: filters });
             <div className="relative" ref={menuRef}>
               <button 
                 type="button"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => setIsMenuOpen((prev) => {
+                  const nextState = !prev;
+                  if (nextState) setIsCartOpen(false);
+                  return nextState;
+                })}
                 className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-emerald-400 font-semibold rounded shadow-sm cursor-pointer hover:bg-slate-700 active:scale-95 transition-all relative select-none"
               >
                 <span className="hidden sm:inline">Menu</span>
@@ -2311,6 +2315,7 @@ syncPreferences({ filters: filters });
         <div className={`w-full h-full relative z-0 flex-1 min-h-0 ${activeView === 'map' ? 'block' : 'hidden'}`}>
           <ErrorBoundary>
             <MapComponent 
+              isMenuOpen={isMenuOpen}
               hidrantes={mapHidrantes} 
               userLocation={userLocation}
               onInspect={handleInspect}

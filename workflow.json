@@ -492,6 +492,18 @@
       "status": "completed",
       "name": "Exportar Base de Dados Completa (XLSX Sanitizada)",
       "prompt": "Atue como Desenvolvedor Sênior. O usuário solicitou que o Netuno consiga exportar a base de dados completa sanitizada. Implemente (ou refine, se já existir) a função de Exportar Base de Dados no formato XLSX e CSV no menu principal. O arquivo exportado deve conter todas as colunas de hidrantes (incluindo coordenadas, endereços, status, defeitos, data da última vistoria, etc) para consulta posterior com dados 100% íntegros. Responda ETAPA CONCLUIDA quando finalizar e testar."
+    },
+    {
+      "id": 83,
+      "status": "completed",
+      "name": "Isolamento de Estado de UI por Usuário (Cloud Preferences)",
+      "prompt": "Atue como Desenvolvedor Frontend e Backend Sênior. O usuário reportou que ao trocar de login, a tela/filtros do usuário anterior permanecem (salvos no localStorage global). Isole a Memória de Tela por usuário:\n1. Em `App.jsx`, `FilterBar.jsx` e `MapComponent.jsx`, altere as chaves de localStorage (`netuno_active_view`, `netuno_saved_filters`, `netuno_map_state`, `netuno_show_pin_codes`, e qualquer chave de estado visual/seleção) para incluir a matrícula do usuário logado (ex: `netuno_active_view_${currentUser?.matricula}`). Se não houver usuário, use fallback.\n2. Além de ler as chaves locais vinculadas ao usuário, sincronize essas chaves de UI para a nuvem através do `syncUserPreferencesToCloud` (já existente no `syncService.js`). Ao fazer login, puxe o `fetchUserPreferencesFromCloud(user.matricula)` e carregue as preferências de visualização, filtros e mapa na tela para continuidade do trabalho em outras máquinas.\n3. Garanta que, na função de logout, todo o estado visual mantido no React (filtros, view ativa, etc.) seja limpo/resetado, não reaproveitando o estado na próxima tela de login.\nResponda ETAPA CONCLUIDA após finalizar e aprovar os testes em localhost."
+    },
+    {
+      "id": 84,
+      "status": "completed",
+      "name": "Fechamento Automático de Popups ao Abrir Menu Principal",
+      "prompt": "Atue como Desenvolvedor Frontend e Especialista UX/UI. Implemente o fechamento automático de popups e menus sobrepostos.\n1. No arquivo `App.jsx`, na função que altera `isMenuOpen` para true (ao abrir o Menu Principal), force o fechamento do Carrinho de Seleção (alterando `isCartOpen` para false).\n2. No arquivo `App.jsx`, passe o estado `isMenuOpen` como prop para o `<MapComponent>`.\n3. No arquivo `MapComponent.jsx`, adicione `isMenuOpen` às propriedades recebidas e implemente um `useEffect` que monitore esta prop; caso seja `true` e exista um `selectedHydrant` ativo, chame `handleCloseHydrant()` ou defina `selectedHydrant` como null, garantindo que o mapa e os bottom sheets fiquem limpos de sobreposições ao navegar no menu principal.\nResponda 'ETAPA CONCLUIDA' após finalizar e aprovar."
     }
   ]
 }
