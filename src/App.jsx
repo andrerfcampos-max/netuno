@@ -325,7 +325,22 @@ syncPreferences({ activeView: view });
   const [isRouteActiveOnMap, setIsRouteActiveOnMap] = useState(false);
 
   // Derivações da Missão Ativa
-  const currentMission = useMemo(() => missions.find(m => m.id === activeMissionId), [missions, activeMissionId]);
+  const currentMission = useMemo(() => {
+    const m = missions.find(item => item.id === activeMissionId);
+    if (!m) return null;
+    if ((!m.orderedIds || !Array.isArray(m.orderedIds) || m.orderedIds.length === 0) && m.id) {
+      try {
+        const cached = localStorage.getItem(`netuno_mission_ordered_${m.id}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return { ...m, orderedIds: parsed };
+          }
+        }
+      } catch (e) {}
+    }
+    return m;
+  }, [missions, activeMissionId]);
   const selectedMissionIds = useMemo(() => currentMission?.selectedIds || [], [currentMission?.selectedIds]);
   const completedMissionIds = useMemo(() => currentMission?.completedIds || [], [currentMission?.completedIds]);
 
@@ -837,7 +852,10 @@ syncPreferences({ filters: newFilters });
     setMissions(prev => {
       const updated = prev.map(m => {
         if (m.id === activeMissionId) {
-          target = { ...m, ...updates, updatedAt: new Date().toISOString() };
+          const mergedOrdered = (updates.orderedIds && Array.isArray(updates.orderedIds) && updates.orderedIds.length > 0)
+            ? updates.orderedIds
+            : (m.orderedIds || []);
+          target = { ...m, ...updates, orderedIds: mergedOrdered, updatedAt: new Date().toISOString() };
           return target;
         }
         return m;
@@ -846,6 +864,11 @@ syncPreferences({ filters: newFilters });
       return updated;
     });
     if (target) {
+      if (target.orderedIds && target.orderedIds.length > 0) {
+        try {
+          localStorage.setItem(`netuno_mission_ordered_${target.id}`, JSON.stringify(target.orderedIds));
+        } catch (e) {}
+      }
       syncMissionToCloud(target);
     }
   };

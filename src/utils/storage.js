@@ -17,6 +17,20 @@ export const loadMissions = () => {
             return createdString === todayString;
           }
           return true;
+        }).map(m => {
+          // Garante recuperação de orderedIds caso tenham sido omitidos ou limpos por sync externo
+          if ((!m.orderedIds || !Array.isArray(m.orderedIds) || m.orderedIds.length === 0) && m.id) {
+            try {
+              const cached = localStorage.getItem(`netuno_mission_ordered_${m.id}`);
+              if (cached) {
+                const parsedOrdered = JSON.parse(cached);
+                if (Array.isArray(parsedOrdered) && parsedOrdered.length > 0) {
+                  return { ...m, orderedIds: parsedOrdered };
+                }
+              }
+            } catch (e) {}
+          }
+          return m;
         });
       }
     }
@@ -41,6 +55,15 @@ const safeSetItem = (key, value) => {
 
 export const saveMissions = (missions) => {
   safeSetItem(MISSIONS_STORAGE_KEY, JSON.stringify(missions));
+  if (Array.isArray(missions)) {
+    missions.forEach(m => {
+      if (m && m.id && Array.isArray(m.orderedIds) && m.orderedIds.length > 0) {
+        try {
+          localStorage.setItem(`netuno_mission_ordered_${m.id}`, JSON.stringify(m.orderedIds));
+        } catch (e) {}
+      }
+    });
+  }
 };
 
 const DEFAULT_FOLDERS = [
@@ -241,8 +264,19 @@ export const mergeMissions = (localMissions = [], cloudMissions = []) => {
   // 1. Carrega todas as missões locais
   localMissions.forEach(m => {
     if (m && m.id) {
+      let orderedIds = Array.isArray(m.orderedIds) ? m.orderedIds : [];
+      if (orderedIds.length === 0) {
+        try {
+          const cached = localStorage.getItem(`netuno_mission_ordered_${m.id}`);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) orderedIds = parsed;
+          }
+        } catch (e) {}
+      }
       map.set(String(m.id), {
         ...m,
+        orderedIds,
         selectedIds: Array.isArray(m.selectedIds) ? m.selectedIds : [],
         completedIds: Array.isArray(m.completedIds) ? m.completedIds : [],
       });
@@ -255,8 +289,20 @@ export const mergeMissions = (localMissions = [], cloudMissions = []) => {
     const key = String(cloudM.id);
     const localM = map.get(key);
 
+    let cloudOrdered = Array.isArray(cloudM.orderedIds) ? cloudM.orderedIds : [];
+    if (cloudOrdered.length === 0) {
+      try {
+        const cached = localStorage.getItem(`netuno_mission_ordered_${cloudM.id}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) cloudOrdered = parsed;
+        }
+      } catch (e) {}
+    }
+
     const safeCloudM = {
       ...cloudM,
+      orderedIds: cloudOrdered,
       selectedIds: Array.isArray(cloudM.selectedIds) ? cloudM.selectedIds : [],
       completedIds: Array.isArray(cloudM.completedIds) ? cloudM.completedIds : [],
     };
@@ -266,19 +312,36 @@ export const mergeMissions = (localMissions = [], cloudMissions = []) => {
     } else {
       const localTime = new Date(localM.updatedAt || localM.createdAt || 0).getTime();
       const cloudTime = new Date(safeCloudM.updatedAt || safeCloudM.createdAt || 0).getTime();
+      const bestOrderedIds = (localM.orderedIds && localM.orderedIds.length > 0) 
+        ? localM.orderedIds 
+        : (safeCloudM.orderedIds && safeCloudM.orderedIds.length > 0 ? safeCloudM.orderedIds : []);
 
       if (cloudTime > localTime) {
         // Se a nuvem for mais recente, mas não tiver hidrantes e o local tiver, preserva os hidrantes locais
         if (safeCloudM.selectedIds.length === 0 && localM.selectedIds.length > 0) {
-          map.set(key, { ...safeCloudM, selectedIds: localM.selectedIds, completedIds: localM.completedIds });
+          map.set(key, { 
+            ...safeCloudM, 
+            selectedIds: localM.selectedIds, 
+            completedIds: localM.completedIds,
+            orderedIds: bestOrderedIds,
+            atribuicao: safeCloudM.atribuicao || localM.atribuicao || ""
+          });
         } else {
-          map.set(key, safeCloudM);
+          map.set(key, {
+            ...safeCloudM,
+            orderedIds: bestOrderedIds,
+            atribuicao: safeCloudM.atribuicao || localM.atribuicao || ""
+          });
         }
       } else if (localTime > cloudTime) {
         map.set(key, localM);
       } else {
         if (safeCloudM.selectedIds.length >= localM.selectedIds.length) {
-          map.set(key, safeCloudM);
+          map.set(key, {
+            ...safeCloudM,
+            orderedIds: bestOrderedIds,
+            atribuicao: safeCloudM.atribuicao || localM.atribuicao || ""
+          });
         } else {
           map.set(key, localM);
         }

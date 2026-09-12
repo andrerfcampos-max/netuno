@@ -7,6 +7,7 @@ import { isValidDFCoordinate } from '../utils/geoUtils';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
 import { setCachedLocation, getLastKnownLocation } from '../utils/geoTracker';
+import { optimizeRouteEuclidean } from '../utils/routeOptimization';
 
 // Fix para ícones padrão do Leaflet não quebrarem
 delete L.Icon.Default.prototype._getIconUrl;
@@ -867,20 +868,63 @@ const MapComponent = ({
     const map = {};
     if (!activeMission) return map;
     
-    // Apenas usa a rota otimizada (orderedIds). Se não existir, não exibe numeração/linhas desorganizadas no mapa.
-    const ordered = (activeMission.orderedIds && activeMission.orderedIds.length > 0) 
+    // 1. Prioriza a rota otimizada salva em activeMission.orderedIds
+    let ordered = (activeMission.orderedIds && Array.isArray(activeMission.orderedIds) && activeMission.orderedIds.length > 0) 
       ? activeMission.orderedIds 
       : null;
     
-    if (!ordered) return map;
+    // 2. Recuperação ultra-resiliente via cache local se activeMission perdeu orderedIds
+    if (!ordered && activeMission.id) {
+      try {
+        const cached = localStorage.getItem(`netuno_mission_ordered_${activeMission.id}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            ordered = parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 3. Fallback instantâneo: se não houver ordenação salva, gera sequenciamento ordenado dos pendentes
+    if (!ordered && activeMissionHydrants && activeMissionHydrants.length > 0) {
+      const pendingList = activeMissionHydrants.filter(h => {
+        const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
+        const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+        const k3 = h._internalId ? String(h._internalId) : null;
+        return !((k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3)));
+      });
+      if (pendingList.length > 0) {
+        const anchorLat = userLocation?.lat || pendingList[0]?.numLatitude;
+        const anchorLng = userLocation?.lng || pendingList[0]?.numLongitude;
+        const autoFast = optimizeRouteEuclidean(pendingList, anchorLat, anchorLng);
+        ordered = autoFast.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
+      }
+    }
+
+    if (!ordered || ordered.length === 0) return map;
 
     // Numera apenas os hidrantes pendentes/faltantes da rota
     const pendingOrdered = ordered.filter(id => !completedIdsSet.has(String(id)));
     pendingOrdered.forEach((id, idx) => {
-      map[String(id)] = idx + 1;
+      const orderNum = idx + 1;
+      const strId = String(id);
+      map[strId] = orderNum;
+
+      // Mapeia TODOS os identificadores possíveis (codHidrante, nomHidrante, _internalId) para garantir 100% de match
+      const found = activeMissionHydrants.find(h => 
+        (h.codHidrante !== undefined && h.codHidrante !== null && String(h.codHidrante) === strId) ||
+        (h.nomHidrante && String(h.nomHidrante) === strId) ||
+        (h._internalId && String(h._internalId) === strId)
+      );
+      if (found) {
+        if (found.codHidrante !== undefined && found.codHidrante !== null) map[String(found.codHidrante)] = orderNum;
+        if (found.nomHidrante) map[String(found.nomHidrante)] = orderNum;
+        if (found._internalId) map[String(found._internalId)] = orderNum;
+      }
     });
     return map;
-  }, [activeMission, completedIdsSet]);
+  }, [activeMission, completedIdsSet, activeMissionHydrants, userLocation]);
 
   const activeMissionIdsSet = useMemo(() => {
     return new Set((activeMission?.selectedIds || []).map(String));
@@ -1125,18 +1169,49 @@ const MapComponent = ({
             });
 
             if (pendingList.length <= 1) return null;
-            if (!activeMission.orderedIds || activeMission.orderedIds.length === 0) return null;
+            let orderedIdsList = (activeMission.orderedIds && Array.isArray(activeMission.orderedIds) && activeMission.orderedIds.length > 0) 
+              ? activeMission.orderedIds 
+              : null;
+
+            if (!orderedIdsList && activeMission.id) {
+              try {
+                const cached = localStorage.getItem(`netuno_mission_ordered_${activeMission.id}`);
+                if (cached) {
+                  const parsed = JSON.parse(cached);
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    orderedIdsList = parsed;
+                  }
+                }
+              } catch (e) {}
+            }
 
             const ordered = (() => {
-                  const orderedStrList = activeMission.orderedIds.map(String);
-                  return [...pendingList].sort((a, b) => {
-                    const idA = String(a.codHidrante !== undefined && a.codHidrante !== null ? a.codHidrante : (a._internalId || a.nomHidrante || ''));
-                    const idB = String(b.codHidrante !== undefined && b.codHidrante !== null ? b.codHidrante : (b._internalId || b.nomHidrante || ''));
-                    const idxA = orderedStrList.indexOf(idA);
-                    const idxB = orderedStrList.indexOf(idB);
-                    return (idxA >= 0 ? idxA : 999) - (idxB >= 0 ? idxB : 999);
-                  });
-                })();
+              if (orderedIdsList && orderedIdsList.length > 0) {
+                const orderedStrList = orderedIdsList.map(String);
+                return [...pendingList].sort((a, b) => {
+                  const idA1 = a.codHidrante !== undefined && a.codHidrante !== null ? String(a.codHidrante) : '';
+                  const idA2 = a.nomHidrante ? String(a.nomHidrante) : '';
+                  const idA3 = a._internalId ? String(a._internalId) : '';
+                  const idxA1 = idA1 ? orderedStrList.indexOf(idA1) : -1;
+                  const idxA2 = idA2 ? orderedStrList.indexOf(idA2) : -1;
+                  const idxA3 = idA3 ? orderedStrList.indexOf(idA3) : -1;
+                  const idxA = Math.max(idxA1, idxA2, idxA3);
+
+                  const idB1 = b.codHidrante !== undefined && b.codHidrante !== null ? String(b.codHidrante) : '';
+                  const idB2 = b.nomHidrante ? String(b.nomHidrante) : '';
+                  const idB3 = b._internalId ? String(b._internalId) : '';
+                  const idxB1 = idB1 ? orderedStrList.indexOf(idB1) : -1;
+                  const idxB2 = idB2 ? orderedStrList.indexOf(idB2) : -1;
+                  const idxB3 = idB3 ? orderedStrList.indexOf(idB3) : -1;
+                  const idxB = Math.max(idxB1, idxB2, idxB3);
+
+                  return (idxA >= 0 ? idxA : 999) - (idxB >= 0 ? idxB : 999);
+                });
+              }
+              const anchorLat = userLocation?.lat || pendingList[0]?.numLatitude;
+              const anchorLng = userLocation?.lng || pendingList[0]?.numLongitude;
+              return optimizeRouteEuclidean(pendingList, anchorLat, anchorLng);
+            })();
 
             const positions = ordered
               .filter(h => isValidDFCoordinate(h.numLatitude, h.numLongitude))

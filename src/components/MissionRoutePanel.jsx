@@ -184,8 +184,14 @@ const MissionRoutePanel = ({
     const sig = pendingHydrants.map(h => h.codHidrante || h._internalId || h.nomHidrante).join(',');
     lastOptimizedIdsRef.current = sig;
 
+    const fastOrderedIds = fastOrdered.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
     if (onUpdateMission) {
-      onUpdateMission({ orderedIds: fastOrdered.map(h => String(h.codHidrante || h._internalId || h.nomHidrante)) });
+      onUpdateMission({ orderedIds: fastOrderedIds });
+    }
+    if (currentMission?.id) {
+      try {
+        localStorage.setItem(`netuno_mission_ordered_${currentMission.id}`, JSON.stringify(fastOrderedIds));
+      } catch (e) {}
     }
 
     // 2. Refinamento OSRM ATSP com sentidos de vias e trânsito real
@@ -200,10 +206,15 @@ const MissionRoutePanel = ({
         setPendingRoute(updatedRoute);
         setDrivingMetrics(osrmResult.drivingMetrics);
         setIsTrafficOptimized(osrmResult.isTrafficMode);
+        const updatedIds = updatedRoute.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
         if (onUpdateMission) {
-          onUpdateMission({ orderedIds: updatedRoute.map(h => String(h.codHidrante || h._internalId || h.nomHidrante)) });
+          onUpdateMission({ orderedIds: updatedIds });
         }
-        // Mensagem popup no topo removida conforme solicitado pelo usuário (o badge visual e animação do botão já confirmam)
+        if (currentMission?.id) {
+          try {
+            localStorage.setItem(`netuno_mission_ordered_${currentMission.id}`, JSON.stringify(updatedIds));
+          } catch (e) {}
+        }
       }
     } catch (err) {
       console.warn('Erro ao otimizar rota com OSRM:', err);
@@ -241,8 +252,14 @@ const MissionRoutePanel = ({
       if (remainingRoute.length === pendingHydrants.length) {
         if (remainingRoute.length !== pendingRoute.length) {
           setPendingRoute(remainingRoute);
+          const remIds = remainingRoute.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
           if (onUpdateMission) {
-            onUpdateMission({ orderedIds: remainingRoute.map(h => String(h.codHidrante || h._internalId || h.nomHidrante)) });
+            onUpdateMission({ orderedIds: remIds });
+          }
+          if (currentMission?.id) {
+            try {
+              localStorage.setItem(`netuno_mission_ordered_${currentMission.id}`, JSON.stringify(remIds));
+            } catch (e) {}
           }
         }
         return;
@@ -252,14 +269,42 @@ const MissionRoutePanel = ({
     // 2. Abertura da Rota / Troca de Missão / Novos Hidrantes Adicionados:
     // Se a missão já possui ordenação prévia salva, prioriza ela
     const sig = pendingHydrants.map(h => String(h.codHidrante || h._internalId || h.nomHidrante)).join(',');
-    if (currentMission?.orderedIds && currentMission.orderedIds.length > 0) {
+    const cachedOrderedIds = (() => {
+      if (currentMission?.orderedIds && Array.isArray(currentMission.orderedIds) && currentMission.orderedIds.length > 0) {
+        return currentMission.orderedIds;
+      }
+      if (currentMission?.id) {
+        try {
+          const cached = localStorage.getItem(`netuno_mission_ordered_${currentMission.id}`);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch (e) {}
+      }
+      return null;
+    })();
+
+    if (cachedOrderedIds && cachedOrderedIds.length > 0) {
       const orderedMap = new Map();
-      currentMission.orderedIds.forEach((id, idx) => orderedMap.set(String(id), idx));
+      cachedOrderedIds.forEach((id, idx) => orderedMap.set(String(id), idx));
       const sortedByMission = [...pendingHydrants].sort((a, b) => {
-        const kA = String(a.codHidrante || a._internalId || a.nomHidrante);
-        const kB = String(b.codHidrante || b._internalId || b.nomHidrante);
-        const idxA = orderedMap.has(kA) ? orderedMap.get(kA) : 999;
-        const idxB = orderedMap.has(kB) ? orderedMap.get(kB) : 999;
+        const kA1 = a.codHidrante !== undefined && a.codHidrante !== null ? String(a.codHidrante) : '';
+        const kA2 = a.nomHidrante ? String(a.nomHidrante) : '';
+        const kA3 = a._internalId ? String(a._internalId) : '';
+        const idxA1 = kA1 && orderedMap.has(kA1) ? orderedMap.get(kA1) : 999;
+        const idxA2 = kA2 && orderedMap.has(kA2) ? orderedMap.get(kA2) : 999;
+        const idxA3 = kA3 && orderedMap.has(kA3) ? orderedMap.get(kA3) : 999;
+        const idxA = Math.min(idxA1, idxA2, idxA3);
+
+        const kB1 = b.codHidrante !== undefined && b.codHidrante !== null ? String(b.codHidrante) : '';
+        const kB2 = b.nomHidrante ? String(b.nomHidrante) : '';
+        const kB3 = b._internalId ? String(b._internalId) : '';
+        const idxB1 = kB1 && orderedMap.has(kB1) ? orderedMap.get(kB1) : 999;
+        const idxB2 = kB2 && orderedMap.has(kB2) ? orderedMap.get(kB2) : 999;
+        const idxB3 = kB3 && orderedMap.has(kB3) ? orderedMap.get(kB3) : 999;
+        const idxB = Math.min(idxB1, idxB2, idxB3);
+
         return idxA - idxB;
       });
       setPendingRoute(sortedByMission);
