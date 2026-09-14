@@ -3,12 +3,41 @@ import { loadPrepopBuildingStudies } from './buildingStudiesStorage';
 import { getTechnicalStudies } from './technicalStudiesStorage';
 import { loadMissions } from './storage';
 
-export const exportGlobalDatabaseCSV = async (hidrantes) => {
+export const exportHidrantesCSV = async (hidrantes) => {
+  const hidrantesData = (hidrantes || []).map(h => ({
+    'Código': h.nomHidrante || h.codHidrante || '',
+    'Status': h.flgAtivo ? 'OPERANTE' : 'INOPERANTE',
+    'Latitude': h.numLatitude ? Number(h.numLatitude).toFixed(6) : '',
+    'Longitude': h.numLongitude ? Number(h.numLongitude).toFixed(6) : '',
+    'Cidade / RA': h.dscLocalidade || '',
+    'Endereço': h.dscEndereco || '',
+    'Ponto de Referência': h.dscPontoReferencia || '',
+    'Data Última Vistoria': h.datHoraUltimaVistoria || 'Sem vistoria',
+    'Problemas Registrados': Array.isArray(h.problemasHidrante) ? h.problemasHidrante.join(' | ') : (h.problemasHidrante || 'Nenhum'),
+    'Observações': h.dscObservacao || '',
+    'Vistoriador / Matrícula': h.vistoriador || h.matricula || '',
+  }));
+
+  const wsHidrantes = XLSX.utils.json_to_sheet(hidrantesData);
+  const csvContent = '\uFEFF' + XLSX.utils.sheet_to_csv(wsHidrantes, { FS: ';' });
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  const dateStr = new Date().toISOString().slice(0, 10);
+  link.setAttribute("download", `Hidrantes_Netuno_${dateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+export const exportGlobalDatabaseXLSX = async (hidrantes) => {
   // Cria um workbook do XLSX
   const wb = XLSX.utils.book_new();
 
   // 1. Aba: Hidrantes e Vistorias
-  const hidrantesData = hidrantes.map(h => ({
+  const hidrantesData = (hidrantes || []).map(h => ({
     'Código': h.nomHidrante || h.codHidrante || '',
     'Status': h.flgAtivo ? 'OPERANTE' : 'INOPERANTE',
     'Latitude': h.numLatitude ? Number(h.numLatitude).toFixed(6) : '',
@@ -26,7 +55,7 @@ export const exportGlobalDatabaseCSV = async (hidrantes) => {
 
   // 2. Aba: Estudos Pré-Pop (Edificações)
   const prepop = await loadPrepopBuildingStudies();
-  const prepopData = prepop.map(p => ({
+  const prepopData = (prepop || []).map(p => ({
     'Cód. Levantamento': p.codLevantamento || '',
     'Nome Estabelecimento': p.nomeEstabelecimento || '',
     'RA': p.ra || '',
@@ -43,7 +72,7 @@ export const exportGlobalDatabaseCSV = async (hidrantes) => {
 
   // 3. Aba: Pareceres Técnicos
   const pareceres = getTechnicalStudies();
-  const pareceresData = pareceres.map(p => ({
+  const pareceresData = (pareceres || []).map(p => ({
     'ID Estudo': p.id || '',
     'Finalidade': p.finalidade || '',
     'Referência Documento': p.referenciaDoc || '',
@@ -57,7 +86,7 @@ export const exportGlobalDatabaseCSV = async (hidrantes) => {
 
   // 4. Aba: Missões e Rotas
   const missoes = loadMissions();
-  const missoesData = missoes.map(m => ({
+  const missoesData = (missoes || []).map(m => ({
     'ID Missão': m.id || '',
     'Nome / Operação': m.name || '',
     'Quartel / Equipe': m.atribuicao || '',
@@ -70,16 +99,10 @@ export const exportGlobalDatabaseCSV = async (hidrantes) => {
   XLSX.utils.book_append_sheet(wb, wsMissoes, "Missões");
 
   // Gera o arquivo Excel (.xlsx) que atende a organização exigida
-  XLSX.writeFile(wb, "Base_Completa_Netuno.xlsx");
+  const dateStr = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `Base_Completa_Netuno_${dateStr}.xlsx`);
+};
 
-  // Também gera um arquivo CSV contendo a aba principal (Hidrantes)
-  const csvContent = '\uFEFF' + XLSX.utils.sheet_to_csv(wsHidrantes, { FS: ';' });
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", "Base_Completa_Netuno.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+export const exportGlobalDatabaseCSV = async (hidrantes) => {
+  await exportGlobalDatabaseXLSX(hidrantes);
 };

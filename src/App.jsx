@@ -20,6 +20,7 @@ const InconsistentHydrantsModal = lazy(() => import('./components/InconsistentHy
 const CloudConfigModal = lazy(() => import('./components/CloudConfigModal'));
 const SystemHistoryModal = lazy(() => import('./components/SystemHistoryModal'));
 const InspectionHistoryModal = lazy(() => import('./components/InspectionHistoryModal'));
+const DownloadDatabaseModal = lazy(() => import('./components/DownloadDatabaseModal'));
 import { logAuditEvent, getUnreadAuditCount } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers } from './utils/storage';
@@ -29,7 +30,6 @@ import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
 import { extractProblemsList, isHidranteRemovido } from './utils/problemUtils';
 import { fixEncoding } from './utils/textUtils';
-import { exportGlobalDatabaseCSV } from './utils/exportGlobalCsv';
 import { getLastKnownLocation, startGlobalGeoTracking, subscribeLocation } from './utils/geoTracker';
 import { optimizeRouteEuclidean } from './utils/routeOptimization';
 
@@ -395,6 +395,7 @@ syncPreferences({ activeView: view });
   const [isSystemHistoryOpen, setIsSystemHistoryOpen] = useState(false);
   const [unreadAuditCount, setUnreadAuditCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDownloadDbModalOpen, setIsDownloadDbModalOpen] = useState(false);
   const [pendingDeleteHydrant, setPendingDeleteHydrant] = useState(null);
   const menuRef = useRef(null);
 
@@ -2084,27 +2085,21 @@ syncPreferences({ filters: filters });
 
                     <button 
                       type="button"
-                      onClick={async () => {
+                      onClick={() => {
                         setIsMenuOpen(false);
-                        try {
-                          await exportGlobalDatabaseCSV(hidrantes);
-                          toast.success('Download da base completa iniciado!');
-                        } catch (err) {
-                          toast.error('Erro ao exportar base completa.');
-                          console.error(err);
-                        }
+                        setIsDownloadDbModalOpen(true);
                       }}
-                      className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                      className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group cursor-pointer"
                     >
                       <div className="w-8 h-8 rounded-lg bg-blue-950/40 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0 mt-0.5 group-hover:border-blue-500/60 transition-colors">
                         <FileSpreadsheet size={17} />
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                          Baixar Base Completa
+                          Baixar Base de Dados
                         </span>
                         <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                          Exportação CSV / XLSX sanitizada
+                          Exportar CSV dos hidrantes ou XLSX completo
                         </span>
                       </div>
                     </button>
@@ -2743,6 +2738,16 @@ syncPreferences({ filters: filters });
             onClose={handleCloseBuildingStudies}
             allHydrantes={hidrantes}
             currentUser={currentUser}
+          />
+        </Suspense>
+      )}
+
+      {isDownloadDbModalOpen && (
+        <Suspense fallback={null}>
+          <DownloadDatabaseModal
+            isOpen={isDownloadDbModalOpen}
+            onClose={() => setIsDownloadDbModalOpen(false)}
+            hidrantes={hidrantes}
           />
         </Suspense>
       )}
