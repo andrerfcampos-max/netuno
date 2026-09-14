@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-86",
+  "activeTaskId": "TASK-87",
   "queue": [
     {
       "id": "TASK-1",
@@ -859,26 +859,26 @@
       "status": "completed",
       "createdAt": "2026-09-14T20:55:03.726Z",
       "startedAt": "2026-09-14T20:55:16.300Z",
-      "completedAt": "2026-09-14T21:03:33.106Z"
+      "completedAt": "2026-09-14T21:07:41.454Z"
     },
     {
       "id": "TASK-86",
       "seq": 86,
       "conversationId": "500f0441-fb25-458b-b001-111825d0bff6",
       "description": "Exibir banner de modo rota de missao apenas na aba do mapa",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-14T20:55:28.114Z",
       "startedAt": "2026-09-14T21:03:35.123Z",
-      "completedAt": null
+      "completedAt": "2026-09-14T21:09:08.416Z"
     },
     {
       "id": "TASK-87",
       "seq": 87,
       "conversationId": "7089a0a0-42a2-4fd5-984d-49ea902b9ed3",
       "description": "Redistribuir espacos e otimizar modal de historico de acoes mobile",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-09-14T21:06:56.376Z",
-      "startedAt": null,
+      "startedAt": "2026-09-14T21:09:12.160Z",
       "completedAt": null
     }
   ]
