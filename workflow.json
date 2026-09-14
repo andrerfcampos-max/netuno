@@ -504,6 +504,12 @@
       "status": "completed",
       "name": "Fechamento Automático de Popups ao Abrir Menu Principal",
       "prompt": "Atue como Desenvolvedor Frontend e Especialista UX/UI. Implemente o fechamento automático de popups e menus sobrepostos.\n1. No arquivo `App.jsx`, na função que altera `isMenuOpen` para true (ao abrir o Menu Principal), force o fechamento do Carrinho de Seleção (alterando `isCartOpen` para false).\n2. No arquivo `App.jsx`, passe o estado `isMenuOpen` como prop para o `<MapComponent>`.\n3. No arquivo `MapComponent.jsx`, adicione `isMenuOpen` às propriedades recebidas e implemente um `useEffect` que monitore esta prop; caso seja `true` e exista um `selectedHydrant` ativo, chame `handleCloseHydrant()` ou defina `selectedHydrant` como null, garantindo que o mapa e os bottom sheets fiquem limpos de sobreposições ao navegar no menu principal.\nResponda 'ETAPA CONCLUIDA' após finalizar e aprovar."
+    },
+    {
+      "id": 85,
+      "status": "completed",
+      "name": "MVP de Fotos de Perfil dos Hidrantes de Arniqueiras (800x600 Sniper)",
+      "prompt": "Executar o MVP de extração e vinculação das fotos de perfil dos hidrantes da RA de Arniqueiras:\n1. Extrair imagens em alta resolução 800x600 via Google Street View com autocentralização Sniper (gemini-3.5-flash-lite).\n2. Salvar na estrutura hierárquica por cidade: `public/hidrantes/arniqueira/ARN0000X.jpeg`.\n3. Atualizar a base de dados oficial (`public/base-de-dados.xlsx` e `base-de-dados.xlsx`) vinculando o campo `fotoPerfil` aos 4 hidrantes de Arniqueiras.\n4. Validar o carregamento do Hero Banner e Lightbox no Netuno mobile com build limpo."
     }
   ]
 }

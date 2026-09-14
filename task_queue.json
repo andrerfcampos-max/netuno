@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-83",
+  "activeTaskId": "TASK-86",
   "queue": [
     {
       "id": "TASK-1",
@@ -836,18 +836,48 @@
       "seq": 83,
       "conversationId": "9276b25b-be0f-4392-ac40-b4b619dd404f",
       "description": "Run automation step 84",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-12T12:50:30.420Z",
       "startedAt": "2026-09-12T12:50:55.583Z",
-      "completedAt": null
+      "completedAt": "2026-09-12T12:54:45.477Z"
     },
     {
       "id": "TASK-84",
       "seq": 84,
       "conversationId": "1ae25ef3-77ce-4d61-a170-7a36945a6fb5",
       "description": "Investigar e corrigir plotagem de numeros de rota no mapa apos recalcular",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-12T12:50:47.368Z",
+      "startedAt": "2026-09-12T12:54:48.050Z",
+      "completedAt": "2026-09-12T13:06:37.711Z"
+    },
+    {
+      "id": "TASK-85",
+      "seq": 85,
+      "conversationId": "c1322d0e-a981-4d21-8202-a750ed2de40f",
+      "description": "MVP Fotos de Perfil Hidrantes de Arniqueiras",
+      "status": "completed",
+      "createdAt": "2026-09-14T20:55:03.726Z",
+      "startedAt": "2026-09-14T20:55:16.300Z",
+      "completedAt": "2026-09-14T21:03:33.106Z"
+    },
+    {
+      "id": "TASK-86",
+      "seq": 86,
+      "conversationId": "500f0441-fb25-458b-b001-111825d0bff6",
+      "description": "Exibir banner de modo rota de missao apenas na aba do mapa",
+      "status": "running",
+      "createdAt": "2026-09-14T20:55:28.114Z",
+      "startedAt": "2026-09-14T21:03:35.123Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-87",
+      "seq": 87,
+      "conversationId": "7089a0a0-42a2-4fd5-984d-49ea902b9ed3",
+      "description": "Redistribuir espacos e otimizar modal de historico de acoes mobile",
+      "status": "queued",
+      "createdAt": "2026-09-14T21:06:56.376Z",
       "startedAt": null,
       "completedAt": null
     }

@@ -2153,7 +2153,7 @@ syncPreferences({ filters: filters });
 
       {/* MÓDULO 1: BARRA DE FILTROS OU PAINEL TÁTICO DE ROTA NO TOPO */}
       {!isMapFullscreen && activeView !== 'route' && (
-        isRouteActiveOnMap && currentMission ? (
+        isRouteActiveOnMap && currentMission && activeView === 'map' ? (
           <div className="flex-shrink-0 px-2 pt-1.5 z-20 w-full">
             <div className="bg-slate-900/98 border border-cyan-500/80 shadow-xl rounded-xl p-2.5 sm:px-4 sm:py-2.5 flex flex-wrap items-center justify-between gap-2.5 backdrop-blur-md">
               <div className="flex items-center gap-2.5 min-w-0">

@@ -127,6 +127,7 @@ export const loadPreloadedDatabase = async (onComplete) => {
         numLongitude: isNaN(lng) ? 0 : lng,
         flgAtivo: isAtivo,
         problemasHidrante: cleanProb,
+        fotoPerfil: row.fotoPerfil || row.foto_perfil || row.foto || '',
         datHoraUltimaVistoria: row.datHoraUltimaVistoria || row.datHoraVistoria || row.DataVistoria || row['Data Vistoria'] || row.data_vistoria || row['Última Vistoria'] || row['Ultima Vistoria'] || row.dataHoraUltimaVistoria || '',
       });
     }
