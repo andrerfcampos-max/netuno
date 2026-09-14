@@ -3,7 +3,7 @@ import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSp
 import { extractProblemsList, sanitizeProblem, isHidranteRemovido } from '../utils/problemUtils';
 import { normalizeRAName, getRARoman } from '../utils/raList';
 import { fixEncoding } from '../utils/textUtils';
-import { printGeneralReport, printCaesbReport, generateDocHash } from '../utils/officialPrintUtils';
+import { printGeneralReport, printCaesbReport, generateDocHash, extractPhotos } from '../utils/officialPrintUtils';
 import { generateSeiMemorandoMinutaText } from '../utils/seiMemorandoUtils';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, activeFilters = null }) => {
@@ -1610,32 +1610,9 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
 
         {/* ANEXO FOTOGRÁFICO DE EVIDÊNCIAS (CAESB / LAUDO) */}
         {(() => {
-          const extractHydrantPhotos = (h) => {
-            const photos = [];
-            const add = (p) => {
-              if (typeof p === 'string' && p.trim().length > 10 && !photos.includes(p)) {
-                photos.push(p);
-              }
-            };
-            if (Array.isArray(h.fotosVistoria)) h.fotosVistoria.forEach(add);
-            if (Array.isArray(h.fotos)) h.fotos.forEach(add);
-            if (Array.isArray(h.HISTORICO_VISTORIAS)) {
-              h.HISTORICO_VISTORIAS.forEach(v => {
-                if (Array.isArray(v.fotosVistoria)) v.fotosVistoria.forEach(add);
-                if (v.fotoVistoria) add(v.fotoVistoria);
-                if (v.fotoUrl) add(v.fotoUrl);
-              });
-            }
-            if (h.fotoVistoria) add(h.fotoVistoria);
-            if (h.fotoPerfil) add(h.fotoPerfil);
-            if (h.foto) add(h.foto);
-            if (h.fotoUrl) add(h.fotoUrl);
-            return photos;
-          };
-
           const hidrantesComFotos = currentData.map(h => ({
             ...h,
-            extractedPhotos: extractHydrantPhotos(h)
+            extractedPhotos: extractPhotos(h)
           })).filter(item => item.extractedPhotos.length > 0);
 
           if (hidrantesComFotos.length === 0) return null;

@@ -1,6 +1,6 @@
 import { fixEncoding } from './textUtils';
 import { normalizeRAName } from './raList';
-import { sanitizeProblem, isHidranteRemovido } from './problemUtils';
+import { sanitizeProblem, isHidranteRemovido, extractProblemsList } from './problemUtils';
 
 /**
  * Utilitário de Geração e Impressão de Documentos Oficiais em Formato A4
@@ -45,29 +45,85 @@ const formatDateTime = (dateStr) => {
 };
 
 /**
- * Utilitário modular para extração consistente de fotos/evidências de hidrantes
+ * Verifica se um hidrante ou registro de vistoria possui inconformidade/problema cadastrado
+ */
+export const hasVistoriaProblem = (item) => {
+  if (!item) return false;
+  // Inoperante indica presença de defeito/inconformidade
+  if (item.flgAtivo === false || item.flgAtivo === 0 || item.flgAtivo === 'false') {
+    return true;
+  }
+  // Problemas descritos no campo problemasHidrante
+  if (item.problemasHidrante) {
+    const list = extractProblemsList(String(item.problemasHidrante));
+    if (list.length > 0) return true;
+    const raw = String(item.problemasHidrante).trim().toLowerCase();
+    if (
+      raw &&
+      raw !== '-' &&
+      raw !== '.' &&
+      raw !== 'sem defeitos registrados' &&
+      raw !== 'sem alteração' &&
+      raw !== 'sem alteracao' &&
+      raw !== 'sem alterações' &&
+      raw !== 'sem alteracoes' &&
+      raw !== 'nenhum' &&
+      raw !== 'falso' &&
+      raw !== 'operante'
+    ) {
+      return true;
+    }
+  }
+  if (item.motivoInoperante && String(item.motivoInoperante).trim() !== '') {
+    return true;
+  }
+  return false;
+};
+
+/**
+ * Utilitário modular para extração de fotos de problemas cadastrados na vistoria.
+ * REGRA: Não anexa fotos banner/perfil do hidrante (fotoPerfil, foto, fotoUrl).
+ * Anexa APENAS fotos de problemas cadastrados na vistoria.
  */
 export const extractPhotos = (h) => {
   if (!h) return [];
+  // Deve anexar apenas as fotos de problema cadastrado na vistoria
+  if (!hasVistoriaProblem(h)) {
+    return [];
+  }
+
   const photos = [];
+  // Conjunto de URLs/base64 de fotos de banner/perfil que NUNCA devem ser anexadas
+  const bannerPhotos = new Set();
+  if (typeof h.fotoPerfil === 'string' && h.fotoPerfil.trim()) bannerPhotos.add(h.fotoPerfil.trim());
+  if (typeof h.foto === 'string' && h.foto.trim()) bannerPhotos.add(h.foto.trim());
+  if (typeof h.fotoUrl === 'string' && h.fotoUrl.trim()) bannerPhotos.add(h.fotoUrl.trim());
+
   const add = (p) => {
-    if (typeof p === 'string' && p.trim().length > 10 && !photos.includes(p)) {
-      photos.push(p);
+    if (typeof p === 'string' && p.trim().length > 10) {
+      const cleanP = p.trim();
+      // Bloqueia qualquer foto de banner/perfil do hidrante
+      if (bannerPhotos.has(cleanP)) return;
+      if (!photos.includes(cleanP)) {
+        photos.push(cleanP);
+      }
     }
   };
+
+  // 1. Fotos da vistoria atual do hidrante
   if (Array.isArray(h.fotosVistoria)) h.fotosVistoria.forEach(add);
-  if (Array.isArray(h.fotos)) h.fotos.forEach(add);
+  if (h.fotoVistoria) add(h.fotoVistoria);
+
+  // 2. Fotos de vistorias com problemas no histórico
   if (Array.isArray(h.HISTORICO_VISTORIAS)) {
     h.HISTORICO_VISTORIAS.forEach(v => {
-      if (Array.isArray(v.fotosVistoria)) v.fotosVistoria.forEach(add);
-      if (v.fotoVistoria) add(v.fotoVistoria);
-      if (v.fotoUrl) add(v.fotoUrl);
+      if (hasVistoriaProblem(v)) {
+        if (Array.isArray(v.fotosVistoria)) v.fotosVistoria.forEach(add);
+        if (v.fotoVistoria) add(v.fotoVistoria);
+      }
     });
   }
-  if (h.fotoVistoria) add(h.fotoVistoria);
-  if (h.fotoPerfil) add(h.fotoPerfil);
-  if (h.foto) add(h.foto);
-  if (h.fotoUrl) add(h.fotoUrl);
+
   return photos;
 };
 
