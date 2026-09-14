@@ -89,7 +89,11 @@ export default function SystemHistoryModal({
   // Filtro inteligente
   const filteredLogs = useMemo(() => {
     return logs.filter(item => {
-      if (entityFilter !== 'all' && item.entityType !== entityFilter) return false;
+      if (entityFilter === 'unread') {
+        if (!item.unread) return false;
+      } else if (entityFilter !== 'all' && item.entityType !== entityFilter) {
+        return false;
+      }
       if (actionFilter !== 'all' && item.action !== actionFilter) return false;
 
       if (searchTerm.trim()) {
@@ -203,45 +207,45 @@ export default function SystemHistoryModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn select-none">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden text-slate-100 animate-scaleUp">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-1 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn select-none">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl w-full max-w-4xl h-[94vh] sm:h-[88vh] flex flex-col overflow-hidden text-slate-100 animate-scaleUp">
         
         {/* CABEÇALHO DO MODAL */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-800 bg-slate-900/90 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-950/70 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-inner">
-              <History size={22} />
+        <div className="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-slate-800 bg-slate-900/95 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-950/70 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 shadow-inner">
+              <History size={18} className="sm:w-[22px] sm:h-[22px]" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-white tracking-wide">
-                  Histórico e Notificações de Ações
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h2 className="text-sm sm:text-base font-bold text-white tracking-wide truncate">
+                  Histórico e Notificações
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
-                  Apenas Gestor
+                <span className="px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold tracking-wider uppercase bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 shrink-0">
+                  Gestor
                 </span>
                 {metrics.unread > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950 animate-pulse">
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-amber-500 text-slate-950 animate-pulse shrink-0">
                     {metrics.unread} nova{metrics.unread > 1 ? 's' : ''}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="hidden sm:block text-xs text-slate-400 mt-0.5 truncate">
                 Rastreamento em tempo real de cadastros, edições e remoções de vistorias, hidrantes e PREPOP
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {metrics.unread > 0 && (
               <button
                 type="button"
                 onClick={handleMarkAllRead}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-500/40 rounded-lg transition-all"
+                className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-500/40 rounded-lg transition-all"
                 title="Marcar todas como lidas"
               >
-                <CheckCheck size={15} />
-                <span>Marcar lidas</span>
+                <CheckCheck size={14} />
+                <span className="hidden sm:inline">Marcar lidas</span>
               </button>
             )}
 
@@ -249,176 +253,108 @@ export default function SystemHistoryModal({
               <button
                 type="button"
                 onClick={handleClearAll}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-400 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/30 rounded-lg transition-all"
+                className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold text-rose-400 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/30 rounded-lg transition-all"
                 title="Limpar histórico de ações"
               >
-                <Trash2 size={15} />
-                <span>Limpar</span>
+                <Trash2 size={14} />
+                <span className="hidden sm:inline">Limpar</span>
               </button>
             )}
 
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all ml-0.5"
               title="Fechar"
             >
-              <X size={20} />
+              <X size={18} className="sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
 
-        {/* CARDS DE MÉTRICAS / RESUMO RÁPIDO */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 sm:p-4 bg-slate-950/40 border-b border-slate-800 shrink-0">
-          <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-2.5 flex flex-col">
-            <span className="text-[11px] font-medium text-slate-400">Total de Ações</span>
-            <span className="text-xl font-bold text-white mt-0.5">{metrics.total}</span>
-          </div>
-
-          <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-2.5 flex flex-col">
-            <span className="text-[11px] font-medium text-amber-400 flex items-center gap-1">
-              <ClipboardCheck size={12} /> Vistorias
-            </span>
-            <span className="text-xl font-bold text-amber-300 mt-0.5">{metrics.vistorias}</span>
-          </div>
-
-          <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-2.5 flex flex-col">
-            <span className="text-[11px] font-medium text-cyan-400 flex items-center gap-1">
-              <Flame size={12} /> Hidrantes
-            </span>
-            <span className="text-xl font-bold text-cyan-300 mt-0.5">{metrics.hidrantes}</span>
-          </div>
-
-          <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-2.5 flex flex-col">
-            <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
-              <Building2 size={12} /> PREPOP
-            </span>
-            <span className="text-xl font-bold text-emerald-300 mt-0.5">{metrics.prepop}</span>
-          </div>
-
-          <div className="col-span-2 sm:col-span-1 bg-slate-800/60 border border-slate-700/60 rounded-xl p-2.5 flex flex-col justify-between">
-            <span className="text-[11px] font-medium text-purple-400 flex items-center gap-1">
-              <Sparkles size={12} /> Não Lidas
-            </span>
-            <div className="flex items-center justify-between mt-0.5">
-              <span className={`text-xl font-bold ${metrics.unread > 0 ? 'text-amber-400' : 'text-slate-400'}`}>
-                {metrics.unread}
-              </span>
-              {metrics.unread > 0 && (
-                <button
-                  type="button"
-                  onClick={handleMarkAllRead}
-                  className="sm:hidden text-[10px] text-emerald-400 underline font-semibold"
-                >
-                  Ler todas
-                </button>
-              )}
-            </div>
-          </div>
+        {/* CHIPS DE MÉTRICAS & FILTRO POR ENTIDADE (COMPACTO E INTEGRADO) */}
+        <div className="flex items-center gap-1.5 px-3 sm:px-6 py-2 bg-slate-950/60 border-b border-slate-800/80 overflow-x-auto shrink-0 scrollbar-none">
+          {[
+            { id: 'all', label: 'Todas', count: metrics.total, icon: <Layers size={13} />, color: 'text-slate-300', activeBg: 'bg-emerald-600 text-white border-emerald-500' },
+            { id: 'vistoria', label: 'Vistorias', count: metrics.vistorias, icon: <ClipboardCheck size={13} />, color: 'text-amber-400', activeBg: 'bg-amber-600 text-white border-amber-500' },
+            { id: 'hidrante', label: 'Hidrantes', count: metrics.hidrantes, icon: <Flame size={13} />, color: 'text-cyan-400', activeBg: 'bg-cyan-600 text-white border-cyan-500' },
+            { id: 'prepop', label: 'PREPOP', count: metrics.prepop, icon: <Building2 size={13} />, color: 'text-emerald-400', activeBg: 'bg-emerald-600 text-white border-emerald-500' },
+            ...(metrics.unread > 0 ? [{ id: 'unread', label: 'Não Lidas', count: metrics.unread, icon: <Sparkles size={13} />, color: 'text-purple-400', activeBg: 'bg-purple-600 text-white border-purple-500' }] : [])
+          ].map((chip) => {
+            const isActive = entityFilter === chip.id;
+            return (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={() => setEntityFilter(chip.id)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
+                  isActive
+                    ? `${chip.activeBg} shadow-sm`
+                    : 'bg-slate-800/70 border-slate-700/60 text-slate-300 hover:bg-slate-700/80 hover:text-white'
+                }`}
+              >
+                <span className={isActive ? 'text-white' : chip.color}>{chip.icon}</span>
+                <span>{chip.label}</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  isActive ? 'bg-black/30 text-white' : 'bg-slate-900/90 text-slate-300 border border-slate-700/50'
+                }`}>
+                  {chip.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* BARRA DE FILTROS E BUSCA */}
-        <div className="p-3 sm:p-4 bg-slate-900/80 border-b border-slate-800 space-y-3 shrink-0">
-          <div className="flex flex-col sm:flex-row gap-2">
-            {/* Campo de Busca */}
-            <div className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por código, militar, RA ou detalhe da ação..."
-                className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
-              />
-              {searchTerm && (
-                <button 
-                  onClick={() => setSearchTerm('')} 
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-
-            {/* Ações Mobile de Limpar / Marcar Lidas */}
-            <div className="flex sm:hidden gap-2">
-              {metrics.unread > 0 && (
-                <button
-                  type="button"
-                  onClick={handleMarkAllRead}
-                  className="flex-1 py-1.5 px-2 text-xs font-semibold text-emerald-300 bg-emerald-950/60 border border-emerald-500/40 rounded-lg text-center"
-                >
-                  Marcar lidas
-                </button>
-              )}
-              {logs.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  className="flex-1 py-1.5 px-2 text-xs font-semibold text-rose-400 bg-rose-950/40 border border-rose-500/30 rounded-lg text-center"
-                >
-                  Limpar
-                </button>
-              )}
-            </div>
+        {/* BARRA DE BUSCA E FILTRO DE TIPO DE AÇÃO */}
+        <div className="px-3 sm:px-6 py-2 bg-slate-900/90 border-b border-slate-800 shrink-0 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+          {/* Campo de Busca Slim */}
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por código, militar, RA ou detalhe..."
+              className="w-full pl-8 pr-7 py-1.5 bg-slate-950 border border-slate-700/80 rounded-lg text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')} 
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-0.5"
+                title="Limpar busca"
+              >
+                <X size={13} />
+              </button>
+            )}
           </div>
 
-          {/* Filtros em Abas / Pílulas */}
-          <div className="flex flex-wrap items-center gap-2 justify-between">
-            {/* Filtro por Entidade */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full">
-              <span className="text-[11px] font-semibold text-slate-400 mr-1 flex items-center gap-1">
-                <Filter size={12} /> Entidade:
-              </span>
-              {[
-                { id: 'all', label: 'Todas' },
-                { id: 'vistoria', label: 'Vistorias' },
-                { id: 'hidrante', label: 'Hidrantes' },
-                { id: 'prepop', label: 'PREPOP' }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setEntityFilter(tab.id)}
-                  className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all cursor-pointer whitespace-nowrap ${
-                    entityFilter === tab.id
-                      ? 'bg-emerald-600 text-white shadow-sm font-semibold'
-                      : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Filtro por Ação */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full">
-              <span className="text-[11px] font-semibold text-slate-400 mr-1">Ação:</span>
-              {[
-                { id: 'all', label: 'Todas' },
-                { id: 'create', label: 'Cadastros', color: 'text-emerald-400' },
-                { id: 'edit', label: 'Edições', color: 'text-cyan-400' },
-                { id: 'delete', label: 'Remoções', color: 'text-rose-400' }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActionFilter(tab.id)}
-                  className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all cursor-pointer whitespace-nowrap ${
-                    actionFilter === tab.id
-                      ? 'bg-slate-700 text-white border border-slate-600 shadow-sm font-semibold'
-                      : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-                  }`}
-                >
-                  <span className={tab.color || ''}>{tab.label}</span>
-                </button>
-              ))}
-            </div>
+          {/* Filtro por Tipo de Ação (Horizontal compacto) */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
+            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mr-0.5 hidden sm:inline">Ação:</span>
+            {[
+              { id: 'all', label: 'Todas' },
+              { id: 'create', label: 'Cadastros', color: 'text-emerald-400' },
+              { id: 'edit', label: 'Edições', color: 'text-cyan-400' },
+              { id: 'delete', label: 'Remoções', color: 'text-rose-400' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActionFilter(tab.id)}
+                className={`px-2 py-1 text-[11px] rounded-md font-medium transition-all cursor-pointer whitespace-nowrap border ${
+                  actionFilter === tab.id
+                    ? 'bg-slate-700 text-white border-slate-500 shadow-xs font-semibold'
+                    : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:bg-slate-700/60 hover:text-slate-200'
+                }`}
+              >
+                <span className={actionFilter === tab.id ? 'text-white' : tab.color || ''}>{tab.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
         {/* LISTAGEM TIMELINE DAS AÇÕES */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-4 space-y-2.5">
           {filteredLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-center text-slate-500 mb-3">
@@ -570,12 +506,18 @@ export default function SystemHistoryModal({
         </div>
 
         {/* RODAPÉ INFORMATIVO */}
-        <div className="px-4 py-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Auditoria ativa no Super Argos 2.1</span>
+        <div className="px-3 sm:px-4 py-2 bg-slate-950/90 border-t border-slate-800 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+            <span className="truncate">Auditoria ativa</span>
+            <span className="text-slate-600">•</span>
+            <span className="text-emerald-400 font-semibold">{filteredLogs.length}</span>
+            <span className="text-slate-500">exibido{filteredLogs.length !== 1 ? 's' : ''}</span>
           </div>
-          <span>Exclusivo para Gestores de Hidrantes e Administradores</span>
+          <span className="text-slate-500 text-[10px] sm:text-[11px] shrink-0">
+            <span className="hidden sm:inline">Exclusivo Gestores & Admin</span>
+            <span className="sm:hidden">Gestores & Admin</span>
+          </span>
         </div>
 
       </div>
