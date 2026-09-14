@@ -1888,229 +1888,236 @@ syncPreferences({ filters: filters });
                     className="fixed inset-0 z-[110]" 
                     onClick={() => setIsMenuOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-72 sm:w-84 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col gap-1.5 p-2 z-[120] animate-scaleUp">
-                    {currentUser.role === 'admin' && (
-                      <a 
-                        href="?modal=admin"
-                        onClick={(e) => {
-                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                            e.preventDefault();
-                            setIsUserManagerOpen(true);
-                            setIsMenuOpen(false);
-                          }
-                        }}
-                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-950/40 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0 mt-0.5 group-hover:border-red-500/60 transition-colors">
-                          <ShieldAlert size={17} />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                            Níveis de Acesso dos Militares
-                          </span>
-                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                            Definir quem é Administrador, Gestor ou Vistoriador
-                          </span>
-                        </div>
-                      </a>
-                    )}
-
-                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-                      <a 
-                        href="?modal=historico"
-                        onClick={(e) => {
-                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                            e.preventDefault();
-                            setIsSystemHistoryOpen(true);
-                            setIsMenuOpen(false);
-                          }
-                        }}
-                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
-                          <History size={17} />
-                        </div>
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                              Histórico de Ações
-                            </span>
-                            {unreadAuditCount > 0 && (
-                              <span className="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/40 font-bold">
-                                {unreadAuditCount}
-                              </span>
-                            )}
+                  <div className="absolute right-0 mt-2 w-72 sm:w-84 max-h-[calc(100dvh-75px)] sm:max-h-[calc(100vh-80px)] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col z-[120] animate-scaleUp overflow-hidden">
+                    {/* Lista com scroll para os itens de navegação */}
+                    <div className="flex-1 overflow-y-auto overscroll-contain p-2 flex flex-col gap-1.5 touch-pan-y pr-1.5">
+                      {currentUser.role === 'admin' && (
+                        <a 
+                          href="?modal=admin"
+                          onClick={(e) => {
+                            if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                              e.preventDefault();
+                              setIsUserManagerOpen(true);
+                              setIsMenuOpen(false);
+                            }
+                          }}
+                          className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-red-950/40 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0 mt-0.5 group-hover:border-red-500/60 transition-colors">
+                            <ShieldAlert size={17} />
                           </div>
-                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                            Auditoria de vistorias, hidrantes e PREPOP
-                          </span>
-                        </div>
-                      </a>
-                    )}
-
-                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-                      <a 
-                        href="?modal=novo-hidrante"
-                        onClick={(e) => {
-                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                            e.preventDefault();
-                            setEditingHydrante({});
-                            setIsMenuOpen(false);
-                          }
-                        }}
-                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
-                          <PlusCircle size={17} />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                            Cadastrar Novo Hidrante
-                          </span>
-                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                            Cadastro rápido georreferenciado no mapa
-                          </span>
-                        </div>
-                      </a>
-                    )}
-
-                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-                      <a 
-                        href="?modal=estudo-edificacoes"
-                        onClick={(e) => {
-                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                            e.preventDefault();
-                            setIsBuildingStudiesOpen(true);
-                            setIsMenuOpen(false);
-                          }
-                        }}
-                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
-                          <Building2 size={17} />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                            Estudos PREPOP das Edificações
-                          </span>
-                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                            Fichas operacionais para combate a incêndio
-                          </span>
-                        </div>
-                      </a>
-                    )}
-
-                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-                      <a 
-                        href="?modal=estudo-tecnico"
-                        onClick={(e) => {
-                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                            e.preventDefault();
-                            setIsTechnicalStudyOpen(true);
-                            setIsMenuOpen(false);
-                          }
-                        }}
-                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
-                          <Calculator size={17} />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                            Parecer Técnico de Hidrante
-                          </span>
-                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                            Dimensionamento e viabilidade espacial NBR 12.218
-                          </span>
-                        </div>
-                      </a>
-                    )}
-
-                    {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
-                      <a 
-                        href="?modal=inconsistentes"
-                        onClick={(e) => {
-                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                            e.preventDefault();
-                            setIsInconsistentModalOpen(true);
-                            setIsMenuOpen(false);
-                          }
-                        }}
-                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-amber-950/40 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 mt-0.5 group-hover:border-amber-500/60 transition-colors">
-                          <ShieldAlert size={17} />
-                        </div>
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-2">
+                          <div className="flex flex-col min-w-0">
                             <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                              Hidrantes Inconsistentes
+                              Níveis de Acesso dos Militares
                             </span>
-                            {inconsistentCount > 0 && (
-                              <span className="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/40 font-bold">
-                                {inconsistentCount}
-                              </span>
-                            )}
+                            <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                              Definir quem é Administrador, Gestor ou Vistoriador
+                            </span>
                           </div>
+                        </a>
+                      )}
+
+                      {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                        <a 
+                          href="?modal=historico"
+                          onClick={(e) => {
+                            if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                              e.preventDefault();
+                              setIsSystemHistoryOpen(true);
+                              setIsMenuOpen(false);
+                            }
+                          }}
+                          className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
+                            <History size={17} />
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                                Histórico de Ações
+                              </span>
+                              {unreadAuditCount > 0 && (
+                                <span className="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/40 font-bold">
+                                  {unreadAuditCount}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                              Auditoria de vistorias, hidrantes e PREPOP
+                            </span>
+                          </div>
+                        </a>
+                      )}
+
+                      {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                        <a 
+                          href="?modal=novo-hidrante"
+                          onClick={(e) => {
+                            if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                              e.preventDefault();
+                              setEditingHydrante({});
+                              setIsMenuOpen(false);
+                            }
+                          }}
+                          className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
+                            <PlusCircle size={17} />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                              Cadastrar Novo Hidrante
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                              Cadastro rápido georreferenciado no mapa
+                            </span>
+                          </div>
+                        </a>
+                      )}
+
+                      {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                        <a 
+                          href="?modal=estudo-edificacoes"
+                          onClick={(e) => {
+                            if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                              e.preventDefault();
+                              setIsBuildingStudiesOpen(true);
+                              setIsMenuOpen(false);
+                            }
+                          }}
+                          className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
+                            <Building2 size={17} />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                              Estudos PREPOP das Edificações
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                              Fichas operacionais para combate a incêndio
+                            </span>
+                          </div>
+                        </a>
+                      )}
+
+                      {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                        <a 
+                          href="?modal=estudo-tecnico"
+                          onClick={(e) => {
+                            if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                              e.preventDefault();
+                              setIsTechnicalStudyOpen(true);
+                              setIsMenuOpen(false);
+                            }
+                          }}
+                          className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
+                            <Calculator size={17} />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                              Parecer Técnico de Hidrante
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                              Dimensionamento e viabilidade espacial NBR 12.218
+                            </span>
+                          </div>
+                        </a>
+                      )}
+
+                      {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                        <a 
+                          href="?modal=inconsistentes"
+                          onClick={(e) => {
+                            if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                              e.preventDefault();
+                              setIsInconsistentModalOpen(true);
+                              setIsMenuOpen(false);
+                            }
+                          }}
+                          className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-amber-950/40 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 mt-0.5 group-hover:border-amber-500/60 transition-colors">
+                            <ShieldAlert size={17} />
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                                Hidrantes Inconsistentes
+                              </span>
+                              {inconsistentCount > 0 && (
+                                <span className="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/40 font-bold">
+                                  {inconsistentCount}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                              Ajuste de coordenadas anômalas ou fora do DF
+                            </span>
+                          </div>
+                        </a>
+                      )}
+
+                      <a 
+                        href="?modal=central-missoes"
+                        onClick={(e) => {
+                          if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                            e.preventDefault();
+                            setIsMissionManagerOpen(true);
+                            setIsMenuOpen(false);
+                          }
+                        }}
+                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
+                          <FolderOpen size={17} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                            Central de Missões
+                          </span>
                           <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                            Ajuste de coordenadas anômalas ou fora do DF
+                            Ordens de vistoria e roteirização por quartel
                           </span>
                         </div>
                       </a>
-                    )}
 
-                    <a 
-                      href="?modal=central-missoes"
-                      onClick={(e) => {
-                        if (!e.ctrlKey && !e.metaKey && e.button === 0) {
-                          e.preventDefault();
-                          setIsMissionManagerOpen(true);
+                      <button 
+                        type="button"
+                        onClick={() => {
                           setIsMenuOpen(false);
-                        }
-                      }}
-                      className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 group-hover:border-emerald-500/60 transition-colors">
-                        <FolderOpen size={17} />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                          Central de Missões
-                        </span>
-                        <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                          Ordens de vistoria e roteirização por quartel
-                        </span>
-                      </div>
-                    </a>
+                          setIsDownloadDbModalOpen(true);
+                        }}
+                        className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-blue-950/40 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0 mt-0.5 group-hover:border-blue-500/60 transition-colors">
+                          <FileSpreadsheet size={17} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                            Baixar Base de Dados
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                            Exportar CSV dos hidrantes ou XLSX completo
+                          </span>
+                        </div>
+                      </button>
+                    </div>
 
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        setIsDownloadDbModalOpen(true);
-                      }}
-                      className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group cursor-pointer"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-blue-950/40 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0 mt-0.5 group-hover:border-blue-500/60 transition-colors">
-                        <FileSpreadsheet size={17} />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
-                          Baixar Base de Dados
-                        </span>
-                        <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
-                          Exportar CSV dos hidrantes ou XLSX completo
-                        </span>
-                      </div>
-                    </button>
-
-                    <div className="pt-2 mt-2 border-t border-slate-700/60 flex flex-col gap-1.5 items-center select-none">
+                    {/* Rodapé fixo com o botão de atualizar versão e créditos */}
+                    <div className="p-2 border-t border-slate-700/60 bg-slate-900/98 shrink-0 flex flex-col gap-1.5 items-center select-none shadow-inner">
                       <button
                         type="button"
                         onClick={async () => {
                           setIsMenuOpen(false);
                           toast.info('Atualizando aplicação e limpando cache...');
                           try {
+                            if (typeof window.__netuno_update_sw === 'function') {
+                              await window.__netuno_update_sw();
+                            }
                             if ('serviceWorker' in navigator) {
                               const regs = await navigator.serviceWorker.getRegistrations();
                               for (const r of regs) await r.unregister();
@@ -2126,10 +2133,10 @@ syncPreferences({ filters: filters });
                             window.location.reload();
                           }, 400);
                         }}
-                        className="flex items-center justify-center gap-1.5 w-full py-1 px-2 text-[11px] font-medium text-slate-400 hover:text-cyan-300 hover:bg-slate-800/60 rounded-md transition-colors cursor-pointer"
+                        className="flex items-center justify-center gap-2 w-full py-2 px-3 text-xs font-semibold text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 hover:bg-cyan-900/50 border border-cyan-500/30 hover:border-cyan-500/50 rounded-xl transition-all cursor-pointer active:scale-95 shadow-sm"
                         title="Atalho para testes: força recarregamento e limpa cache do service worker"
                       >
-                        <RefreshCw size={12} className="text-slate-400 group-hover:text-cyan-300" />
+                        <RefreshCw size={13} className="text-cyan-400 shrink-0" />
                         <span>Atualizar versão / limpar cache</span>
                       </button>
                       <div className="text-[10px] text-slate-500 font-medium">
