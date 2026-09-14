@@ -1,14 +1,17 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown, Share2, ChevronDown, Check } from 'lucide-react';
+import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown, Share2, ChevronDown, Check, FileText } from 'lucide-react';
 import { extractProblemsList, sanitizeProblem, isHidranteRemovido } from '../utils/problemUtils';
-import { normalizeRAName } from '../utils/raList';
+import { normalizeRAName, getRARoman } from '../utils/raList';
 import { fixEncoding } from '../utils/textUtils';
 import { printGeneralReport, printCaesbReport, generateDocHash } from '../utils/officialPrintUtils';
+import { generateSeiMemorandoMinutaText } from '../utils/seiMemorandoUtils';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, activeFilters = null }) => {
   const [isMaximized, setIsMaximized] = useState(false);
   const panelRef = useRef(null);
   const [copied, setCopied] = useState(false);
+  const [copiedMinuta, setCopiedMinuta] = useState(false);
+  const [seiDocNumber, setSeiDocNumber] = useState('');
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [showSeiModal, setShowSeiModal] = useState(false);
   const [reportType, setReportType] = useState(() => {
@@ -610,22 +613,53 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
   };
 
   
+  const handleCopySeiMinuta = async (customDocNum = null) => {
+    try {
+      const docNum = customDocNum !== null ? customDocNum : seiDocNumber;
+      const primeiraCidade = (rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal');
+      const raRomano = getRARoman(primeiraCidade);
+      const texto = generateSeiMemorandoMinutaText({
+        cidade: primeiraCidade,
+        raRomano,
+        ano: new Date().getFullYear(),
+        numeroSeiRelatorio: docNum
+      });
+      await navigator.clipboard.writeText(texto);
+      setCopiedMinuta(true);
+      setTimeout(() => setCopiedMinuta(false), 3000);
+    } catch (err) {
+      console.error('Falha ao copiar minuta SEI:', err);
+      alert('Não foi possível copiar a minuta para a área de transferência.');
+    }
+  };
+
   const handleGenerateSeiProcess = () => {
     if (!isGestorOrAdmin) {
       alert('Acesso restrito: A integração com processo SEI é exclusiva para Gestores e Administradores.');
       return;
     }
+    const primeiraCidade = (rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal');
+    const raRomano = getRARoman(primeiraCidade);
     const dataPack = {
       rasPresentes,
+      cidade: primeiraCidade,
+      raRomano,
       total,
       operantes,
       inoperantes,
       operantesPercent,
       inoperantesPercent,
       ano: new Date().getFullYear(),
-      origem: 'SEHUR/SUOMA',
-      destino: 'SEHUR/SUTEC',
-      htmlContent: document.getElementById('report-content-to-print')?.innerHTML || ''
+      origem: 'CBMDF/DIVIS/SEHUR/SUOMA',
+      destino: 'CBMDF/DIVIS/SEHUR/SUOMA',
+      seiDocNumber: seiDocNumber.trim(),
+      htmlContent: document.getElementById('report-content-to-print')?.innerHTML || '',
+      memorandoMinuta: generateSeiMemorandoMinutaText({
+        cidade: primeiraCidade,
+        raRomano,
+        ano: new Date().getFullYear(),
+        numeroSeiRelatorio: seiDocNumber
+      })
     };
     localStorage.setItem('netuno_sei_data', JSON.stringify(dataPack));
     setShowSeiModal(false);
@@ -721,29 +755,138 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       
   {showSeiModal && (
     <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-md shadow-2xl overflow-hidden">
-        <div className="bg-emerald-600/20 p-4 border-b border-emerald-500/30 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <span className="text-2xl">🚀</span> Integração SEI-GDF
+      <div className="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-lg shadow-2xl overflow-hidden animate-scaleUp flex flex-col max-h-[90vh]">
+        <div className="bg-emerald-600/20 p-4 border-b border-emerald-500/30 flex justify-between items-center shrink-0">
+          <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+            <span className="text-2xl">🏛️</span> Processo SEI • Protocolo SUOMA
           </h3>
-          <button onClick={() => setShowSeiModal(false)} className="text-slate-400 hover:text-white"><X size={24} /></button>
+          <button onClick={() => setShowSeiModal(false)} className="text-slate-400 hover:text-white transition-colors"><X size={24} /></button>
         </div>
-        <div className="p-5 space-y-4">
-          <div className="bg-slate-700/50 p-4 rounded-lg space-y-2">
-            <p className="text-slate-300"><span className="font-semibold text-white">Cidade (RA):</span> {rasPresentes || 'Todas as Cidades'}</p>
-            <p className="text-slate-300"><span className="font-semibold text-white">Total de Hidrantes:</span> {total}</p>
-            <p className="text-slate-300"><span className="font-semibold text-white">Inoperantes:</span> {inoperantes} ({inoperantesPercent}%)</p>
-            <hr className="border-slate-600 my-2" />
-            <p className="text-slate-300"><span className="font-semibold text-white">Unidade Origem:</span> SEHUR/SUOMA</p>
-            <p className="text-slate-300"><span className="font-semibold text-white">Destino Teste:</span> SEHUR/SUTEC</p>
+        
+        <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+          {/* Diretriz Institucional */}
+          <div className="bg-blue-950/40 border border-blue-500/40 p-3 rounded-lg text-xs text-blue-200">
+            <span className="font-bold text-blue-300">📌 Novo Protocolo de Arquivamento e Tramitação:</span>
+            <div className="mt-1 leading-relaxed">
+              O processo é mantido na unidade interna <strong>CBMDF/DIVIS/SEHUR/SUOMA</strong>. <strong>Não</strong> deve ser feito encaminhamento para o ambiente SEI da CAESB.
+            </div>
           </div>
-          <p className="text-sm text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20">
-            Atenção: Ao confirmar, a extensão do navegador assumirá o controle no SEI para gerar o processo automaticamente.
-          </p>
+
+          {/* Dados da Missão / Localidade */}
+          <div className="bg-slate-700/50 p-3.5 rounded-lg space-y-2 text-xs sm:text-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400">Região Administrativa:</span>
+              <span className="font-bold text-white">
+                {(rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal')} {getRARoman((rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : '')) ? `(RA ${getRARoman((rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : ''))})` : ''}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400">Hidrantes com Avaria (CAESB):</span>
+              <span className="font-bold text-emerald-400">{total} hidrantes</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400">Unidade de Permanência:</span>
+              <span className="font-bold text-amber-300">CBMDF/DIVIS/SEHUR/SUOMA</span>
+            </div>
+          </div>
+
+          {/* Roteiro Passo a Passo */}
+          <div className="space-y-2 text-xs text-slate-300">
+            <div className="font-bold text-slate-200 flex items-center gap-1.5">
+              <span>📋</span> Roteiro Operacional:
+            </div>
+            <div className="space-y-1.5 pl-2 border-l-2 border-emerald-500/50">
+              <div className="flex items-start gap-1.5">
+                <span className="font-bold text-emerald-400">1.</span>
+                <span><strong>Baixar PDF CAESB:</strong> Salve o relatório técnico gerado pelo Netuno e anexe como <em>Documento Externo</em> (1º documento do processo).</span>
+              </div>
+              <div className="flex items-start gap-1.5">
+                <span className="font-bold text-emerald-400">2.</span>
+                <span><strong>Criar Memorando no SEI:</strong> Crie um documento interno do tipo <em>Memorando</em> ao Comandante do GPCIU.</span>
+              </div>
+              <div className="flex items-start gap-1.5">
+                <span className="font-bold text-emerald-400">3.</span>
+                <span><strong>Colar Minuta Integrada:</strong> Cole o texto abaixo no editor do Memorando (já contém a Minuta de Ofício à CAESB anexada no próprio corpo).</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Campo Número SEI do Documento Externo */}
+          <div className="bg-slate-900/70 p-3 rounded-lg border border-slate-700">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Nº SEI do Documento Externo (Relatório Anexado):
+            </label>
+            <div className="flex gap-2">
+              <input 
+                type="text"
+                placeholder="Ex: 213296742 (opcional)"
+                value={seiDocNumber}
+                onChange={(e) => setSeiDocNumber(e.target.value)}
+                className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => handleCopySeiMinuta(seiDocNumber)}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded font-bold text-xs flex items-center gap-1 transition-colors"
+                title="Copiar texto com este número SEI"
+              >
+                {copiedMinuta ? <Check size={14} className="text-white" /> : <Copy size={14} />}
+                <span>{copiedMinuta ? 'Copiado!' : 'Copiar'}</span>
+              </button>
+            </div>
+            <div className="text-[11px] text-slate-400 mt-1">
+              O cabeçalho e as assinaturas são preenchidos automaticamente pelo SEI.
+            </div>
+          </div>
+
+          {/* Prévia da Minuta */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs font-semibold text-slate-400">Prévia do Texto para o Memorando:</span>
+              <button
+                type="button"
+                onClick={() => handleCopySeiMinuta(seiDocNumber)}
+                className="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer"
+              >
+                {copiedMinuta ? '✓ Texto Copiado!' : 'Copiar Minuta'}
+              </button>
+            </div>
+            <textarea
+              readOnly
+              rows={5}
+              value={generateSeiMemorandoMinutaText({
+                cidade: (rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal'),
+                raRomano: getRARoman((rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : '')),
+                ano: new Date().getFullYear(),
+                numeroSeiRelatorio: seiDocNumber
+              })}
+              className="w-full bg-slate-900 border border-slate-700 rounded p-2.5 text-[11px] text-slate-300 font-mono resize-none focus:outline-none"
+            />
+          </div>
         </div>
-        <div className="p-4 bg-slate-800/80 border-t border-slate-700 flex justify-end gap-3">
-          <button onClick={() => setShowSeiModal(false)} className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 font-semibold transition-colors">Cancelar</button>
-          <button onClick={handleGenerateSeiProcess} className="px-5 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 font-bold transition-all shadow-lg">Iniciar Automação</button>
+
+        <div className="p-4 bg-slate-800/90 border-t border-slate-700 flex justify-between items-center gap-3 shrink-0">
+          <button 
+            onClick={() => handlePrint()} 
+            className="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-colors"
+            title="Baixar PDF do Relatório para anexar como documento externo"
+          >
+            <Printer size={14} className="text-cyan-400" />
+            <span>Baixar PDF CAESB</span>
+          </button>
+          
+          <div className="flex gap-2">
+            <button onClick={() => setShowSeiModal(false)} className="px-3.5 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 text-xs font-semibold transition-colors">
+              Fechar
+            </button>
+            <button 
+              onClick={handleGenerateSeiProcess} 
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs transition-all shadow-lg flex items-center gap-1.5"
+            >
+              <span>Abrir SEI-GDF</span>
+              <span>🚀</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -763,7 +906,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
           </button>
 
           {isExportMenuOpen && (
-            <div className="absolute right-0 bottom-full mb-2 w-60 sm:w-64 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-[120] py-2 text-xs sm:text-sm text-slate-200 animate-scaleUp">
+            <div className="absolute right-0 bottom-full mb-2 w-64 sm:w-72 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-[120] py-2 text-xs sm:text-sm text-slate-200 animate-scaleUp">
               <div className="px-3.5 sm:px-4 py-1.5 border-b border-slate-700/80 mb-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 {reportType === 'interno' ? (
                   <>
@@ -777,21 +920,39 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
                   </>
                 )}
               </div>
+
+              {/* Botão 1: PDF */}
               <button 
                 onClick={() => { handlePrint(); setIsExportMenuOpen(false); }}
                 className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                title={reportType === 'caesb' ? 'Baixar PDF CAESB para anexar como Documento Externo no SEI' : 'Abrir visualização para impressão/PDF'}
               >
                 <Printer size={16} className="text-cyan-400 shrink-0" />
-                <span>Abrir PDF / Imprimir</span>
+                <span>{reportType === 'caesb' ? 'Abrir / Baixar PDF CAESB' : 'Abrir PDF / Imprimir'}</span>
               </button>
-              <button 
-                onClick={() => { handleCopySEI(); setIsExportMenuOpen(false); }}
-                className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
-                title="Copiar dados e gráficos formatados para SEI / Word"
-              >
-                <Copy size={16} className="text-amber-400 shrink-0" />
-                <span>{copied ? 'DADOS COPIADOS!' : 'COPIAR DADOS'}</span>
-              </button>
+
+              {/* Botão 2: Copiar Minuta SEI (CAESB) ou Copiar Dados (Interno) */}
+              {reportType === 'caesb' ? (
+                <button 
+                  onClick={() => { handleCopySeiMinuta(); setIsExportMenuOpen(false); }}
+                  className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                  title="Copiar texto da Minuta do Memorando com Minuta de Ofício para colar no SEI"
+                >
+                  <Copy size={16} className="text-amber-400 shrink-0" />
+                  <span>{copiedMinuta ? 'MINUTA SEI COPIADA!' : 'Copiar Minuta SEI (Memorando)'}</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => { handleCopySEI(); setIsExportMenuOpen(false); }}
+                  className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                  title="Copiar dados e gráficos formatados para SEI / Word"
+                >
+                  <Copy size={16} className="text-amber-400 shrink-0" />
+                  <span>{copied ? 'DADOS COPIADOS!' : 'COPIAR DADOS'}</span>
+                </button>
+              )}
+
+              {/* Botão 3: WhatsApp */}
               <button 
                 onClick={() => { handleWhatsApp(); setIsExportMenuOpen(false); }}
                 className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
@@ -799,6 +960,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
                 <MessageCircle size={16} className="text-emerald-400 shrink-0" />
                 <span>Compartilhar WhatsApp</span>
               </button>
+
+              {/* Botão 4: Planilha CSV */}
               <button 
                 onClick={() => { handleExportCSV(); setIsExportMenuOpen(false); }}
                 className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
@@ -807,13 +970,16 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
                 <span>Exportar Planilha (CSV)</span>
               </button>
 
+              {/* Botão 5: Processo SEI Gestor */}
               {isGestorOrAdmin && (
                 <button 
                   onClick={() => { setShowSeiModal(true); setIsExportMenuOpen(false); }}
                   className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors border-t border-slate-700 mt-1"
                 >
                   <span className="shrink-0">🚀</span>
-                  <span className="text-emerald-400">Gerar Processo no SEI</span>
+                  <span className="text-emerald-400">
+                    {reportType === 'caesb' ? 'Processo SEI • SUOMA' : 'Gerar Processo no SEI'}
+                  </span>
                 </button>
               )}
 

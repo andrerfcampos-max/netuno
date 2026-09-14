@@ -1503,12 +1503,19 @@ export const printCaesbReport = ({
   const docSeed = `${nowStr}_${caesbData.length}_${emissorNome}_${rasPresentes}`;
   const docHash = generateDocHash(docSeed);
 
+  const docTitle = buildReportFileName({
+    prefix: 'Relatorio_Vistoria_Fiscalizacao',
+    rasPresentes,
+    activeFilters,
+    currentMission
+  });
+
   const html = `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
       <meta charset="utf-8">
-      <title>Relatorio_CAESB_Manutencao_${nowStr.replace(/[^0-9]/g, '_')}</title>
+      <title>${docTitle}</title>
       <style>
         @page {
           size: A4 portrait;
@@ -2042,12 +2049,6 @@ export const printCaesbReport = ({
     </html>
   `;
 
-  const docTitle = buildReportFileName({
-    prefix: 'Relatorio_CAESB_Manutencao',
-    rasPresentes,
-    activeFilters,
-    currentMission
-  });
   executePrintHtml(html, docTitle);
 };
 

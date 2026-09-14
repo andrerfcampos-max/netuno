@@ -261,3 +261,57 @@ export const generateNextHydrantCode = (raName, allHidrantes = []) => {
   const formattedNum = String(nextNum).padStart(Math.max(numDigits, 3), '0');
   return `${finalPrefix}${formattedNum}`;
 };
+
+/**
+ * Numeração Romana Oficial das Regiões Administrativas do Distrito Federal
+ */
+export const RA_ROMAN_MAP = {
+  'Brasília': 'I',
+  'Plano Piloto': 'I',
+  'Gama': 'II',
+  'Taguatinga': 'III',
+  'Brazlândia': 'IV',
+  'Sobradinho': 'V',
+  'Planaltina': 'VI',
+  'Paranoá': 'VII',
+  'Núcleo Bandeirante': 'VIII',
+  'Ceilândia': 'IX',
+  'Guará': 'X',
+  'Cruzeiro': 'XI',
+  'Samambaia': 'XII',
+  'Santa Maria': 'XIII',
+  'São Sebastião': 'XIV',
+  'Recanto das Emas': 'XV',
+  'Lago Sul': 'XVI',
+  'Riacho Fundo': 'XVII',
+  'Lago Norte': 'XVIII',
+  'Candangolândia': 'XIX',
+  'Águas Claras': 'XX',
+  'Riacho Fundo II': 'XXI',
+  'Sudoeste e Octogonal': 'XXII',
+  'Sudoeste/Octogonal': 'XXII',
+  'Varjão': 'XXIII',
+  'Park Way': 'XXIV',
+  'Estrutural': 'XXV',
+  'SCIA': 'XXV',
+  'SCIA / Estrutural': 'XXV',
+  'Sobradinho II': 'XXVI',
+  'Jardim Botânico': 'XXVII',
+  'Itapoã': 'XXVIII',
+  'SIA': 'XXIX',
+  'Vicente Pires': 'XXX',
+  'Fercal': 'XXXI',
+  'Sol Nascente/Pôr do Sol': 'XXXII',
+  'Arniqueira': 'XXXIII',
+  'Arapoanga': 'XXXIV',
+  'Água Quente': 'XXXV'
+};
+
+/**
+ * Retorna o número romano correspondente a uma RA
+ */
+export const getRARoman = (raName) => {
+  if (!raName) return '';
+  const norm = normalizeRAName(raName);
+  return RA_ROMAN_MAP[norm] || RA_ROMAN_MAP[raName] || '';
+};
