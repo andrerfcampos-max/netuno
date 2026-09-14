@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-87",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -876,10 +876,70 @@
       "seq": 87,
       "conversationId": "7089a0a0-42a2-4fd5-984d-49ea902b9ed3",
       "description": "Redistribuir espacos e otimizar modal de historico de acoes mobile",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-14T21:06:56.376Z",
       "startedAt": "2026-09-14T21:09:12.160Z",
-      "completedAt": null
+      "completedAt": "2026-09-14T21:12:11.522Z"
+    },
+    {
+      "id": "TASK-88",
+      "seq": 88,
+      "conversationId": "de2bfe88-dd16-4ce5-bc58-b39e62ffeeb3",
+      "description": "Modal confirmacao download base csv hidrantes ou xlsx completo",
+      "status": "completed",
+      "createdAt": "2026-09-14T21:14:49.470Z",
+      "startedAt": "2026-09-14T21:14:53.311Z",
+      "completedAt": "2026-09-14T21:18:00.477Z"
+    },
+    {
+      "id": "TASK-89",
+      "seq": 89,
+      "conversationId": "3cf78032-72b8-4cab-854f-8b7e8ef40af7",
+      "description": "Fix mobile menu scroll and update version button overflow",
+      "status": "completed",
+      "createdAt": "2026-09-14T21:17:00.387Z",
+      "startedAt": "2026-09-14T21:18:02.271Z",
+      "completedAt": "2026-09-14T21:21:54.993Z"
+    },
+    {
+      "id": "TASK-90",
+      "seq": 90,
+      "conversationId": "7089a0a0-42a2-4fd5-984d-49ea902b9ed3",
+      "description": "Remover botoes de exclusao do historico de auditoria",
+      "status": "completed",
+      "createdAt": "2026-09-14T21:20:37.783Z",
+      "startedAt": "2026-09-14T21:21:58.854Z",
+      "completedAt": "2026-09-14T21:26:46.477Z"
+    },
+    {
+      "id": "TASK-91",
+      "seq": 91,
+      "conversationId": "7af0d5d2-8d98-4fe1-bcfa-2d720cdaf0bb",
+      "description": "Atualizacao do protocolo SEI relatorio CAESB memorando minuta de oficio",
+      "status": "completed",
+      "createdAt": "2026-09-14T21:22:44.372Z",
+      "startedAt": "2026-09-14T21:26:49.463Z",
+      "completedAt": "2026-09-14T21:30:50.755Z"
+    },
+    {
+      "id": "TASK-92",
+      "seq": 92,
+      "conversationId": "c1322d0e-a981-4d21-8202-a750ed2de40f",
+      "description": "Fix: Vincular fotoPerfil no hidrantes_df_oficial.json e fallback em MapComponent",
+      "status": "completed",
+      "createdAt": "2026-09-14T21:25:27.300Z",
+      "startedAt": "2026-09-14T21:30:50.772Z",
+      "completedAt": "2026-09-14T21:34:20.909Z"
+    },
+    {
+      "id": "TASK-93",
+      "seq": 93,
+      "conversationId": "b3611aa2-3fe4-4e35-b33f-a4c088a80fb6",
+      "description": "Corrigir fotos em relatorios para anexar apenas fotos de problemas da vistoria e nao fotos banner",
+      "status": "completed",
+      "createdAt": "2026-09-14T21:29:21.811Z",
+      "startedAt": "2026-09-14T21:34:22.234Z",
+      "completedAt": "2026-09-14T21:36:36.687Z"
     }
   ]
 }
