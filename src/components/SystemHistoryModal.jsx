@@ -22,9 +22,7 @@ import {
 } from 'lucide-react';
 import { 
   getAuditLogs, 
-  markAllAuditLogsAsRead, 
-  clearAuditLogs, 
-  deleteAuditLog 
+  markAllAuditLogsAsRead 
 } from '../utils/auditLogger';
 
 // Formatação amigável de tempo relativo
@@ -121,18 +119,6 @@ export default function SystemHistoryModal({
     setLogs(updated);
   };
 
-  const handleClearAll = () => {
-    if (window.confirm('Deseja realmente limpar todo o histórico de ações e notificações do sistema? Esta ação não pode ser desfeita.')) {
-      const updated = clearAuditLogs();
-      setLogs(updated);
-    }
-  };
-
-  const handleDeleteItem = (id, e) => {
-    e.stopPropagation();
-    const updated = deleteAuditLog(id);
-    setLogs(updated);
-  };
 
   const handleFocusOnMap = (coords, e) => {
     e.stopPropagation();
@@ -249,17 +235,6 @@ export default function SystemHistoryModal({
               </button>
             )}
 
-            {logs.length > 0 && (
-              <button
-                type="button"
-                onClick={handleClearAll}
-                className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold text-rose-400 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/30 rounded-lg transition-all"
-                title="Limpar histórico de ações"
-              >
-                <Trash2 size={14} />
-                <span className="hidden sm:inline">Limpar</span>
-              </button>
-            )}
 
             <button
               type="button"
@@ -476,8 +451,8 @@ export default function SystemHistoryModal({
                     </div>
 
                     {/* Botões de Ação Rápida no Card */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      {item.coords && (
+                    {item.coords && (
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={(e) => handleFocusOnMap(item.coords, e)}
@@ -487,17 +462,8 @@ export default function SystemHistoryModal({
                           <LocateFixed size={13} />
                           <span className="hidden sm:inline">Ver no Mapa</span>
                         </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteItem(item.id, e)}
-                        className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 rounded-md transition-colors"
-                        title="Remover este registro"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

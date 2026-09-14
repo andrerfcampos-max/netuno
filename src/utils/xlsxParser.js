@@ -5,9 +5,9 @@ import { fixEncoding } from './textUtils';
 
 export const loadPreloadedDatabase = async (onComplete) => {
   try {
-    // 1. Tenta carregar a base limpa oficial (JSON/CSV) diretamente
+    // 1. Tenta carregar a base limpa oficial (JSON/CSV) diretamente sem cache antigo
     try {
-      const cleanResp = await fetch('/hidrantes_df_oficial.json');
+      const cleanResp = await fetch(`/hidrantes_df_oficial.json?t=${Date.now()}`, { cache: 'no-store' });
       if (cleanResp.ok) {
         const cleanData = await cleanResp.json();
         if (Array.isArray(cleanData) && cleanData.length > 0) {
@@ -20,7 +20,7 @@ export const loadPreloadedDatabase = async (onComplete) => {
     }
 
     // 2. Fallback: Base legada XLSX
-    const response = await fetch('/base-de-dados.xlsx');
+    const response = await fetch(`/base-de-dados.xlsx?t=${Date.now()}`, { cache: 'no-store' });
     const arrayBuffer = await response.arrayBuffer();
     
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });

@@ -733,6 +733,14 @@ const MapComponent = ({
     return list;
   }, [hidrantes, selectedHydrant]);
 
+  const hydrantPhoto = useMemo(() => {
+    if (!selectedHydrant) return null;
+    return selectedHydrant.fotoPerfil || 
+      (selectedHydrant.nomHidrante && String(selectedHydrant.nomHidrante).toUpperCase().startsWith('ARN') 
+        ? `/hidrantes/arniqueira/${selectedHydrant.nomHidrante}.jpeg` 
+        : null);
+  }, [selectedHydrant]);
+
   const handleCloseHydrant = () => {
     setSelectedHydrant(null);
     if (onDeselectHydrant) {
@@ -1336,15 +1344,15 @@ const MapComponent = ({
             {/* ==================================================== */}
             <div 
               className="relative w-full h-[120px] shrink-0 bg-slate-900 overflow-hidden cursor-pointer active:opacity-90"
-              onClick={() => setFullscreenPhoto(selectedHydrant.fotoPerfil || 'placeholder')}
+              onClick={() => setFullscreenPhoto(hydrantPhoto || 'placeholder')}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
               {/* Imagem de Fundo (Real ou Placeholder) */}
-              {selectedHydrant.fotoPerfil ? (
+              {hydrantPhoto ? (
                 <img 
-                  src={selectedHydrant.fotoPerfil} 
+                  src={hydrantPhoto} 
                   alt="Foto do Hidrante e Fachada" 
                   className="w-full h-full object-cover"
                 />
@@ -1598,13 +1606,13 @@ const MapComponent = ({
             {/* Cabeçalho Desktop */}
             <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-3">
               <div className="flex items-center gap-3 min-w-0">
-                {selectedHydrant.fotoPerfil ? (
+                {hydrantPhoto ? (
                   <img 
-                    src={selectedHydrant.fotoPerfil} 
+                    src={hydrantPhoto} 
                     alt="Foto do Hidrante" 
                     className="w-12 h-12 rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform border border-slate-600 shrink-0 shadow-md"
                     title="Clique para ampliar a foto"
-                    onClick={() => setFullscreenPhoto(selectedHydrant.fotoPerfil)}
+                    onClick={() => setFullscreenPhoto(hydrantPhoto)}
                   />
                 ) : (
                   <div className="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl shrink-0">
