@@ -3,6 +3,7 @@ import { Navigation, Download, Map as MapIcon, MapPin, Plus, Edit, Edit3, Messag
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
 import { isHydrantSelected } from '../utils/geoUtils';
+import { openStreetView } from '../utils/streetViewUtils';
 
 const parseDateToTimestamp = (dateStr) => {
   if (!dateStr || dateStr === '-') return -Infinity;
@@ -312,10 +313,10 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
                       </button>
 
                       <button
-                        onClick={() => window.open(`https://maps.google.com/maps?q=&layer=c&cbll=${h.numLatitude},${h.numLongitude}`, '_blank')}
+                        onClick={() => openStreetView(h)}
                         style={{ backgroundColor: '#d97706' }}
                         className="flex-[3] h-9 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-lg font-bold text-[11px] shadow-sm flex items-center justify-center gap-1 transition-all tracking-wide min-w-0 border border-amber-400/40"
-                        title="Google Street View 360°"
+                        title="Google Street View 360° com enquadramento calibrado"
                       >
                         <MapPin size={14} className="shrink-0 text-amber-200" />
                         <span className="truncate text-white">STREET VIEW</span>
@@ -518,8 +519,8 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
                         </button>
 
                         <button
-                          onClick={() => window.open(`https://maps.google.com/maps?q=&layer=c&cbll=${h.numLatitude},${h.numLongitude}`, '_blank')}
-                          title="Google Street View 360°"
+                          onClick={() => openStreetView(h)}
+                          title="Google Street View 360° com enquadramento calibrado"
                           style={{ backgroundColor: '#d97706' }}
                           className="flex items-center gap-1 py-1 px-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold transition-all active:scale-95 border border-amber-400/40 shadow-sm"
                         >

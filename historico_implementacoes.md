@@ -734,3 +734,10 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 ### [12/09/2026] Etapa 84 Conclu�da Automaticamente 
 - **Fechamento Autom�tico de Popups ao Abrir Menu Principal** foi executada e validada com sucesso pelo agente orquestrador. 
 
+
+
+### [14/09/2026] Etapa 85 Concluida: MVP de Fotos de Perfil dos Hidrantes de Arniqueiras (800x600 Sniper)
+- 1. Extracao Sniper de Alta Resolucao (800x600): Script scripts/extract_arniqueiras.cjs com autocentralizacao via gemini-3.5-flash-lite. Fotos salvas em public/hidrantes/arniqueira/ (ARN00001 a ARN00004).
+- 2. Sincronizacao Tripla de Dados: Gravacao em public/base-de-dados.xlsx, raiz base-de-dados.xlsx e regeneracao canonica em public/hidrantes_df_oficial.json e csv com a coluna fotoPerfil.
+- 3. UI Hero Banner e Fallback Dinamico: Banner panoramico 120px e Lightbox fullscreen no MapComponent.jsx com fallback automatico para ARN e protecao anti-cache no xlsxParser.js.
+- 4. Manual Tecnico Consolidado: Criado e atualizado STREETVIEW_PIPELINE.md com todas as instrucoes detalhadas para continuidade em novos chats.

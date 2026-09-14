@@ -1373,7 +1373,7 @@ const MapComponent = ({
             {/* ==================================================== */}
             <div 
               className="relative w-full h-[120px] shrink-0 bg-slate-900 overflow-hidden cursor-pointer active:opacity-90"
-              onClick={() => setFullscreenPhoto(hydrantPhoto || 'placeholder')}
+              onClick={() => handleSetFullscreenPhoto(hydrantPhoto || 'placeholder')}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -1538,12 +1538,12 @@ const MapComponent = ({
                 </a>
 
                 <a 
-                  href={`https://maps.google.com/maps?q=&layer=c&cbll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
+                  href={getStreetViewUrl(selectedHydrant)} 
                   target="_blank" 
                   rel="noreferrer" 
                   style={{ backgroundColor: '#d97706' }}
                   className="flex-[3] h-12 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all tracking-wide min-w-0 border border-amber-400/40" 
-                  title="Google Street View 360°"
+                  title="Google Street View 360° com enquadramento calibrado"
                 >
                   <MapPin size={17} className="shrink-0 text-amber-200" />
                   <span className="truncate text-white">STREET VIEW</span>
@@ -1640,11 +1640,15 @@ const MapComponent = ({
                     src={hydrantPhoto} 
                     alt="Foto do Hidrante" 
                     className="w-12 h-12 rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform border border-slate-600 shrink-0 shadow-md"
-                    title="Clique para ampliar a foto"
-                    onClick={() => setFullscreenPhoto(hydrantPhoto)}
+                    title="Clique para ampliar a foto do hidrante em tela cheia"
+                    onClick={() => handleSetFullscreenPhoto(hydrantPhoto)}
                   />
                 ) : (
-                  <div className="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl shrink-0">
+                  <div 
+                    className="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl shrink-0 cursor-pointer hover:bg-slate-700 transition-colors"
+                    title="Ver detalhes da fachada e Street View"
+                    onClick={() => handleSetFullscreenPhoto('placeholder')}
+                  >
                     🚒
                   </div>
                 )}
@@ -1772,12 +1776,12 @@ const MapComponent = ({
                 </a>
 
                 <a 
-                  href={`https://maps.google.com/maps?q=&layer=c&cbll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
+                  href={getStreetViewUrl(selectedHydrant)} 
                   target="_blank" 
                   rel="noreferrer" 
                   style={{ backgroundColor: '#d97706' }}
                   className="flex-[3] h-12 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5 transition-all tracking-wide min-w-0 border border-amber-400/40" 
-                  title="Google Street View 360°"
+                  title="Google Street View 360° com enquadramento calibrado"
                 >
                   <MapPin size={17} className="shrink-0 text-amber-200" />
                   <span className="truncate text-white">STREET VIEW</span>
@@ -1878,68 +1882,86 @@ const MapComponent = ({
       >
         {isMapFullscreen ? <Minimize2 size={22} /> : <Maximize2 size={22} />}
       </button>
-      {fullscreenPhoto && (
+      {fullscreenPhoto && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 bg-black/95 z-[999999] flex flex-col p-4 pb-24 overflow-y-auto"
-          onClick={() => setFullscreenPhoto(null)}
+          className="fixed inset-0 z-[99999999] bg-slate-950/98 backdrop-blur-2xl flex flex-col p-4 sm:p-6 overflow-y-auto select-none"
+          onClick={() => handleSetFullscreenPhoto(null)}
         >
-          {/* Header do Lightbox */}
-          <div className="flex items-center justify-between w-full pt-2 pb-4 shrink-0">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-slate-800/80 flex items-center justify-center border border-slate-700">
-                <MapPin size={16} className="text-emerald-400" />
+          {/* Barra Superior / Header do Lightbox com Botão Voltar/Fechar em Destaque */}
+          <div className="flex items-center justify-between w-full pb-3 border-b border-slate-800/80 shrink-0 gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/40 shrink-0">
+                <MapPin size={18} className="text-emerald-400" />
               </div>
-              <div className="flex flex-col">
-                <span className="text-white font-bold text-sm leading-tight">
-                  {selectedHydrant ? (fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante) : 'Hidrante'}
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-extrabold text-base sm:text-lg leading-tight truncate">
+                    {selectedHydrant ? (fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante) : 'Hidrante'}
+                  </span>
+                  {selectedHydrant && (
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider shrink-0 ${
+                      (selectedHydrant.flgAtivo && selectedHydrant.status === 'Operante')
+                        ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/50'
+                        : 'bg-rose-950/80 text-rose-400 border-rose-500/50'
+                    }`}>
+                      {(selectedHydrant.flgAtivo && selectedHydrant.status === 'Operante') ? 'Operante' : 'Inoperante'}
+                    </span>
+                  )}
+                </div>
+                <span className="text-slate-400 text-xs truncate">
+                  {selectedHydrant ? (fixEncoding(selectedHydrant.dscLocalidade) || 'Região DF') : 'Enquadramento Tático da Fachada'}
                 </span>
-                <span className="text-slate-400 text-[10px] uppercase">Detalhe da Fachada</span>
               </div>
             </div>
             
+            {/* Botão de Fechar / Voltar à Tela Anterior */}
             <button 
-              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-md active:scale-95 transition-all"
+              type="button"
+              className="h-10 px-3.5 sm:px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 hover:border-slate-500 text-white flex items-center gap-2 text-xs sm:text-sm font-bold shadow-lg transition-all cursor-pointer active:scale-95 shrink-0"
               onClick={(e) => {
                 e.stopPropagation();
-                setFullscreenPhoto(null);
+                handleSetFullscreenPhoto(null);
               }}
+              title="Voltar à tela anterior (Esc)"
             >
-              <X size={20} />
+              <X size={18} className="text-slate-300" />
+              <span>Fechar</span>
+              <span className="hidden sm:inline text-[10px] text-slate-400 font-normal ml-0.5">(Esc)</span>
             </button>
           </div>
 
-          {/* Área da Imagem */}
-          <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden relative mb-4">
+          {/* Área Central da Imagem */}
+          <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden relative my-4">
             {fullscreenPhoto === 'placeholder' ? (
-              <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/50 rounded-2xl border border-slate-800 max-w-sm w-full">
+              <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/60 rounded-2xl border border-slate-800 max-w-sm w-full">
                 <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4 border border-slate-700">
                   <MapPin size={24} className="text-slate-500" />
                 </div>
                 <h3 className="text-white font-bold text-lg mb-2">Foto não capturada</h3>
                 <p className="text-slate-400 text-sm">
                   Este hidrante ainda não possui uma foto de perfil ou a captura automática falhou. 
-                  Você pode usar o botão do Street View abaixo para explorar a área manualmente.
+                  Você pode usar o botão do Street View abaixo para explorar a área com o enquadramento calibrado.
                 </p>
               </div>
             ) : (
               <img 
                 src={fullscreenPhoto} 
-                alt="Foto Ampliada" 
-                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" 
+                alt="Foto Ampliada do Hidrante" 
+                className="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-slate-800" 
                 onClick={(e) => e.stopPropagation()}
               />
             )}
           </div>
 
           {/* Footer de Ações do Lightbox */}
-          <div className="flex flex-col gap-3 w-full max-w-md mx-auto shrink-0 pb-10">
+          <div className="flex flex-col gap-2.5 w-full max-w-md mx-auto shrink-0 pb-4" onClick={(e) => e.stopPropagation()}>
             {selectedHydrant && (
               <a 
-                href={`https://maps.google.com/maps?q=&layer=c&cbll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
+                href={getStreetViewUrl(selectedHydrant)} 
                 target="_blank" 
                 rel="noreferrer" 
-                onClick={(e) => e.stopPropagation()}
-                className="w-full h-14 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all border border-amber-400/40"
+                className="w-full h-13 sm:h-14 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 active:scale-98 text-white rounded-xl font-bold text-sm sm:text-base shadow-lg flex items-center justify-center gap-2 transition-all border border-amber-400/40 cursor-pointer"
+                title="Google Street View 360° com enquadramento calibrado"
               >
                 <MapPin size={18} className="text-amber-200 shrink-0" />
                 <span>EXPLORAR NO STREET VIEW 360°</span>
@@ -1948,19 +1970,29 @@ const MapComponent = ({
 
             {fullscreenPhoto !== 'placeholder' && selectedHydrant && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
+                type="button"
+                onClick={() => {
                   alert('Aviso enviado! O administrador foi notificado para revisar o enquadramento desta imagem.');
-                  setFullscreenPhoto(null);
+                  handleSetFullscreenPhoto(null);
                 }}
-                className="w-full h-11 bg-slate-800/80 hover:bg-slate-700 active:scale-98 text-slate-300 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition-all border border-slate-700"
+                className="w-full h-10 bg-slate-900/80 hover:bg-slate-800 active:scale-98 text-slate-400 hover:text-slate-200 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition-all border border-slate-800 cursor-pointer"
               >
                 <AlertTriangle size={14} className="text-rose-400 shrink-0" />
                 <span>Reportar foto incorreta / obstruída</span>
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => handleSetFullscreenPhoto(null)}
+              className="w-full h-10 bg-slate-800/60 hover:bg-slate-700/80 active:scale-98 text-slate-300 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition-all border border-slate-700/60 cursor-pointer sm:hidden"
+            >
+              <ArrowLeft size={14} />
+              <span>Voltar à visualização anterior</span>
+            </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
