@@ -1,13 +1,15 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Edit3, Minimize2, Maximize2, Plus, Share2, AlertTriangle, Wrench, Route as RouteIcon, Check, X, History, Hash } from 'lucide-react';
+import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Edit3, Minimize2, Maximize2, Plus, Share2, AlertTriangle, Wrench, Route as RouteIcon, Check, X, History, Hash, ArrowLeft } from 'lucide-react';
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
 import { setCachedLocation, getLastKnownLocation } from '../utils/geoTracker';
 import { optimizeRouteEuclidean } from '../utils/routeOptimization';
+import { getStreetViewUrl } from '../utils/streetViewUtils';
 
 // Fix para ícones padrão do Leaflet não quebrarem
 delete L.Icon.Default.prototype._getIconUrl;
@@ -60,7 +62,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             width: 26px;
             height: 26px;
             border-radius: 50%;
-            border: 3.5px solid #ffffff;
+            border: 3.5px solid #ffffff !important;
             outline: 3px solid #00ffff;
             box-shadow: 0 0 14px #00ffff, 0 3px 8px rgba(0,0,0,0.6);
             display: flex;
@@ -120,7 +122,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
               width: 22px;
               height: 22px;
               border-radius: 50%;
-              border: 2.5px solid #ffffff;
+              border: 2.5px solid #ffffff !important;
               box-shadow: 0 3px 8px rgba(0,0,0,0.65);
               display: flex;
               align-items: center;
@@ -179,7 +181,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             width: 22px;
             height: 22px;
             border-radius: 50%;
-            border: 2.5px solid #ffffff;
+            border: 2.5px solid #ffffff !important;
             box-shadow: 0 3px 8px rgba(0,0,0,0.65);
             display: flex;
             align-items: center;
@@ -250,7 +252,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            border: 3px solid #ffffff;
+            border: 3px solid #ffffff !important;
             box-shadow: 0 2px 6px rgba(0,0,0,0.6);
             display: flex;
             align-items: center;
@@ -305,8 +307,8 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          border: 3px solid #ffffff;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.55);
+          border: 2px solid #ffffff !important;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
           transition: transform 0.2s ease;
         "></div>
         ${showPinCode && pinCode ? `
@@ -688,9 +690,36 @@ const MapComponent = ({
   onCloseRouteOnMap = null,
   onOpenInspectionHistory = null,
   onBackToRoute = null,
-  userLocation: propUserLocation = null
+  userLocation: propUserLocation = null,
+  onFullscreenPhotoChange = null
 }) => {
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
+
+  const handleSetFullscreenPhoto = (photo) => {
+    setFullscreenPhoto(photo);
+    if (onFullscreenPhotoChange) {
+      onFullscreenPhotoChange(!!photo);
+    }
+  };
+
+  // Trava scroll da página e fecha modal de foto com a tecla Escape (Esc)
+  useEffect(() => {
+    if (!fullscreenPhoto) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        handleSetFullscreenPhoto(null);
+      }
+    };
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [fullscreenPhoto]);
+
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [selectedHydrant, setSelectedHydrant] = useState(null);
   const [internalUserLocation, setInternalUserLocation] = useState(() => propUserLocation || getLastKnownLocation());
