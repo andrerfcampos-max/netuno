@@ -741,3 +741,10 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - 2. Sincronizacao Tripla de Dados: Gravacao em public/base-de-dados.xlsx, raiz base-de-dados.xlsx e regeneracao canonica em public/hidrantes_df_oficial.json e csv com a coluna fotoPerfil.
 - 3. UI Hero Banner e Fallback Dinamico: Banner panoramico 120px e Lightbox fullscreen no MapComponent.jsx com fallback automatico para ARN e protecao anti-cache no xlsxParser.js.
 - 4. Manual Tecnico Consolidado: Criado e atualizado STREETVIEW_PIPELINE.md com todas as instrucoes detalhadas para continuidade em novos chats.
+
+
+### [15/09/2026] Fotos de Perfil dos Hidrantes de Águas Claras (800x600 Sniper)
+- **1. Extração Sniper de Alta Resolução (800x600):** Script scripts/extract_aguas_claras.cjs com autocentralização via gemini-3.5-flash-lite. 40 hidrantes de Águas Claras (ACL00001 a ACL00049) extraídos com sucesso e salvos em public/hidrantes/aguas_claras/.
+- **2. Sincronização Tripla de Dados:** Gravação simultânea na planilha pública public/base-de-dados.xlsx, na planilha raiz ase-de-dados.xlsx e regeneração canônica oficial em public/hidrantes_df_oficial.json e .csv com a coluna otoPerfil preenchida para todos os 40 hidrantes.
+- **3. UI Hero Banner e Fallback Dinâmico (MapComponent.jsx):** Suporte nativo ao prefixo ACL com link relativo /hidrantes/aguas_claras/.jpeg integrado ao Hero Banner e modal Lightbox com visão 360°.
+- **4. Atualização da Documentação Técnica:** Registro do script e do lote de Águas Claras no manual STREETVIEW_PIPELINE.md.

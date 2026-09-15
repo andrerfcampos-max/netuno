@@ -88,6 +88,7 @@ Ao executar extrações e atualizar as fotos no Netuno, o script ou agente **DEV
 
 ## 7. Scripts Existentes no Repositório
 - [`scripts/extract_arniqueiras.cjs`](file:///c:/Users/andre/OneDrive/Desktop/argosa%202-1/scripts/extract_arniqueiras.cjs): Script piloto executado com sucesso no MVP de Arniqueiras (4 hidrantes).
+- [`scripts/extract_aguas_claras.cjs`](file:///c:/Users/andre/OneDrive/Desktop/argosa%202-1/scripts/extract_aguas_claras.cjs): Script de extração e autocentralização Sniper para os 40 hidrantes de Águas Claras (`ACL00001` a `ACL00049`).
 - [`scripts/poc_streetview_v3_sniper.cjs`](file:///c:/Users/andre/OneDrive/Desktop/argosa%202-1/scripts/poc_streetview_v3_sniper.cjs): Script de testes do algoritmo Sniper.
 - [`scripts/export_clean_database.cjs`](file:///c:/Users/andre/OneDrive/Desktop/argosa%202-1/scripts/export_clean_database.cjs): Converte a planilha Excel nos arquivos oficiais `public/hidrantes_df_oficial.json` e `.csv`, preservando o campo `fotoPerfil`.
 - [`scripts/task_queue.cjs`](file:///c:/Users/andre/OneDrive/Desktop/argosa%202-1/scripts/task_queue.cjs): Gerenciador da fila de concorrência entre conversas.
@@ -96,5 +97,6 @@ Ao executar extrações e atualizar as fotos no Netuno, o script ou agente **DEV
 
 ## 8. Status Atual do Projeto
 - **Etapa 85 Concluída:** MVP de Arniqueiras (4 hidrantes: `ARN00001` a `ARN00004`) extraído, gravado e publicado na Vercel.
-- **Frontend Preparado:** O `MapComponent.jsx` possui Hero Banner panorâmico 16:9, modal Lightbox fullscreen com botão de Street View 360°, e fallback por convenção para cidades testadas.
+- **Águas Claras Concluída:** 40 hidrantes de Águas Claras (`ACL00001` a `ACL00049`) extraídos em alta resolução (800x600) com autocentralização Sniper, salvos em `public/hidrantes/aguas_claras/` e sincronizados na tripla base (`base-de-dados.xlsx`, `public/base-de-dados.xlsx`, `public/hidrantes_df_oficial.json` e `.csv`).
+- **Frontend Preparado:** O `MapComponent.jsx` possui Hero Banner panorâmico 16:9, modal Lightbox fullscreen com botão de Street View 360°, e fallback por convenção para cidades testadas (`ARN` e `ACL`).
 - **Próxima Etapa:** Após validação do usuário no mobile, criar rotina para converter em `.webp` (via `sharp`), configurar o Bucket no Supabase Storage e disparar os lotes das demais cidades (Taguatinga, Ceilândia, Brasília, etc.).
