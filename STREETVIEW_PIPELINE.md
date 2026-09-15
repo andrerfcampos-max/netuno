@@ -104,7 +104,12 @@ Ao executar extrações e atualizar as fotos no Netuno, o script ou agente **DEV
 
 ---
 
-## 8. Status Atual do Projeto
+## 8. Regras de Exclusão de Captura
+- **Hidrantes Removidos ou Não Encontrados:** O script DEVE ESTRITAMENTE ignorar e NÃO tentar capturar fotos de hidrantes cujo status/problema esteja classificado como "Hidrante removido ou não encontrado". Como o equipamento não existe mais fisicamente, a tentativa gera perda de tempo e desperdício inútil de cota da API. Essa validação deve ocorrer antes de iniciar a busca de panoramas.
+
+---
+
+## 9. Status Atual do Projeto
 - **Etapa 85 Concluída:** MVP de Arniqueiras (4 hidrantes) publicado.
 - **Águas Claras e POC v4 Smart Concluídos:** O lote de Águas Claras (49 hidrantes) serviu como base para desenvolvimento da **Arquitetura Sniper v4**. A nova inteligência de Step-Around resolveu oclusões severas (ônibus, tapumes) e lidou perfeitamente com hidrantes de diferentes cores, ignorando com sucesso falsos-positivos (hidrantes de recalque). Imagens em alta resolução HD também estão documentadas.
 - **Próxima Etapa:** Disparar a extração em massa (utilizando a nova lógica Sniper v4) para as demais cidades do DF (Taguatinga, Ceilândia, Brasília, etc.) em uma nova pipeline de conversa.
