@@ -878,10 +878,15 @@ const MapComponent = ({
 
   const hydrantPhoto = useMemo(() => {
     if (!selectedHydrant) return null;
-    return selectedHydrant.fotoPerfil || 
-      (selectedHydrant.nomHidrante && String(selectedHydrant.nomHidrante).toUpperCase().startsWith('ARN') 
-        ? `/hidrantes/arniqueira/${selectedHydrant.nomHidrante}.jpeg` 
-        : null);
+    if (selectedHydrant.fotoPerfil) return selectedHydrant.fotoPerfil;
+    const nom = String(selectedHydrant.nomHidrante || '').toUpperCase();
+    if (nom.startsWith('ARN')) {
+      return `/hidrantes/arniqueira/${selectedHydrant.nomHidrante}.jpeg`;
+    }
+    if (nom.startsWith('ACL')) {
+      return `/hidrantes/aguas_claras/${selectedHydrant.nomHidrante}.jpeg`;
+    }
+    return null;
   }, [selectedHydrant]);
 
   const handleCloseHydrant = () => {

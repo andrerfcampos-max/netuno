@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-102",
+  "activeTaskId": "TASK-103",
   "queue": [
     {
       "id": "TASK-1",
@@ -1028,19 +1028,19 @@
       "seq": 102,
       "conversationId": "5e9607ad-2159-41f0-8feb-1fa5583ef997",
       "description": "Salvar fotos banner hidrantes Águas Claras",
-      "status": "running",
+      "status": "timed_out",
       "createdAt": "2026-09-15T15:03:33.128Z",
       "startedAt": "2026-09-15T15:40:34.326Z",
-      "completedAt": null
+      "completedAt": "2026-09-15T15:55:45.299Z"
     },
     {
       "id": "TASK-103",
       "seq": 103,
       "conversationId": "a78ee6ee-ff32-4a2f-9a33-d3beddd1b8c9",
       "description": "Finalizar sincronizacao em nuvem de auditoria, RBAC e rotas",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-09-15T15:19:59.095Z",
-      "startedAt": null,
+      "startedAt": "2026-09-15T15:56:19.083Z",
       "completedAt": null
     }
   ]
