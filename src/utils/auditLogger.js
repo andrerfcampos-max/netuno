@@ -191,3 +191,53 @@ export const clearAuditLogs = () => {
   saveAuditLogs([]);
   return [];
 };
+
+/**
+ * Mescla registros de auditoria vindos da nuvem com os locais,
+ * preservando a ordem cronológica e o status de leitura local.
+ */
+export const mergeAuditLogs = (cloudLogs = []) => {
+  if (!Array.isArray(cloudLogs) || cloudLogs.length === 0) {
+    return getAuditLogs();
+  }
+
+  try {
+    const current = getAuditLogs();
+    const map = new Map();
+
+    // 1. Registros vindos da nuvem
+    cloudLogs.forEach(item => {
+      if (item && item.id) {
+        map.set(String(item.id), item);
+      }
+    });
+
+    // 2. Mescla com registros locais (mantém unread local se o usuário já tiver lido aqui)
+    current.forEach(item => {
+      if (item && item.id) {
+        const cloudItem = map.get(String(item.id));
+        if (cloudItem) {
+          map.set(String(item.id), {
+            ...cloudItem,
+            unread: item.unread !== undefined ? item.unread : cloudItem.unread
+          });
+        } else {
+          map.set(String(item.id), item);
+        }
+      }
+    });
+
+    // 3. Ordenação cronológica decrescente (mais recente primeiro)
+    const merged = Array.from(map.values()).sort((a, b) => {
+      const tA = new Date(a.timestamp || 0).getTime();
+      const tB = new Date(b.timestamp || 0).getTime();
+      return tB - tA;
+    });
+
+    saveAuditLogs(merged);
+    return merged;
+  } catch (err) {
+    console.error('Erro ao mesclar logs de auditoria da nuvem:', err);
+    return getAuditLogs();
+  }
+};

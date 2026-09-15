@@ -161,28 +161,43 @@ async function runMVPArniqueiras() {
       const carLat = metaRes.location.lat;
       const carLng = metaRes.location.lng;
 
-      // 2. Azimute inicial (apontando pro GPS cadastrado)
-      const baseHeading = calculateBearing(carLat, carLng, h.numLatitude, h.numLongitude);
-      const SCAN_FOV = 100;
+      // 2. Azimute inicial (apontando pro GPS cadastrado ou override validado)
+      const HEADING_OVERRIDES = {
+        'ARN00004': { heading: 201, pitch: -10, fov: 55 },
+        '5289': { heading: 201, pitch: -10, fov: 55 }
+      };
 
-      console.log(`   📸 Fase 1: Tirando foto de varredura ampla (FOV=${SCAN_FOV}, Ângulo=${Math.round(baseHeading)}°)...`);
-      const scanImage = await downloadStreetView(carLat, carLng, baseHeading, SCAN_FOV, 640, 640);
+      const override = HEADING_OVERRIDES[nom] || HEADING_OVERRIDES[cod];
+      let finalHeading;
+      let finalFov = 75;
 
-      console.log(`   🧠 Fase 2: IA Sniper rastreando hidrante amarelo...`);
-      const aiResult = await locateHydrantWithGemini(scanImage.base64);
-
-      let finalHeading = baseHeading;
-      if (aiResult.encontrado && aiResult.centro_x !== undefined) {
-        const correctionOffset = (aiResult.centro_x - 0.5) * SCAN_FOV;
-        finalHeading = (baseHeading + correctionOffset + 360) % 360;
-        console.log(`   🤖 IA encontrou em X=${aiResult.centro_x.toFixed(2)}! Corrigindo mira em ${Math.round(correctionOffset)}° (Novo Ângulo: ${Math.round(finalHeading)}°).`);
+      if (override) {
+        console.log(`   🎯 Override validado manualmente detectado: Heading=${override.heading}°, Pitch=${override.pitch}°, FOV=${override.fov}°`);
+        finalHeading = override.heading;
+        finalFov = override.fov || 75;
       } else {
-        console.log(`   ℹ️ Hidrante não detectado com precisão na varredura. Usando enquadramento padrão no GPS.`);
+        const baseHeading = calculateBearing(carLat, carLng, h.numLatitude, h.numLongitude);
+        const SCAN_FOV = 100;
+
+        console.log(`   📸 Fase 1: Tirando foto de varredura ampla (FOV=${SCAN_FOV}, Ângulo=${Math.round(baseHeading)}°)...`);
+        const scanImage = await downloadStreetView(carLat, carLng, baseHeading, SCAN_FOV, 640, 640);
+
+        console.log(`   🧠 Fase 2: IA Sniper rastreando hidrante amarelo...`);
+        const aiResult = await locateHydrantWithGemini(scanImage.base64);
+
+        finalHeading = baseHeading;
+        if (aiResult.encontrado && aiResult.centro_x !== undefined) {
+          const correctionOffset = (aiResult.centro_x - 0.5) * SCAN_FOV;
+          finalHeading = (baseHeading + correctionOffset + 360) % 360;
+          console.log(`   🤖 IA encontrou em X=${aiResult.centro_x.toFixed(2)}! Corrigindo mira em ${Math.round(correctionOffset)}° (Novo Ângulo: ${Math.round(finalHeading)}°).`);
+        } else {
+          console.log(`   ℹ️ Hidrante não detectado com precisão na varredura. Usando enquadramento padrão no GPS.`);
+        }
       }
 
-      // 3. Foto Oficial em Alta Resolução (800x600, FOV=75 para foco tático na calçada)
-      console.log(`   📸 Fase 3: Bate foto final de alta resolução (800x600, FOV=75)...`);
-      const finalImage = await downloadStreetView(carLat, carLng, finalHeading, 75, 800, 600);
+      // 3. Foto Oficial em Alta Resolução (800x600, FOV tático para foco na calçada)
+      console.log(`   📸 Fase 3: Bate foto final de alta resolução (800x600, FOV=${finalFov})...`);
+      const finalImage = await downloadStreetView(carLat, carLng, finalHeading, finalFov, 800, 600);
 
       const fileName = `${nom}.jpeg`;
       const filePath = path.join(OUTPUT_DIR, fileName);

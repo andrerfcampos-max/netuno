@@ -34,6 +34,15 @@ function cleanStaleTasks(queueData) {
         item.completedAt = new Date().toISOString();
         changed = true;
       }
+    } else if (item.status === 'queued') {
+      const created = item.createdAt ? new Date(item.createdAt).getTime() : 0;
+      if (now - created > 2 * 60 * 60 * 1000) {
+        console.warn(`[TaskQueue] ⚠️ Tarefa enfileirada ${item.id} expirou por abandono (> 2h sem início).`);
+        item.status = 'failed';
+        item.error = 'Expirou na fila (> 2h sem execução)';
+        item.completedAt = new Date().toISOString();
+        changed = true;
+      }
     }
   }
 

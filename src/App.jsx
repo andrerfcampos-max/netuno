@@ -244,6 +244,7 @@ syncPreferences({ activeView: view });
   }, [activeFilters, hidrantes]);
 
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [isPhotoFullscreen, setIsPhotoFullscreen] = useState(false);
   const [inspectingHidrante, setInspectingHidrante] = useState(null);
   const [editingHydrante, setEditingHydrante] = useState(null);
   const [historyHidrante, setHistoryHidrante] = useState(null);
@@ -2154,7 +2155,7 @@ syncPreferences({ filters: filters });
 
 
       {/* MÓDULO 1: BARRA DE FILTROS OU PAINEL TÁTICO DE ROTA NO TOPO */}
-      {!isMapFullscreen && activeView !== 'route' && (
+      {!isMapFullscreen && !isPhotoFullscreen && activeView !== 'route' && (
         isRouteActiveOnMap && currentMission && activeView === 'map' ? (
           <div className="flex-shrink-0 px-2 pt-1.5 z-20 w-full">
             <div className="bg-slate-900/98 border border-cyan-500/80 shadow-xl rounded-xl p-2.5 sm:px-4 sm:py-2.5 flex flex-wrap items-center justify-between gap-2.5 backdrop-blur-md">
@@ -2263,7 +2264,7 @@ syncPreferences({ filters: filters });
               regions={regions} 
               anos={anosVistoria} 
               problemasAtivos={problemasVistoria} 
-              isVisible={!isMapFullscreen} 
+              isVisible={!isMapFullscreen && !isPhotoFullscreen} 
               currentUser={currentUser} 
               onLogout={handleLogout}
               filteredCount={filteredList.length}
@@ -2273,7 +2274,7 @@ syncPreferences({ filters: filters });
       )}
 
       {/* CONTROLES DE VISUALIZAÇÃO NO DESKTOP (LOGO ABAIXO DOS FILTROS) */}
-      {!isMapFullscreen && (
+      {!isMapFullscreen && !isPhotoFullscreen && (
         <div className="hidden md:block flex-shrink-0 px-2 py-1 z-10 w-full">
           <div className={`grid ${currentUser?.role === 'gestor' || currentUser?.role === 'admin' ? 'grid-cols-4' : 'grid-cols-3'} gap-1.5 sm:gap-2 px-0.5 max-w-4xl mx-auto`}>
             <button 
@@ -2370,6 +2371,7 @@ syncPreferences({ filters: filters });
               onCloseRouteOnMap={() => setIsRouteActiveOnMap(false)}
               onOpenInspectionHistory={(h) => setHistoryHidrante(h)}
               onBackToRoute={() => setActiveView('route')}
+              onFullscreenPhotoChange={setIsPhotoFullscreen}
             />
           </ErrorBoundary>
         </div>
@@ -2570,7 +2572,7 @@ syncPreferences({ filters: filters });
       </main>
 
       {/* BARRA DE NAVEGAÇÃO INFERIOR ERGONÔMICA NO MOBILE (BOTTOM NAV FIXA) */}
-      {!isMapFullscreen && (
+      {!isMapFullscreen && !isPhotoFullscreen && (
         <nav className="md:hidden flex-shrink-0 bg-slate-900/98 border-t border-slate-700/90 backdrop-blur-md px-2 py-1 z-40 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.5)] min-h-[52px]">
           <button
             onClick={() => setActiveView('map')}
@@ -2636,7 +2638,7 @@ syncPreferences({ filters: filters });
       )}
 
       {/* Barramento de Seleção Inferior (Desktop apenas) */}
-      <footer className={isMapFullscreen ? "hidden" : "hidden md:flex bg-slate-900 border-t border-slate-700 p-3 justify-between items-center z-20"}>
+      <footer className={isMapFullscreen || isPhotoFullscreen ? "hidden" : "hidden md:flex bg-slate-900 border-t border-slate-700 p-3 justify-between items-center z-20"}>
         <div className="flex flex-col">
           {activeMissionId && currentMission && (
             <div className="text-sm font-semibold text-slate-400">
