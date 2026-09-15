@@ -40,11 +40,14 @@ export const fetchMissionsFromCloud = async () => {
         try { completed = JSON.parse(completed); } catch { completed = []; }
       }
 
+      const validSelected = Array.isArray(selected) ? selected : [];
+
       return {
         id: String(row.id),
         name: row.name || 'Missão sem título',
         parentFolderId: row.parent_folder_id || null,
-        selectedIds: Array.isArray(selected) ? selected : [],
+        selectedIds: validSelected,
+        orderedIds: validSelected,
         completedIds: Array.isArray(completed) ? completed : [],
         isDraft: Boolean(row.is_draft),
         createdBy: row.created_by || null,
@@ -67,11 +70,15 @@ export const syncMissionToCloud = async (mission) => {
   if (!client || !mission) return;
 
   try {
+    const orderedList = (Array.isArray(mission.orderedIds) && mission.orderedIds.length > 0)
+      ? mission.orderedIds
+      : (mission.selectedIds || []);
+
     const payload = {
       id: String(mission.id),
       name: mission.name,
       parent_folder_id: mission.parentFolderId || null,
-      selected_ids: mission.selectedIds || [],
+      selected_ids: orderedList,
       completed_ids: mission.completedIds || [],
       is_draft: Boolean(mission.isDraft),
       created_by: mission.createdBy || null,
@@ -90,6 +97,14 @@ export const syncMissionToCloud = async (mission) => {
     if (error) {
       console.warn(`Erro ao sincronizar missão ${mission.id} na nuvem:`, error.message);
     }
+
+    // Sincroniza metadados complementares (orderedIds e atribuicao) via netuno_hydrant_mutations
+    await syncHydrantMutationToCloud('mission_meta', {
+      id: `mission_meta_${mission.id}`,
+      missionId: String(mission.id),
+      orderedIds: orderedList,
+      atribuicao: mission.atribuicao || ""
+    });
   } catch (err) {
     console.warn('Falha ao enviar missão para nuvem:', err);
   }
@@ -202,6 +217,11 @@ export const syncInspectionToCloud = async (hidrante) => {
   if (!client || !hidrante) return;
 
   try {
+    const fotoPrincipal = hidrante.fotoVistoria || 
+      (Array.isArray(hidrante.fotosVistoria) && hidrante.fotosVistoria[0]) || 
+      hidrante.fotoUrl || 
+      null;
+
     const payload = {
       id: `insp_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
       cod_hidrante: String(hidrante.codHidrante || ''),
@@ -212,7 +232,7 @@ export const syncInspectionToCloud = async (hidrante) => {
       num_matricula: hidrante.vistoriadorMatricula || '',
       data_hora_vistoria: hidrante.datHoraUltimaVistoria || new Date().toISOString(),
       observacao: hidrante.dscObservacao || '',
-      foto_url: hidrante.fotoUrl || null,
+      foto_url: fotoPrincipal,
       latitude: hidrante.numLatitude ? parseFloat(hidrante.numLatitude) : null,
       longitude: hidrante.numLongitude ? parseFloat(hidrante.numLongitude) : null,
       created_at: new Date().toISOString(),
@@ -235,17 +255,17 @@ export const syncInspectionToCloud = async (hidrante) => {
 // ------------------------------------------------------------------------------
 
 /**
- * Salva uma mutação de hidrante (atualização, adição ou exclusão) no banco em nuvem
+ * Salva uma mutação de hidrante (atualização, adição, auditoria ou exclusão) no banco em nuvem
  */
 export const syncHydrantMutationToCloud = async (type, payloadData) => {
   const client = getSupabaseClient();
   if (!client || !payloadData) return;
 
   try {
-    const idKey = payloadData._internalId || payloadData.codHidrante || payloadData.nomHidrante || `mut_${Date.now()}`;
+    const idKey = payloadData.id || payloadData._internalId || payloadData.codHidrante || payloadData.nomHidrante || `mut_${Date.now()}`;
     const payload = {
       id: String(idKey),
-      type, // 'update', 'add', 'delete'
+      type, // 'update', 'add', 'delete', 'audit_event', 'mission_meta', 'rbac_users'
       payload: payloadData,
       updated_at: new Date().toISOString(),
     };
@@ -288,7 +308,10 @@ export const fetchHydrantMutationsFromCloud = async () => {
       buildingStudies: {},
       deletedBuildingStudies: [],
       technicalStudies: {},
-      deletedTechnicalStudies: []
+      deletedTechnicalStudies: [],
+      auditLogs: [],
+      rbacUsers: null,
+      missionMetas: {}
     };
 
     (data || []).forEach(row => {
@@ -323,6 +346,13 @@ export const fetchHydrantMutationsFromCloud = async () => {
         if (id && !result.deletedTechnicalStudies.includes(id)) {
           result.deletedTechnicalStudies.push(id);
         }
+      } else if (row.type === 'audit_event' && row.payload) {
+        result.auditLogs.push(row.payload);
+      } else if (row.type === 'rbac_users' && row.payload) {
+        result.rbacUsers = row.payload.users || row.payload;
+      } else if (row.type === 'mission_meta' && row.payload) {
+        const mId = row.payload.missionId || row.payload.id || row.id.replace('mission_meta_', '');
+        result.missionMetas[mId] = row.payload;
       }
     });
 
@@ -514,3 +544,52 @@ export const fetchUserPreferencesFromCloud = async (matricula) => {
     return null;
   }
 };
+
+// ------------------------------------------------------------------------------
+// 7. SINCRONIZAÇÃO DE USUÁRIOS E PERFIS RBAC (netuno_rbac_users)
+// ------------------------------------------------------------------------------
+
+/**
+ * Salva a lista de usuários e perfis RBAC no banco em nuvem
+ */
+export const syncRbacUsersToCloud = async (users) => {
+  const client = getSupabaseClient();
+  if (!client || !Array.isArray(users)) return;
+
+  try {
+    await syncHydrantMutationToCloud('rbac_users', {
+      id: 'rbac_system_users',
+      users,
+      updated_at: new Date().toISOString()
+    });
+  } catch (err) {
+    console.warn('Falha ao sincronizar usuários RBAC na nuvem:', err);
+  }
+};
+
+/**
+ * Busca a lista de usuários e perfis RBAC salvos na nuvem
+ */
+export const fetchRbacUsersFromCloud = async () => {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const { data, error } = await client
+      .from('netuno_hydrant_mutations')
+      .select('payload')
+      .eq('id', 'rbac_system_users')
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Erro ao buscar usuários RBAC da nuvem:', error.message);
+      return null;
+    }
+
+    return data?.payload?.users || null;
+  } catch (err) {
+    console.warn('Falha ao obter usuários RBAC da nuvem:', err);
+    return null;
+  }
+};
+

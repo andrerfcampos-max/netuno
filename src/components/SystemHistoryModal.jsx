@@ -22,8 +22,11 @@ import {
 } from 'lucide-react';
 import { 
   getAuditLogs, 
-  markAllAuditLogsAsRead 
+  markAllAuditLogsAsRead,
+  mergeAuditLogs
 } from '../utils/auditLogger';
+import { isCloudConfigured } from '../services/supabase';
+import { fetchHydrantMutationsFromCloud } from '../services/syncService';
 
 // Formatação amigável de tempo relativo
 const formatRelativeTime = (isoString) => {
@@ -69,6 +72,16 @@ export default function SystemHistoryModal({
     };
 
     refreshLogs();
+
+    // Sincroniza da nuvem em segundo plano para garantir o histórico multiusuário mais recente
+    if (isCloudConfigured() && navigator.onLine) {
+      fetchHydrantMutationsFromCloud().then(mutations => {
+        if (mutations && Array.isArray(mutations.auditLogs) && mutations.auditLogs.length > 0) {
+          const merged = mergeAuditLogs(mutations.auditLogs);
+          setLogs(merged);
+        }
+      }).catch(err => console.warn('Erro ao atualizar histórico da nuvem no modal:', err));
+    }
 
     const handleUpdate = () => refreshLogs();
     window.addEventListener('netuno_audit_updated', handleUpdate);

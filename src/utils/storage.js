@@ -249,6 +249,33 @@ export const saveRbacUsers = (users) => {
 };
 
 /**
+ * Mescla usuários RBAC locais e da nuvem garantindo admin obrigatório
+ */
+export const mergeRbacUsers = (localUsers = [], cloudUsers = []) => {
+  const map = new Map();
+  const initialAdmin = { matricula: '1997400', nome: 'Sgt Roméro', role: 'admin' };
+  map.set('1997400', initialAdmin);
+
+  (localUsers || []).forEach(u => {
+    if (u && u.matricula) map.set(String(u.matricula).toLowerCase(), u);
+  });
+
+  (cloudUsers || []).forEach(u => {
+    if (u && u.matricula) {
+      map.set(String(u.matricula).toLowerCase(), u);
+    }
+  });
+
+  const merged = Array.from(map.values());
+  const admin = merged.find(u => String(u.matricula).toLowerCase() === '1997400');
+  if (admin) admin.role = 'admin';
+  else merged.unshift(initialAdmin);
+
+  safeSetItem(RBAC_USERS_KEY, JSON.stringify(merged));
+  return merged;
+};
+
+/**
  * Mescla de forma inteligente missões locais e da nuvem sem perda de dados
  */
 export const mergeMissions = (localMissions = [], cloudMissions = []) => {

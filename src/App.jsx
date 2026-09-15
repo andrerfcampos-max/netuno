@@ -21,10 +21,10 @@ const CloudConfigModal = lazy(() => import('./components/CloudConfigModal'));
 const SystemHistoryModal = lazy(() => import('./components/SystemHistoryModal'));
 const InspectionHistoryModal = lazy(() => import('./components/InspectionHistoryModal'));
 const DownloadDatabaseModal = lazy(() => import('./components/DownloadDatabaseModal'));
-import { logAuditEvent, getUnreadAuditCount } from './utils/auditLogger';
+import { logAuditEvent, getUnreadAuditCount, mergeAuditLogs } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
-import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers } from './utils/storage';
-import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime, fetchUserPreferencesFromCloud, syncUserPreferencesToCloud } from './services/syncService';
+import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers, mergeRbacUsers } from './utils/storage';
+import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime, fetchUserPreferencesFromCloud, syncUserPreferencesToCloud, fetchRbacUsersFromCloud } from './services/syncService';
 import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
@@ -744,6 +744,53 @@ syncPreferences({ filters: newFilters });
             } catch (errTech) {
               console.warn('Erro ao mesclar Estudos Técnicos da nuvem:', errTech);
             }
+          }
+
+          // Sincronização em tempo real do Histórico de Ações / Auditoria
+          if (cloudMutations.auditLogs && cloudMutations.auditLogs.length > 0) {
+            mergeAuditLogs(cloudMutations.auditLogs);
+          }
+
+          // Sincronização em tempo real de Usuários e Perfis RBAC
+          if (cloudMutations.rbacUsers && Array.isArray(cloudMutations.rbacUsers)) {
+            mergeRbacUsers(loadRbacUsers(), cloudMutations.rbacUsers);
+          }
+
+          // Sincronização em tempo real de metadados de missões (ordem otimizada e atribuição)
+          if (cloudMutations.missionMetas && Object.keys(cloudMutations.missionMetas).length > 0) {
+            setMissions(prevMissions => {
+              let hasChange = false;
+              const updated = prevMissions.map(m => {
+                const meta = cloudMutations.missionMetas[String(m.id)];
+                if (meta) {
+                  let changedItem = false;
+                  const nextOrdered = (Array.isArray(meta.orderedIds) && meta.orderedIds.length > 0)
+                    ? meta.orderedIds
+                    : m.orderedIds;
+                  const nextAtribuicao = meta.atribuicao !== undefined ? meta.atribuicao : m.atribuicao;
+
+                  if (JSON.stringify(nextOrdered) !== JSON.stringify(m.orderedIds) || nextAtribuicao !== m.atribuicao) {
+                    changedItem = true;
+                    hasChange = true;
+                  }
+
+                  if (changedItem) {
+                    if (nextOrdered && nextOrdered.length > 0) {
+                      try {
+                        localStorage.setItem(`netuno_mission_ordered_${m.id}`, JSON.stringify(nextOrdered));
+                      } catch (e) {}
+                    }
+                    return { ...m, orderedIds: nextOrdered, atribuicao: nextAtribuicao };
+                  }
+                }
+                return m;
+              });
+              if (hasChange) {
+                saveMissions(updated);
+                return updated;
+              }
+              return prevMissions;
+            });
           }
         }
       } catch (e) {
@@ -1574,7 +1621,7 @@ syncPreferences({ filters: filters });
     };
   }, [currentUser?.matricula]); // Depende apenas da matrícula para não refazer os listeners atoa
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     const mat = (e.target.matricula.value || '').trim();
     const senha = (e.target.senha.value || '').trim();
@@ -1591,7 +1638,20 @@ syncPreferences({ filters: filters });
     }
 
     let user = null;
-    const rbacUsers = loadRbacUsers();
+    let rbacUsers = loadRbacUsers();
+
+    // Sincroniza RBAC da nuvem antes de validar acesso
+    if (isCloudConfigured()) {
+      try {
+        const cloudRBAC = await fetchRbacUsersFromCloud();
+        if (cloudRBAC && Array.isArray(cloudRBAC) && cloudRBAC.length > 0) {
+          rbacUsers = mergeRbacUsers(rbacUsers, cloudRBAC);
+        }
+      } catch (e) {
+        console.warn('Falha ao obter RBAC da nuvem no login:', e);
+      }
+    }
+
     const foundRbac = rbacUsers.find(u => String(u.matricula).toLowerCase() === mat.toLowerCase());
 
     if (foundRbac) {
@@ -2360,6 +2420,7 @@ syncPreferences({ filters: filters });
               }}
               activeView={activeView}
               isCitySelected={isCitySelected}
+              selectedCity={activeFilters.ra || ''}
               hasFilter={Boolean(isCitySelected || hasSecondaryFilter)}
               isRouteActiveOnMap={isRouteActiveOnMap}
               activeMission={isRouteActiveOnMap ? currentMission : null}

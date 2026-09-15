@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Edit3, Minimize2, Maximize2, Plus, Share2, AlertTriangle, Wrench, Route as RouteIcon, Check, X, History, Hash, ArrowLeft } from 'lucide-react';
+import { Navigation, LocateFixed, Map as MapIcon, MapPin, ClipboardPlus, Edit, Edit3, Minimize2, Maximize2, Plus, Share2, AlertTriangle, Wrench, Route as RouteIcon, Check, X, History, Hash, ArrowLeft, Focus } from 'lucide-react';
 import { isValidDFCoordinate } from '../utils/geoUtils';
 import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
@@ -361,10 +361,11 @@ const RecenterMap = ({ centerPosition, selectedHydrant }) => {
   return null;
 };
 
-const AutoFitFilteredBounds = ({ hidrantes, centerPosition, selectedHydrant, hasActiveRoute }) => {
+const AutoFitFilteredBounds = ({ hidrantes, centerPosition, selectedHydrant, hasActiveRoute, selectedCity }) => {
   const map = useMap();
   const prevCountRef = React.useRef(null);
   const prevFirstIdRef = React.useRef(null);
+  const prevCityRef = React.useRef(null);
 
   useEffect(() => {
     // Não força ajuste geral se houver hidrante selecionado ou rota ativa em execução
@@ -372,8 +373,12 @@ const AutoFitFilteredBounds = ({ hidrantes, centerPosition, selectedHydrant, has
 
     if (hidrantes && hidrantes.length > 0) {
       const firstId = hidrantes[0]?.codHidrante || hidrantes[0]?.nomHidrante;
+      const cityChanged = selectedCity && prevCityRef.current !== selectedCity;
+      const countChanged = prevCountRef.current !== hidrantes.length;
+      const firstIdChanged = prevFirstIdRef.current !== firstId;
 
-      if (prevCountRef.current !== hidrantes.length || prevFirstIdRef.current !== firstId) {
+      if (cityChanged || countChanged || firstIdChanged) {
+        prevCityRef.current = selectedCity;
         prevCountRef.current = hidrantes.length;
         prevFirstIdRef.current = firstId;
 
@@ -382,14 +387,25 @@ const AutoFitFilteredBounds = ({ hidrantes, centerPosition, selectedHydrant, has
           .map(h => [h.numLatitude, h.numLongitude]);
 
         if (validCoords.length > 0) {
-          const bounds = L.latLngBounds(validCoords);
-          if (bounds.isValid()) {
-            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16, animate: true });
+          if (validCoords.length === 1) {
+            map.setView(validCoords[0], 16, { animate: true });
+          } else {
+            const bounds = L.latLngBounds(validCoords);
+            if (bounds.isValid()) {
+              const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+              map.fitBounds(bounds, { 
+                padding: isMobile ? [40, 40] : [60, 60], 
+                maxZoom: 16, 
+                animate: true 
+              });
+            }
           }
         }
       }
+    } else if (selectedCity && prevCityRef.current !== selectedCity) {
+      prevCityRef.current = selectedCity;
     }
-  }, [hidrantes, centerPosition, selectedHydrant, hasActiveRoute, map]);
+  }, [hidrantes, centerPosition, selectedHydrant, hasActiveRoute, selectedCity, map]);
 
   return null;
 };
@@ -580,7 +596,7 @@ const UserLocationTracker = ({ userLocation, centerPosition, selectedHydrant, ha
   return null;
 };
 
-const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocusRoute, showPinCodes, onTogglePinCodes }) => {
+const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocusRoute, showPinCodes, onTogglePinCodes, validHidrantes = [] }) => {
   const map = useMap();
   const [isLocating, setIsLocating] = useState(false);
 
@@ -615,20 +631,118 @@ const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocu
     }
   };
 
+  // Enquadra Todos os Hidrantes Plotados no Mapa (Ver todos os pinos)
+  const handleFitAllHydrants = (e) => {
+    e.stopPropagation();
+    try {
+      if (!validHidrantes || validHidrantes.length === 0) {
+        alert('Nenhum hidrante plotado para enquadrar.');
+        return;
+      }
+      const coords = validHidrantes.map(h => [h.numLatitude, h.numLongitude]);
+      if (coords.length === 1) {
+        map.setView(coords[0], 16, { animate: true });
+      } else {
+        const bounds = L.latLngBounds(coords);
+        if (bounds.isValid()) {
+          const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+          map.fitBounds(bounds, {
+            padding: isMobile ? [40, 40] : [60, 60],
+            maxZoom: 16,
+            animate: true
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao enquadrar hidrantes', e);
+    }
+  };
+
+  // Enquadra Você + Hidrantes Mais Próximos (ou Foco na Rota de Missão)
+  const handleFitUserAndHydrants = (e) => {
+    e.stopPropagation();
+    try {
+      if (hasActiveRoute && onFocusRoute) {
+        onFocusRoute();
+        return;
+      }
+
+      const hasUserLoc = userLocation && typeof userLocation.lat === 'number' && !isNaN(userLocation.lat) && typeof userLocation.lng === 'number' && !isNaN(userLocation.lng);
+      
+      if (!hasUserLoc && (!validHidrantes || validHidrantes.length === 0)) {
+        alert('GPS ou hidrantes não disponíveis no momento.');
+        return;
+      }
+
+      if (!hasUserLoc) {
+        handleFitAllHydrants(e);
+        return;
+      }
+
+      if (!validHidrantes || validHidrantes.length === 0) {
+        map.setView([userLocation.lat, userLocation.lng], 17, { animate: true });
+        return;
+      }
+
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      let targetCoords = [];
+
+      if (validHidrantes.length <= 10) {
+        targetCoords = validHidrantes.map(h => [h.numLatitude, h.numLongitude]);
+      } else {
+        const sorted = [...validHidrantes].sort((a, b) => {
+          const dA = Math.hypot(a.numLatitude - userLocation.lat, a.numLongitude - userLocation.lng);
+          const dB = Math.hypot(b.numLatitude - userLocation.lat, b.numLongitude - userLocation.lng);
+          return dA - dB;
+        });
+        targetCoords = sorted.slice(0, 6).map(h => [h.numLatitude, h.numLongitude]);
+      }
+
+      const points = [
+        [userLocation.lat, userLocation.lng],
+        ...targetCoords
+      ];
+
+      const bounds = L.latLngBounds(points);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, {
+          padding: isMobile ? [45, 45] : [65, 65],
+          maxZoom: 16,
+          animate: true
+        });
+      }
+    } catch (e) {
+      console.warn('Erro ao enquadrar usuário e hidrantes', e);
+    }
+  };
+
+  const hasUserLoc = Boolean(userLocation && typeof userLocation.lat === 'number' && !isNaN(userLocation.lat) && typeof userLocation.lng === 'number' && !isNaN(userLocation.lng));
+  const hasHydrants = Boolean(validHidrantes && validHidrantes.length > 0);
+  const showNavButton = hasActiveRoute || (hasUserLoc && hasHydrants);
+
   return (
     <div className={`leaflet-bottom leaflet-right !right-3 sm:!right-4 !pointer-events-auto z-[1000] flex flex-col gap-2 sm:gap-2.5 items-end transition-all duration-300 ${isSheetOpen ? '!bottom-[280px] sm:!bottom-6' : '!bottom-16 sm:!bottom-6'}`}>
-      {/* Botão Tático: Focar na Rota Próxima (Você + hidrantes mais próximos) */}
-      {hasActiveRoute && (
+      {/* Botão Tático: Foco Combinado (Você + Hidrantes Próximos ou Rota de Missão) */}
+      {showNavButton && (
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onFocusRoute) onFocusRoute();
-          }}
-          title="Focar na sua posição e nos hidrantes mais próximos da rota"
+          onClick={handleFitUserAndHydrants}
+          title={hasActiveRoute ? "Focar na sua posição e na rota da missão" : "Enquadrar sua localização e os hidrantes mais próximos"}
           className="p-2.5 sm:p-3 bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 border border-cyan-400/80 hover:border-cyan-300 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer backdrop-blur-md group"
         >
           <Navigation size={20} className="text-cyan-300 group-hover:text-cyan-200 transition-transform group-hover:rotate-12" />
+        </button>
+      )}
+
+      {/* Botão Tático: Ver Todos os Hidrantes Plotados (Enquadrar Cidade) */}
+      {hasHydrants && (
+        <button
+          type="button"
+          onClick={handleFitAllHydrants}
+          title="Ver todos os hidrantes plotados (Enquadrar cidade)"
+          className="p-2.5 sm:p-3 bg-slate-900/90 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 border border-emerald-500/60 hover:border-emerald-400 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer backdrop-blur-md group"
+        >
+          <Focus size={20} className="text-emerald-400 group-hover:text-emerald-300 transition-transform group-hover:scale-110" />
         </button>
       )}
 
@@ -649,7 +763,7 @@ const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocu
         <Hash size={20} className={showPinCodes ? "text-white font-bold" : "text-cyan-400"} />
       </button>
 
-      {/* Botão GPS Padrão */}
+      {/* Botão GPS Padrão: Centralizar e Zoom na Posição Atual */}
       <button
         type="button"
         onClick={handleCenterUser}
@@ -828,6 +942,20 @@ const MapComponent = ({
       setSelectedHydrant(null);
     }
   }, [centerPosition]);
+
+  // Ao alterar a Cidade/RA selecionada no filtro superior, limpa qualquer hidrante aberto da cidade anterior
+  const prevSelectedCityRef = useRef(selectedCity);
+  useEffect(() => {
+    if (selectedCity && prevSelectedCityRef.current !== selectedCity) {
+      prevSelectedCityRef.current = selectedCity;
+      if (selectedHydrant) {
+        setSelectedHydrant(null);
+        if (onDeselectHydrant) {
+          onDeselectHydrant();
+        }
+      }
+    }
+  }, [selectedCity]);
 
   useEffect(() => {
     let watchId;
@@ -1181,7 +1309,7 @@ const MapComponent = ({
         />
         
         <RecenterMap centerPosition={centerPosition} selectedHydrant={selectedHydrant} />
-        <AutoFitFilteredBounds hidrantes={hidrantes} centerPosition={centerPosition} selectedHydrant={selectedHydrant} hasActiveRoute={hasActiveRoute} />
+        <AutoFitFilteredBounds hidrantes={hidrantes} centerPosition={centerPosition} selectedHydrant={selectedHydrant} hasActiveRoute={hasActiveRoute} selectedCity={selectedCity} />
         <RouteNearbyAutoFitter 
           routeFitTrigger={routeFitTrigger} 
           activeMissionHydrants={activeMissionHydrants} 
@@ -1306,6 +1434,7 @@ const MapComponent = ({
           }}
           showPinCodes={showPinCodes}
           onTogglePinCodes={handleTogglePinCodes}
+          validHidrantes={validHidrantes}
         />
       </MapContainer>
 

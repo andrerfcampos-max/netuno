@@ -1,13 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, UserCog, Shield, UserPlus, Trash2, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { loadRbacUsers, saveRbacUsers } from '../utils/storage';
+import { loadRbacUsers, saveRbacUsers, mergeRbacUsers } from '../utils/storage';
+import { syncRbacUsersToCloud, fetchRbacUsersFromCloud } from '../services/syncService';
 
 const UserManagerModal = ({ onClose }) => {
   const [users, setUsers] = useState(() => loadRbacUsers());
   const [newMatricula, setNewMatricula] = useState('');
   const [newNome, setNewNome] = useState('');
   const [newRole, setNewRole] = useState('gestor');
+
+  // Atualiza com a base em nuvem ao abrir
+  useEffect(() => {
+    fetchRbacUsersFromCloud().then(cloudUsers => {
+      if (cloudUsers && Array.isArray(cloudUsers) && cloudUsers.length > 0) {
+        const merged = mergeRbacUsers(loadRbacUsers(), cloudUsers);
+        setUsers(merged);
+      }
+    }).catch(err => console.warn('Erro ao carregar RBAC da nuvem no modal:', err));
+  }, []);
 
   const getRoleLabel = (role) => {
     switch (role) {
@@ -63,6 +74,7 @@ const UserManagerModal = ({ onClose }) => {
 
     setUsers(updatedUsers);
     saveRbacUsers(updatedUsers);
+    syncRbacUsersToCloud(updatedUsers);
     setNewMatricula('');
     setNewNome('');
     setNewRole('gestor');
@@ -86,6 +98,7 @@ const UserManagerModal = ({ onClose }) => {
     );
     setUsers(updatedUsers);
     saveRbacUsers(updatedUsers);
+    syncRbacUsersToCloud(updatedUsers);
     toast.success(`Nível de acesso do militar ${matricula} alterado para "${getRoleLabel(targetRole)}"!`);
   };
 
@@ -108,6 +121,7 @@ const UserManagerModal = ({ onClose }) => {
       const updatedUsers = users.filter(usr => String(usr.matricula).toLowerCase() !== String(u.matricula).toLowerCase());
       setUsers(updatedUsers);
       saveRbacUsers(updatedUsers);
+      syncRbacUsersToCloud(updatedUsers);
       toast.info(`Militar ${u.matricula} retornou ao nível padrão de Vistoriador.`);
     }
   };
