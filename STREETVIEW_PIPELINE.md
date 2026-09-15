@@ -5,13 +5,14 @@
 
 ---
 
-## 1. O Problema Resolvido: Autocentralização Sniper
-1. **Problema dos Dados Legados:** O GPS cadastral dos hidrantes frequentemente aponta para o meio do lote ou parede do imóvel, e não para o meio-fio/calçada. Um cálculo trigonométrico simples (Azimute básico) apontava a câmera para o muro errado ou cortava o hidrante na borda da foto.
-2. **Solução Definitiva (Modo Sniper):**
+## 1. O Problema Resolvido: Autocentralização Sniper v4 (Smart Scan & Auto-Healing)
+1. **Problema dos Dados Legados:** O GPS cadastral dos hidrantes frequentemente aponta para o meio do lote, parede do imóvel, ou a visão está bloqueada por obstáculos (caminhões, tapumes). Além disso, o ângulo pode cortar o hidrante ou o GPS estar nas costas do carro do Street View.
+2. **Solução Definitiva (Modo Sniper v4):**
    - **Fase 1 (Varredura Ampla):** Bate uma foto com FOV aberto (`FOV=100°`) na direção estimada do GPS.
-   - **Fase 2 (Visão Computacional IA):** O modelo `gemini-3.5-flash-lite` (ou `gemini-3.6-flash`) analisa a imagem e identifica as coordenadas de um **hidrante AMARELO** de calçada, retornando estritamente: `{"encontrado": true, "centro_x": <float 0.0 a 1.0>}`.
-   - **Fase 3 (Correção Angular):** O script calcula o desvio: `offset = (centro_x - 0.5) * FOV`. O ângulo da câmera é girado dinamicamente para o ponto exato.
-   - **Fase 4 (Foto de Alta Resolução):** Bate a foto final com zoom fechado (`FOV=75°` e resolução `800x600`), enquadrando o hidrante cravado no centro com a fachada nítida ao fundo.
+   - **Fase 2 (Visão Computacional IA - Agnosticismo de Cor):** O modelo `gemini-3.5-flash-lite` (ou `gemini-3.6-flash`) analisa a imagem buscando estritamente um **hidrante de coluna urbano (cilíndrico, geralmente amarelo ou vermelho)**. *NOTA: A IA é instruída a ignorar propositalmente hidrantes de recalque (vermelhos de tubulação fina).* Retorna a confiança (0-100) e o `centro_x`.
+   - **Fase 3 (Sweep 360°):** Se não achar de frente, o "pescoço" da câmera rotaciona dinamicamente `+120°` e `-120°` e submete novas fotos para a IA (achando hidrantes perdidos atrás da câmera).
+   - **Fase 4 (Step-Around Espacial):** Se todas as visões falharem por oclusão (ex: ônibus estacionado na frente), o script consulta o Street View pedindo um deslocamento de ~15 metros (`0.00015` lat/lng). Ao mudar de panorama, ele "fura" o obstáculo e refaz o Scan triangular.
+   - **Fase 5 (Correção Angular e Foto em Alta):** Com o hidrante achado, calcula o offset angular e bate a foto final com zoom fechado (`FOV=75°` e resolução `800x600`), enquadrando o hidrante perfeitamente.
 
 ---
 
@@ -104,7 +105,6 @@ Ao executar extrações e atualizar as fotos no Netuno, o script ou agente **DEV
 ---
 
 ## 8. Status Atual do Projeto
-- **Etapa 85 Concluída:** MVP de Arniqueiras (4 hidrantes: `ARN00001` a `ARN00004`) extraído, gravado e publicado na Vercel.
-- **Águas Claras Concluída:** 40 hidrantes de Águas Claras (`ACL00001` a `ACL00049`) extraídos em alta resolução (800x600) com autocentralização Sniper, salvos em `public/hidrantes/aguas_claras/` e sincronizados na tripla base (`base-de-dados.xlsx`, `public/base-de-dados.xlsx`, `public/hidrantes_df_oficial.json` e `.csv`).
-- **Frontend Preparado:** O `MapComponent.jsx` possui Hero Banner panorâmico 16:9, modal Lightbox fullscreen com botão de Street View 360°, e fallback por convenção para cidades testadas (`ARN` e `ACL`).
-- **Próxima Etapa:** Após validação do usuário no mobile, criar rotina para converter em `.webp` (via `sharp`), configurar o Bucket no Supabase Storage e disparar os lotes das demais cidades (Taguatinga, Ceilândia, Brasília, etc.).
+- **Etapa 85 Concluída:** MVP de Arniqueiras (4 hidrantes) publicado.
+- **Águas Claras e POC v4 Smart Concluídos:** O lote de Águas Claras (49 hidrantes) serviu como base para desenvolvimento da **Arquitetura Sniper v4**. A nova inteligência de Step-Around resolveu oclusões severas (ônibus, tapumes) e lidou perfeitamente com hidrantes de diferentes cores, ignorando com sucesso falsos-positivos (hidrantes de recalque). Imagens em alta resolução HD também estão documentadas.
+- **Próxima Etapa:** Disparar a extração em massa (utilizando a nova lógica Sniper v4) para as demais cidades do DF (Taguatinga, Ceilândia, Brasília, etc.) em uma nova pipeline de conversa.
