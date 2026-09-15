@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-102",
   "queue": [
     {
       "id": "TASK-1",
@@ -940,6 +940,108 @@
       "createdAt": "2026-09-14T21:29:21.811Z",
       "startedAt": "2026-09-14T21:34:22.234Z",
       "completedAt": "2026-09-14T21:36:36.687Z"
+    },
+    {
+      "id": "TASK-94",
+      "seq": 94,
+      "conversationId": "25225b4f-104f-421e-a027-6d45f101390e",
+      "description": "Fix banner full screen overlay, close button, hide filters and streetview heading angle",
+      "status": "timed_out",
+      "createdAt": "2026-09-14T21:38:13.066Z",
+      "startedAt": "2026-09-14T21:38:21.487Z",
+      "completedAt": "2026-09-14T21:53:22.160Z"
+    },
+    {
+      "id": "TASK-95",
+      "seq": 95,
+      "conversationId": "c1322d0e-a981-4d21-8202-a750ed2de40f",
+      "description": "Docs: Sincronizar STREETVIEW_PIPELINE.md e historico_implementacoes.md",
+      "status": "completed",
+      "createdAt": "2026-09-14T21:41:41.108Z",
+      "startedAt": "2026-09-14T21:53:22.181Z",
+      "completedAt": "2026-09-14T21:54:09.094Z"
+    },
+    {
+      "id": "TASK-96",
+      "seq": 96,
+      "conversationId": "b29df60a-2b8e-4f16-9f12-214c832629bc",
+      "description": "Corrigir foto e enquadramento do hidrante ARN00004",
+      "status": "completed",
+      "createdAt": "2026-09-14T21:44:04.966Z",
+      "startedAt": "2026-09-15T15:00:01.622Z",
+      "completedAt": "2026-09-15T15:07:40.955Z",
+      "error": "Abandonada no dia anterior"
+    },
+    {
+      "id": "TASK-97",
+      "seq": 97,
+      "conversationId": "6b2bd9c6-b08b-4ca2-87f3-fdaf0592f262",
+      "description": "Fix black outline on hydrant pins",
+      "status": "completed",
+      "createdAt": "2026-09-14T21:46:21.351Z",
+      "startedAt": null,
+      "completedAt": "2026-09-14T21:51:25.317Z"
+    },
+    {
+      "id": "TASK-98",
+      "seq": 98,
+      "conversationId": "5e9607ad-2159-41f0-8feb-1fa5583ef997",
+      "description": "Salvar fotos banner hidrantes Águas Claras",
+      "status": "failed",
+      "createdAt": "2026-09-14T21:50:29.308Z",
+      "startedAt": null,
+      "completedAt": "2026-09-15T15:00:46.856Z",
+      "error": "Abandonada no dia anterior"
+    },
+    {
+      "id": "TASK-99",
+      "seq": 99,
+      "conversationId": "a78ee6ee-ff32-4a2f-9a33-d3beddd1b8c9",
+      "description": "Sincronizacao em nuvem de historico de auditoria, RBAC e rotas otimizadas",
+      "status": "timed_out",
+      "createdAt": "2026-09-14T21:52:24.804Z",
+      "startedAt": "2026-09-15T15:01:27.817Z",
+      "completedAt": "2026-09-15T15:16:29.001Z"
+    },
+    {
+      "id": "TASK-100",
+      "seq": 100,
+      "conversationId": "3ad4b930-720b-441f-8a7a-41cf57795ff1",
+      "description": "Ajuste de centralização e enquadramento de pinos no mapa",
+      "status": "completed",
+      "createdAt": "2026-09-15T14:58:49.974Z",
+      "startedAt": "2026-09-15T15:16:29.004Z",
+      "completedAt": "2026-09-15T15:36:55.105Z"
+    },
+    {
+      "id": "TASK-101",
+      "seq": 101,
+      "conversationId": "25225b4f-104f-421e-a027-6d45f101390e",
+      "description": "Finalizar correcao tela cheia banner, fechar e Street View calibrado",
+      "status": "completed",
+      "createdAt": "2026-09-15T15:00:02.665Z",
+      "startedAt": "2026-09-15T15:31:32.116Z",
+      "completedAt": "2026-09-15T15:40:32.899Z"
+    },
+    {
+      "id": "TASK-102",
+      "seq": 102,
+      "conversationId": "5e9607ad-2159-41f0-8feb-1fa5583ef997",
+      "description": "Salvar fotos banner hidrantes Águas Claras",
+      "status": "running",
+      "createdAt": "2026-09-15T15:03:33.128Z",
+      "startedAt": "2026-09-15T15:40:34.326Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-103",
+      "seq": 103,
+      "conversationId": "a78ee6ee-ff32-4a2f-9a33-d3beddd1b8c9",
+      "description": "Finalizar sincronizacao em nuvem de auditoria, RBAC e rotas",
+      "status": "queued",
+      "createdAt": "2026-09-15T15:19:59.095Z",
+      "startedAt": null,
+      "completedAt": null
     }
   ]
 }
