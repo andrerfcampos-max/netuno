@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, MapPin, AlertCircle, SlidersHorizontal, X, Check, Filter } from 'lucide-react';
 
-const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problemasAtivos = [], isVisible, currentUser, onLogout, filteredCount = null }) => {
+const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problemasAtivos = [], isVisible, currentUser, onLogout, filteredCount = null, onDrawerOpen, onDrawerClose }) => {
   const filters = useMemo(() => {
     return {
       buscaGeral: activeFilters?.buscaGeral || '',
@@ -15,7 +15,8 @@ const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problema
     };
   }, [activeFilters]);
 
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpenInternal] = useState(false);
+  const setIsMobileDrawerOpen = (val) => { setIsMobileDrawerOpenInternal(val); if (val && onDrawerOpen) onDrawerOpen(); if (!val && onDrawerClose) onDrawerClose(); };
 
   const activeSecondaryFiltersCount = useMemo(() => {
     let count = 0;

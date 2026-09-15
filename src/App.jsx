@@ -244,6 +244,7 @@ syncPreferences({ activeView: view });
   }, [activeFilters, hidrantes]);
 
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [isPhotoFullscreen, setIsPhotoFullscreen] = useState(false);
   const [inspectingHidrante, setInspectingHidrante] = useState(null);
   const [editingHydrante, setEditingHydrante] = useState(null);
@@ -2318,8 +2319,10 @@ syncPreferences({ filters: filters });
                 </div>
               </div>
             )}
-            <FilterBar 
-              activeFilters={activeFilters}
+            <FilterBar
+                onDrawerOpen={() => setIsFilterDrawerOpen(true)}
+                onDrawerClose={() => setIsFilterDrawerOpen(false)}
+                activeFilters={activeFilters}
               onFilterChange={handleFilterChange} 
               regions={regions} 
               anos={anosVistoria} 
@@ -2400,8 +2403,9 @@ syncPreferences({ filters: filters });
         {/* MÓDULO 2: MAPA TÁTICO INTEGRADO */}
         <div className={`w-full h-full relative z-0 flex-1 min-h-0 ${activeView === 'map' ? 'block' : 'hidden'}`}>
           <ErrorBoundary>
-            <MapComponent 
-              isMenuOpen={isMenuOpen}
+            <MapComponent
+                isFilterDrawerOpen={isFilterDrawerOpen}
+                isMenuOpen={isMenuOpen}
               hidrantes={mapHidrantes} 
               userLocation={userLocation}
               onInspect={handleInspect}

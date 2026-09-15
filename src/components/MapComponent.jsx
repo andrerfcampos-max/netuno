@@ -778,6 +778,7 @@ const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocu
 
 const MapComponent = ({ 
   isMenuOpen = false,
+  isFilterDrawerOpen = false,
   hidrantes, 
   onInspect, 
   onEdit, 
@@ -908,13 +909,13 @@ const MapComponent = ({
 
   // Fecha imediatamente a dialog/bottom sheet de hidrante quando o menu principal é aberto
   useEffect(() => {
-    if (isMenuOpen && selectedHydrant) {
+    if (selectedHydrant) {
       setSelectedHydrant(null);
       if (onDeselectHydrant) {
         onDeselectHydrant();
       }
     }
-  }, [isMenuOpen]);
+  }, [isMenuOpen, isFilterDrawerOpen, isMapFullscreen]);
 
   // Suporte a arrastar / deslizar para baixo para fechar o Bottom Sheet
   const handleTouchStart = (e) => {

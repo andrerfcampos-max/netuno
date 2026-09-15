@@ -510,6 +510,18 @@
       "status": "completed",
       "name": "MVP de Fotos de Perfil dos Hidrantes de Arniqueiras (800x600 Sniper)",
       "prompt": "Executar o MVP de extração e vinculação das fotos de perfil dos hidrantes da RA de Arniqueiras:\n1. Extrair imagens em alta resolução 800x600 via Google Street View com autocentralização Sniper (gemini-3.5-flash-lite).\n2. Salvar na estrutura hierárquica por cidade: `public/hidrantes/arniqueira/ARN0000X.jpeg`.\n3. Atualizar a base de dados oficial (`public/base-de-dados.xlsx` e `base-de-dados.xlsx`) vinculando o campo `fotoPerfil` aos 4 hidrantes de Arniqueiras.\n4. Validar o carregamento do Hero Banner e Lightbox no Netuno mobile com build limpo."
+    },
+    {
+      "id": 86,
+      "status": "completed",
+      "name": "Fechamento Automático da Dialog do Hidrante",
+      "prompt": "Atue como Desenvolvedor Frontend e Especialista UX/UI. Quando a dialog/bottom sheet do hidrante estiver aberta no mapa e o usuário interagir com outras partes da interface (como ativar o modo Fullscreen, abrir os Filtros, ou abrir o Menu Principal), a dialog do hidrante deve ser fechada automaticamente. Certifique-se de fechar a dialog ao acionar fullscreen, filtro ou menu. Responda 'ETAPA CONCLUIDA' após finalizar, compilar e testar."
+    },
+    {
+      "id": 87,
+      "status": "pending",
+      "name": "Zoom com Pinça e Progressive Loading de Fotos (HD)",
+      "prompt": "Atue como Desenvolvedor Frontend Sênior e Especialista UI/UX.\\n1. Instale e implemente a biblioteca react-zoom-pan-pinch no MapComponent.jsx para permitir o zoom fluido com pinça (pinch-to-zoom) no lightbox (tela cheia) da foto.\\n2. Implemente o Progressive Image Loading: ao abrir a tela cheia, mostre a foto normal (carregamento instantâneo) e inicie o carregamento de uma versão em HD da foto em background (ex: hd_foto.jpeg ou resolução maior do Street View). Ao concluir o download, substitua a imagem pela HD para garantir o zoom nítido.\\n3. Atualize os scripts de extração/pipeline do Street View para passarem a salvar sempre as fotos nos dois tamanhos (padrão 800x600 para a miniatura e alta resolução 1200x900 para o lightbox).\\nResponda ETAPA CONCLUIDA ao finalizar e aprovar os testes."
     }
   ]
 }
