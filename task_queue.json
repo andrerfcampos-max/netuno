@@ -1028,10 +1028,10 @@
       "seq": 102,
       "conversationId": "5e9607ad-2159-41f0-8feb-1fa5583ef997",
       "description": "Salvar fotos banner hidrantes Águas Claras",
-      "status": "timed_out",
+      "status": "completed",
       "createdAt": "2026-09-15T15:03:33.128Z",
       "startedAt": "2026-09-15T15:40:34.326Z",
-      "completedAt": "2026-09-15T15:55:45.299Z"
+      "completedAt": "2026-09-15T16:21:56.870Z"
     },
     {
       "id": "TASK-103",
