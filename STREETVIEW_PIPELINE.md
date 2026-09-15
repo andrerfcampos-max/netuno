@@ -15,11 +15,19 @@
 
 ---
 
-## 2. Parâmetros Ótimos de Imagem (Foco Mobile)
-- **Formato:** `.webp` (com compressão em **80%**) ou `.jpeg` como transição.
-- **Resolução de Captura:** **`800x600`** pixels (ou `800x500` 16:9).
-  - *Por que não 640x640?* Imagens de 640px ficam levemente pixeladas quando esticadas em monitores de computador. Telas de smartphone possuem telas Retina com densidade 2x/3x DPR: uma imagem de `800x600` possui superamostragem perfeita, ficando ultra nítida no celular.
-- **Peso por Arquivo:** Entre **35 KB e 50 KB** por hidrante.
+## 2. Parâmetros Ótimos de Imagem (Foco Mobile) e Progressive Loading
+O sistema agora utiliza o conceito de **Progressive Image Loading** (Etapa 87) para garantir zoom com pinça no mapa sem pixelar, mantendo o tempo de resposta instantâneo.
+Para isso, os scripts de extração devem baixar e salvar **duas versões** da imagem:
+
+1. **Miniatura Padrão (`[ID].jpeg` ou `.webp`):**
+   - Resolução de Captura: **`800x600`** pixels (ou `800x500` 16:9).
+   - Função: Usada no banner do mapa e na abertura imediata da tela cheia.
+   - Peso por Arquivo: Entre **35 KB e 50 KB**.
+
+2. **Versão Alta Resolução HD (`[ID]_hd.jpeg` ou `.webp`):**
+   - Resolução de Captura: **`1200x900`** pixels.
+   - Função: Baixada em background quando a foto entra em tela cheia. Ocultamente substitui a foto leve para garantir um zoom (pinch-to-zoom) perfeito e sem pixelar para pessoas com deficiência visual.
+   - Peso por Arquivo: Entre **100 KB a 150 KB**.
 
 ---
 

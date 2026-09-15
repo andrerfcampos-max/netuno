@@ -1,3 +1,4 @@
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
@@ -773,6 +774,35 @@ const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocu
         <LocateFixed size={22} className="text-cyan-400" />
       </button>
     </div>
+  );
+};
+
+const ProgressiveFullscreenPhoto = ({ photoUrl, placeholderContent }) => {
+  const [hdSrc, setHdSrc] = React.useState(null);
+
+  React.useEffect(() => {
+    if (photoUrl === 'placeholder' || !photoUrl) return;
+
+    let hdUrl = photoUrl;
+    if (photoUrl.includes('.jpeg')) hdUrl = photoUrl.replace('.jpeg', '_hd.jpeg');
+    else if (photoUrl.includes('.jpg')) hdUrl = photoUrl.replace('.jpg', '_hd.jpg');
+    else if (photoUrl.includes('.webp')) hdUrl = photoUrl.replace('.webp', '_hd.webp');
+    else hdUrl = photoUrl + '_hd';
+
+    const img = new Image();
+    img.src = hdUrl;
+    img.onload = () => setHdSrc(hdUrl);
+    img.onerror = () => setHdSrc(null);
+  }, [photoUrl]);
+
+  if (photoUrl === 'placeholder') return placeholderContent;
+
+  return (
+    <TransformWrapper initialScale={1} minScale={0.5} maxScale={5} centerOnInit wheel={{ step: 0.1 }}>
+      <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <img src={hdSrc || photoUrl} alt="Foto Ampliada" className="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-slate-800" onClick={(e) => e.stopPropagation()} />
+      </TransformComponent>
+    </TransformWrapper>
   );
 };
 
@@ -2067,25 +2097,21 @@ const MapComponent = ({
 
           {/* Área Central da Imagem */}
           <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden relative my-4">
-            {fullscreenPhoto === 'placeholder' ? (
-              <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/60 rounded-2xl border border-slate-800 max-w-sm w-full">
-                <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4 border border-slate-700">
-                  <MapPin size={24} className="text-slate-500" />
+            <ProgressiveFullscreenPhoto 
+              photoUrl={fullscreenPhoto} 
+              placeholderContent={
+                <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/60 rounded-2xl border border-slate-800 max-w-sm w-full">
+                  <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4 border border-slate-700">
+                    <MapPin size={24} className="text-slate-500" />
+                  </div>
+                  <h3 className="text-white font-bold text-lg mb-2">Foto não capturada</h3>
+                  <p className="text-slate-400 text-sm">
+                    Este hidrante ainda não possui uma foto de perfil ou a captura automática falhou. 
+                    Você pode usar o botão do Street View abaixo para explorar a área com o enquadramento calibrado.
+                  </p>
                 </div>
-                <h3 className="text-white font-bold text-lg mb-2">Foto não capturada</h3>
-                <p className="text-slate-400 text-sm">
-                  Este hidrante ainda não possui uma foto de perfil ou a captura automática falhou. 
-                  Você pode usar o botão do Street View abaixo para explorar a área com o enquadramento calibrado.
-                </p>
-              </div>
-            ) : (
-              <img 
-                src={fullscreenPhoto} 
-                alt="Foto Ampliada do Hidrante" 
-                className="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-slate-800" 
-                onClick={(e) => e.stopPropagation()}
-              />
-            )}
+              } 
+            />
           </div>
 
           {/* Footer de Ações do Lightbox */}

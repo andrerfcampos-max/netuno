@@ -519,7 +519,7 @@
     },
     {
       "id": 87,
-      "status": "pending",
+      "status": "completed",
       "name": "Zoom com Pinça e Progressive Loading de Fotos (HD)",
       "prompt": "Atue como Desenvolvedor Frontend Sênior e Especialista UI/UX.\\n1. Instale e implemente a biblioteca react-zoom-pan-pinch no MapComponent.jsx para permitir o zoom fluido com pinça (pinch-to-zoom) no lightbox (tela cheia) da foto.\\n2. Implemente o Progressive Image Loading: ao abrir a tela cheia, mostre a foto normal (carregamento instantâneo) e inicie o carregamento de uma versão em HD da foto em background (ex: hd_foto.jpeg ou resolução maior do Street View). Ao concluir o download, substitua a imagem pela HD para garantir o zoom nítido.\\n3. Atualize os scripts de extração/pipeline do Street View para passarem a salvar sempre as fotos nos dois tamanhos (padrão 800x600 para a miniatura e alta resolução 1200x900 para o lightbox).\\nResponda ETAPA CONCLUIDA ao finalizar e aprovar os testes."
     }

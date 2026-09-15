@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-109",
   "queue": [
     {
       "id": "TASK-1",
@@ -1042,6 +1042,78 @@
       "createdAt": "2026-09-15T15:19:59.095Z",
       "startedAt": "2026-09-15T15:56:19.083Z",
       "completedAt": "2026-09-15T16:02:37.597Z"
+    },
+    {
+      "id": "TASK-104",
+      "seq": 104,
+      "conversationId": "5e9607ad-2159-41f0-8feb-1fa5583ef997",
+      "description": "Elaborar plano de otimização da IA Sniper",
+      "status": "completed",
+      "createdAt": "2026-09-15T16:34:47.073Z",
+      "startedAt": "2026-09-15T16:34:56.636Z",
+      "completedAt": "2026-09-15T16:35:47.402Z"
+    },
+    {
+      "id": "TASK-105",
+      "seq": 105,
+      "conversationId": "5e9607ad-2159-41f0-8feb-1fa5583ef997",
+      "description": "Criar e testar POC Sniper v4 Smart para 14 hidrantes dificeis",
+      "status": "timed_out",
+      "createdAt": "2026-09-15T16:36:09.149Z",
+      "startedAt": "2026-09-15T16:36:17.119Z",
+      "completedAt": "2026-09-15T17:07:22.817Z"
+    },
+    {
+      "id": "TASK-106",
+      "seq": 106,
+      "conversationId": "6794e6e2-c1d7-4007-af34-c221440751c3",
+      "description": "Close hydrant dialog on external clicks (fullscreen, filters, menu)",
+      "status": "completed",
+      "createdAt": "2026-09-15T16:48:03.170Z",
+      "startedAt": "2026-09-15T17:07:27.759Z",
+      "completedAt": "2026-09-15T17:13:23.006Z"
+    },
+    {
+      "id": "TASK-107",
+      "seq": 107,
+      "conversationId": "run_automation",
+      "description": "Orquestrador Etapa 86: Fechamento Automático da Dialog do Hidrante",
+      "status": "failed",
+      "createdAt": "2026-09-15T17:08:01.087Z",
+      "startedAt": null,
+      "completedAt": "2026-09-15T17:08:01.128Z",
+      "error": "Falha durante execução do agente"
+    },
+    {
+      "id": "TASK-108",
+      "seq": 108,
+      "conversationId": "5e9607ad-2159-41f0-8feb-1fa5583ef997",
+      "description": "Finalizar POC Sniper v4 com relatorio de falhas",
+      "status": "completed",
+      "createdAt": "2026-09-15T17:09:27.157Z",
+      "startedAt": "2026-09-15T17:13:23.934Z",
+      "completedAt": "2026-09-15T17:32:07.625Z"
+    },
+    {
+      "id": "TASK-109",
+      "seq": 109,
+      "conversationId": "f5d2bff3-5b52-4fa5-ab6b-0b7e04363d2e",
+      "description": "Executar etapa 87 do workflow",
+      "status": "running",
+      "createdAt": "2026-09-15T17:13:22.073Z",
+      "startedAt": "2026-09-15T17:28:26.421Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-110",
+      "seq": 110,
+      "conversationId": "run_automation",
+      "description": "Orquestrador Etapa 87: Zoom com Pinça e Progressive Loading de Fotos (HD)",
+      "status": "failed",
+      "createdAt": "2026-09-15T17:28:33.076Z",
+      "startedAt": null,
+      "completedAt": "2026-09-15T17:28:33.099Z",
+      "error": "Falha durante execução do agente"
     }
   ]
 }
