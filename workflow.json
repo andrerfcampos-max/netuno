@@ -558,6 +558,12 @@
       "status": "pending",
       "name": "Performance & Carregamento - Ajustes Imediatos",
       "prompt": "Atue como Engenheiro de Performance e Frontend. Investigue e otimize a tela pós-login: 1) Banner pós-login: Solucionar o delay/tempo de carregamento da imagem de banner que causa uma tela em branco ou demora de alguns segundos imediatamente após a autenticação. Implemente pre-loading ou otimize o asset de entrada. Responda 'ETAPA CONCLUIDA' após finalizar."
+    },
+    {
+      "id": 94,
+      "status": "pending",
+      "name": "Correção Pipeline Lago Sul (Fallback GPS)",
+      "prompt": "Atue como Engenheiro de Software. Modifique o script scripts/extract_lago_sul.cjs. A função smartScan atualmente retorna falha caso a IA (Gemini) não identifique o hidrante com >80% de confiança. Altere para adotar o mesmo fallback dos scripts de Águas Claras e Arniqueiras: se a IA não encontrar, o script não deve falhar; em vez disso, deve usar a coordenada GPS original (baseHeading) para tirar a foto e salvá-la de qualquer forma, garantindo que o banner do hidrante não fique vazio. Após alterar, rode o script para Lago Sul novamente para capturar as fotos faltantes e atualize o base-de-dados.xlsx."
     }
   ]
 }
