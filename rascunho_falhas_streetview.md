@@ -28,3 +28,18 @@
 - BRZ00035 (Capturado via Fallback GPS)
 - BRZ00037 (Capturado via Fallback GPS)
 
+
+## Candangolândia (Revisão de Enquadramento GPS / Sem Cobertura)
+- CAN00007 (Sem cobertura Street View)
+- CAN00010 (Sem cobertura Street View)
+- CAN00032 (Sem cobertura Street View)
+- CAN00001 (Capturado via Fallback GPS)
+- CAN00003 (Capturado via Fallback GPS)
+- CAN00006 (Capturado via Fallback GPS)
+- CAN00009 (Capturado via Fallback GPS)
+- CAN00016 (Capturado via Fallback GPS)
+- CAN00018 (Capturado via Fallback GPS)
+- CAN00020 (Capturado via Fallback GPS)
+- CAN00021 (Capturado via Fallback GPS)
+- CAN00027 (Capturado via Fallback GPS)
+- CAN00030 (Capturado via Fallback GPS)
