@@ -10,6 +10,7 @@ import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
 import { setCachedLocation, getLastKnownLocation } from '../utils/geoTracker';
 import { optimizeRouteEuclidean } from '../utils/routeOptimization';
+import { isHydrantInSet, getHydrantAllIds } from '../utils/idMapping';
 import { getStreetViewUrl } from '../utils/streetViewUtils';
 
 // Fix para ícones padrão do Leaflet não quebrarem
@@ -1112,16 +1113,10 @@ const MapComponent = ({
       const strId = String(id);
       map[strId] = orderNum;
 
-      // Mapeia TODOS os identificadores possíveis (codHidrante, nomHidrante, _internalId) para garantir 100% de match
-      const found = activeMissionHydrants.find(h => 
-        (h.codHidrante !== undefined && h.codHidrante !== null && String(h.codHidrante) === strId) ||
-        (h.nomHidrante && String(h.nomHidrante) === strId) ||
-        (h._internalId && String(h._internalId) === strId)
-      );
+      // Mapeia TODOS os identificadores possíveis para garantir 100% de match
+      const found = activeMissionHydrants.find(h => isHydrantInSet(h, [strId]));
       if (found) {
-        if (found.codHidrante !== undefined && found.codHidrante !== null) map[String(found.codHidrante)] = orderNum;
-        if (found.nomHidrante) map[String(found.nomHidrante)] = orderNum;
-        if (found._internalId) map[String(found._internalId)] = orderNum;
+        getHydrantAllIds(found).forEach(k => { map[k] = orderNum; });
       }
     });
     return map;
@@ -1136,10 +1131,7 @@ const MapComponent = ({
     let comp = 0;
     let pend = 0;
     activeMissionHydrants.forEach(h => {
-      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-      const k3 = h._internalId ? String(h._internalId) : null;
-      if ((k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3))) {
+      if (isHydrantInSet(h, completedIdsSet)) {
         comp++;
       } else {
         pend++;
@@ -1150,20 +1142,11 @@ const MapComponent = ({
 
   const selectedHydrantMissionStatus = useMemo(() => {
     if (!hasActiveRoute || !selectedHydrant) return null;
-    const k1 = selectedHydrant.codHidrante !== undefined && selectedHydrant.codHidrante !== null ? String(selectedHydrant.codHidrante) : null;
-    const k2 = selectedHydrant.nomHidrante ? String(selectedHydrant.nomHidrante) : null;
-    const k3 = selectedHydrant._internalId ? String(selectedHydrant._internalId) : null;
-    const isCompleted = Boolean((k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3)));
-    const isMission = Boolean(
-      (k1 && activeMissionIdsSet.has(k1)) ||
-      (k2 && activeMissionIdsSet.has(k2)) ||
-      (k3 && activeMissionIdsSet.has(k3)) ||
-      (k1 && activeMissionHydrants.some(mh => String(mh.codHidrante) === k1)) ||
-      (k2 && activeMissionHydrants.some(mh => mh.nomHidrante === k2)) ||
-      (k3 && activeMissionHydrants.some(mh => mh._internalId === k3))
-    );
+    const isMission = isHydrantInSet(selectedHydrant, activeMissionIdsSet) || activeMissionHydrants.some(mh => isHydrantInSet(selectedHydrant, getHydrantAllIds(mh)));
     if (!isMission) return null;
-    const order = !isCompleted ? ((k1 && missionOrderMap[k1]) || (k2 && missionOrderMap[k2]) || (k3 && missionOrderMap[k3])) : null;
+    const isCompleted = isHydrantInSet(selectedHydrant, completedIdsSet);
+    const allIds = getHydrantAllIds(selectedHydrant);
+    const order = !isCompleted ? (allIds.map(k => missionOrderMap[k]).find(v => v !== undefined) || null) : null;
     return { isCompleted, order };
   }, [hasActiveRoute, selectedHydrant, completedIdsSet, activeMissionIdsSet, activeMissionHydrants, missionOrderMap]);
 

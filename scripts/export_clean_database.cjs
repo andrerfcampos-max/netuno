@@ -19,7 +19,9 @@ function generateCleanDatabase() {
 
   for (let i = 0; i < rawData.length; i++) {
     const row = rawData[i];
-    const code = String(row.nomHidrante || row.codHidrante || row['Código'] || '').trim();
+    const legacyCode = String(row.codHidrante || '').trim();
+    const officialNom = String(row.nomHidrante || '').trim();
+    const code = officialNom || legacyCode || String(row['Código'] || '').trim();
     const address = String(row.dscEndereco || row['Endereço'] || '').trim();
     const ra = String(row.dscLocalidade || row['RA'] || row['Cidade'] || '').trim();
 
@@ -37,17 +39,22 @@ function generateCleanDatabase() {
     const isAtivo = ['true', '1', 'v', 'verdadeiro', 'sim', 's', 'operante', 'ativo'].includes(ativoStr) || flgAtivoRaw === true;
 
     const record = {
-      _internalId: `hid_${i + 1}`,
-      codHidrante: code,
-      nomHidrante: code,
+      _internalId: row._internalId || `hid_${i}`,
+      codHidrante: legacyCode || code,
+      nomHidrante: officialNom || code,
+      codLegado: legacyCode,
       dscLocalidade: ra || 'Brasília',
       dscEndereco: address,
-      pontoReferencia: String(row.dscPontoReferencia || row['Ponto de referência'] || '').trim(),
+      pontoReferencia: String(row.dscPontoReferencia || row['Ponto de referência'] || row.pontoReferencia || '').trim(),
+      dscPontoReferencia: String(row.dscPontoReferencia || row['Ponto de referência'] || row.pontoReferencia || '').trim(),
       numLatitude: parseFloat(lat.toFixed(6)),
       numLongitude: parseFloat(lng.toFixed(6)),
       flgAtivo: isAtivo,
+      status: isAtivo ? 'Operante' : 'Inoperante',
       problemasHidrante: String(row.problemasHidrante || row['Problemas'] || '').trim(),
-      datHoraVistoria: String(row.datHoraVistoria || row['Data da Vistoria'] || '').trim(),
+      dscObservacao: String(row.dscObservacao || row.observacoes || '').trim(),
+      datHoraVistoria: String(row.datHoraVistoria || row['Data da Vistoria'] || row.datHoraUltimaVistoria || '').trim(),
+      datHoraUltimaVistoria: String(row.datHoraUltimaVistoria || row.datHoraVistoria || '').trim(),
       vistoriadorNome: String(row.vistoriadorNome || row['Vistoriador'] || '').trim(),
       diametro: String(row.diametro || '100mm').trim(),
       fotoPerfil: String(row.fotoPerfil || '').trim()
@@ -61,14 +68,19 @@ function generateCleanDatabase() {
     '_internalId',
     'codHidrante',
     'nomHidrante',
+    'codLegado',
     'dscLocalidade',
     'dscEndereco',
     'pontoReferencia',
+    'dscPontoReferencia',
     'numLatitude',
     'numLongitude',
     'flgAtivo',
+    'status',
     'problemasHidrante',
+    'dscObservacao',
     'datHoraVistoria',
+    'datHoraUltimaVistoria',
     'vistoriadorNome',
     'diametro',
     'fotoPerfil'

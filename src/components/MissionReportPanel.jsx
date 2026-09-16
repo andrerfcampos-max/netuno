@@ -5,6 +5,7 @@ import { normalizeRAName, getRARoman } from '../utils/raList';
 import { fixEncoding } from '../utils/textUtils';
 import { printGeneralReport, printCaesbReport, generateDocHash, extractPhotos } from '../utils/officialPrintUtils';
 import { generateSeiMemorandoMinutaText } from '../utils/seiMemorandoUtils';
+import { isHydrantInSet } from '../utils/idMapping';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, activeFilters = null }) => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -93,13 +94,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       // Para Relatório de Missão (Parcial ou Conclusivo):
       // Inclui ESTRITAMENTE os hidrantes que foram vistoriados (concluídos) nesta missão!
       // Nenhum hidrante pendente/não vistoriado da base legada entra no relatório de vistoria.
-      const compSet = new Set((currentMission.completedIds || []).map(id => String(id).trim().toUpperCase()));
-      const completed = hidrantes.filter(h => {
-        const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante).trim().toUpperCase() : null;
-        const k2 = h.nomHidrante ? String(h.nomHidrante).trim().toUpperCase() : null;
-        const k3 = h._internalId ? String(h._internalId).trim().toUpperCase() : null;
-        return (k1 && compSet.has(k1)) || (k2 && compSet.has(k2)) || (k3 && compSet.has(k3));
-      });
+      const completed = hidrantes.filter(h => isHydrantInSet(h, currentMission.completedIds || []));
 
       // Ordena rigorosamente da vistoria mais recente para a mais antiga realizada
       return completed.sort((a, b) => {

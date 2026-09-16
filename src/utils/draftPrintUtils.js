@@ -1,6 +1,7 @@
 import { fixEncoding } from './textUtils';
 import { normalizeRAName } from './raList';
 import { executePrintHtml } from './officialPrintUtils';
+import { isHydrantInSet, translateId } from './idMapping';
 
 // Cálculo de distância geodésica em km (Haversine)
 export const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -73,15 +74,12 @@ export const printMissionDraft = ({ mission, hidrantes = [], folderName = '', cu
 
   // Mapeia os códigos da missão para os objetos completos de hidrantes
   const missionHydrants = selectedIds.map(id => {
-    const found = hidrantes.find(h => 
-      h.nomHidrante === id || 
-      h.codHidrante === id || 
-      String(h.codHidrante) === String(id) || 
-      h._internalId === id
-    );
+    const found = hidrantes.find(h => isHydrantInSet(h, [id]));
     if (found) return found;
+    const translated = translateId(id);
+    const nom = translated && translated.length > String(id).length ? translated : id;
     return {
-      nomHidrante: id,
+      nomHidrante: nom,
       codHidrante: id,
       dscEndereco: 'Endereço não localizado na base',
       dscPontoReferencia: '',

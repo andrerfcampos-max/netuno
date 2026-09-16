@@ -16,6 +16,7 @@ import {
   subscribeLocation, 
   setCachedLocation 
 } from '../utils/geoTracker';
+import { isHydrantInSet, getHydrantAllIds, translateId, areIdsEquivalent } from '../utils/idMapping';
 
 // Fórmula de Haversine em km para compatibilidade interna
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -108,45 +109,40 @@ const MissionRoutePanel = ({
   // Hidrantes que pertencem à missão
   const missionHydrants = useMemo(() => {
     if (!selectedMissionIds || selectedMissionIds.length === 0) return [];
-    return hidrantes.filter(h => {
-      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-      const k3 = h._internalId ? String(h._internalId) : null;
-      return (k1 && selectedIdsSet.has(k1)) || (k2 && selectedIdsSet.has(k2)) || (k3 && selectedIdsSet.has(k3));
-    });
+    return hidrantes.filter(h => isHydrantInSet(h, selectedIdsSet));
   }, [hidrantes, selectedIdsSet]);
 
   // Hidrantes concluídos na missão
   const completedHydrants = useMemo(() => {
-    return missionHydrants.filter(h => {
-      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-      const k3 = h._internalId ? String(h._internalId) : null;
-      return (k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3));
-    });
+    return missionHydrants.filter(h => isHydrantInSet(h, completedIdsSet));
   }, [missionHydrants, completedIdsSet]);
 
   // Hidrantes faltantes / pendentes
   const pendingHydrants = useMemo(() => {
-    return missionHydrants.filter(h => {
-      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-      const k3 = h._internalId ? String(h._internalId) : null;
-      const isDone = (k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3));
-      return !isDone;
-    });
+    return missionHydrants.filter(h => !isHydrantInSet(h, completedIdsSet));
   }, [missionHydrants, completedIdsSet]);
 
   // Inicializa a rota respeitando a ordenação prévia salva na missão, se houver
   const [pendingRoute, setPendingRoute] = useState(() => {
     if (!currentMission?.orderedIds || currentMission.orderedIds.length === 0) return [];
     const orderedMap = new Map();
-    currentMission.orderedIds.forEach((id, idx) => orderedMap.set(String(id), idx));
+    currentMission.orderedIds.forEach((id, idx) => {
+      const s = String(id).trim();
+      orderedMap.set(s, idx);
+      const trans = translateId(s);
+      if (trans) orderedMap.set(trans, idx);
+    });
     return [...pendingHydrants].sort((a, b) => {
-      const kA = String(a.codHidrante || a._internalId || a.nomHidrante);
-      const kB = String(b.codHidrante || b._internalId || b.nomHidrante);
-      const idxA = orderedMap.has(kA) ? orderedMap.get(kA) : 999;
-      const idxB = orderedMap.has(kB) ? orderedMap.get(kB) : 999;
+      const allA = getHydrantAllIds(a);
+      const allB = getHydrantAllIds(b);
+      let idxA = 999;
+      for (const id of allA) {
+        if (orderedMap.has(id)) { idxA = Math.min(idxA, orderedMap.get(id)); }
+      }
+      let idxB = 999;
+      for (const id of allB) {
+        if (orderedMap.has(id)) { idxB = Math.min(idxB, orderedMap.get(id)); }
+      }
       return idxA - idxB;
     });
   });
@@ -328,24 +324,23 @@ const MissionRoutePanel = ({
 
     if (cachedOrderedIds && cachedOrderedIds.length > 0) {
       const orderedMap = new Map();
-      cachedOrderedIds.forEach((id, idx) => orderedMap.set(String(id), idx));
+      cachedOrderedIds.forEach((id, idx) => {
+        const s = String(id).trim();
+        orderedMap.set(s, idx);
+        const trans = translateId(s);
+        if (trans) orderedMap.set(trans, idx);
+      });
       const sortedByMission = [...pendingHydrants].sort((a, b) => {
-        const kA1 = a.codHidrante !== undefined && a.codHidrante !== null ? String(a.codHidrante) : '';
-        const kA2 = a.nomHidrante ? String(a.nomHidrante) : '';
-        const kA3 = a._internalId ? String(a._internalId) : '';
-        const idxA1 = kA1 && orderedMap.has(kA1) ? orderedMap.get(kA1) : 999;
-        const idxA2 = kA2 && orderedMap.has(kA2) ? orderedMap.get(kA2) : 999;
-        const idxA3 = kA3 && orderedMap.has(kA3) ? orderedMap.get(kA3) : 999;
-        const idxA = Math.min(idxA1, idxA2, idxA3);
-
-        const kB1 = b.codHidrante !== undefined && b.codHidrante !== null ? String(b.codHidrante) : '';
-        const kB2 = b.nomHidrante ? String(b.nomHidrante) : '';
-        const kB3 = b._internalId ? String(b._internalId) : '';
-        const idxB1 = kB1 && orderedMap.has(kB1) ? orderedMap.get(kB1) : 999;
-        const idxB2 = kB2 && orderedMap.has(kB2) ? orderedMap.get(kB2) : 999;
-        const idxB3 = kB3 && orderedMap.has(kB3) ? orderedMap.get(kB3) : 999;
-        const idxB = Math.min(idxB1, idxB2, idxB3);
-
+        const allA = getHydrantAllIds(a);
+        const allB = getHydrantAllIds(b);
+        let idxA = 999;
+        for (const id of allA) {
+          if (orderedMap.has(id)) { idxA = Math.min(idxA, orderedMap.get(id)); }
+        }
+        let idxB = 999;
+        for (const id of allB) {
+          if (orderedMap.has(id)) { idxB = Math.min(idxB, orderedMap.get(id)); }
+        }
         return idxA - idxB;
       });
       setPendingRoute(sortedByMission);

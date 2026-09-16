@@ -108,18 +108,20 @@ export const loadPreloadedDatabase = async (onComplete) => {
       const cleanRA = normalizeRAName(rawRA);
 
       // Resolução do código alfa-numérico oficial com prefixo da RA (ex: GUA00123, BSB00511, TAG00142)
-      const officialCode = String(rawNom || rawCod || `HID${i + 1}`).trim();
-      const cleanNom = fixEncoding(officialCode);
-      const cleanCod = fixEncoding(officialCode);
+      const officialNom = String(row.nomHidrante || row['Código'] || `HID${i + 1}`).trim();
+      const legacyCod = String(row.codHidrante || '').trim();
+      const cleanNom = fixEncoding(officialNom);
+      const cleanCod = fixEncoding(legacyCod || officialNom);
       const cleanEnd = fixEncoding(row.dscEndereco || row['Endereço'] || '');
-      const cleanRef = fixEncoding(row.dscPontoReferencia || row['Ponto de referência'] || '');
+      const cleanRef = fixEncoding(row.dscPontoReferencia || row['Ponto de referência'] || row.pontoReferencia || '');
       const cleanProb = sanitizeProblem(fixEncoding(row.problemasHidrante || row['Problemas do Hidrante'] || row.Problema || ''));
 
       parsedData.push({
         ...row,
-        _internalId: `hid_${i}`,
+        _internalId: row._internalId || `hid_${i}`,
         nomHidrante: cleanNom,
         codHidrante: cleanCod,
+        codLegado: legacyCod || cleanCod,
         dscLocalidade: cleanRA,
         dscEndereco: cleanEnd,
         dscPontoReferencia: cleanRef,

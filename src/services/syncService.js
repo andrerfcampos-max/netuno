@@ -70,15 +70,22 @@ export const syncMissionToCloud = async (mission) => {
   if (!client || !mission) return;
 
   try {
-    const orderedList = (Array.isArray(mission.orderedIds) && mission.orderedIds.length > 0)
-      ? mission.orderedIds
-      : (mission.selectedIds || []);
+    const allSelected = Array.isArray(mission.selectedIds) ? mission.selectedIds : [];
+    const orderedIds = Array.isArray(mission.orderedIds) ? mission.orderedIds : [];
+    
+    // Preserva a ordem otimizada sem nunca truncar ou perder hidrantes de selectedIds
+    const orderedSet = new Set(orderedIds.map(String));
+    const fullOrderedList = [
+      ...orderedIds,
+      ...allSelected.filter(id => !orderedSet.has(String(id)))
+    ];
+    const finalSelectedIds = fullOrderedList.length >= allSelected.length ? fullOrderedList : allSelected;
 
     const payload = {
       id: String(mission.id),
       name: mission.name,
       parent_folder_id: mission.parentFolderId || null,
-      selected_ids: orderedList,
+      selected_ids: finalSelectedIds,
       completed_ids: mission.completedIds || [],
       is_draft: Boolean(mission.isDraft),
       created_by: mission.createdBy || null,

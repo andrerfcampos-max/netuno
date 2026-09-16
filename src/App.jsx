@@ -32,6 +32,7 @@ import { extractProblemsList, isHidranteRemovido } from './utils/problemUtils';
 import { fixEncoding } from './utils/textUtils';
 import { getLastKnownLocation, startGlobalGeoTracking, subscribeLocation } from './utils/geoTracker';
 import { optimizeRouteEuclidean } from './utils/routeOptimization';
+import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent } from './utils/idMapping';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Raio da Terra em km
@@ -349,28 +350,13 @@ syncPreferences({ activeView: view });
   // Extrai TODOS os hidrantes da rota da missão ativa (concluídos e faltantes)
   const allMissionRouteHydrants = useMemo(() => {
     if (!currentMission || !currentMission.selectedIds || currentMission.selectedIds.length === 0) return [];
-    const idSet = new Set(currentMission.selectedIds.map(String));
-
-    return hidrantes.filter(h => {
-      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-      const k3 = h._internalId ? String(h._internalId) : null;
-      return (k1 && idSet.has(k1)) || (k2 && idSet.has(k2)) || (k3 && idSet.has(k3));
-    });
+    return hidrantes.filter(h => isHydrantInSet(h, currentMission.selectedIds));
   }, [currentMission, hidrantes]);
 
   // Extrai APENAS os hidrantes PENDENTES (não vistoriados) da rota da missão ativa
   const pendingRouteHydrants = useMemo(() => {
     if (!allMissionRouteHydrants || allMissionRouteHydrants.length === 0) return [];
-    const compSet = new Set((currentMission?.completedIds || []).map(String));
-
-    return allMissionRouteHydrants.filter(h => {
-      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-      const k3 = h._internalId ? String(h._internalId) : null;
-      const isCompleted = (k1 && compSet.has(k1)) || (k2 && compSet.has(k2)) || (k3 && compSet.has(k3));
-      return !isCompleted;
-    });
+    return allMissionRouteHydrants.filter(h => !isHydrantInSet(h, currentMission?.completedIds || []));
   }, [allMissionRouteHydrants, currentMission?.completedIds]);
 
   // Fecha a rota no mapa caso a missão ativa seja limpa ou fechada
@@ -1023,31 +1009,18 @@ syncPreferences({ filters: newFilters });
 
     let candidateKeys = [];
     if (typeof hydrantOrId === 'object' && hydrantOrId !== null) {
-      candidateKeys = [
-        hydrantOrId._internalId ? String(hydrantOrId._internalId) : null,
-        hydrantOrId.codHidrante !== undefined && hydrantOrId.codHidrante !== null ? String(hydrantOrId.codHidrante) : null,
-        hydrantOrId.nomHidrante ? String(hydrantOrId.nomHidrante) : null
-      ].filter(Boolean);
+      candidateKeys = getHydrantAllIds(hydrantOrId);
     } else if (hydrantOrId) {
       const strId = String(hydrantOrId);
-      candidateKeys = [strId];
-      const found = hidrantes.find(h => 
-        String(h._internalId) === strId || 
-        String(h.codHidrante) === strId || 
-        String(h.nomHidrante) === strId
-      );
-      if (found) {
-        if (found._internalId) candidateKeys.push(String(found._internalId));
-        if (found.codHidrante) candidateKeys.push(String(found.codHidrante));
-        if (found.nomHidrante) candidateKeys.push(String(found.nomHidrante));
-      }
+      const found = hidrantes.find(h => isHydrantInSet(h, [strId]));
+      candidateKeys = found ? getHydrantAllIds(found) : [strId];
     }
 
     const currentSel = currentM.selectedIds || [];
     const currentComp = currentM.completedIds || [];
 
-    const newSelected = currentSel.filter(selId => !candidateKeys.includes(String(selId)));
-    const newCompleted = currentComp.filter(compId => !candidateKeys.includes(String(compId)));
+    const newSelected = currentSel.filter(selId => !candidateKeys.some(ck => areIdsEquivalent(selId, ck)));
+    const newCompleted = currentComp.filter(compId => !candidateKeys.some(ck => areIdsEquivalent(compId, ck)));
 
     const target = {
       ...currentM,
@@ -1069,14 +1042,17 @@ syncPreferences({ filters: newFilters });
     const currentSel = currentM.selectedIds || [];
     const currentComp = currentM.completedIds || [];
 
-    const isAlreadySelected = currentSel.some(x => String(x) === strId);
+    const found = hidrantes.find(h => isHydrantInSet(h, [strId]));
+    const candidateKeys = found ? getHydrantAllIds(found) : [strId];
+
+    const isAlreadySelected = currentSel.some(x => candidateKeys.some(ck => areIdsEquivalent(x, ck)));
 
     const newSelected = isAlreadySelected 
-      ? currentSel.filter(missionId => String(missionId) !== strId) 
+      ? currentSel.filter(missionId => !candidateKeys.some(ck => areIdsEquivalent(missionId, ck))) 
       : [...currentSel, id];
     
     const newCompleted = isAlreadySelected
-      ? currentComp.filter(cId => String(cId) !== strId)
+      ? currentComp.filter(cId => !candidateKeys.some(ck => areIdsEquivalent(cId, ck)))
       : currentComp;
 
     const target = {
