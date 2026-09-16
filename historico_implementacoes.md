@@ -772,3 +772,10 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   2. **Cobertura Quase Total:** 41 de 42 hidrantes (97,6%) capturados com sucesso em resolucoes padrao (800x600) e HD (1200x900) na pasta public/hidrantes/brazlandia/.
   3. **Base Oficial Atualizada:** Sincronizacao de fotoPerfil em base-de-dados.xlsx, public/base-de-dados.xlsx, hidrantes_df_oficial.csv e hidrantes_df_oficial.json.
   4. **Sem Cobertura:** Apenas 1 hidrante (BRZ00042) nao possui cobertura Street View inicial do Google, devidamente catalogado em rascunho_falhas_streetview.md.
+
+### [16/09/2026] Etapa 95 Concluída - Integração Direta Netuno-SEI (Envio e Assinatura Backend)
+- **Integração Direta Netuno-SEI (Envio e Assinatura Backend)** foi executada e validada com sucesso:
+  1. **Motor HTTP Headless (SeiClient):** Implementado em \src/services/seiService.js\ para automação nativa e ultrarrápida no SEI DF via requisições HTTP e Cheerio, com suporte a cookies de sessão e extração dinâmica de tokens \infra_hash\.
+  2. **Ciclo Completo Mapeado:** Autenticação SIP/SEI, criação de processo de fiscalização (\	ipo 100000446\), upload e anexo do Relatório CAESB em PDF (\documento_receber\, série 2056), geração do Memorando ao GPCIU com Minuta de Ofício acoplada (\documento_gerar\, série 165), assinatura eletrônica do militar e tramitação direta para a SUTEC (\110037655\).
+  3. **Backend Serverless e Dev Plugin:** Criado endpoint unificado \/api/sei/processar\ em \pi/sei/processar.js\ (compatível com Vercel Serverless Functions) e configurado middleware no \ite.config.js\ para testes locais.
+  4. **Interface Mobile Integrada:** Criado \src/components/SeiIntegrationModal.jsx\ com fluxo em 2 toques no celular (login e senha de assinatura eletrônica) e botão de disparo integrado no painel de relatórios (\MissionReportPanel.jsx\).

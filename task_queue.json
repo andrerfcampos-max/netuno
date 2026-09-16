@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-130",
+  "activeTaskId": "TASK-132",
   "queue": [
     {
       "id": "TASK-1",
@@ -1314,28 +1314,38 @@
       "seq": 130,
       "conversationId": "cd4f62dc-114d-4ebf-8fae-15dc8a2b1652",
       "description": "Executar Etapa 90: Lógica de Rotas & Geolocalização",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-16T21:44:25.229Z",
       "startedAt": "2026-09-16T21:44:41.697Z",
-      "completedAt": null
+      "completedAt": "2026-09-16T21:49:45.179Z"
     },
     {
       "id": "TASK-131",
       "seq": 131,
       "conversationId": "db08333e-f3d8-49a3-98a7-0dba444c07d9",
       "description": "Extracao de fotos Street View para Brazlandia",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-16T21:45:50.096Z",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-09-16T21:49:48.740Z",
+      "completedAt": "2026-09-16T22:03:41.131Z"
     },
     {
       "id": "TASK-132",
       "seq": 132,
       "conversationId": "d2c0754e-5278-4875-beec-475646517df7",
       "description": "Implementar Integracao Direta Netuno-SEI (Etapa 95)",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-09-16T21:47:29.926Z",
+      "startedAt": "2026-09-16T22:03:44.005Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-133",
+      "seq": 133,
+      "conversationId": "cd4f62dc-114d-4ebf-8fae-15dc8a2b1652",
+      "description": "Executar Etapa 91: Histórico de Atividades & Contadores",
+      "status": "queued",
+      "createdAt": "2026-09-16T21:50:02.557Z",
       "startedAt": null,
       "completedAt": null
     }

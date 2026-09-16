@@ -6,6 +6,7 @@ import { fixEncoding } from '../utils/textUtils';
 import { printGeneralReport, printCaesbReport, generateDocHash, extractPhotos } from '../utils/officialPrintUtils';
 import { generateSeiMemorandoMinutaText } from '../utils/seiMemorandoUtils';
 import { isHydrantInSet } from '../utils/idMapping';
+import { SeiIntegrationModal } from './SeiIntegrationModal';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, activeFilters = null }) => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -15,6 +16,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
   const [seiDocNumber, setSeiDocNumber] = useState('');
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [showSeiModal, setShowSeiModal] = useState(false);
+  const [showDirectSeiModal, setShowDirectSeiModal] = useState(false);
   const [reportType, setReportType] = useState(() => {
     return localStorage.getItem('lastReportType') || 'interno';
   });
@@ -870,21 +872,47 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
             <span>Baixar PDF CAESB</span>
           </button>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => setShowSeiModal(false)} className="px-3.5 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 text-xs font-semibold transition-colors">
               Fechar
             </button>
             <button 
               onClick={handleGenerateSeiProcess} 
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs transition-all shadow-lg flex items-center gap-1.5"
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5"
+              title="Abrir página manual do SEI"
             >
-              <span>Abrir SEI-GDF</span>
+              <span>Abrir Manualmente</span>
+              <span>🔗</span>
+            </button>
+            <button 
+              onClick={() => { setShowSeiModal(false); setShowDirectSeiModal(true); }}
+              className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg font-bold text-xs transition-all shadow-lg shadow-emerald-950/50 flex items-center gap-1.5 cursor-pointer"
+              title="Criar processo, anexar PDF, assinar e tramitar automaticamente pelo celular"
+            >
+              <span>⚡ Enviar Direto ao SEI</span>
               <span>🚀</span>
             </button>
           </div>
         </div>
       </div>
     </div>
+  )}
+
+  {/* MODAL DE INTEGRAÇÃO DIRETA E AUTOMATIZADA AO SEI */}
+  {showDirectSeiModal && (
+    <SeiIntegrationModal
+      isOpen={showDirectSeiModal}
+      onClose={() => setShowDirectSeiModal(false)}
+      cidade={(rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal')}
+      raRomano={getRARoman((rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : ''))}
+      currentUser={currentUser}
+      memorandoMinuta={generateSeiMemorandoMinutaText({
+        cidade: (rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal'),
+        raRomano: getRARoman((rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : '')),
+        ano: new Date().getFullYear(),
+        numeroSeiRelatorio: seiDocNumber
+      })}
+    />
   )}
   
 
@@ -967,15 +995,27 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
 
               {/* Botão 5: Processo SEI Gestor */}
               {isGestorOrAdmin && (
-                <button 
-                  onClick={() => { setShowSeiModal(true); setIsExportMenuOpen(false); }}
-                  className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors border-t border-slate-700 mt-1"
-                >
-                  <span className="shrink-0">🚀</span>
-                  <span className="text-emerald-400">
-                    {reportType === 'caesb' ? 'Processo SEI • SUOMA' : 'Gerar Processo no SEI'}
-                  </span>
-                </button>
+                <>
+                  <button 
+                    onClick={() => { setShowDirectSeiModal(true); setIsExportMenuOpen(false); }}
+                    className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left bg-emerald-950/40 hover:bg-emerald-900/60 text-white font-bold transition-colors border-t border-emerald-500/40 mt-1 cursor-pointer"
+                    title="Envio 100% automatizado direto pelo celular (com login e assinatura)"
+                  >
+                    <span className="shrink-0 text-emerald-400">⚡</span>
+                    <span className="text-emerald-300">
+                      Enviar Direto ao SEI (1 Toque)
+                    </span>
+                  </button>
+
+                  <button 
+                    onClick={() => { setShowSeiModal(true); setIsExportMenuOpen(false); }}
+                    className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2 text-left hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-xs font-semibold transition-colors"
+                    title="Ver instruções manuais do protocolo SEI"
+                  >
+                    <span className="shrink-0">📋</span>
+                    <span>Instruções Manuais SEI</span>
+                  </button>
+                </>
               )}
 
             </div>
