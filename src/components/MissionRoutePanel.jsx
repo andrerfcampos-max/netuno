@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { X, Navigation, LocateFixed, GitMerge, Share2, MapPin, Map as MapIcon, RotateCcw, Plus, Save, Edit, CheckCircle, FolderOpen, CheckCircle2, ClipboardCheck, AlertTriangle } from 'lucide-react';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import { X, Navigation, LocateFixed, GitMerge, Share2, MapPin, Map as MapIcon, RotateCcw, Plus, Save, Edit, CheckCircle, FolderOpen, CheckCircle2, ClipboardCheck, AlertTriangle, Maximize2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { sanitizeProblem, extractProblemsList } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
@@ -33,6 +34,35 @@ const getShortRaName = (localidade) => {
   return clean;
 };
 
+const ProgressiveFullscreenPhoto = ({ photoUrl, placeholderContent }) => {
+  const [hdSrc, setHdSrc] = React.useState(null);
+
+  React.useEffect(() => {
+    if (photoUrl === 'placeholder' || !photoUrl) return;
+
+    let hdUrl = photoUrl;
+    if (photoUrl.includes('.jpeg')) hdUrl = photoUrl.replace('.jpeg', '_hd.jpeg');
+    else if (photoUrl.includes('.jpg')) hdUrl = photoUrl.replace('.jpg', '_hd.jpg');
+    else if (photoUrl.includes('.webp')) hdUrl = photoUrl.replace('.webp', '_hd.webp');
+    else hdUrl = photoUrl + '_hd';
+
+    const img = new Image();
+    img.src = hdUrl;
+    img.onload = () => setHdSrc(hdUrl);
+    img.onerror = () => setHdSrc(null);
+  }, [photoUrl]);
+
+  if (photoUrl === 'placeholder') return placeholderContent;
+
+  return (
+    <TransformWrapper initialScale={1} minScale={0.5} maxScale={5} centerOnInit wheel={{ step: 0.1 }}>
+      <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <img src={hdSrc || photoUrl} alt="Foto Ampliada" className="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-slate-800" onClick={(e) => e.stopPropagation()} />
+      </TransformComponent>
+    </TransformWrapper>
+  );
+};
+
 const MissionRoutePanel = ({ 
   hidrantes = [], 
   selectedMissionIds = [], 
@@ -54,6 +84,17 @@ const MissionRoutePanel = ({
   onSaveRouteToFolder, 
   onGenerateReport 
 }) => {
+  const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
+
+  const getHydrantPhoto = (h) => {
+    if (!h) return null;
+    if (h.fotoPerfil) return h.fotoPerfil;
+    const nom = String(h.nomHidrante || '').toUpperCase();
+    if (nom.startsWith('ARN')) return `/hidrantes/arniqueira/${h.nomHidrante}.jpeg`;
+    if (nom.startsWith('ACL')) return `/hidrantes/aguas_claras/${h.nomHidrante}.jpeg`;
+    return null;
+  };
+
   // Conjunto de IDs selecionados normalizados em string
   const selectedIdsSet = useMemo(() => {
     return new Set((selectedMissionIds || []).map(id => String(id)));
@@ -477,11 +518,30 @@ const MissionRoutePanel = ({
     // 1º LUGAR (ALVO ATUAL): SUPER CARD TÁTICO DESTACADO
     // ========================================================
     if (!isCompleted && index === 0) {
+      const bannerPhoto = getHydrantPhoto(h);
       return (
         <div 
           key={h._internalId || h.codHidrante || h.nomHidrante || index}
           className="w-full rounded-xl p-2.5 sm:p-3 bg-gradient-to-b from-slate-800/98 via-slate-850/95 to-slate-900 border-2 border-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.25)] flex flex-col gap-2 transition-all overflow-hidden relative"
         >
+          {bannerPhoto && (
+            <div 
+              className="relative w-full h-[120px] shrink-0 bg-slate-900 overflow-hidden cursor-pointer active:opacity-90 rounded-lg border border-slate-700/50 mb-1"
+              onClick={() => setFullscreenPhoto(bannerPhoto)}
+            >
+              <img 
+                src={bannerPhoto} 
+                alt="Foto do Hidrante" 
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent pointer-events-none"></div>
+              <div className="absolute bottom-2 right-2 p-1.5 bg-black/60 border border-slate-600/50 rounded-md backdrop-blur-md flex items-center gap-1 shadow-lg">
+                <Maximize2 size={12} className="text-white" />
+                <span className="text-[9px] font-bold text-white uppercase tracking-wider">Ampliar</span>
+              </div>
+            </div>
+          )}
+
           {/* LINHA 1: IDENTIFICAÇÃO E AÇÕES RÁPIDAS DE TOPO */}
           <div className="flex items-center justify-between gap-1.5 w-full">
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -489,8 +549,8 @@ const MissionRoutePanel = ({
                 1
               </div>
 
-              {h.fotoPerfil && (
-                <img src={h.fotoPerfil} alt="Perfil" className="w-8 h-8 object-cover rounded-lg border border-slate-600 shrink-0 cursor-pointer hover:scale-105 transition-transform shadow-sm" />
+              {!bannerPhoto && h.fotoPerfil && (
+                <img src={h.fotoPerfil} alt="Perfil" className="w-8 h-8 object-cover rounded-lg border border-slate-600 shrink-0 cursor-pointer hover:scale-105 transition-transform shadow-sm" onClick={() => setFullscreenPhoto(h.fotoPerfil)} />
               )}
 
               <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
@@ -945,6 +1005,36 @@ const MissionRoutePanel = ({
           </button>
         )}
       </div>
+
+      {fullscreenPhoto && (
+        <div 
+          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center backdrop-blur-sm animate-fadeIn"
+          onClick={() => setFullscreenPhoto(null)}
+        >
+          {/* Botão de Fechar */}
+          <button 
+            className="absolute top-4 right-4 z-[10000] p-2 bg-slate-900/80 hover:bg-rose-600 border border-slate-700 hover:border-rose-500 text-white rounded-full shadow-2xl transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              setFullscreenPhoto(null);
+            }}
+          >
+            <X size={24} />
+          </button>
+          
+          <div className="w-full h-full max-w-5xl max-h-screen p-2 sm:p-6" onClick={(e) => e.stopPropagation()}>
+            <ProgressiveFullscreenPhoto 
+              photoUrl={fullscreenPhoto} 
+              placeholderContent={
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-500" onClick={() => setFullscreenPhoto(null)}>
+                  <MapPin size={48} className="mb-4 opacity-20" />
+                  <p className="font-bold">Foto não disponível</p>
+                </div>
+              } 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

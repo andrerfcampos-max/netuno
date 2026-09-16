@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-109",
+  "activeTaskId": "TASK-116",
   "queue": [
     {
       "id": "TASK-1",
@@ -1099,10 +1099,10 @@
       "seq": 109,
       "conversationId": "f5d2bff3-5b52-4fa5-ab6b-0b7e04363d2e",
       "description": "Executar etapa 87 do workflow",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-15T17:13:22.073Z",
       "startedAt": "2026-09-15T17:28:26.421Z",
-      "completedAt": null
+      "completedAt": "2026-09-15T17:34:34.998Z"
     },
     {
       "id": "TASK-110",
@@ -1113,6 +1113,77 @@
       "createdAt": "2026-09-15T17:28:33.076Z",
       "startedAt": null,
       "completedAt": "2026-09-15T17:28:33.099Z",
+      "error": "Falha durante execução do agente"
+    },
+    {
+      "id": "TASK-111",
+      "seq": 111,
+      "conversationId": "5e9607ad-2159-41f0-8feb-1fa5583ef997",
+      "description": "Rodar POC para 13 e 16 e substituir fotos na pasta principal",
+      "status": "completed",
+      "createdAt": "2026-09-15T17:38:24.856Z",
+      "startedAt": "2026-09-15T17:38:32.574Z",
+      "completedAt": "2026-09-15T17:41:51.420Z"
+    },
+    {
+      "id": "TASK-112",
+      "seq": 112,
+      "conversationId": "5e9607ad-2159-41f0-8feb-1fa5583ef997",
+      "description": "Atualizar documentacao e workflow para extração global v4",
+      "status": "completed",
+      "createdAt": "2026-09-15T17:44:57.650Z",
+      "startedAt": "2026-09-15T17:45:03.927Z",
+      "completedAt": "2026-09-15T17:46:30.291Z"
+    },
+    {
+      "id": "TASK-113",
+      "seq": 113,
+      "conversationId": "860f62c4-72d7-4b27-8065-024ac57cb789",
+      "description": "Extract Lago Sul StreetView Photos",
+      "status": "timed_out",
+      "createdAt": "2026-09-15T17:48:57.398Z",
+      "startedAt": "2026-09-15T17:49:02.565Z",
+      "completedAt": "2026-09-15T20:27:47.152Z"
+    },
+    {
+      "id": "TASK-114",
+      "seq": 114,
+      "conversationId": "860f62c4-72d7-4b27-8065-024ac57cb789",
+      "description": "Extract Lago Sul StreetView Photos - Continuation",
+      "status": "timed_out",
+      "createdAt": "2026-09-15T20:27:59.989Z",
+      "startedAt": "2026-09-15T20:28:08.838Z",
+      "completedAt": "2026-09-16T09:16:23.163Z"
+    },
+    {
+      "id": "TASK-115",
+      "seq": 115,
+      "conversationId": "7cb4eaf2-138b-4090-b58a-71c01e59ac04",
+      "description": "Diagnosticar e corrigir discrepancia e falhas ao abrir missoes (0/106 virando 0/13 ou 0/0)",
+      "status": "timed_out",
+      "createdAt": "2026-09-16T09:16:23.164Z",
+      "startedAt": "2026-09-16T09:16:31.199Z",
+      "completedAt": "2026-09-16T09:31:34.677Z"
+    },
+    {
+      "id": "TASK-116",
+      "seq": 116,
+      "conversationId": "7c6c680b-2738-47b9-97f0-9c731d1cd384",
+      "description": "Run automation for workflow 88",
+      "status": "running",
+      "createdAt": "2026-09-16T09:19:34.566Z",
+      "startedAt": "2026-09-16T09:31:34.680Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-117",
+      "seq": 117,
+      "conversationId": "run_automation",
+      "description": "Orquestrador Etapa 88: Foto Banner no Card do Primeiro Hidrante da Lista de Rota",
+      "status": "failed",
+      "createdAt": "2026-09-16T09:31:42.261Z",
+      "startedAt": null,
+      "completedAt": "2026-09-16T09:31:42.280Z",
       "error": "Falha durante execução do agente"
     }
   ]

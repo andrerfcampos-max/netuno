@@ -522,6 +522,12 @@
       "status": "completed",
       "name": "Zoom com Pinça e Progressive Loading de Fotos (HD)",
       "prompt": "Atue como Desenvolvedor Frontend Sênior e Especialista UI/UX.\\n1. Instale e implemente a biblioteca react-zoom-pan-pinch no MapComponent.jsx para permitir o zoom fluido com pinça (pinch-to-zoom) no lightbox (tela cheia) da foto.\\n2. Implemente o Progressive Image Loading: ao abrir a tela cheia, mostre a foto normal (carregamento instantâneo) e inicie o carregamento de uma versão em HD da foto em background (ex: hd_foto.jpeg ou resolução maior do Street View). Ao concluir o download, substitua a imagem pela HD para garantir o zoom nítido.\\n3. Atualize os scripts de extração/pipeline do Street View para passarem a salvar sempre as fotos nos dois tamanhos (padrão 800x600 para a miniatura e alta resolução 1200x900 para o lightbox).\\nResponda ETAPA CONCLUIDA ao finalizar e aprovar os testes."
+    },
+    {
+      "id": 88,
+      "status": "completed",
+      "name": "Foto Banner no Card do Primeiro Hidrante da Lista de Rota",
+      "prompt": "Atue como Desenvolvedor Frontend Sênior e Especialista UI/UX. No bloco/lista de Rota de Missão (provavelmente no MissionRoutePanel.jsx), adicione a imagem banner (fotoPerfil) no card referente ao PRIMEIRO hidrante da rota, mantendo o padrão da dialog do mapa, incluindo a funcionalidade de clicar na foto para abri-la em tela cheia (lightbox). Apenas o primeiro card da lista deve ter o banner, visando economia visual nos demais. Responda 'ETAPA CONCLUIDA' após finalizar e aprovar os testes em localhost."
     }
   ]
 }

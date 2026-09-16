@@ -3,7 +3,6 @@ const path = require('path');
 const https = require('https');
 const xlsx = require('xlsx');
 
-// Carrega variáveis do .env local
 const envPath = path.join(__dirname, '..', '.env');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
@@ -24,16 +23,12 @@ if (!GOOGLE_MAPS_API_KEY || !GEMINI_API_KEY) {
 }
 
 const DB_PATH_PUBLIC = path.join(__dirname, '..', 'public', 'base-de-dados.xlsx');
-const OUTPUT_DIR = path.join(__dirname, '..', 'public', 'poc_hidrantes_v4');
+const DB_PATH_ROOT = path.join(__dirname, '..', 'base-de-dados.xlsx');
+const OUTPUT_DIR = path.join(__dirname, '..', 'public', 'hidrantes', 'lago_sul');
 
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
-
-// Códigos problemáticos para a POC
-const TARGET_CODES = [
-  'ACL00016', 'ACL00013'
-];
 
 function calculateBearing(lat1, lng1, lat2, lng2) {
   const toRad = (val) => (val * Math.PI) / 180;
@@ -58,7 +53,6 @@ async function fetchMetadata(lat, lng) {
 }
 
 async function findAdjacentPanorama(baseLat, baseLng, excludePanoId) {
-  // Deslocamentos de ~15 metros em cruz (Norte, Sul, Leste, Oeste)
   const offsets = [
     { dLat: 0.00015, dLng: 0 },
     { dLat: -0.00015, dLng: 0 },
@@ -78,9 +72,8 @@ async function findAdjacentPanorama(baseLat, baseLng, excludePanoId) {
   return null;
 }
 
-// Visão Computacional Sniper
 async function locateHydrantWithGemini(base64Image) {
-  const prompt = "Você é um sistema de visão computacional de alta precisão do Corpo de Bombeiros. Analise a imagem fornecida e localize um hidrante de calçada/rua (geralmente de cor AMARELA ou VERMELHA, metálico, cilíndrico).\n\nSe encontrado, retorne a coordenada horizontal exata do centro do hidrante na imagem, e uma nota de confiança de 0 a 100.\n\nRetorne ESTRITAMENTE um JSON válido neste formato:\n{\"encontrado\": true/false, \"centro_x\": <float entre 0.0 e 1.0>, \"confianca\": <int>}\n\nSó marque como encontrado se a confiança for >= 80.";
+  const prompt = "Você é um sistema de visão computacional de alta precisão do Corpo de Bombeiros. Analise a imagem fornecida e localize um hidrante de calçada/rua (geralmente de cor AMARELA ou VERMELHA, metálico, cilíndrico). O hidrante NÃO É um hidrante de recalque de parede. Se encontrado, retorne a coordenada horizontal exata do centro do hidrante na imagem, e uma nota de confiança de 0 a 100.\n\nRetorne ESTRITAMENTE um JSON válido neste formato:\n{\"encontrado\": true/false, \"centro_x\": <float entre 0.0 e 1.0>, \"confianca\": <int>}\n\nSó marque como encontrado se a confiança for >= 80.";
   
   const payload = JSON.stringify({
     contents: [{
@@ -156,7 +149,6 @@ async function downloadStreetView(carLat, carLng, heading, fov, width = 800, hei
   });
 }
 
-// Varredura Inteligente
 async function smartScan(carLat, carLng, gpsLat, gpsLng, prefixLog) {
   const baseHeading = calculateBearing(carLat, carLng, gpsLat, gpsLng);
   const sweeps = [
@@ -185,19 +177,26 @@ async function smartScan(carLat, carLng, gpsLat, gpsLng, prefixLog) {
   return { success: false };
 }
 
-async function runPOC() {
+async function runLagoSul() {
   console.log("==========================================================");
-  console.log("🎯 INICIANDO POC SNIPER V4 SMART (14 HIDRANTES DIFÍCEIS)");
+  console.log("🎯 PIPELINE STREET VIEW SNIPER - LAGO SUL");
   console.log("==========================================================\n");
 
   const workbook = xlsx.readFile(DB_PATH_PUBLIC);
   const sheetName = workbook.SheetNames[0];
   const allRows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-  const targetHydrants = allRows.filter(r => TARGET_CODES.includes(r.nomHidrante));
-  console.log(`📍 Processando ${targetHydrants.length} hidrantes alvo...\n`);
+  const targetHydrants = allRows.filter(r => 
+    (r.nomHidrante || '').toUpperCase().startsWith('LGS') ||
+    (r.cidade || '').toUpperCase() === 'LAGO SUL' ||
+    (r.dscLocalidade || '').toUpperCase().includes('LAGO SUL')
+  );
+
+  console.log(`📍 Processando ${targetHydrants.length} hidrantes em Lago Sul...\n`);
 
   let failedHydrants = [];
+  const updatedPhotosMap = {};
+  let countUpdated = 0;
 
   for (let i = 0; i < targetHydrants.length; i++) {
     const h = targetHydrants[i];
@@ -207,13 +206,17 @@ async function runPOC() {
 
     console.log(`\n🔎 [${i+1}/${targetHydrants.length}] ${nom}`);
 
-    const filePath = path.join(OUTPUT_DIR, `${nom}_smart.jpeg`);
-    if (fs.existsSync(filePath) && fs.statSync(filePath).size > 5000) {
-      console.log(`   ⚡ Foto já existente localmente (${fs.statSync(filePath).size} bytes). Pulando...`);
+    const fileBase = path.join(OUTPUT_DIR, nom);
+    const relativeUrl = `/hidrantes/lago_sul/${nom}.jpeg`;
+
+    if (fs.existsSync(`${fileBase}.jpeg`) && fs.statSync(`${fileBase}.jpeg`).size > 5000 &&
+        fs.existsSync(`${fileBase}_hd.jpeg`) && fs.statSync(`${fileBase}_hd.jpeg`).size > 5000) {
+      console.log(`   ⚡ Fotos (Padrão e HD) já existem localmente. Pulando...`);
+      updatedPhotosMap[h.codHidrante] = relativeUrl;
+      updatedPhotosMap[nom] = relativeUrl;
       continue;
     }
 
-    // Pega meta inicial
     const metaRes = await fetchMetadata(gpsLat, gpsLng);
     if (!metaRes || metaRes.status !== 'OK') {
       console.log(`   ⚠️ Sem cobertura Street View inicial.`);
@@ -225,11 +228,9 @@ async function runPOC() {
     let carLat = metaRes.location.lat;
     let carLng = metaRes.location.lng;
 
-    // TENTATIVA 1: Pano Original (Com Sweeps)
     console.log(`   [Passo 1] Scan no Pano Original...`);
     let result = await smartScan(carLat, carLng, gpsLat, gpsLng, "   ");
 
-    // TENTATIVA 2: "Step-Around" (Mudar de Panorama)
     if (!result.success) {
       console.log(`   🚧 Obstáculo detectado ou hidrante escondido. Iniciando [Passo 2] Step-Around...`);
       const altMeta = await findAdjacentPanorama(gpsLat, gpsLng, initialPanoId);
@@ -246,28 +247,79 @@ async function runPOC() {
     }
 
     if (result.success) {
-      console.log(`   📸 Bate foto FINAL de alta resolução (800x600, FOV=75)...`);
+      console.log(`   📸 Bate fotos FINAIS (800x600 e 1200x900, FOV=75)...`);
       const finalImage = await downloadStreetView(result.carLat, result.carLng, result.finalHeading, 75, 800, 600);
-      fs.writeFileSync(filePath, finalImage.buffer);
-      console.log(`   ✅ SUCESSO V4! Salvo em: ${filePath}`);
+      const finalImageHD = await downloadStreetView(result.carLat, result.carLng, result.finalHeading, 75, 1200, 900);
+      
+      fs.writeFileSync(`${fileBase}.jpeg`, finalImage.buffer);
+      fs.writeFileSync(`${fileBase}_hd.jpeg`, finalImageHD.buffer);
+      
+      console.log(`   ✅ SUCESSO V4! Salvo em: ${fileBase}.jpeg e _hd.jpeg`);
+      updatedPhotosMap[h.codHidrante] = relativeUrl;
+      updatedPhotosMap[nom] = relativeUrl;
     } else {
       console.log(`   💀 FALHA CRÍTICA: Hidrante não encontrado mesmo com Step-Around.`);
       failedHydrants.push(nom);
     }
 
-    // Intervalo de segurança
     await new Promise(resolve => setTimeout(resolve, 5000));
   }
 
-  console.log(`\n==========================================================`);
-  console.log(`🎉 POC V4 FINALIZADA!`);
-  if (failedHydrants.length > 0) {
-    console.log(`⚠️ HIDRANTES NÃO ENCONTRADOS (Verificar Manualmente):`);
-    failedHydrants.forEach(nom => console.log(` - ${nom}`));
+  // Atualizar planilha
+  console.log("\n💾 Sincronizando base de dados com as novas fotos...");
+  const updatedAllRows = allRows.map(row => {
+    const photoUrl = updatedPhotosMap[row.codHidrante] || updatedPhotosMap[row.nomHidrante];
+    if (photoUrl) {
+      countUpdated++;
+      return { ...row, fotoPerfil: photoUrl };
+    }
+    return row;
+  });
+
+  const newSheet = xlsx.utils.json_to_sheet(updatedAllRows);
+  const newWorkbook = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(newWorkbook, newSheet, sheetName);
+  xlsx.writeFile(newWorkbook, DB_PATH_PUBLIC);
+  if (fs.existsSync(DB_PATH_ROOT)) xlsx.writeFile(newWorkbook, DB_PATH_ROOT);
+
+  // Executar clean export
+  console.log("\n🔄 Executando scripts/export_clean_database.cjs...");
+  try {
+    const { execSync } = require('child_process');
+    execSync('node scripts/export_clean_database.cjs', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
+  } catch (err) {
+    console.error('   ⚠️ Falha ao executar export:', err.message);
+  }
+
+  // Salvar rascunho de falhas
+  let failureLog = "";
+  const draftFile = path.join(__dirname, '..', 'rascunho_falhas_streetview.md');
+  if (fs.existsSync(draftFile)) {
+    failureLog = fs.readFileSync(draftFile, 'utf8');
   } else {
-    console.log(`✅ Todos os hidrantes foram encontrados!`);
+    failureLog = "# Hidrantes Não Capturados (Revisão Manual)\n\n## Águas Claras\n- ACL00013\n- ACL00016\n\n";
+  }
+
+  if (failedHydrants.length > 0) {
+    if (!failureLog.includes("## Lago Sul")) {
+      failureLog += "\n## Lago Sul\n";
+    }
+    failedHydrants.forEach(nom => {
+      if (!failureLog.includes(`- ${nom}`)) {
+        failureLog += `- ${nom}\n`;
+      }
+    });
+    fs.writeFileSync(draftFile, failureLog);
+  }
+
+  console.log(`\n==========================================================`);
+  console.log(`🎉 EXTRAÇÃO DE LAGO SUL CONCLUÍDA!`);
+  console.log(`   💾 Registros atualizados na base: ${countUpdated}`);
+  if (failedHydrants.length > 0) {
+    console.log(`⚠️ HIDRANTES NÃO ENCONTRADOS (Salvos em rascunho):`);
+    failedHydrants.forEach(nom => console.log(` - ${nom}`));
   }
   console.log(`==========================================================\n`);
 }
 
-runPOC();
+runLagoSul();

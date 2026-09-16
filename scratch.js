@@ -1,0 +1,593 @@
+import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import { Search, MapPin, AlertCircle, SlidersHorizontal, X, Check, Filter } from 'lucide-react';
+
+const FilterBar = ({ activeFilters, onFilterChange, regions, anos = [], problemasAtivos = [], isVisible, currentUser, onLogout, filteredCount = null, onDrawerOpen, onDrawerClose }) => {
+  const filters = useMemo(() => {
+    return {
+      buscaGeral: activeFilters?.buscaGeral || '',
+      ra: activeFilters?.ra || '',
+      periodo: activeFilters?.periodo || '',
+      dataInicio: activeFilters?.dataInicio || '',
+      dataFim: activeFilters?.dataFim || '',
+      status: activeFilters?.status || 'Todos',
+      problema: activeFilters?.problema || ''
+    };
+  }, [activeFilters]);
+
+  const [isMobileDrawerOpen, setDrawerOpen] = useState(false);
+  const setDrawerOpen = (val) => { setDrawerOpen(val); if (val && onDrawerOpen) onDrawerOpen(); if (!val && onDrawerClose) onDrawerClose(); };
+
+  const activeSecondaryFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.status && filters.status !== 'Todos') count++;
+    if (filters.periodo && filters.periodo !== '') count++;
+    if (filters.problema && filters.problema !== '') count++;
+    return count;
+  }, [filters.status, filters.periodo, filters.problema]);
+
+  const hasAnyFilterActive = useMemo(() => {
+    return Boolean(
+      (filters.ra && filters.ra !== '') ||
+      (filters.buscaGeral && filters.buscaGeral.trim() !== '') ||
+      (filters.status && filters.status !== 'Todos') ||
+      (filters.periodo && filters.periodo !== '') ||
+      (filters.problema && filters.problema !== '')
+    );
+  }, [filters]);
+
+  const handleChange = (key, value) => {
+    let newFilters = { ...filters, [key]: value };
+    if (key === 'ra') {
+      if (newFilters.problema) newFilters.problema = '';
+    }
+    try {
+      localStorage.setItem(`netuno_saved_filters_${currentUser?.matricula || 'guest'}`, JSON.stringify(newFilters));
+    } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
+    onFilterChange(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    const defaultFilters = {
+      buscaGeral: '',
+      ra: '',
+      periodo: '',
+      dataInicio: '',
+      dataFim: '',
+      status: 'Todos',
+      problema: ''
+    };
+    try {
+      localStorage.removeItem(`netuno_saved_filters_${currentUser?.matricula || 'guest'}`);
+    } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
+    onFilterChange(defaultFilters);
+  };
+
+  const handlePeriodoChange = (val) => {
+    let newFilters = { ...filters, periodo: val };
+    if (val !== 'personalizado') {
+       newFilters.dataInicio = '';
+       newFilters.dataFim = '';
+    }
+    try {
+      localStorage.setItem(`netuno_saved_filters_${currentUser?.matricula || 'guest'}`, JSON.stringify(newFilters));
+    } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
+    onFilterChange(newFilters);
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="w-full z-20 transition-all duration-300">
+      
+      {/* ======================================================== */}
+      {/* 1. VISUALIZAÇÃO MOBILE COMPACTA (< md): 1 LINHA ENXUTA */}
+      {/* ======================================================== */}
+      <div className="md:hidden flex items-center gap-1.5 bg-slate-800/95 border border-slate-700/80 rounded-xl p-1.5 shadow-md w-full max-w-full">
+        
+        {/* Seletor de RA Compacto */}
+        <div className="relative flex-1 min-w-0">
+          <select 
+            className={`w-full h-9 pl-6 pr-1.5 rounded-lg text-xs font-semibold focus:outline-none transition-all truncate ${
+              filters.ra && filters.ra !== ''
+                ? 'bg-slate-850 border border-emerald-500 text-emerald-300 ring-1 ring-emerald-500/30' 
+                : 'bg-slate-900 border border-slate-700 text-slate-300'
+            }`}
+            value={filters.ra}
+            onChange={(e) => handleChange('ra', e.target.value)}
+          >
+            <option value="" className="bg-slate-900 text-slate-400">🎯 RA...</option>
+            {regions.map(r => {
+              const name = typeof r === 'object' && r ? r.name : r;
+              return <option key={name} value={name} className="bg-slate-900 text-white">{name}</option>;
+            })}
+          </select>
+          <MapPin size={13} className={`absolute left-1.5 top-2.5 pointer-events-none ${filters.ra ? 'text-emerald-400' : 'text-slate-400'}`} />
+        </div>
+
+        {/* Busca Livre Rápida */}
+        <div className="relative flex-1 min-w-0">
+          <input 
+            type="text" 
+            placeholder="Código, Rua..." 
+            className="w-full h-9 pl-6 pr-5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 truncate"
+            value={filters.buscaGeral}
+            onChange={(e) => handleChange('buscaGeral', e.target.value)}
+          />
+          <Search size={13} className="absolute left-1.5 top-2.5 text-slate-400 pointer-events-none" />
+          {filters.buscaGeral && (
+            <button 
+              onClick={() => handleChange('buscaGeral', '')}
+              className="absolute right-1.5 top-2 text-slate-400 hover:text-white text-xs p-0.5"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Botão de Filtros Avançados (Drawer Trigger) */}
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          className={`h-9 px-2 flex items-center justify-center gap-1 rounded-lg text-xs font-bold transition-all flex-shrink-0 relative ${
+            activeSecondaryFiltersCount > 0
+              ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400/40'
+              : 'bg-slate-700/80 border border-slate-600 text-slate-300 hover:bg-slate-600'
+          }`}
+          title="Filtros Avançados (Status, Período, Problemas)"
+        >
+          <SlidersHorizontal size={14} />
+          {activeSecondaryFiltersCount > 0 && (
+            <span className="bg-amber-400 text-slate-950 text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+              {activeSecondaryFiltersCount}
+            </span>
+          )}
+        </button>
+
+        {/* Botão Rápido de Limpar Filtros se houver algo ativo */}
+        {hasAnyFilterActive && (
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="h-9 w-8 bg-rose-950/70 border border-rose-700/80 text-rose-300 hover:bg-rose-900 rounded-lg text-xs font-bold transition-all flex items-center justify-center flex-shrink-0 active:scale-95 shadow-sm"
+            title="Limpar todos os filtros"
+          >
+            <X size={15} />
+          </button>
+        )}
+      </div>
+
+      {/* ======================================================== */}
+      {/* DRAWER / BOTTOM SHEET MOBILE DE FILTROS AVANÇADOS */}
+      {/* ======================================================== */}
+      {isMobileDrawerOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="md:hidden fixed inset-0 z-[9999] flex flex-col justify-end bg-black/75 backdrop-blur-sm animate-fadeIn"
+          onClick={() => setDrawerOpen(false)}
+        >
+          <div 
+            className="w-full bg-slate-900 border-t border-slate-700 rounded-t-2xl px-4 pt-2 pb-6 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Barra de Arrastar / Minimizar */}
+            <div 
+              className="w-full flex flex-col items-center justify-center py-1 cursor-grab active:cursor-grabbing touch-none select-none"
+              onTouchStart={(e) => {
+                e.currentTarget._startY = e.touches[0].clientY;
+              }}
+              onTouchMove={(e) => {
+                if (e.currentTarget._startY && e.touches[0].clientY - e.currentTarget._startY > 70) {
+                  setDrawerOpen(false);
+                }
+              }}
+              onClick={() => setDrawerOpen(false)}
+              title="Puxe para fechar"
+            >
+              <div className="w-10 h-1 bg-slate-600 hover:bg-slate-500 rounded-full opacity-80 transition-colors" />
+            </div>
+
+            {/* Header do Drawer */}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800 mb-2.5">
+              <div className="flex items-center gap-1.5">
+                <SlidersHorizontal size={15} className="text-emerald-400" />
+                <h3 className="text-sm font-bold text-white tracking-wide">
+                  Filtros Avançados
+                </h3>
+                {activeSecondaryFiltersCount > 0 && (
+                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] px-2 py-0.2 rounded-full font-bold">
+                    {activeSecondaryFiltersCount} {activeSecondaryFiltersCount === 1 ? 'ativo' : 'ativos'}
+                  </span>
+                )}
+              </div>
+              <button 
+                onClick={() => setDrawerOpen(false)}
+                className="p-1 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                title="Fechar e ver o mapa"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Conteúdo rolável do Drawer */}
+            <div className="flex-1 overflow-y-auto pr-0.5 flex flex-col gap-2.5">
+              
+              {/* 1. Cidade / RA no Drawer */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                    <MapPin size={12} className="text-emerald-400" />
+                    Cidade / Região Administrativa
+                  </label>
+                  {filters.ra && (
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.2 rounded border border-emerald-500/40">
+                      {filters.ra}
+                    </span>
+                  )}
+                </div>
+                <select 
+                  className="w-full h-8 px-2.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 truncate font-medium"
+                  value={filters.ra}
+                  onChange={(e) => handleChange('ra', e.target.value)}
+                >
+                  <option value="">🎯 DF Completo (Todas as Cidades / RAs)</option>
+                  {regions.map(r => {
+                    const name = typeof r === 'object' && r ? r.name : r;
+                    return (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* 2. Busca Livre no Drawer */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Search size={12} className="text-cyan-400" />
+                  Busca Livre (Código, Rua, Endereço ou Ref.)
+                </label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder="Digite Código (ex: GUA00101), Rua, Endereço..." 
+                    className="w-full h-8 pl-7 pr-7 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                    value={filters.buscaGeral}
+                    onChange={(e) => handleChange('buscaGeral', e.target.value)}
+                  />
+                  <Search size={12} className="absolute left-2.5 top-2.5 text-slate-400 pointer-events-none" />
+                  {filters.buscaGeral && (
+                    <button 
+                      onClick={() => handleChange('buscaGeral', '')}
+                      className="absolute right-2 top-1 text-slate-400 hover:text-white text-xs p-1"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 3. Grid com 2 Colunas: Status Operacional & Data da Vistoria */}
+              <div className="grid grid-cols-2 gap-2">
+                {/* Status Operacional */}
+                <div>
+                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1 block">
+                    Status Operacional
+                  </label>
+                  <div className="grid grid-cols-3 gap-1">
+                    <button 
+                      type="button"
+                      onClick={() => handleChange('status', 'Todos')}
+                      className={`h-8 rounded-lg text-[10px] font-bold border transition-all truncate px-0.5 ${
+                        filters.status === 'Todos' 
+                          ? 'bg-slate-700 border-slate-500 text-white ring-1 ring-slate-400/30' 
+                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      Todos
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => handleChange('status', 'Operante')}
+                      className={`h-8 rounded-lg text-[10px] font-bold border transition-all truncate px-0.5 ${
+                        filters.status === 'Operante' 
+                          ? 'bg-emerald-600 border-emerald-500 text-white ring-1 ring-emerald-400/30' 
+                          : 'bg-slate-800 border-slate-700 text-emerald-400/80 hover:text-emerald-300'
+                      }`}
+                    >
+                      ● Oper.
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => handleChange('status', 'Inoperante')}
+                      className={`h-8 rounded-lg text-[10px] font-bold border transition-all truncate px-0.5 ${
+                        filters.status === 'Inoperante' 
+                          ? 'bg-rose-600 border-rose-500 text-white ring-1 ring-rose-400/30' 
+                          : 'bg-slate-800 border-slate-700 text-rose-400/80 hover:text-rose-300'
+                      }`}
+                    >
+                      ● Inop.
+                    </button>
+                  </div>
+                </div>
+
+                {/* Data da Vistoria */}
+                <div>
+                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1 block truncate">
+                    Data da Vistoria
+                  </label>
+                  <select 
+                    className="w-full h-8 px-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium truncate"
+                    value={filters.periodo}
+                    onChange={(e) => handlePeriodoChange(e.target.value)}
+                  >
+                    <option value="">Todo o período</option>
+                    <option value="hoje">Hoje</option>
+                    <option value="semana">Esta semana</option>
+                    <option value="mes">Este mês</option>
+                    <option value="ano_atual">Este ano</option>
+                    <option value="personalizado">Personalizado...</option>
+                    {anos.length > 0 && (
+                      <optgroup label="Por Ano">
+                        {anos.map(a => <option key={a} value={`ano-${a}`}>{a}</option>)}
+                      </optgroup>
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              {/* Campos adicionais caso selecione período personalizado */}
+              {filters.periodo === 'personalizado' && (
+                <div className="grid grid-cols-2 gap-2 bg-slate-800/60 p-2 rounded-lg border border-slate-700/60">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block mb-0.5">Início:</span>
+                    <input 
+                      type="date" 
+                      value={filters.dataInicio} 
+                      onChange={(e) => handleChange('dataInicio', e.target.value)}
+                      className="w-full h-7 px-1.5 rounded bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block mb-0.5">Fim:</span>
+                    <input 
+                      type="date" 
+                      value={filters.dataFim} 
+                      onChange={(e) => handleChange('dataFim', e.target.value)}
+                      className="w-full h-7 px-1.5 rounded bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Filtro de Problemas */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <AlertCircle size={12} className="text-orange-400" />
+                  Problema Específico
+                </label>
+                <select 
+                  className="w-full h-8 px-2.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 truncate"
+                  value={filters.problema}
+                  onChange={(e) => handleChange('problema', e.target.value)}
+                >
+                  <option value="">Qualquer problema...</option>
+                  {problemasAtivos.map((d, idx) => (
+                    <option key={`${d}-${idx}`} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 5. Resumo Compacto do Resultado */}
+              {filteredCount !== null && (
+                <div className="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/80 flex items-center justify-between shadow-sm">
+                  <span className={`text-xs font-bold flex items-center gap-1.5 ${filteredCount > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    <span className={`w-2 h-2 rounded-full ${filteredCount > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                    {filteredCount > 0 
+                      ? `${filteredCount} hidrante(s) encontrado(s)` 
+                      : 'Nenhum hidrante encontrado'}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {filters.ra || 'DF Completo'}
+                  </span>
+                </div>
+              )}
+
+            </div>
+
+            {/* Ações do Rodapé do Drawer (Fixed at bottom with safe padding, never covered) */}
+            <div className="flex items-center gap-2 mt-2.5 pt-2 border-t border-slate-800 bg-slate-900 shrink-0">
+              {hasAnyFilterActive && (
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="w-1/3 py-2 bg-slate-800 hover:bg-slate-700 text-rose-400 font-bold rounded-xl text-xs transition-all border border-slate-700 active:scale-95 text-center"
+                >
+                  Limpar
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(false)}
+                className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <Check size={16} />
+                {filteredCount !== null ? `Ver ${filteredCount} no Mapa` : 'Aplicar e Ver no Mapa'}
+              </button>
+            </div>
+
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ======================================================== */}
+      {/* 2. VISUALIZAÇÃO DESKTOP (>= md): GRADE HORIZONTAL COMPLETA */}
+      {/* ======================================================== */}
+      <div className="hidden md:block bg-slate-800/90 backdrop-blur-md border border-slate-700 shadow-md rounded-xl p-2 sm:p-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2">
+            
+          {/* 1. Filtro por RA */}
+          <div className="flex flex-col gap-0.5 sm:col-span-1 lg:col-span-3">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <MapPin size={12} className="text-emerald-400" />
+                Cidade / RA
+              </label>
+              {filters.ra ? (
+                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.2 rounded border border-emerald-500/40">
+                  Ativo
+                </span>
+              ) : (
+                <span className="text-[9px] bg-slate-700 text-slate-300 font-semibold px-1.5 py-0.2 rounded">
+                  Todas
+                </span>
+              )}
+            </div>
+            <select 
+              className="min-h-[38px] px-2.5 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 truncate"
+              value={filters.ra}
+              onChange={(e) => handleChange('ra', e.target.value)}
+            >
+              <option value="">🎯 DF Completo (Todas as Cidades / RAs)</option>
+              {regions.map(r => {
+                const name = typeof r === 'object' && r ? r.name : r;
+                return (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          {/* 2. Busca Textual (Geral) */}
+          <div className="flex flex-col gap-0.5 sm:col-span-1 lg:col-span-3">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <Search size={12} className="text-cyan-400" />
+                Busca Livre
+              </label>
+              {filteredCount !== null && (
+                <span className={`text-[10px] font-semibold ${filteredCount > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {filteredCount > 0 ? `${filteredCount} hidrante(s)${filters.ra ? ` (${filters.ra})` : ' no DF'}` : `0 encontrados`}
+                </span>
+              )}
+            </div>
+            <div className="relative flex items-center">
+              <input 
+                type="text" 
+                placeholder="🔍 Buscar por Código (ex: GUA00101), Endereço, Rua, Bairro ou Ponto de Ref..." 
+                className="min-h-[38px] w-full px-2.5 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                value={filters.buscaGeral}
+                onChange={(e) => handleChange('buscaGeral', e.target.value)}
+              />
+              {filters.buscaGeral && (
+                <button 
+                  onClick={() => handleChange('buscaGeral', '')}
+                  className="absolute right-2 text-slate-400 hover:text-slate-200 text-xs"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 3. Filtro de Status */}
+          <div className="flex flex-col gap-0.5 sm:col-span-1 lg:col-span-2">
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Status</label>
+            <div className="min-h-[38px] flex rounded-lg overflow-hidden border border-slate-700 bg-slate-900/80 text-[10px] xl:text-[11px] font-semibold">
+              <button 
+                type="button"
+                onClick={() => handleChange('status', 'Todos')}
+                className={`flex-1 py-1.5 px-0.5 transition-colors truncate ${filters.status === 'Todos' ? 'bg-slate-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                Todos
+              </button>
+              <button 
+                type="button"
+                onClick={() => handleChange('status', 'Operante')}
+                className={`flex-1 py-1.5 px-0.5 transition-colors truncate ${filters.status === 'Operante' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                Operantes
+              </button>
+              <button 
+                type="button"
+                onClick={() => handleChange('status', 'Inoperante')}
+                className={`flex-1 py-1.5 px-0.5 transition-colors truncate ${filters.status === 'Inoperante' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                Inoperantes
+              </button>
+            </div>
+          </div>
+
+          {/* 4. Filtro por Período */}
+          <div className="flex flex-col gap-0.5 sm:col-span-1 lg:col-span-2">
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Data da Vistoria</label>
+            <select 
+              className="min-h-[38px] px-2 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500"
+              value={filters.periodo}
+              onChange={(e) => handlePeriodoChange(e.target.value)}
+            >
+              <option value="">Todo o período</option>
+              <option value="hoje">Hoje</option>
+              <option value="semana">Esta semana</option>
+              <option value="mes">Este mês</option>
+              <option value="ano_atual">Este ano</option>
+              <option value="personalizado">Personalizado...</option>
+              {anos.length > 0 && <optgroup label="Por Ano Específico">
+                {anos.map(a => <option key={a} value={`ano-${a}`}>{a}</option>)}
+              </optgroup>}
+            </select>
+            {filters.periodo === 'personalizado' && (
+              <div className="flex gap-1.5 mt-1">
+                <input 
+                  type="date" 
+                  value={filters.dataInicio} 
+                  onChange={(e) => handleChange('dataInicio', e.target.value)}
+                  className="w-1/2 p-1.5 rounded bg-slate-700 border border-slate-600 text-[10px] text-white focus:outline-none focus:border-emerald-500"
+                />
+                <input 
+                  type="date" 
+                  value={filters.dataFim} 
+                  onChange={(e) => handleChange('dataFim', e.target.value)}
+                  className="w-1/2 p-1.5 rounded bg-slate-700 border border-slate-600 text-[10px] text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* 5. Filtro de Problemas */}
+          <div className="flex flex-col gap-0.5 sm:col-span-1 lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <AlertCircle size={12} className="text-orange-400" /> 
+                Problema
+              </label>
+              {(filters.ra || filters.buscaGeral || filters.periodo || filters.status !== 'Todos' || filters.problema) && (
+                <button 
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="text-[10px] text-rose-400 hover:text-rose-300 font-bold underline"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+            <select 
+              className="min-h-[38px] px-2 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 truncate"
+              value={filters.problema}
+              onChange={(e) => handleChange('problema', e.target.value)}
+            >
+              <option value="">Qualquer problema...</option>
+              {problemasAtivos.map((d, idx) => <option key={`${d}-${idx}`} value={d}>{d}</option>)}
+            </select>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FilterBar;
