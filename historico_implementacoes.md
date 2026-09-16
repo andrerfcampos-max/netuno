@@ -763,3 +763,12 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 
 ### [16/09/2026] Etapa 90 Concluída - Lógica de Rotas & Geolocalização
 - **Lógica de Rotas & Geolocalização - Ajustes Imediatos** foi executada e validada com sucesso: 1) Recálculo de rota blindado em 3 níveis (GPS com timeout estendido de 6s -> fallback no último hidrante se vistoriado há menos de 2 minutos -> aviso seguro sem embaralhar rota); 2) Ordenação das vistorias concluídas em ordem cronológica inversa (mais recente no topo) com botão direto de edição para vistorias finalizadas.
+
+### Etapa 96 - Extracao de Fotos de Perfil dos Hidrantes de Brazlandia (Street View Sniper e Fallback GPS)
+- **Data:** 16/09/2026
+- **Contexto:** Extracao e vinculacao das fotos de perfil dos hidrantes da Regiao Administrativa de Brazlandia.
+- **Implementacoes:**
+  1. **Script Dedicado:** Criacao de scripts/extract_brazlandia.cjs com IA Sniper calibrada (prompt adaptado para coluna DF, tolerancia 60%, step-around de panoramas e fallback automatico de enquadramento GPS).
+  2. **Cobertura Quase Total:** 41 de 42 hidrantes (97,6%) capturados com sucesso em resolucoes padrao (800x600) e HD (1200x900) na pasta public/hidrantes/brazlandia/.
+  3. **Base Oficial Atualizada:** Sincronizacao de fotoPerfil em base-de-dados.xlsx, public/base-de-dados.xlsx, hidrantes_df_oficial.csv e hidrantes_df_oficial.json.
+  4. **Sem Cobertura:** Apenas 1 hidrante (BRZ00042) nao possui cobertura Street View inicial do Google, devidamente catalogado em rascunho_falhas_streetview.md.

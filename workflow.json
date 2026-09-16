@@ -570,6 +570,12 @@
       "status": "pending",
       "name": "Integração Direta Netuno-SEI (Envio e Assinatura Backend)",
       "prompt": "Atue como Arquiteto de Software Sênior e Especialista em Integrações. Crie um serviço Node.js no backend do Netuno (SeiService) para automatizar o envio de relatórios ao SEI do DF usando requisições HTTP (fetch/axios) e Cheerio para parsear formulários, sem depender de navegador (headless). O serviço deve: 1. Fazer login no SEI (/sip/login.php) e capturar o cookie de sessão. 2. Extrair os infra_hash das páginas. 3. Criar um processo (procedimento_gerar, tipo 100000446). 4. Fazer upload do PDF gerado pelo Netuno (documento_receber). 5. Criar um Memorando (documento_gerar, tipo 165). 6. Validar a assinatura do usuário (solicitada via modal na interface móvel do Netuno) no pop-up oculto do SEI (assinatura_documento_assinar). 7. Tramitar o processo para a unidade SUTEC (110037655). Crie as rotas de API no Express para conectar com o frontend React, mantendo a experiência mobile rápida e com poucos cliques. Responda 'ETAPA CONCLUIDA' após finalizar e testar as rotas de ponta a ponta."
+    },
+    {
+      "id": 96,
+      "status": "completed",
+      "name": "Extração de Fotos de Perfil dos Hidrantes de Brazlândia (Street View Sniper e Fallback GPS)",
+      "prompt": "Atue como Arquiteto e Desenvolvedor Frontend. Execute a extração das fotos de perfil dos hidrantes da RA de Brazlândia (BRZ00001 a BRZ00042): 1) Rodar scripts/extract_brazlandia.cjs com IA Sniper calibrada e Fallback GPS automático. 2) Salvar imagens padrão (800x600) e HD (1200x900) em public/hidrantes/brazlandia/. 3) Sincronizar banco de dados oficial (base-de-dados.xlsx, public/base-de-dados.xlsx, hidrantes_df_oficial.csv e json). 4) Atualizar rascunho_falhas_streetview.md caso haja algum hidrante sem cobertura inicial do Google Street View. Responda ETAPA CONCLUIDA."
     }
   ]
 }
