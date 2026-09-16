@@ -528,6 +528,36 @@
       "status": "completed",
       "name": "Foto Banner no Card do Primeiro Hidrante da Lista de Rota",
       "prompt": "Atue como Desenvolvedor Frontend Sênior e Especialista UI/UX. No bloco/lista de Rota de Missão (provavelmente no MissionRoutePanel.jsx), adicione a imagem banner (fotoPerfil) no card referente ao PRIMEIRO hidrante da rota, mantendo o padrão da dialog do mapa, incluindo a funcionalidade de clicar na foto para abri-la em tela cheia (lightbox). Apenas o primeiro card da lista deve ter o banner, visando economia visual nos demais. Responda 'ETAPA CONCLUIDA' após finalizar e aprovar os testes em localhost."
+    },
+    {
+      "id": 89,
+      "status": "pending",
+      "name": "Interface & Layout (UI/UX) - Ajustes Imediatos",
+      "prompt": "Atue como Desenvolvedor Frontend e Especialista UX/UI. Implemente as seguintes tarefas: 1) Cadastro de novo hidrante: Aumentar a área ocupada pelo mapa na tela (avalie botão de rolagem ou ajuste de altura). 2) Cadastro de vistoria: Reduzir espaçamentos gerais para que os campos principais fiquem visíveis sem necessidade de rolagem. 3) Cadastro de vistoria: Fechar automaticamente o menu suspenso após a seleção de um problema, reabrindo apenas mediante novo clique. 4) Histórico de atividades: Compactar o tamanho dos cards para permitir a visualização simultânea de mais de dois cards (padrão similar à roda de missão). Responda 'ETAPA CONCLUIDA' após finalizar."
+    },
+    {
+      "id": 90,
+      "status": "pending",
+      "name": "Lógica de Rotas & Geolocalização - Ajustes Imediatos",
+      "prompt": "Atue como Desenvolvedor Sênior. Resolva problemas na lógica de rota: 1) Recálculo de rota em andamento: Corrigir o embaralhamento de ordem ao clicar em recalcular durante o percurso; garanta que a rota considere a posição móvel atual do dispositivo (GPS) e não o ponto inicial fixo de partida. O recálculo no meio da rota estava mudando a sequência para locais distantes, possivelmente considerando o ponto inicial fixo. 2) Ordenação de vistorias na rota: Listar as vistorias já concluídas em ordem cronológica inversa (da mais recente para a mais antiga) e adicionar um botão direto para edição. Responda 'ETAPA CONCLUIDA' após finalizar."
+    },
+    {
+      "id": 91,
+      "status": "pending",
+      "name": "Histórico de Atividades & Contadores - Ajustes Imediatos",
+      "prompt": "Atue como Desenvolvedor Frontend Sênior. Adicione novas métricas e filtros no histórico: 1) Filtros e contagem temporal: Implementar filtro por período de tempo na tela de histórico acompanhado de um contador dinâmico de resultados. 2) Contador diário: Exibir no histórico o total de vistorias realizadas na data de hoje. 3) Acesso rápido: Adicionar botão nos registros do histórico para acessar e editar diretamente a vistoria. Responda 'ETAPA CONCLUIDA' após finalizar."
+    },
+    {
+      "id": 92,
+      "status": "pending",
+      "name": "Mapeamento & Dados - Ajustes Imediatos",
+      "prompt": "Atue como Engenheiro de Software Sênior. 1) Marcadores do mapa: Configurar o pino de hidrante que está INOPERANTE porém com vistoria CONCLUÍDA para ter um ícone de *check* vermelho, facilitando a visualização rápida. 2) Integração Argos: Tratar os diálogos e propriedades dos hidrantes importados (legado) para não exibirem indevidamente o status visual de 'sem vistoria', reconhecendo seus dados passados adequadamente. Responda 'ETAPA CONCLUIDA' após finalizar."
+    },
+    {
+      "id": 93,
+      "status": "pending",
+      "name": "Performance & Carregamento - Ajustes Imediatos",
+      "prompt": "Atue como Engenheiro de Performance e Frontend. Investigue e otimize a tela pós-login: 1) Banner pós-login: Solucionar o delay/tempo de carregamento da imagem de banner que causa uma tela em branco ou demora de alguns segundos imediatamente após a autenticação. Implemente pre-loading ou otimize o asset de entrada. Responda 'ETAPA CONCLUIDA' após finalizar."
     }
   ]
 }
