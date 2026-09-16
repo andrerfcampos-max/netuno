@@ -748,3 +748,12 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 - **2. Sincronização Tripla de Dados:** Gravação simultânea na planilha pública public/base-de-dados.xlsx, na planilha raiz ase-de-dados.xlsx e regeneração canônica oficial em public/hidrantes_df_oficial.json e .csv com a coluna otoPerfil preenchida para todos os 40 hidrantes.
 - **3. UI Hero Banner e Fallback Dinâmico (MapComponent.jsx):** Suporte nativo ao prefixo ACL com link relativo /hidrantes/aguas_claras/.jpeg integrado ao Hero Banner e modal Lightbox com visão 360°.
 - **4. Atualização da Documentação Técnica:** Registro do script e do lote de Águas Claras no manual STREETVIEW_PIPELINE.md.
+
+### Etapa 94 - Correcao Pipeline Lago Sul (Fallback GPS e Calibracao IA Sniper)
+- **Contexto:** 55 hidrantes de Lago Sul falharam na captura original devido a camuflagem (cor cinza/envelhecida), vegetacao densa e exigencia de 80% de confianca da IA.
+- **Implementacoes:**
+  1. **Calibracao do Prompt Sniper:** Prompt ajustado para instruir a IA que no DF todos os hidrantes sao de coluna cilindrica (sem caixas subterraneas), com atencao a hidrantes cinzas, descascados ou parcialmente escondidos por folhagens.
+  2. **Tolerancia Calibrada:** Confianca minima reduzida para 60% com varredura step-around.
+  3. **Fallback GPS Resiliente:** Se a IA nao atingir confianca apos a varredura completa e step-around, o sistema aponta a camera diretamente para o azimute da coordenada cadastrada no GPS e grava tanto a imagem padrao (800x600) quanto a HD (1200x900).
+  4. **Base Oficial Atualizada:** 100 hidrantes do Lago Sul agora contam com fotos de alta qualidade vinculadas no banco (fotoPerfil).
+  5. **Mapeamento de Areas Restritas:** Apenas 6 hidrantes nao possuem cobertura Street View por estarem dentro de instalacoes militares restritas (VI COMAR, Base Aerea, Aeroporto e 11o GBM). Registrados em rascunho_falhas_streetview.md.

@@ -561,7 +561,7 @@
     },
     {
       "id": 94,
-      "status": "pending",
+      "status": "completed",
       "name": "Correção Pipeline Lago Sul (Fallback GPS)",
       "prompt": "Atue como Desenvolvedor e Arquiteto de Software. Modifique rigorosamente o script scripts/extract_lago_sul.cjs para lidar melhor com o ambiente do Lago Sul: 1) Altere o prompt do Gemini Sniper: avise que o hidrante de coluna pode estar cinza, envelhecido, pintado de outras cores para camuflagem ou escondido na vegetacao densa. Lembre-se que no DF todos sao de coluna (nao ha caixas subterraneas), foque no formato cilindrico. 2) Reduza a nota de corte da confianca para 60%. 3) Implemente o Fallback GPS: se a IA ainda falhar em detecta-lo, o script nao deve abortar a foto. Ele deve fotografar apontando para o baseHeading (GPS original) e registrar sucesso para o salvamento da foto, evitando a falha critica e inclusao vazia. 4) Caso ative o fallback cego (IA nao encontrou, confianca baixa), grave o nome do hidrante no arquivo rascunho_falhas_streetview.md na secao Lago Sul para que o usuario possa verificar o enquadramento no futuro, MAS continue a atualizacao do banco com o novo relativeUrl. Apos codificar e alterar o script, rode a extracao do Lago Sul (node scripts/extract_lago_sul.cjs) para capturar as fotos faltantes e atualize o banco e responda ETAPA CONCLUIDA."
     },

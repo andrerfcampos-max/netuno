@@ -73,7 +73,7 @@ async function findAdjacentPanorama(baseLat, baseLng, excludePanoId) {
 }
 
 async function locateHydrantWithGemini(base64Image) {
-  const prompt = "Você é um sistema de visão computacional de alta precisão do Corpo de Bombeiros. Analise a imagem fornecida e localize um hidrante de calçada/rua (geralmente de cor AMARELA ou VERMELHA, metálico, cilíndrico). O hidrante NÃO É um hidrante de recalque de parede. Se encontrado, retorne a coordenada horizontal exata do centro do hidrante na imagem, e uma nota de confiança de 0 a 100.\n\nRetorne ESTRITAMENTE um JSON válido neste formato:\n{\"encontrado\": true/false, \"centro_x\": <float entre 0.0 e 1.0>, \"confianca\": <int>}\n\nSó marque como encontrado se a confiança for >= 80.";
+  const prompt = "Você é um sistema de visão computacional de alta precisão do Corpo de Bombeiros. Analise a imagem fornecida e localize um hidrante de calçada/rua (geralmente de cor AMARELA ou VERMELHA, metálico, cilíndrico). ATENÇÃO: Ele pode estar cinza, envelhecido, com pintura descascada, pintado de outras cores para camuflagem ou parcialmente escondido na vegetação densa. Todos no DF são de coluna e formato cilíndrico (não há hidrante de caixa subterrânea). Se encontrado, retorne a coordenada horizontal exata do centro do hidrante na imagem, e uma nota de confiança de 0 a 100.\n\nRetorne ESTRITAMENTE um JSON válido neste formato:\n{\"encontrado\": true/false, \"centro_x\": <float entre 0.0 e 1.0>, \"confianca\": <int>}\n\nSó marque como encontrado se a confiança for >= 60.";
   
   const payload = JSON.stringify({
     contents: [{
@@ -164,7 +164,7 @@ async function smartScan(carLat, carLng, gpsLat, gpsLng, prefixLog) {
     console.log(`${prefixLog} 🧠 Analisando com IA...`);
     const aiResult = await locateHydrantWithGemini(scanImage.base64);
 
-    if (aiResult.encontrado && aiResult.confianca >= 80 && aiResult.centro_x !== undefined) {
+    if (aiResult.encontrado && aiResult.confianca >= 60 && aiResult.centro_x !== undefined) {
       const correctionOffset = (aiResult.centro_x - 0.5) * 100;
       const finalHeading = (sweep.heading + correctionOffset + 360) % 360;
       console.log(`${prefixLog} 🤖 Sucesso! Confiança: ${aiResult.confianca}%. Correção: ${Math.round(correctionOffset)}° (Mira final: ${Math.round(finalHeading)}°).`);
@@ -187,6 +187,7 @@ async function runLagoSul() {
   const allRows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
   const targetHydrants = allRows.filter(r => 
+    (r.nomHidrante || '').toUpperCase().startsWith('LAS') ||
     (r.nomHidrante || '').toUpperCase().startsWith('LGS') ||
     (r.cidade || '').toUpperCase() === 'LAGO SUL' ||
     (r.dscLocalidade || '').toUpperCase().includes('LAGO SUL')
@@ -246,6 +247,13 @@ async function runLagoSul() {
       }
     }
 
+    if (!result.success) {
+      console.log(`   ⚠️ IA não encontrou com confiança. Aplicando FALLBACK para GPS original.`);
+      failedHydrants.push(nom);
+      const baseHeadingFallback = calculateBearing(carLat, carLng, gpsLat, gpsLng);
+      result = { success: true, carLat, carLng, finalHeading: baseHeadingFallback };
+    }
+
     if (result.success) {
       console.log(`   📸 Bate fotos FINAIS (800x600 e 1200x900, FOV=75)...`);
       const finalImage = await downloadStreetView(result.carLat, result.carLng, result.finalHeading, 75, 800, 600);
@@ -254,12 +262,9 @@ async function runLagoSul() {
       fs.writeFileSync(`${fileBase}.jpeg`, finalImage.buffer);
       fs.writeFileSync(`${fileBase}_hd.jpeg`, finalImageHD.buffer);
       
-      console.log(`   ✅ SUCESSO V4! Salvo em: ${fileBase}.jpeg e _hd.jpeg`);
+      console.log(`   ✅ SUCESSO! Salvo em: ${fileBase}.jpeg e _hd.jpeg`);
       updatedPhotosMap[h.codHidrante] = relativeUrl;
       updatedPhotosMap[nom] = relativeUrl;
-    } else {
-      console.log(`   💀 FALHA CRÍTICA: Hidrante não encontrado mesmo com Step-Around.`);
-      failedHydrants.push(nom);
     }
 
     await new Promise(resolve => setTimeout(resolve, 5000));
