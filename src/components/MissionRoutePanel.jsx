@@ -112,10 +112,35 @@ const MissionRoutePanel = ({
     return hidrantes.filter(h => isHydrantInSet(h, selectedIdsSet));
   }, [hidrantes, selectedIdsSet]);
 
-  // Hidrantes concluídos na missão
+  // Hidrantes concluídos na missão em ordem cronológica inversa (mais recente no topo)
   const completedHydrants = useMemo(() => {
-    return missionHydrants.filter(h => isHydrantInSet(h, completedIdsSet));
-  }, [missionHydrants, completedIdsSet]);
+    const raw = missionHydrants.filter(h => isHydrantInSet(h, completedIdsSet));
+    const compList = (currentMission?.completedIds || completedMissionIds || []).map(id => String(id));
+    
+    return [...raw].sort((a, b) => {
+      // 1. Prioriza data e hora de vistoria se disponível
+      const dateA = a.datUltimaVistoria || a.dataVistoria || a.timestamp || a.updatedAt;
+      const dateB = b.datUltimaVistoria || b.dataVistoria || b.timestamp || b.updatedAt;
+      if (dateA && dateB) {
+        const timeA = new Date(dateA).getTime();
+        const timeB = new Date(dateB).getTime();
+        if (!isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+          return timeB - timeA; // mais recente no topo
+        }
+      }
+
+      // 2. Fallback: posição no array completedIds (último inserido é o mais recente)
+      const allA = getHydrantAllIds(a);
+      const allB = getHydrantAllIds(b);
+      let idxA = -1;
+      let idxB = -1;
+      compList.forEach((id, idx) => {
+        if (allA.includes(id)) idxA = idx;
+        if (allB.includes(id)) idxB = idx;
+      });
+      return idxB - idxA; // maior índice primeiro
+    });
+  }, [missionHydrants, completedIdsSet, currentMission?.completedIds, completedMissionIds]);
 
   // Hidrantes faltantes / pendentes
   const pendingHydrants = useMemo(() => {
@@ -367,19 +392,94 @@ const MissionRoutePanel = ({
     }
   }, [userLocation]);
 
-  // Função para forçar recálculo tático manual
+  // Função para forçar recálculo tático manual (Lógica Blindada de 3 Níveis)
   const handleRecalculateRoute = async () => {
     if (pendingHydrants.length === 0) return;
     setIsOptimizing(true);
     lastOptimizedIdsRef.current = '';
 
-    const fresh = await getFreshLocation(3500);
-    if (fresh && typeof fresh.lat === 'number' && typeof fresh.lng === 'number') {
-      setUserLocation(fresh);
-      hasRealGpsAnchorRef.current = true;
-      await runRouteOptimization(fresh.lat, fresh.lng, false);
-    } else {
-      await runRouteOptimization(null, null, false);
+    const toastId = toast.loading('Obtendo sinal de GPS atual para recálculo...');
+    
+    let anchorLat = null;
+    let anchorLng = null;
+    let anchorSource = '';
+
+    // NÍVEL 1: Busca GPS atual com alta precisão e timeout estendido (6 segundos)
+    try {
+      const fresh = await getFreshLocation(6000);
+      if (fresh && typeof fresh.lat === 'number' && typeof fresh.lng === 'number') {
+        anchorLat = fresh.lat;
+        anchorLng = fresh.lng;
+        anchorSource = 'GPS em tempo real';
+        setUserLocation(fresh);
+        hasRealGpsAnchorRef.current = true;
+      }
+    } catch (e) {
+      console.warn('Falha ao obter fresh GPS:', e);
+    }
+
+    // NÍVEL 2: Fallback no último hidrante vistoriado SE concluído há menos de 2 MINUTOS
+    if (anchorLat === null || anchorLng === null) {
+      if (completedHydrants.length > 0) {
+        const lastCompleted = completedHydrants[0];
+        const lastDate = lastCompleted?.datUltimaVistoria || lastCompleted?.dataVistoria || lastCompleted?.timestamp || lastCompleted?.updatedAt;
+        const now = Date.now();
+        let isRecent = false;
+        
+        if (lastDate) {
+          const vistoriaTime = new Date(lastDate).getTime();
+          if (!isNaN(vistoriaTime) && (now - vistoriaTime <= 2 * 60 * 1000)) {
+            isRecent = true;
+          }
+        } else if (lastInspectedCoords?.timestamp && (now - lastInspectedCoords.timestamp <= 2 * 60 * 1000)) {
+          isRecent = true;
+        }
+
+        if (isRecent && lastCompleted?.numLatitude && lastCompleted?.numLongitude) {
+          anchorLat = lastCompleted.numLatitude;
+          anchorLng = lastCompleted.numLongitude;
+          anchorSource = `Último hidrante vistoriado (${lastCompleted.nomHidrante || lastCompleted.codHidrante})`;
+        } else if (isRecent && lastInspectedCoords?.lat && lastInspectedCoords?.lng) {
+          anchorLat = lastInspectedCoords.lat;
+          anchorLng = lastInspectedCoords.lng;
+          anchorSource = 'Última vistoria recente';
+        }
+      }
+    }
+
+    // NÍVEL 3: Fallback em cache recente (< 5 min) ou aviso seguro sem quebrar a rota
+    if (anchorLat === null || anchorLng === null) {
+      const cached = getLastKnownLocation();
+      const now = Date.now();
+      if (cached && typeof cached.lat === 'number' && typeof cached.lng === 'number' && cached.timestamp && (now - cached.timestamp <= 5 * 60 * 1000)) {
+        anchorLat = cached.lat;
+        anchorLng = cached.lng;
+        anchorSource = 'GPS em cache recente';
+      }
+    }
+
+    if (anchorLat === null || anchorLng === null) {
+      toast.dismiss(toastId);
+      toast.warn('Sinal de GPS indisponível no momento. A rota atual foi mantida para evitar embaralhamento.');
+      setIsOptimizing(false);
+      return;
+    }
+
+    toast.update(toastId, {
+      render: `Recalculando rota a partir de: ${anchorSource}...`,
+      type: 'info',
+      isLoading: true
+    });
+
+    try {
+      await runRouteOptimization(anchorLat, anchorLng, false);
+      toast.dismiss(toastId);
+      toast.success(`Rota recalculada com sucesso (${anchorSource})!`);
+    } catch (err) {
+      toast.dismiss(toastId);
+      toast.error('Erro ao recalcular rota. A rota anterior foi mantida.');
+    } finally {
+      setIsOptimizing(false);
     }
   };
 
@@ -762,6 +862,19 @@ const MissionRoutePanel = ({
               >
                 <Plus size={11} strokeWidth={3}/>
                 <span>VISTORIA</span>
+              </button>
+            )}
+
+            {/* Botão Editar Vistoria (para hidrantes já concluídos) */}
+            {isCompleted && (
+              <button 
+                type="button"
+                onClick={() => onInspect && onInspect(h)} 
+                title="Editar Vistoria Realizada" 
+                className="h-6 px-2 text-amber-200 bg-amber-900/80 hover:bg-amber-800 border border-amber-600/50 rounded-md active:scale-95 transition-all font-bold text-[10px] flex items-center gap-1 shadow-xs cursor-pointer shrink-0"
+              >
+                <Edit size={11} strokeWidth={2.5}/>
+                <span>Editar</span>
               </button>
             )}
             

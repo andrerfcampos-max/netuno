@@ -760,3 +760,6 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 
 ### [16/09/2026] Etapa 89 Concluída - Interface & Layout (UI/UX)
 - **Interface & Layout (UI/UX) - Ajustes Imediatos** foi executada e validada com sucesso: 1) Aumento da área ocupada pelo mapa no cadastro de novo hidrante (EditHydrantModal); 2) Compactação de espaçamentos gerais nas perguntas de vistoria (InspectionModal) eliminando necessidade de rolagem; 3) Fechamento automático do dropdown de problemas ao selecionar opção (SearchableSelect); 4) Compactação dos cards do histórico de atividades (SystemHistoryModal) permitindo visualizar mais de dois cards simultaneamente.
+
+### [16/09/2026] Etapa 90 Concluída - Lógica de Rotas & Geolocalização
+- **Lógica de Rotas & Geolocalização - Ajustes Imediatos** foi executada e validada com sucesso: 1) Recálculo de rota blindado em 3 níveis (GPS com timeout estendido de 6s -> fallback no último hidrante se vistoriado há menos de 2 minutos -> aviso seguro sem embaralhar rota); 2) Ordenação das vistorias concluídas em ordem cronológica inversa (mais recente no topo) com botão direto de edição para vistorias finalizadas.
