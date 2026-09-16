@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-116",
+  "activeTaskId": "TASK-129",
   "queue": [
     {
       "id": "TASK-1",
@@ -1160,20 +1160,20 @@
       "seq": 115,
       "conversationId": "7cb4eaf2-138b-4090-b58a-71c01e59ac04",
       "description": "Diagnosticar e corrigir discrepancia e falhas ao abrir missoes (0/106 virando 0/13 ou 0/0)",
-      "status": "timed_out",
+      "status": "completed",
       "createdAt": "2026-09-16T09:16:23.164Z",
       "startedAt": "2026-09-16T09:16:31.199Z",
-      "completedAt": "2026-09-16T09:31:34.677Z"
+      "completedAt": "2026-09-16T09:51:46.538Z"
     },
     {
       "id": "TASK-116",
       "seq": 116,
       "conversationId": "7c6c680b-2738-47b9-97f0-9c731d1cd384",
       "description": "Run automation for workflow 88",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-16T09:19:34.566Z",
       "startedAt": "2026-09-16T09:31:34.680Z",
-      "completedAt": null
+      "completedAt": "2026-09-16T09:37:01.207Z"
     },
     {
       "id": "TASK-117",
@@ -1185,6 +1185,129 @@
       "startedAt": null,
       "completedAt": "2026-09-16T09:31:42.280Z",
       "error": "Falha durante execução do agente"
+    },
+    {
+      "id": "TASK-118",
+      "seq": 118,
+      "conversationId": "cd4f62dc-114d-4ebf-8fae-15dc8a2b1652",
+      "description": "Add 12 immediate tasks to workflow.json",
+      "status": "completed",
+      "createdAt": "2026-09-16T16:24:08.304Z",
+      "startedAt": "2026-09-16T16:24:22.588Z",
+      "completedAt": "2026-09-16T16:26:41.891Z"
+    },
+    {
+      "id": "TASK-119",
+      "seq": 119,
+      "conversationId": "db08333e-f3d8-49a3-98a7-0dba444c07d9",
+      "description": "Investigate Lago Sul hydrant banner photos",
+      "status": "completed",
+      "createdAt": "2026-09-16T16:26:34.333Z",
+      "startedAt": "2026-09-16T16:26:44.163Z",
+      "completedAt": "2026-09-16T16:28:28.643Z"
+    },
+    {
+      "id": "TASK-120",
+      "seq": 120,
+      "conversationId": "d2c0754e-5278-4875-beec-475646517df7",
+      "description": "Adicionar Etapa 95 SEI e rodar automacao",
+      "status": "completed",
+      "createdAt": "2026-09-16T18:08:41.741Z",
+      "startedAt": "2026-09-16T18:08:52.253Z",
+      "completedAt": "2026-09-16T18:10:07.967Z"
+    },
+    {
+      "id": "TASK-121",
+      "seq": 121,
+      "conversationId": "cd4f62dc-114d-4ebf-8fae-15dc8a2b1652",
+      "description": "Investigate route sequence recalculation",
+      "status": "completed",
+      "createdAt": "2026-09-16T18:09:41.517Z",
+      "startedAt": "2026-09-16T18:10:10.835Z",
+      "completedAt": "2026-09-16T18:24:43.260Z"
+    },
+    {
+      "id": "TASK-122",
+      "seq": 122,
+      "conversationId": "db08333e-f3d8-49a3-98a7-0dba444c07d9",
+      "description": "Investigar 55 hidrantes falhos no Lago Sul",
+      "status": "timed_out",
+      "createdAt": "2026-09-16T18:11:21.460Z",
+      "startedAt": "2026-09-16T18:24:45.749Z",
+      "completedAt": "2026-09-16T18:39:49.658Z"
+    },
+    {
+      "id": "TASK-123",
+      "seq": 123,
+      "conversationId": "d2c0754e-5278-4875-beec-475646517df7",
+      "description": "Rodar automacao (run_automation.js)",
+      "status": "timed_out",
+      "createdAt": "2026-09-16T18:12:12.849Z",
+      "startedAt": "2026-09-16T18:39:49.660Z",
+      "completedAt": "2026-09-16T21:29:32.382Z"
+    },
+    {
+      "id": "TASK-124",
+      "seq": 124,
+      "conversationId": "cd4f62dc-114d-4ebf-8fae-15dc8a2b1652",
+      "description": "Update step 90 prompt with robust recalculation logic",
+      "status": "completed",
+      "createdAt": "2026-09-16T18:17:51.103Z",
+      "startedAt": null,
+      "completedAt": "2026-09-16T18:25:30.413Z"
+    },
+    {
+      "id": "TASK-125",
+      "seq": 125,
+      "conversationId": "run_automation",
+      "description": "Orquestrador Etapa 89: Interface & Layout (UI/UX) - Ajustes Imediatos",
+      "status": "failed",
+      "createdAt": "2026-09-16T18:25:48.320Z",
+      "startedAt": null,
+      "completedAt": "2026-09-16T18:25:48.384Z",
+      "error": "Falha durante execução do agente"
+    },
+    {
+      "id": "TASK-126",
+      "seq": 126,
+      "conversationId": "cd4f62dc-114d-4ebf-8fae-15dc8a2b1652",
+      "description": "Rodar automacao de imediato",
+      "status": "failed",
+      "createdAt": "2026-09-16T18:29:08.191Z",
+      "startedAt": null,
+      "completedAt": "2026-09-16T21:29:32.383Z",
+      "error": "Expirou na fila (> 2h sem execução)"
+    },
+    {
+      "id": "TASK-127",
+      "seq": 127,
+      "conversationId": "run_automation",
+      "description": "Orquestrador Etapa 89: Interface & Layout (UI/UX) - Ajustes Imediatos",
+      "status": "failed",
+      "createdAt": "2026-09-16T18:40:04.169Z",
+      "startedAt": null,
+      "completedAt": "2026-09-16T18:40:04.201Z",
+      "error": "Falha durante execução do agente"
+    },
+    {
+      "id": "TASK-128",
+      "seq": 128,
+      "conversationId": "db08333e-f3d8-49a3-98a7-0dba444c07d9",
+      "description": "Finalizar extracao e processamento Lago Sul",
+      "status": "completed",
+      "createdAt": "2026-09-16T21:29:42.756Z",
+      "startedAt": "2026-09-16T21:29:46.264Z",
+      "completedAt": "2026-09-16T21:39:20.343Z"
+    },
+    {
+      "id": "TASK-129",
+      "seq": 129,
+      "conversationId": "cd4f62dc-114d-4ebf-8fae-15dc8a2b1652",
+      "description": "Executar Etapa 89: Interface & Layout (UI/UX)",
+      "status": "running",
+      "createdAt": "2026-09-16T21:30:59.228Z",
+      "startedAt": "2026-09-16T21:39:20.555Z",
+      "completedAt": null
     }
   ]
 }

@@ -366,118 +366,105 @@ export default function SystemHistoryModal({
               return (
                 <div
                   key={item.id}
-                  className={`group relative bg-slate-800/40 hover:bg-slate-800/80 border rounded-xl p-3 sm:p-4 transition-all ${
+                  className={`group relative bg-slate-800/50 hover:bg-slate-800/90 border rounded-lg p-2 sm:p-2.5 transition-all shadow-xs ${
                     item.unread 
-                      ? 'border-emerald-500/40 bg-emerald-950/10 shadow-sm' 
-                      : 'border-slate-800 hover:border-slate-700'
+                      ? 'border-emerald-500/50 bg-emerald-950/20 shadow-xs' 
+                      : 'border-slate-700/60 hover:border-slate-600'
                   }`}
                 >
-                  {/* Linha Principal do Card */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 min-w-0">
-                      
-                      {/* Ícone Indicador da Ação */}
-                      <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 mt-0.5 ${actionBadge.bg}`}>
-                        {actionBadge.icon}
+                  {/* Linha 1: Badges, Tempo e Ações Rápidas */}
+                  <div className="flex items-center justify-between gap-1.5 w-full">
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                      {/* Ícone Indicador Compacto */}
+                      <div className={`w-6 h-6 rounded-md border flex items-center justify-center shrink-0 ${actionBadge.bg}`}>
+                        {React.cloneElement(actionBadge.icon, { size: 12 })}
                       </div>
 
-                      <div className="flex flex-col min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                          {/* Badges de Entidade e Ação */}
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${entityBadge.color}`}>
-                            {entityBadge.icon}
-                            <span>{entityBadge.label}</span>
-                          </span>
+                      {/* Badges de Entidade e Ação */}
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-bold border uppercase tracking-wider ${entityBadge.color}`}>
+                        {React.cloneElement(entityBadge.icon, { size: 10 })}
+                        <span>{entityBadge.label}</span>
+                      </span>
 
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${actionBadge.bg}`}>
-                            <span>{actionBadge.label}</span>
-                          </span>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold border ${actionBadge.bg}`}>
+                        <span>{actionBadge.label}</span>
+                      </span>
 
-                          {item.unread && (
-                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-emerald-500 text-slate-950 uppercase tracking-widest shadow">
-                              NOVO
-                            </span>
-                          )}
-
-                          <span className="text-[11px] text-slate-400 flex items-center gap-1 ml-auto sm:ml-0" title={new Date(item.timestamp).toLocaleString('pt-BR')}>
-                            <Clock size={12} className="text-slate-500" />
-                            {formatRelativeTime(item.timestamp)}
-                          </span>
-                        </div>
-
-                        {/* Título e Entidade */}
-                        <div className="mt-1">
-                          <h4 className="text-sm font-bold text-slate-100 group-hover:text-white transition-colors">
-                            {item.title}
-                          </h4>
-                          {(item.entityName || item.entityId) && (
-                            <div className="text-xs font-semibold text-slate-300 mt-0.5">
-                              {item.entityName} {item.entityId && item.entityId !== item.entityName ? `(${item.entityId})` : ''}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Localização / RA se existir */}
-                        {item.location && (
-                          <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
-                            <MapPin size={12} className="text-emerald-400 shrink-0" />
-                            <span className="truncate">{item.location}</span>
-                          </div>
-                        )}
-
-                        {/* Autor da Ação */}
-                        <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-400">
-                          <div className="flex items-center gap-1 bg-slate-900/60 px-2 py-0.5 rounded-md border border-slate-800">
-                            <User size={12} className="text-slate-400" />
-                            <span className="font-semibold text-slate-300">{item.author?.nome || 'Militar'}</span>
-                            {item.author?.matricula && (
-                              <span className="text-slate-500">({item.author.matricula})</span>
-                            )}
-                            {item.author?.role && (
-                              <span className="text-emerald-400 text-[10px] ml-1 uppercase font-bold">
-                                {item.author.role}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Detalhes específicos */}
-                        {item.details && (
-                          <div className="mt-2 text-xs text-slate-300 bg-slate-950/60 border border-slate-800/80 rounded-lg p-2 font-mono">
-                            {typeof item.details === 'string' ? (
-                              <p className="whitespace-pre-wrap font-sans text-xs text-slate-300 leading-relaxed">
-                                {item.details}
-                              </p>
-                            ) : (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] font-sans">
-                                {Object.entries(item.details).map(([k, v]) => (
-                                  <div key={k} className="flex items-center gap-1 truncate">
-                                    <span className="text-slate-500">{k}:</span>
-                                    <span className="text-slate-200 font-semibold truncate">{String(v)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      {item.unread && (
+                        <span className="px-1.5 py-0.2 rounded text-[8.5px] font-black bg-emerald-500 text-slate-950 uppercase tracking-wider shadow-xs">
+                          NOVO
+                        </span>
+                      )}
                     </div>
 
-                    {/* Botões de Ação Rápida no Card */}
-                    {item.coords && (
-                      <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1" title={new Date(item.timestamp).toLocaleString('pt-BR')}>
+                        <Clock size={11} className="text-slate-500" />
+                        {formatRelativeTime(item.timestamp)}
+                      </span>
+
+                      {item.coords && (
                         <button
                           type="button"
                           onClick={(e) => handleFocusOnMap(item.coords, e)}
-                          className="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/40 rounded-lg transition-all"
+                          className="p-1 text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/40 rounded transition-all active:scale-95 cursor-pointer"
                           title="Centralizar no Mapa Tático"
                         >
-                          <LocateFixed size={13} />
-                          <span className="hidden sm:inline">Ver no Mapa</span>
+                          <LocateFixed size={12} />
                         </button>
-                      </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Linha 2: Título e Identificação do Alvo */}
+                  <div className="mt-1 flex items-baseline gap-1.5 min-w-0">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-white transition-colors truncate">
+                      {item.title}
+                    </h4>
+                    {(item.entityName || item.entityId) && item.entityName !== item.title && (
+                      <span className="text-[11px] text-slate-300 font-medium truncate hidden sm:inline">
+                        • {item.entityName} {item.entityId && item.entityId !== item.entityName ? `(${item.entityId})` : ''}
+                      </span>
                     )}
                   </div>
+
+                  {/* Linha 3: Metadados Compactos (Localização e Militar) */}
+                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px] text-slate-400 mt-0.5">
+                    {item.location && (
+                      <span className="flex items-center gap-0.5 text-cyan-300 font-medium">
+                        <MapPin size={10} className="text-cyan-400 shrink-0" />
+                        <span className="truncate max-w-[150px]">{item.location}</span>
+                      </span>
+                    )}
+                    <span className="flex items-center gap-0.5 text-slate-300">
+                      <User size={10} className="text-slate-400 shrink-0" />
+                      <span className="font-semibold">{item.author?.nome || 'Militar'}</span>
+                      {item.author?.matricula && <span className="text-slate-400">({item.author.matricula})</span>}
+                      {item.author?.role && (
+                        <span className="text-emerald-400 font-bold uppercase ml-0.5 text-[9px]">[{item.author.role}]</span>
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Linha 4: Detalhes específicos (se existirem) */}
+                  {item.details && (
+                    <div className="mt-1 text-[10.5px] text-slate-300 bg-slate-950/60 border border-slate-800/80 rounded p-1.5 font-sans leading-tight">
+                      {typeof item.details === 'string' ? (
+                        <p className="whitespace-pre-wrap text-slate-300">
+                          {item.details}
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
+                          {Object.entries(item.details).map(([k, v]) => (
+                            <div key={k} className="flex items-center gap-1 truncate">
+                              <span className="text-slate-400">{k}:</span>
+                              <span className="text-slate-200 font-medium truncate">{String(v)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })

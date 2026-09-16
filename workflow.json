@@ -531,7 +531,7 @@
     },
     {
       "id": 89,
-      "status": "pending",
+      "status": "completed",
       "name": "Interface & Layout (UI/UX) - Ajustes Imediatos",
       "prompt": "Atue como Desenvolvedor Frontend e Especialista UX/UI. Implemente as seguintes tarefas: 1) Cadastro de novo hidrante: Aumentar a área ocupada pelo mapa na tela (avalie botão de rolagem ou ajuste de altura). 2) Cadastro de vistoria: Reduzir espaçamentos gerais para que os campos principais fiquem visíveis sem necessidade de rolagem. 3) Cadastro de vistoria: Fechar automaticamente o menu suspenso após a seleção de um problema, reabrindo apenas mediante novo clique. 4) Histórico de atividades: Compactar o tamanho dos cards para permitir a visualização simultânea de mais de dois cards (padrão similar à roda de missão). Responda 'ETAPA CONCLUIDA' após finalizar."
     },

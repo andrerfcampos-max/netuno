@@ -479,7 +479,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
 
   const renderOption = (value, currentVal, setVal, isPositive, onClickOverride) => {
     const isSelected = currentVal === value;
-    const baseClass = "flex-1 py-2 px-2 font-bold text-xs sm:text-sm rounded shadow-sm border transition-all active:scale-95 text-center";
+    const baseClass = "flex-1 py-1.5 px-2 font-bold text-[11px] sm:text-xs rounded shadow-xs border transition-all active:scale-95 text-center leading-tight";
     
     const clickHandler = () => {
       if (onClickOverride) {
@@ -504,7 +504,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       <button 
         type="button"
         onClick={clickHandler}
-        className={`${baseClass} bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600`}
+        className={`${baseClass} bg-slate-700/90 border-slate-600 text-slate-300 hover:bg-slate-600`}
       >
         {value}
       </button>
@@ -513,33 +513,33 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-0 sm:p-4 animate-fadeIn">
-      <div className="bg-slate-900 sm:rounded-2xl shadow-2xl w-full max-w-lg border-0 sm:border border-slate-700/80 overflow-hidden flex flex-col h-[100dvh] sm:h-auto sm:max-h-[92dvh] text-slate-100">
+      <div className="bg-slate-900 sm:rounded-2xl shadow-2xl w-full max-w-lg border-0 sm:border border-slate-700/80 overflow-hidden flex flex-col h-[100dvh] sm:h-auto sm:max-h-[94dvh] text-slate-100">
         
-        {/* CABEÇALHO PADRONIZADO */}
-        <div className="px-4 py-3 sm:px-5 sm:py-3.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
+        {/* CABEÇALHO PADRONIZADO COMPACTO */}
+        <div className="px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             <button 
               type="button"
               onClick={onClose} 
-              className="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+              className="text-xs px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
             >
               ← Voltar
             </button>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md shrink-0 ${isEditing ? 'bg-gradient-to-br from-amber-500 to-amber-700 shadow-amber-950/50' : 'bg-gradient-to-br from-emerald-600 to-teal-700 shadow-emerald-950/50'}`}>
-              {isEditing ? <Edit3 size={20} /> : <ClipboardCheck size={20} />}
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md shrink-0 ${isEditing ? 'bg-gradient-to-br from-amber-500 to-amber-700 shadow-amber-950/50' : 'bg-gradient-to-br from-emerald-600 to-teal-700 shadow-emerald-950/50'}`}>
+              {isEditing ? <Edit3 size={17} /> : <ClipboardCheck size={17} />}
             </div>
             <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-bold text-white tracking-tight truncate flex items-center gap-1.5">
                 {isEditing ? (
                   <>
                     <span>Editar Vistoria</span>
-                    <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-mono font-bold tracking-wide">EDIÇÃO</span>
+                    <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-mono font-bold tracking-wide">EDIÇÃO</span>
                   </>
                 ) : (
                   <span>Cadastrar nova vistoria</span>
                 )}
               </h2>
-              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+              <p className="text-[10.5px] sm:text-xs text-slate-400 truncate">
                 Hidrante: <span className="font-semibold text-emerald-400">{fixEncoding(hidrante.nomHidrante) || hidrante.codHidrante}</span>
               </p>
             </div>
@@ -547,32 +547,32 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
           <button 
             type="button"
             onClick={onClose} 
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
             title="Fechar"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        <div className="p-4 flex flex-col gap-4 overflow-y-auto">
+        <div className="p-2.5 sm:p-3.5 flex flex-col gap-2 sm:gap-2.5 overflow-y-auto">
           
           {/* Pergunta 1 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">
+          <div className="flex flex-col gap-1.5 bg-slate-900/50 p-2 sm:p-2.5 rounded-lg border border-slate-700/60">
+            <label className="font-bold text-slate-200 text-xs sm:text-sm">
               1) A CHAVE TIPO T ENCAIXA NO REGISTRO? <span className="text-red-500 font-bold ml-1">*</span>
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               {renderOption('SIM', q1, setQ1, true)}
               {renderOption('NÃO, FALTA LUVA', q1, setQ1, false)}
             </div>
           </div>
 
           {/* Pergunta 2 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">
+          <div className="flex flex-col gap-1.5 bg-slate-900/50 p-2 sm:p-2.5 rounded-lg border border-slate-700/60">
+            <label className="font-bold text-slate-200 text-xs sm:text-sm">
               2) O REGISTRO ESTÁ... <span className="text-red-500 font-bold ml-1">*</span>
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               {renderOption('SEM ALTERAÇÃO', q2, setQ2, true)}
               {renderOption('SOTERRADO', q2, setQ2, false)}
               {renderOption('COM VAZAMENTO', q2, setQ2, false)}
@@ -581,11 +581,11 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
           </div>
 
           {/* Pergunta 3 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">
+          <div className="flex flex-col gap-1.5 bg-slate-900/50 p-2 sm:p-2.5 rounded-lg border border-slate-700/60">
+            <label className="font-bold text-slate-200 text-xs sm:text-sm">
               3) A TAMPA DA CAIXA ESTÁ... <span className="text-red-500 font-bold ml-1">*</span>
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               {renderOption('SEM ALTERAÇÃO', q3, setQ3, true)}
               {renderOption('LACRADA', q3, setQ3, false)}
               {renderOption('QUEBRADA', q3, setQ3, false)}
@@ -594,11 +594,11 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
           </div>
 
           {/* Pergunta 4 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">
+          <div className="flex flex-col gap-1.5 bg-slate-900/50 p-2 sm:p-2.5 rounded-lg border border-slate-700/60">
+            <label className="font-bold text-slate-200 text-xs sm:text-sm">
               4) TODOS OS TAMPÕES ESTÃO PRESENTES? <span className="text-red-500 font-bold ml-1">*</span>
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               {renderOption('SIM', q4, setQ4, true)}
               {renderOption('FALTA 1 TAMPÃO', q4, setQ4, true)}
               {renderOption('FALTAM 2 TAMPÕES', q4, setQ4, false)}
@@ -607,38 +607,39 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
           </div>
 
           {/* Pergunta 5 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+          <div className="flex flex-col gap-1.5 bg-slate-900/50 p-2 sm:p-2.5 rounded-lg border border-slate-700/60">
             <div className="flex justify-between items-center">
-              <label className="font-bold text-slate-300 text-sm">
+              <label className="font-bold text-slate-200 text-xs sm:text-sm">
                 5) O HIDRANTE ESTÁ OPERANTE? <span className="text-red-500 font-bold ml-1">*</span>
               </label>
               {motivoInoperante && (
-                <span className="text-[10px] bg-red-900/80 text-red-300 font-bold px-2 py-0.5 rounded border border-red-700">
+                <span className="text-[9.5px] bg-red-900/80 text-red-300 font-bold px-1.5 py-0.2 rounded border border-red-700">
                   Bloqueado (Inoperante)
                 </span>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               {renderOption('SIM', q5, setQ5, true, handleSelectQ5)}
               {renderOption('NÃO', q5, setQ5, false)}
             </div>
           </div>
 
           {/* Pergunta 6 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
+          <div className="flex flex-col gap-1.5 bg-slate-900/50 p-2 sm:p-2.5 rounded-lg border border-slate-700/60">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-slate-300 text-sm">6) OUTROS PROBLEMAS CONSTATADOS (Opcional)</label>
+              <label className="font-bold text-slate-200 text-xs sm:text-sm">6) OUTROS PROBLEMAS CONSTATADOS (Opcional)</label>
               {Array.isArray(q6) && q6.length > 0 && (
-                <span className="text-[11px] font-mono font-bold text-amber-300 bg-amber-950/70 border border-amber-500/40 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-950/70 border border-amber-500/40 px-1.5 py-0.2 rounded-full">
                   {q6.length} {q6.length === 1 ? 'defeito selecionado' : 'defeitos selecionados'}
                 </span>
               )}
             </div>
             <SearchableSelect
               isMulti={true}
+              closeOnSelect={true}
               options={DEFEITOS_OFICIAIS.map(d => ({ value: d, label: d }))}
               value={q6}
-              placeholder="Selecione um ou mais defeitos (ex: vazamento, pressão, abelhas)..."
+              placeholder="Selecione um ou mais defeitos..."
               allowCustom={true}
               clearable={true}
               onChange={(vals) => {
@@ -655,10 +656,10 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
           </div>
 
           {/* Pergunta 7 */}
-          <div className="flex flex-col gap-2 bg-slate-900/40 p-3 rounded border border-slate-700/50">
-            <label className="font-bold text-slate-300 text-sm">7) OBSERVAÇÕES (Opcional)</label>
+          <div className="flex flex-col gap-1 bg-slate-900/50 p-2 sm:p-2.5 rounded-lg border border-slate-700/60">
+            <label className="font-bold text-slate-200 text-xs sm:text-sm">7) OBSERVAÇÕES (Opcional)</label>
             <textarea
-              className="p-2 rounded bg-slate-700 border border-slate-600 text-sm text-white focus:outline-none focus:border-emerald-500 w-full h-16 resize-none"
+              className="p-1.5 rounded bg-slate-800 border border-slate-600 text-xs text-white focus:outline-none focus:border-emerald-500 w-full h-12 resize-none"
               placeholder="Digite alguma observação adicional..."
               value={q7}
               onChange={(e) => setQ7(e.target.value)}

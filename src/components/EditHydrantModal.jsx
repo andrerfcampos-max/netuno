@@ -731,7 +731,7 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
               </div>
 
               {/* Container do Mapa com Satélite e Botão de Localização GPS */}
-              <div className="w-full md:w-1/2 min-h-[160px] h-[170px] sm:h-[220px] md:h-auto md:min-h-[360px] border border-slate-600 rounded-lg overflow-hidden relative shadow-inner z-0">
+              <div className="w-full md:w-1/2 min-h-[260px] h-[300px] sm:h-[340px] md:h-auto md:min-h-[420px] border border-slate-600 rounded-lg overflow-hidden relative shadow-inner z-0">
                  
                  {/* Botão de Localização GPS do Usuário */}
                  <div className="absolute top-2 right-2 z-[1000] flex flex-col items-end gap-1">

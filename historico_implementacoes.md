@@ -757,3 +757,6 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   3. **Fallback GPS Resiliente:** Se a IA nao atingir confianca apos a varredura completa e step-around, o sistema aponta a camera diretamente para o azimute da coordenada cadastrada no GPS e grava tanto a imagem padrao (800x600) quanto a HD (1200x900).
   4. **Base Oficial Atualizada:** 100 hidrantes do Lago Sul agora contam com fotos de alta qualidade vinculadas no banco (fotoPerfil).
   5. **Mapeamento de Areas Restritas:** Apenas 6 hidrantes nao possuem cobertura Street View por estarem dentro de instalacoes militares restritas (VI COMAR, Base Aerea, Aeroporto e 11o GBM). Registrados em rascunho_falhas_streetview.md.
+
+### [16/09/2026] Etapa 89 Concluída - Interface & Layout (UI/UX)
+- **Interface & Layout (UI/UX) - Ajustes Imediatos** foi executada e validada com sucesso: 1) Aumento da área ocupada pelo mapa no cadastro de novo hidrante (EditHydrantModal); 2) Compactação de espaçamentos gerais nas perguntas de vistoria (InspectionModal) eliminando necessidade de rolagem; 3) Fechamento automático do dropdown de problemas ao selecionar opção (SearchableSelect); 4) Compactação dos cards do histórico de atividades (SystemHistoryModal) permitindo visualizar mais de dois cards simultaneamente.

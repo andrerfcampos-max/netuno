@@ -26,7 +26,8 @@ const SearchableSelect = ({
   className = '',
   dropdownClassName = '',
   name = '',
-  isMulti = false
+  isMulti = false,
+  closeOnSelect = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -165,7 +166,11 @@ const SearchableSelect = ({
       }
       setSearchQuery('');
       setIsTyping(false);
-      if (inputRef.current) inputRef.current.focus();
+      if (closeOnSelect) {
+        closeMenu();
+      } else if (inputRef.current) {
+        inputRef.current.focus();
+      }
     } else {
       onChange && onChange(optionValue);
       closeMenu();
