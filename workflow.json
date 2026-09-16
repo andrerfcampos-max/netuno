@@ -549,7 +549,7 @@
     },
     {
       "id": 92,
-      "status": "pending",
+      "status": "completed",
       "name": "Mapeamento & Dados - Ajustes Imediatos",
       "prompt": "Atue como Engenheiro de Software Sênior. 1) Marcadores do mapa: Configurar o pino de hidrante que está INOPERANTE porém com vistoria CONCLUÍDA para ter um ícone de *check* vermelho, facilitando a visualização rápida. 2) Integração Argos: Tratar os diálogos e propriedades dos hidrantes importados (legado) para não exibirem indevidamente o status visual de 'sem vistoria', reconhecendo seus dados passados adequadamente. Responda 'ETAPA CONCLUIDA' após finalizar."
     },

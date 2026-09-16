@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-133",
+  "activeTaskId": "TASK-135",
   "queue": [
     {
       "id": "TASK-1",
@@ -1344,19 +1344,29 @@
       "seq": 133,
       "conversationId": "cd4f62dc-114d-4ebf-8fae-15dc8a2b1652",
       "description": "Executar Etapa 91: Histórico de Atividades & Contadores",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-16T21:50:02.557Z",
       "startedAt": "2026-09-16T22:11:52.319Z",
-      "completedAt": null
+      "completedAt": "2026-09-16T22:20:55.501Z"
     },
     {
       "id": "TASK-134",
       "seq": 134,
       "conversationId": "5f006d6b-967c-442d-a81a-8fd0db5439b6",
       "description": "salvamento das fotos dos hidrantes de candangolandia",
-      "status": "queued",
+      "status": "timed_out",
       "createdAt": "2026-09-16T22:16:57.152Z",
-      "startedAt": null,
+      "startedAt": "2026-09-16T22:20:56.871Z",
+      "completedAt": "2026-09-16T22:35:57.329Z"
+    },
+    {
+      "id": "TASK-135",
+      "seq": 135,
+      "conversationId": "cd4f62dc-114d-4ebf-8fae-15dc8a2b1652",
+      "description": "Executar Etapa 92: Mapeamento & Dados",
+      "status": "running",
+      "createdAt": "2026-09-16T22:21:13.054Z",
+      "startedAt": "2026-09-16T22:35:57.332Z",
       "completedAt": null
     }
   ]

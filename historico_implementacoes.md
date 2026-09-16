@@ -782,3 +782,6 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 
 ### [16/09/2026] Etapa 91 Concluída - Histórico de Atividades & Contadores
 - **Histórico de Atividades & Contadores - Ajustes Imediatos** foi executada e validada com sucesso: 1) Filtro por período de tempo (Todo Período, Hoje, 7 dias, 30 dias) acompanhado de contador dinâmico de resultados na tela de histórico; 2) Contador diário dedicado com badge de vistorias realizadas na data de hoje no topo; 3) Botão de acesso rápido nos registros de vistoria para abrir e editar a vistoria diretamente.
+
+### [16/09/2026] Etapa 92 Concluída - Mapeamento & Dados
+- **Mapeamento & Dados - Ajustes Imediatos**: 1) Marcadores do mapa com check vermelho para inoperantes concluídos (diferenciando de operantes em verde); 2) Integração Argos com getHydrantVistoriaDate evitando exibição indevida de 'Sem vistoria' nos detalhes.

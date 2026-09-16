@@ -21,6 +21,50 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
+// Resolução inteligente da data/status de vistoria (inclusive dados históricos Argos)
+export const getHydrantVistoriaDate = (h) => {
+  if (!h) return 'Sem vistoria';
+  // 1. Campos diretos de data de vistoria
+  const candidate = 
+    h.datHoraUltimaVistoria || 
+    h.datUltimaVistoria || 
+    h.dataUltimaVistoria || 
+    h.dataVistoria || 
+    h.datVistoria || 
+    h.timestamp;
+  if (candidate) {
+    const s = String(candidate).trim();
+    if (s && s.toLowerCase() !== 'sem vistoria') {
+      return s.split(' ')[0];
+    }
+  }
+
+  // 2. Histórico de vistorias se disponível
+  if (Array.isArray(h.HISTORICO_VISTORIAS) && h.HISTORICO_VISTORIAS.length > 0) {
+    const last = h.HISTORICO_VISTORIAS[0];
+    const histDate = last?.datHoraUltimaVistoria || last?.dataVistoria || last?.datVistoria || last?.timestamp || last?.data;
+    if (histDate) {
+      return String(histDate).split(' ')[0];
+    }
+    return 'Registrada';
+  }
+
+  // 3. Se possui dados históricos consolidados do Argos (ex: problemas cadastrados ou vistoriador identificado)
+  if (h.problemasHidrante && h.problemasHidrante.trim() !== '') {
+    return h.datAtualizacao ? String(h.datAtualizacao).split(' ')[0] : 'Dados Argos';
+  }
+  if (h.nomVistoriador || h.numMatriculaVistoriador) {
+    return h.datAtualizacao ? String(h.datAtualizacao).split(' ')[0] : 'Vistoriado (Argos)';
+  }
+
+  // 4. Se possui data de atualização/cadastro recente
+  if (h.datAtualizacao) {
+    return String(h.datAtualizacao).split(' ')[0];
+  }
+
+  return 'Sem vistoria';
+};
+
 // Estilização dos Marcadores (Design Consistente com Desktop e Mobile - Alto Contraste Satélite)
 const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = false, missionOrder = null, isMissionCompleted = false, showPinCode = false, pinCode = '') => {
   const statusColor = isOperante ? '#10b981' : '#ef4444'; // Verde Esmeralda ou Vermelho Sólido
@@ -107,7 +151,11 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
   // Contorno branco para manter a consistência visual, com diferenciação pelo tamanho e número interno
   if (isMissionItem) {
     if (isMissionCompleted) {
-      // Hidrante da Rota Já Vistoriado: Verde Esmeralda com borda branca e checkmark
+      // Hidrante da Rota Já Vistoriado: Verde Esmeralda (se operante) ou Vermelho Sólido (se inoperante) com borda branca e checkmark
+      const completedBg = isOperante ? '#059669' : '#dc2626';
+      const labelColor = isOperante ? '#a7f3d0' : '#fecaca';
+      const labelBorder = isOperante ? 'rgba(16, 185, 129, 0.6)' : 'rgba(239, 68, 68, 0.6)';
+
       return L.divIcon({
         className: 'custom-div-icon',
         html: `
@@ -120,7 +168,7 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
             justify-content: center;
           ">
             <div style="
-              background-color: #059669;
+              background-color: ${completedBg};
               width: 22px;
               height: 22px;
               border-radius: 50%;
@@ -143,13 +191,13 @@ const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = fals
                 left: 50%;
                 transform: translateX(-50%);
                 background: rgba(15, 23, 42, 0.95);
-                color: #a7f3d0;
+                color: ${labelColor};
                 font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
                 font-size: 10px;
                 font-weight: 800;
                 padding: 1px 5px;
                 border-radius: 4px;
-                border: 1px solid rgba(16, 185, 129, 0.6);
+                border: 1px solid ${labelBorder};
                 box-shadow: 0 2px 5px rgba(0,0,0,0.85);
                 white-space: nowrap;
                 pointer-events: none;
@@ -1644,8 +1692,12 @@ const MapComponent = ({
                 <div>
                   <span className="text-slate-400 block font-medium">Vistoria Vigente:</span>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shrink-0"></span>
-                    <span className="text-slate-200 font-semibold">{selectedHydrant.datHoraUltimaVistoria ? String(selectedHydrant.datHoraUltimaVistoria).split(' ')[0] : 'Sem vistoria'}</span>
+                    <span className={`w-2 h-2 rounded-full inline-block shrink-0 ${
+                      getHydrantVistoriaDate(selectedHydrant) !== 'Sem vistoria'
+                        ? (selectedHydrant.flgAtivo ? 'bg-emerald-400' : 'bg-red-400')
+                        : 'bg-slate-500'
+                    }`}></span>
+                    <span className="text-slate-200 font-semibold">{getHydrantVistoriaDate(selectedHydrant)}</span>
                   </div>
                   {isGestor && onOpenInspectionHistory && (
                     <button
@@ -1658,7 +1710,7 @@ const MapComponent = ({
                       title="Auditar Histórico de Vistorias Anteriores (Exclusivo Gestor)"
                     >
                       <History size={11} className="text-amber-400 shrink-0" />
-                      <span>Histórico ({Array.isArray(selectedHydrant.HISTORICO_VISTORIAS) ? selectedHydrant.HISTORICO_VISTORIAS.length : (selectedHydrant.datHoraUltimaVistoria ? 1 : 0)})</span>
+                      <span>Histórico ({Array.isArray(selectedHydrant.HISTORICO_VISTORIAS) ? selectedHydrant.HISTORICO_VISTORIAS.length : (getHydrantVistoriaDate(selectedHydrant) !== 'Sem vistoria' ? 1 : 0)})</span>
                     </button>
                   )}
                 </div>
@@ -1882,8 +1934,12 @@ const MapComponent = ({
                 <div>
                   <span className="text-slate-400 block font-medium">Vistoria Vigente:</span>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shrink-0"></span>
-                    <span className="text-slate-200 font-semibold">{selectedHydrant.datHoraUltimaVistoria ? String(selectedHydrant.datHoraUltimaVistoria).split(' ')[0] : 'Sem vistoria'}</span>
+                    <span className={`w-2 h-2 rounded-full inline-block shrink-0 ${
+                      getHydrantVistoriaDate(selectedHydrant) !== 'Sem vistoria'
+                        ? (selectedHydrant.flgAtivo ? 'bg-emerald-400' : 'bg-red-400')
+                        : 'bg-slate-500'
+                    }`}></span>
+                    <span className="text-slate-200 font-semibold">{getHydrantVistoriaDate(selectedHydrant)}</span>
                   </div>
                   {isGestor && onOpenInspectionHistory && (
                     <button
@@ -1896,7 +1952,7 @@ const MapComponent = ({
                       title="Auditar Histórico de Vistorias Anteriores (Exclusivo Gestor)"
                     >
                       <History size={12} className="text-amber-400 shrink-0" />
-                      <span>Histórico de Vistorias ({Array.isArray(selectedHydrant.HISTORICO_VISTORIAS) ? selectedHydrant.HISTORICO_VISTORIAS.length : (selectedHydrant.datHoraUltimaVistoria ? 1 : 0)})</span>
+                      <span>Histórico de Vistorias ({Array.isArray(selectedHydrant.HISTORICO_VISTORIAS) ? selectedHydrant.HISTORICO_VISTORIAS.length : (getHydrantVistoriaDate(selectedHydrant) !== 'Sem vistoria' ? 1 : 0)})</span>
                     </button>
                   )}
                 </div>
