@@ -785,3 +785,10 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 
 ### [16/09/2026] Etapa 92 Concluída - Mapeamento & Dados
 - **Mapeamento & Dados - Ajustes Imediatos**: 1) Marcadores do mapa com check vermelho para inoperantes concluídos (diferenciando de operantes em verde); 2) Integração Argos com getHydrantVistoriaDate evitando exibição indevida de 'Sem vistoria' nos detalhes.
+
+### [16/09/2026] Etapa 93 Concluída - Performance & Carregamento (Banner Pós-Login)
+- **Performance & Carregamento - Ajustes Imediatos** foi executada e validada com sucesso:
+  1. **Utilitário Centralizado (`src/utils/hydrantPhotoUtils.js`):** Mapeamento dinâmico de fotos cobrindo 100% das 5 RAs com Street View (ARN, ACL, BRZ, CAN/CDG, LAS/LGS) e URLs de alta resolução (HD).
+  2. **Pré-Carregamento Agressivo em Cache HTTP (0ms):** Disparo assíncrono via `Image()` e tags `<link rel="preload">` dos banners dos primeiros hidrantes da rota ativa logo no clique de autenticação e no carregamento de missões, eliminando delay percebido.
+  3. **Eliminação de White Flash:** Adicionado background escuro nativo (`#0f172a`) diretamente no `<html>` e `<body>` de `index.html`, prevenindo clarão branco do navegador durante transições de estado.
+  4. **Skeleton Placeholder e Prioridade de Rede:** Banners do 1º hidrante da rota (`MissionRoutePanel`) e do Hero Banner (`MapComponent`) agora contam com skeleton animado suave e atributos `loading="eager"`, `fetchPriority="high"` e `decoding="async"`. Feedback visual imediato com spinner no botão de login.

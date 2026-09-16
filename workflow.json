@@ -555,7 +555,7 @@
     },
     {
       "id": 93,
-      "status": "pending",
+      "status": "completed",
       "name": "Performance & Carregamento - Ajustes Imediatos",
       "prompt": "Atue como Engenheiro de Performance e Frontend. Investigue e otimize a tela pós-login: 1) Banner pós-login: Solucionar o delay/tempo de carregamento da imagem de banner que causa uma tela em branco ou demora de alguns segundos imediatamente após a autenticação. Implemente pre-loading ou otimize o asset de entrada. Responda 'ETAPA CONCLUIDA' após finalizar."
     },

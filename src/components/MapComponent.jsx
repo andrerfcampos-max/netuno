@@ -12,6 +12,7 @@ import { setCachedLocation, getLastKnownLocation } from '../utils/geoTracker';
 import { optimizeRouteEuclidean } from '../utils/routeOptimization';
 import { isHydrantInSet, getHydrantAllIds } from '../utils/idMapping';
 import { getStreetViewUrl } from '../utils/streetViewUtils';
+import { getHydrantPhoto, preloadHydrantPhoto } from '../utils/hydrantPhotoUtils';
 
 // Fix para ícones padrão do Leaflet não quebrarem
 delete L.Icon.Default.prototype._getIconUrl;
@@ -957,17 +958,15 @@ const MapComponent = ({
   }, [hidrantes, selectedHydrant]);
 
   const hydrantPhoto = useMemo(() => {
-    if (!selectedHydrant) return null;
-    if (selectedHydrant.fotoPerfil) return selectedHydrant.fotoPerfil;
-    const nom = String(selectedHydrant.nomHidrante || '').toUpperCase();
-    if (nom.startsWith('ARN')) {
-      return `/hidrantes/arniqueira/${selectedHydrant.nomHidrante}.jpeg`;
-    }
-    if (nom.startsWith('ACL')) {
-      return `/hidrantes/aguas_claras/${selectedHydrant.nomHidrante}.jpeg`;
-    }
-    return null;
+    return getHydrantPhoto(selectedHydrant);
   }, [selectedHydrant]);
+
+  // Pré-carrega imediatamente a imagem do hidrante selecionado
+  useEffect(() => {
+    if (hydrantPhoto) {
+      preloadHydrantPhoto(hydrantPhoto);
+    }
+  }, [hydrantPhoto]);
 
   const handleCloseHydrant = () => {
     setSelectedHydrant(null);
@@ -1576,11 +1575,19 @@ const MapComponent = ({
             >
               {/* Imagem de Fundo (Real ou Placeholder) */}
               {hydrantPhoto ? (
-                <img 
-                  src={hydrantPhoto} 
-                  alt="Foto do Hidrante e Fachada" 
-                  className="w-full h-full object-cover"
-                />
+                <>
+                  <div className="absolute inset-0 bg-slate-800/90 animate-pulse flex items-center justify-center pointer-events-none">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Carregando foto...</span>
+                  </div>
+                  <img 
+                    src={hydrantPhoto} 
+                    alt="Foto do Hidrante e Fachada" 
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                    className="relative z-10 w-full h-full object-cover"
+                  />
+                </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 border-b border-slate-700/50">
                   <div className="w-10 h-10 rounded-full bg-slate-700/50 flex items-center justify-center mb-1 border border-slate-600">
@@ -1839,6 +1846,9 @@ const MapComponent = ({
                   <img 
                     src={hydrantPhoto} 
                     alt="Foto do Hidrante" 
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     className="w-12 h-12 rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform border border-slate-600 shrink-0 shadow-md"
                     title="Clique para ampliar a foto do hidrante em tela cheia"
                     onClick={() => handleSetFullscreenPhoto(hydrantPhoto)}

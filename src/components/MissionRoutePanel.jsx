@@ -17,6 +17,7 @@ import {
   setCachedLocation 
 } from '../utils/geoTracker';
 import { isHydrantInSet, getHydrantAllIds, translateId, areIdsEquivalent } from '../utils/idMapping';
+import { getHydrantPhoto, getHydrantHdPhoto, preloadHydrantsList } from '../utils/hydrantPhotoUtils';
 
 // Fórmula de Haversine em km para compatibilidade interna
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -86,15 +87,6 @@ const MissionRoutePanel = ({
   onGenerateReport 
 }) => {
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
-
-  const getHydrantPhoto = (h) => {
-    if (!h) return null;
-    if (h.fotoPerfil) return h.fotoPerfil;
-    const nom = String(h.nomHidrante || '').toUpperCase();
-    if (nom.startsWith('ARN')) return `/hidrantes/arniqueira/${h.nomHidrante}.jpeg`;
-    if (nom.startsWith('ACL')) return `/hidrantes/aguas_claras/${h.nomHidrante}.jpeg`;
-    return null;
-  };
 
   // Conjunto de IDs selecionados normalizados em string
   const selectedIdsSet = useMemo(() => {
@@ -197,6 +189,13 @@ const MissionRoutePanel = ({
     });
     return () => unsub();
   }, []);
+
+  // Pré-carregamento agressivo das fotos dos primeiros hidrantes da rota (0ms delay)
+  useEffect(() => {
+    if (pendingRoute && pendingRoute.length > 0) {
+      preloadHydrantsList(pendingRoute, 4);
+    }
+  }, [pendingRoute]);
 
   // Motor Central de Otimização Tática (0ms Instantâneo Euclidiano + Refinamento OSRM ATSP)
   const runRouteOptimization = async (overrideLat = null, overrideLng = null, isSilent = true) => {
@@ -624,13 +623,20 @@ const MissionRoutePanel = ({
               className="relative w-full h-[120px] shrink-0 bg-slate-900 overflow-hidden cursor-pointer active:opacity-90 rounded-lg border border-slate-700/50 mb-1"
               onClick={() => setFullscreenPhoto(bannerPhoto)}
             >
+              {/* Skeleton placeholder suave de fundo durante carregamento inicial */}
+              <div className="absolute inset-0 bg-slate-800/90 animate-pulse flex items-center justify-center pointer-events-none">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Carregando visualização...</span>
+              </div>
               <img 
                 src={bannerPhoto} 
                 alt="Foto do Hidrante" 
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                className="relative z-10 w-full h-full object-cover hover:scale-105 transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent pointer-events-none"></div>
-              <div className="absolute bottom-2 right-2 p-1.5 bg-black/60 border border-slate-600/50 rounded-md backdrop-blur-md flex items-center gap-1 shadow-lg">
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent pointer-events-none z-20"></div>
+              <div className="absolute bottom-2 right-2 p-1.5 bg-black/60 border border-slate-600/50 rounded-md backdrop-blur-md flex items-center gap-1 shadow-lg z-20">
                 <Maximize2 size={12} className="text-white" />
                 <span className="text-[9px] font-bold text-white uppercase tracking-wider">Ampliar</span>
               </div>

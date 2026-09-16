@@ -33,6 +33,7 @@ import { fixEncoding } from './utils/textUtils';
 import { getLastKnownLocation, startGlobalGeoTracking, subscribeLocation } from './utils/geoTracker';
 import { optimizeRouteEuclidean } from './utils/routeOptimization';
 import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent } from './utils/idMapping';
+import { getHydrantPhoto, preloadHydrantPhoto, preloadHydrantsList } from './utils/hydrantPhotoUtils';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Raio da Terra em km
@@ -177,6 +178,7 @@ function App() {
     const saved = localStorage.getItem('netuno_user');
     return saved ? JSON.parse(saved) : null;
   });
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const [hidrantes, setHidrantes] = useState([]);
 
@@ -358,6 +360,13 @@ syncPreferences({ activeView: view });
     if (!allMissionRouteHydrants || allMissionRouteHydrants.length === 0) return [];
     return allMissionRouteHydrants.filter(h => !isHydrantInSet(h, currentMission?.completedIds || []));
   }, [allMissionRouteHydrants, currentMission?.completedIds]);
+
+  // Pré-carregamento agressivo em background dos primeiros hidrantes da rota para acesso instantâneo pós-login
+  useEffect(() => {
+    if (pendingRouteHydrants && pendingRouteHydrants.length > 0) {
+      preloadHydrantsList(pendingRouteHydrants, 3);
+    }
+  }, [pendingRouteHydrants]);
 
   // Fecha a rota no mapa caso a missão ativa seja limpa ou fechada
   useEffect(() => {
@@ -1614,56 +1623,81 @@ syncPreferences({ filters: filters });
       return;
     }
 
-    let user = null;
-    let rbacUsers = loadRbacUsers();
+    setIsLoggingIn(true);
 
-    // Sincroniza RBAC da nuvem antes de validar acesso
-    if (isCloudConfigured()) {
-      try {
-        const cloudRBAC = await fetchRbacUsersFromCloud();
-        if (cloudRBAC && Array.isArray(cloudRBAC) && cloudRBAC.length > 0) {
-          rbacUsers = mergeRbacUsers(rbacUsers, cloudRBAC);
+    try {
+      let user = null;
+      let rbacUsers = loadRbacUsers();
+
+      // Sincroniza RBAC da nuvem com timeout rápido para não reter a entrada
+      if (isCloudConfigured()) {
+        try {
+          const cloudRBAC = await Promise.race([
+            fetchRbacUsersFromCloud(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500))
+          ]);
+          if (cloudRBAC && Array.isArray(cloudRBAC) && cloudRBAC.length > 0) {
+            rbacUsers = mergeRbacUsers(rbacUsers, cloudRBAC);
+          }
+        } catch (e) {
+          console.warn('Falha ao obter RBAC da nuvem no login (prosseguindo local):', e);
         }
-      } catch (e) {
-        console.warn('Falha ao obter RBAC da nuvem no login:', e);
       }
-    }
 
-    const foundRbac = rbacUsers.find(u => String(u.matricula).toLowerCase() === mat.toLowerCase());
+      const foundRbac = rbacUsers.find(u => String(u.matricula).toLowerCase() === mat.toLowerCase());
 
-    if (foundRbac) {
-      user = { ...foundRbac };
-    } else if (mat.toLowerCase() === '1997400') {
-      user = { matricula: '1997400', nome: 'Sgt Roméro', role: 'admin' };
-    } else {
-      // Regra de Negócio CBMDF: A princípio todos os militares entram automaticamente como vistoriador
-      user = { matricula: mat, nome: `Militar ${mat}`, role: 'vistoriador' };
-    }
-    
-        if (user) {
-      user.expiresAt = Date.now() + 8 * 60 * 60 * 1000;
-      localStorage.setItem('netuno_user', JSON.stringify(user));
-      setCurrentUser(user);
+      if (foundRbac) {
+        user = { ...foundRbac };
+      } else if (mat.toLowerCase() === '1997400') {
+        user = { matricula: '1997400', nome: 'Sgt Roméro', role: 'admin' };
+      } else {
+        // Regra de Negócio CBMDF: A princípio todos os militares entram automaticamente como vistoriador
+        user = { matricula: mat, nome: `Militar ${mat}`, role: 'vistoriador' };
+      }
+      
+      if (user) {
+        user.expiresAt = Date.now() + 8 * 60 * 60 * 1000;
+        localStorage.setItem('netuno_user', JSON.stringify(user));
 
-      // PUXAR DA NUVEM
-      fetchUserPreferencesFromCloud(user.matricula).then(prefs => {
-        if (prefs) {
-          if (prefs.activeView) {
-            _setActiveView(prefs.activeView);
-            localStorage.setItem(`netuno_active_view_${user.matricula}`, prefs.activeView);
+        // Pré-carregamento agressivo dos banners e assets de entrada pós-login
+        try {
+          const activeState = loadActiveMissionState();
+          const savedMissions = loadMissions();
+          const currentActive = savedMissions.find(m => m.id === activeState?.activeMissionId);
+          if (currentActive && currentActive.selectedIds?.length > 0) {
+            const firstTarget = hidrantes.find(h => isHydrantInSet(h, [currentActive.selectedIds[0]]));
+            if (firstTarget) {
+              preloadHydrantPhoto(getHydrantPhoto(firstTarget));
+            }
+          } else if (hidrantes.length > 0) {
+            preloadHydrantsList(hidrantes, 3);
           }
-          if (prefs.filters) {
-            setActiveFilters(prefs.filters);
-            localStorage.setItem(`netuno_saved_filters_${user.matricula}`, JSON.stringify(prefs.filters));
+        } catch (e) {}
+
+        setCurrentUser(user);
+
+        // PUXAR DA NUVEM
+        fetchUserPreferencesFromCloud(user.matricula).then(prefs => {
+          if (prefs) {
+            if (prefs.activeView) {
+              _setActiveView(prefs.activeView);
+              localStorage.setItem(`netuno_active_view_${user.matricula}`, prefs.activeView);
+            }
+            if (prefs.filters) {
+              setActiveFilters(prefs.filters);
+              localStorage.setItem(`netuno_saved_filters_${user.matricula}`, JSON.stringify(prefs.filters));
+            }
+            if (prefs.mapState) {
+              localStorage.setItem(`netuno_map_state_${user.matricula}`, JSON.stringify(prefs.mapState));
+            }
+            if (prefs.showPinCodes !== undefined) {
+              localStorage.setItem(`netuno_show_pin_codes_${user.matricula}`, String(prefs.showPinCodes));
+            }
           }
-          if (prefs.mapState) {
-            localStorage.setItem(`netuno_map_state_${user.matricula}`, JSON.stringify(prefs.mapState));
-          }
-          if (prefs.showPinCodes !== undefined) {
-            localStorage.setItem(`netuno_show_pin_codes_${user.matricula}`, String(prefs.showPinCodes));
-          }
-        }
-      }).catch(err => console.warn('Falha sync prefs login', err));
+        }).catch(err => console.warn('Falha sync prefs login', err));
+      }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -1700,8 +1734,19 @@ syncPreferences({ filters: filters });
                 required 
               />
             </div>
-            <button type="submit" className="w-full py-3 bg-emerald-600 text-white font-bold rounded shadow-lg shadow-emerald-900/50 hover:bg-emerald-500 active:scale-95 transition-all mt-2">
-              Acessar Sistema
+            <button 
+              type="submit" 
+              disabled={isLoggingIn}
+              className={`w-full py-3 bg-emerald-600 text-white font-bold rounded shadow-lg shadow-emerald-900/50 hover:bg-emerald-500 active:scale-95 transition-all mt-2 flex items-center justify-center gap-2 ${isLoggingIn ? 'opacity-80 cursor-wait' : ''}`}
+            >
+              {isLoggingIn ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  <span>Autenticando...</span>
+                </>
+              ) : (
+                'Acessar Sistema'
+              )}
             </button>
           </form>
           <p className="text-[11px] text-slate-500 text-center mt-5 font-medium tracking-wide select-none">
