@@ -18,7 +18,8 @@ import {
   Filter,
   Layers,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 import { 
   getAuditLogs, 
@@ -27,6 +28,7 @@ import {
 } from '../utils/auditLogger';
 import { isCloudConfigured } from '../services/supabase';
 import { fetchHydrantMutationsFromCloud } from '../services/syncService';
+import { getHydrantAllIds } from '../utils/idMapping';
 
 // Formatação amigável de tempo relativo
 const formatRelativeTime = (isoString) => {
@@ -55,13 +57,35 @@ export default function SystemHistoryModal({
   isOpen,
   onClose,
   onFocusLocation,
-  currentUser
+  currentUser,
+  hidrantes = [],
+  onEditInspection
 }) {
   const [logs, setLogs] = useState([]);
   const [entityFilter, setEntityFilter] = useState('all'); // 'all' | 'vistoria' | 'hidrante' | 'prepop'
   const [actionFilter, setActionFilter] = useState('all'); // 'all' | 'create' | 'edit' | 'delete'
+  const [periodFilter, setPeriodFilter] = useState('all'); // 'all' | 'today' | '7days' | '30days'
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedLogId, setExpandedLogId] = useState(null);
+
+  // Helper para verificar se uma data é hoje
+  const isToday = (timestamp) => {
+    if (!timestamp) return false;
+    const d = new Date(timestamp);
+    const now = new Date();
+    return d.getDate() === now.getDate() &&
+           d.getMonth() === now.getMonth() &&
+           d.getFullYear() === now.getFullYear();
+  };
+
+  // Helper para verificar se está dentro de N dias
+  const isWithinDays = (timestamp, days) => {
+    if (!timestamp) return false;
+    const time = new Date(timestamp).getTime();
+    if (isNaN(time)) return false;
+    const diffMs = Date.now() - time;
+    return diffMs <= days * 24 * 60 * 60 * 1000;
+  };
 
   // Carrega e assina atualizações do histórico
   useEffect(() => {
@@ -94,10 +118,11 @@ export default function SystemHistoryModal({
     const vistorias = logs.filter(l => l.entityType === 'vistoria').length;
     const hidrantes = logs.filter(l => l.entityType === 'hidrante').length;
     const prepop = logs.filter(l => l.entityType === 'prepop').length;
-    return { total: logs.length, unread, vistorias, hidrantes, prepop };
+    const vistoriasHoje = logs.filter(l => l.entityType === 'vistoria' && isToday(l.timestamp)).length;
+    return { total: logs.length, unread, vistorias, hidrantes, prepop, vistoriasHoje };
   }, [logs]);
 
-  // Filtro inteligente
+  // Filtro inteligente multi-dimensão (Entidade, Ação, Período Temporal e Busca)
   const filteredLogs = useMemo(() => {
     return logs.filter(item => {
       if (entityFilter === 'unread') {
@@ -106,6 +131,15 @@ export default function SystemHistoryModal({
         return false;
       }
       if (actionFilter !== 'all' && item.action !== actionFilter) return false;
+
+      // Filtro Temporal
+      if (periodFilter === 'today') {
+        if (!isToday(item.timestamp)) return false;
+      } else if (periodFilter === '7days') {
+        if (!isWithinDays(item.timestamp, 7)) return false;
+      } else if (periodFilter === '30days') {
+        if (!isWithinDays(item.timestamp, 30)) return false;
+      }
 
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
@@ -123,7 +157,7 @@ export default function SystemHistoryModal({
 
       return true;
     });
-  }, [logs, entityFilter, actionFilter, searchTerm]);
+  }, [logs, entityFilter, actionFilter, periodFilter, searchTerm]);
 
   if (!isOpen) return null;
 
@@ -137,6 +171,39 @@ export default function SystemHistoryModal({
     e.stopPropagation();
     if (onFocusLocation && coords) {
       onFocusLocation(coords);
+      onClose();
+    }
+  };
+
+  const handleDirectEditInspection = (item, e) => {
+    e.stopPropagation();
+    if (!onEditInspection) return;
+
+    // Tenta localizar o hidrante real correspondente na base
+    const targetHydrant = (hidrantes || []).find(h => {
+      const allIds = getHydrantAllIds(h);
+      if (item.entityId && allIds.includes(String(item.entityId))) return true;
+      if (item.entityName && allIds.includes(String(item.entityName))) return true;
+      if (item.entityId && String(h.codHidrante) === String(item.entityId)) return true;
+      if (item.entityName && String(h.nomHidrante) === String(item.entityName)) return true;
+      return false;
+    });
+
+    if (targetHydrant) {
+      onEditInspection(targetHydrant);
+      onClose();
+    } else {
+      // Fallback seguro com dados do log para abrir o modal de edição
+      const fallbackH = {
+        _internalId: item.entityId || `hist_${item.id}`,
+        codHidrante: item.entityId,
+        nomHidrante: item.entityName || item.entityId,
+        dscLocalidade: item.location || '',
+        numLatitude: item.coords?.lat,
+        numLongitude: item.coords?.lng,
+        _isEditing: true
+      };
+      onEditInspection(fallbackH);
       onClose();
     }
   };
@@ -262,6 +329,15 @@ export default function SystemHistoryModal({
 
         {/* CHIPS DE MÉTRICAS & FILTRO POR ENTIDADE (COMPACTO E INTEGRADO) */}
         <div className="flex items-center gap-1.5 px-3 sm:px-6 py-2 bg-slate-950/60 border-b border-slate-800/80 overflow-x-auto shrink-0 scrollbar-none">
+          {/* Badge Destacado de Vistorias Hoje */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap border shrink-0 bg-amber-950/70 border-amber-500/50 text-amber-300 shadow-xs">
+            <Calendar size={13} className="text-amber-400 shrink-0" />
+            <span>Hoje:</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-amber-500 text-slate-950">
+              {metrics.vistoriasHoje} {metrics.vistoriasHoje === 1 ? 'vistoria' : 'vistorias'}
+            </span>
+          </div>
+
           {[
             { id: 'all', label: 'Todas', count: metrics.total, icon: <Layers size={13} />, color: 'text-slate-300', activeBg: 'bg-emerald-600 text-white border-emerald-500' },
             { id: 'vistoria', label: 'Vistorias', count: metrics.vistorias, icon: <ClipboardCheck size={13} />, color: 'text-amber-400', activeBg: 'bg-amber-600 text-white border-amber-500' },
@@ -341,6 +417,46 @@ export default function SystemHistoryModal({
           </div>
         </div>
 
+        {/* BARRA DE FILTRO POR PERÍODO DE TEMPO & CONTADOR DINÂMICO */}
+        <div className="px-3 sm:px-6 py-1.5 bg-slate-950/75 border-b border-slate-800 flex items-center justify-between gap-2 overflow-x-auto shrink-0 scrollbar-none">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 mr-0.5">
+              <Calendar size={12} className="text-slate-500" />
+              <span>Período:</span>
+            </span>
+            {[
+              { id: 'all', label: 'Todo Período' },
+              { id: 'today', label: 'Hoje' },
+              { id: '7days', label: '7 dias' },
+              { id: '30days', label: '30 dias' }
+            ].map(p => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPeriodFilter(p.id)}
+                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all border cursor-pointer whitespace-nowrap ${
+                  periodFilter === p.id
+                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-xs'
+                    : 'bg-slate-900/80 border-slate-700/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Contador Dinâmico de Resultados Filtrados */}
+          <div className="flex items-center gap-1 shrink-0 text-[11px] font-medium text-slate-400">
+            <span className="hidden sm:inline">Exibindo:</span>
+            <span className="font-bold font-mono text-emerald-400 bg-emerald-950/80 border border-emerald-500/40 px-1.5 py-0.2 rounded text-[10.5px]">
+              {filteredLogs.length}
+            </span>
+            <span className="text-[10.5px] text-slate-400">
+              {filteredLogs.length === 1 ? 'registro' : 'registros'}
+            </span>
+          </div>
+        </div>
+
         {/* LISTAGEM TIMELINE DAS AÇÕES */}
         <div className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-4 space-y-2.5">
           {filteredLogs.length === 0 ? (
@@ -411,6 +527,18 @@ export default function SystemHistoryModal({
                           title="Centralizar no Mapa Tático"
                         >
                           <LocateFixed size={12} />
+                        </button>
+                      )}
+
+                      {onEditInspection && (item.entityType === 'vistoria' || (item.title && item.title.toLowerCase().includes('vistoria'))) && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleDirectEditInspection(item, e)}
+                          className="flex items-center gap-1 px-1.5 py-0.5 text-[9.5px] font-bold text-amber-300 bg-amber-950/70 hover:bg-amber-900/90 border border-amber-500/40 rounded transition-all active:scale-95 cursor-pointer shadow-xs"
+                          title="Acessar e editar vistoria diretamente"
+                        >
+                          <Edit3 size={11} className="text-amber-400 shrink-0" />
+                          <span>Editar</span>
                         </button>
                       )}
                     </div>

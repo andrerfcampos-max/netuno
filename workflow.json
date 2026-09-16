@@ -543,7 +543,7 @@
     },
     {
       "id": 91,
-      "status": "pending",
+      "status": "completed",
       "name": "Histórico de Atividades & Contadores - Ajustes Imediatos",
       "prompt": "Atue como Desenvolvedor Frontend Sênior. Adicione novas métricas e filtros no histórico: 1) Filtros e contagem temporal: Implementar filtro por período de tempo na tela de histórico acompanhado de um contador dinâmico de resultados. 2) Contador diário: Exibir no histórico o total de vistorias realizadas na data de hoje. 3) Acesso rápido: Adicionar botão nos registros do histórico para acessar e editar diretamente a vistoria. Responda 'ETAPA CONCLUIDA' após finalizar."
     },

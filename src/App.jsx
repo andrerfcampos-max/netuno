@@ -1790,6 +1790,8 @@ syncPreferences({ filters: filters });
               setMapCenterPosition({ ...coords, _ts: Date.now() });
             }}
             currentUser={currentUser}
+            hidrantes={hidrantes}
+            onEditInspection={handleEditInspection}
           />
         </Suspense>
       )}

@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-132",
+  "activeTaskId": "TASK-133",
   "queue": [
     {
       "id": "TASK-1",
@@ -1334,18 +1334,28 @@
       "seq": 132,
       "conversationId": "d2c0754e-5278-4875-beec-475646517df7",
       "description": "Implementar Integracao Direta Netuno-SEI (Etapa 95)",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-16T21:47:29.926Z",
       "startedAt": "2026-09-16T22:03:44.005Z",
-      "completedAt": null
+      "completedAt": "2026-09-16T22:11:48.654Z"
     },
     {
       "id": "TASK-133",
       "seq": 133,
       "conversationId": "cd4f62dc-114d-4ebf-8fae-15dc8a2b1652",
       "description": "Executar Etapa 91: Histórico de Atividades & Contadores",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-09-16T21:50:02.557Z",
+      "startedAt": "2026-09-16T22:11:52.319Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-134",
+      "seq": 134,
+      "conversationId": "5f006d6b-967c-442d-a81a-8fd0db5439b6",
+      "description": "salvamento das fotos dos hidrantes de candangolandia",
+      "status": "queued",
+      "createdAt": "2026-09-16T22:16:57.152Z",
       "startedAt": null,
       "completedAt": null
     }
