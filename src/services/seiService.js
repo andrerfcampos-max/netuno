@@ -10,7 +10,7 @@ export class SeiClient {
   constructor(options = {}) {
     this.sipUrl = options.sipUrl || 'https://sip.df.gov.br';
     this.seiUrl = options.seiUrl || 'https://sei.df.gov.br';
-    this.cookies = new Map();
+    this.cookiesByDomain = new Map();
     this.sessionState = {
       usuario: '',
       unidadeAtual: '110037654', // CBMDF/DIVIS/SEHUR/SUOMA
@@ -21,30 +21,80 @@ export class SeiClient {
     };
   }
 
-  // --- Gerenciamento de Cookies ---
-  parseSetCookie(setCookieHeaders) {
+  // --- Gerenciamento de Cookies Isolado por Domínio ---
+  parseSetCookie(url, setCookieHeaders) {
     if (!setCookieHeaders) return;
+    const reqUrl = new URL(url);
+    const reqHost = reqUrl.hostname;
     const headers = Array.isArray(setCookieHeaders) ? setCookieHeaders : [setCookieHeaders];
+
     for (const h of headers) {
       const parts = h.split(';');
       const [nameVal] = parts;
       const eqIdx = nameVal.indexOf('=');
-      if (eqIdx > 0) {
-        const key = nameVal.substring(0, eqIdx).trim();
-        const val = nameVal.substring(eqIdx + 1).trim();
-        if (val === '' || val === 'deleted') {
-          this.cookies.delete(key);
-        } else {
-          this.cookies.set(key, val);
+      if (eqIdx <= 0) continue;
+
+      const key = nameVal.substring(0, eqIdx).trim();
+      const val = nameVal.substring(eqIdx + 1).trim();
+
+      // Extrai domínio do cookie se especificado (ex: domain=df.gov.br)
+      let cookieDomain = reqHost;
+      for (let i = 1; i < parts.length; i++) {
+        const p = parts[i].trim();
+        if (p.toLowerCase().startsWith('domain=')) {
+          const d = p.substring(7).trim().replace(/^\./, '');
+          if (d) cookieDomain = d;
         }
+      }
+
+      if (!this.cookiesByDomain.has(cookieDomain)) {
+        this.cookiesByDomain.set(cookieDomain, new Map());
+      }
+      const domainMap = this.cookiesByDomain.get(cookieDomain);
+
+      if (val === '' || val === 'deleted') {
+        domainMap.delete(key);
+      } else {
+        domainMap.set(key, val);
       }
     }
   }
 
-  getCookieHeader() {
-    return Array.from(this.cookies.entries())
+  getCookieHeader(url) {
+    if (!url) return '';
+    const reqUrl = new URL(url);
+    const reqHost = reqUrl.hostname;
+    const activeCookies = new Map();
+
+    // Inclui cookies correspondentes ao host da requisição
+    for (const [domain, domainMap] of this.cookiesByDomain.entries()) {
+      if (reqHost === domain || reqHost.endsWith('.' + domain)) {
+        for (const [k, v] of domainMap.entries()) {
+          activeCookies.set(k, v);
+        }
+      }
+    }
+
+    return Array.from(activeCookies.entries())
       .map(([k, v]) => `${k}=${v}`)
       .join('; ');
+  }
+
+  // Compatibilidade com serializações legadas
+  get cookies() {
+    const all = new Map();
+    for (const map of this.cookiesByDomain.values()) {
+      for (const [k, v] of map.entries()) {
+        all.set(k, v);
+      }
+    }
+    return all;
+  }
+
+  set cookies(map) {
+    if (map instanceof Map) {
+      this.cookiesByDomain.set('df.gov.br', map);
+    }
   }
 
   // --- Helper para extrair mensagens de erro e alertas do HTML do SEI ---
@@ -54,23 +104,18 @@ export class SeiClient {
     const $ = res.$ || cheerio.load(text);
 
     // 1. Mensagens de erro em caixas de aviso do InfraPHP
-    const barraLoc = $('#divInfraBarraLocalizacao').text().trim();
-    if (barraLoc && !barraLoc.includes('Você está aqui') && !barraLoc.includes('Principal')) {
-      return barraLoc;
-    }
+    const infraMsg = $('.infraMensagem, .infraAlerta, .infraAviso, .infraAlertaSistema, .infraFaixaAlerta, .infraMensagemAlerta, #divInfraMensagem, #divMensagens, .infraTextoAlerta').text().trim();
+    if (infraMsg) return infraMsg.replace(/\s+/g, ' ');
 
-    const infraMsg = $('.infraMensagem, .infraAlerta, #divInfraMensagem, #divMensagens').text().trim();
-    if (infraMsg) return infraMsg;
-
-    // 2. Alertas em javascript: alert("...") ou infraAlerta("...")
-    const alertMatch = text.match(/(?:alert|infraAlerta)\s*\(\s*['"]([^'"]+)['"]\s*\)/i);
+    // 2. Alertas em javascript: alert("..."), infraAlerta("..."), top.infraAlerta("..."), etc.
+    const alertMatch = text.match(/(?:(?:window|top|parent)\.)?(?:alert|infraAlerta)\s*\(\s*['"]([^'"]+)['"]\s*\)/i);
     if (alertMatch && alertMatch[1]) {
       return alertMatch[1].replace(/\\n/g, ' ').replace(/\\'/g, "'").trim();
     }
 
     // 3. Spans ou divs de erro comuns
-    const lblErro = $('#lblErro, .mensagemErro, .alert-danger').text().trim();
-    if (lblErro) return lblErro;
+    const lblErro = $('#lblErro, .mensagemErro, .alert-danger, #lblMensagem').text().trim();
+    if (lblErro) return lblErro.replace(/\s+/g, ' ');
 
     // 4. Verificação de sessão
     if (text.includes('Sessão expirada') || text.includes('sessao_finalizada') || text.includes('Sesso expirada')) {
@@ -79,6 +124,12 @@ export class SeiClient {
 
     if (text.includes('Usuário não autenticado') || text.includes('Acesso negado')) {
       return 'Acesso não autorizado ou sessão expirada no SEI DF.';
+    }
+
+    // 5. Título ou localização caso contenha erro
+    const barraLoc = $('#divInfraBarraLocalizacao').text().trim();
+    if (barraLoc && (barraLoc.toLowerCase().includes('erro') || barraLoc.toLowerCase().includes('falha') || barraLoc.toLowerCase().includes('aviso'))) {
+      return barraLoc;
     }
 
     return defaultMsg;
@@ -92,7 +143,8 @@ export class SeiClient {
       ...(options.headers || {})
     };
 
-    const cookieHeader = this.getCookieHeader();
+    let currentUrl = url;
+    const cookieHeader = this.getCookieHeader(currentUrl);
     if (cookieHeader) {
       headers['Cookie'] = cookieHeader;
     }
@@ -104,18 +156,17 @@ export class SeiClient {
       body: options.body
     };
 
-    let currentUrl = url;
     let redirectCount = 0;
     const maxRedirects = 10;
 
     while (redirectCount < maxRedirects) {
       const res = await fetch(currentUrl, fetchOptions);
       
-      // Armazena cookies recebidos
+      // Armazena cookies recebidos no domínio correspondente
       const setCookies = res.headers.getSetCookie 
         ? res.headers.getSetCookie() 
         : (res.headers.get('set-cookie') ? [res.headers.get('set-cookie')] : []);
-      this.parseSetCookie(setCookies);
+      this.parseSetCookie(currentUrl, setCookies);
 
       // Trata redirecionamentos HTTP (301, 302, 303, 307)
       if (res.status >= 300 && res.status < 400) {
@@ -127,7 +178,7 @@ export class SeiClient {
         fetchOptions.method = 'GET';
         delete fetchOptions.body;
         delete fetchOptions.headers['Content-Type'];
-        fetchOptions.headers['Cookie'] = this.getCookieHeader();
+        fetchOptions.headers['Cookie'] = this.getCookieHeader(currentUrl);
         redirectCount++;
         continue;
       }
@@ -146,7 +197,7 @@ export class SeiClient {
           fetchOptions.method = 'GET';
           delete fetchOptions.body;
           delete fetchOptions.headers['Content-Type'];
-          fetchOptions.headers['Cookie'] = this.getCookieHeader();
+          fetchOptions.headers['Cookie'] = this.getCookieHeader(currentUrl);
           redirectCount++;
           continue;
         } catch (_) {
@@ -300,6 +351,17 @@ export class SeiClient {
     postData.set('rdoNivelAcesso', '0'); // Público
     postData.set('hdnFlagProcedimentoCadastro', '2');
     postData.set('hdnDtaGeracao', dataHoje);
+    postData.set('sbmSalvar', 'Salvar');
+
+    if (!postData.get('selTipoPrioridade') || postData.get('selTipoPrioridade') === '') {
+      postData.set('selTipoPrioridade', 'null');
+    }
+    if (!postData.get('selGrauSigilo') || postData.get('selGrauSigilo') === '') {
+      postData.set('selGrauSigilo', 'null');
+    }
+    if (!postData.get('selHipoteseLegal') || postData.get('selHipoteseLegal') === '') {
+      postData.set('selHipoteseLegal', 'null');
+    }
 
     if (!postData.get('hdnAssuntos') || postData.get('hdnAssuntos').trim() === '') {
       postData.set('hdnAssuntos', '339±081.00 - CBMDF - CORPO DE BOMBEIROS MILITAR DO DISTRITO FEDERAL');
@@ -331,8 +393,17 @@ export class SeiClient {
 
     if (!idProcedimento) {
       const seiError = this.extractSeiErrorMessage(submitRes);
-      console.error('[SeiService] Falha ao criar processo. Resposta SEI URL:', submitRes.url, 'Detalhes:', seiError);
-      throw new Error(seiError || 'Não foi possível identificar o ID do processo recém-criado no SEI.');
+      const title = submitRes.$ ? submitRes.$('title').text().trim() : '';
+      const localizacao = submitRes.$ ? submitRes.$('#divInfraBarraLocalizacao').text().trim() : '';
+      
+      let debugMsg = seiError;
+      if (debugMsg === 'Erro na operação do SEI.') {
+        if (title) debugMsg = `Página retornada: ${title}`;
+        if (localizacao) debugMsg += ` (${localizacao})`;
+      }
+
+      console.error('[SeiService] Falha ao criar processo. URL:', submitRes.url, 'Status:', submitRes.status, 'Msg:', debugMsg);
+      throw new Error(debugMsg || 'Não foi possível identificar o ID do processo recém-criado no SEI.');
     }
 
     this.sessionState.infraHash = this.extractInfraHash(submitRes.url) || this.sessionState.infraHash;
