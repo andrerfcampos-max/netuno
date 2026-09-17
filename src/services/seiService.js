@@ -247,8 +247,8 @@ export class SeiClient {
     };
   }
 
-  // --- 3. Upload e Anexo do Relatório CAESB em PDF ---
-  async anexarRelatorioPdf({ idProcedimento, pdfBuffer, fileName = 'Relatorio_Vistoria_CAESB.pdf', nomeArvore = 'Relatório CAESB' }) {
+  // --- 3. Upload e Anexo do Relatório Oficial CAESB (HTML / PDF) ---
+  async anexarRelatorio({ idProcedimento, pdfBuffer, htmlContent, fileName = 'Relatorio_Vistoria_CAESB.html', nomeArvore = 'Relatório CAESB' }) {
     const hash = this.sessionState.infraHash;
     const unidade = this.sessionState.unidadeAtual;
     const sistema = this.sessionState.infraSistema;
@@ -260,13 +260,27 @@ export class SeiClient {
     const currentHash = this.extractInfraHash(formDoc.url) || hash;
     this.sessionState.infraHash = currentHash;
 
-    // 2. Upload do binário via multipart FormData
+    // 2. Upload do binário ou documento via multipart FormData
     const uploadIdentifier = Math.floor(Math.random() * 900000 + 100000).toString();
     const formData = new FormData();
     formData.append('UPLOAD_IDENTIFIER', uploadIdentifier);
     
-    const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
-    formData.append('filArquivo', blob, fileName);
+    let blob;
+    let finalFileName = fileName;
+    if (htmlContent) {
+      blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      if (!finalFileName.endsWith('.html') && !finalFileName.endsWith('.htm')) {
+        finalFileName = `${finalFileName.replace(/\.[^/.]+$/, '')}.html`;
+      }
+    } else if (pdfBuffer) {
+      blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+      if (!finalFileName.endsWith('.pdf')) {
+        finalFileName = `${finalFileName}.pdf`;
+      }
+    } else {
+      blob = new Blob([''], { type: 'text/plain' });
+    }
+    formData.append('filArquivo', blob, finalFileName);
 
     const uploadUrl = `${this.seiUrl}/sei/controlador.php?acao=documento_upload_anexo&infra_sistema=${sistema}&infra_unidade_atual=${unidade}&infra_hash=${this.sessionState.infraHash}`;
     const uploadRes = await fetch(uploadUrl, {
@@ -281,7 +295,7 @@ export class SeiClient {
     const uploadText = await uploadRes.text();
     // O retorno do upload traz o token interno do anexo
     const anexoTokenMatch = uploadText.match(/([a-f0-9]{32}±[^"'\s<>]+)/);
-    const anexoToken = anexoTokenMatch ? anexoTokenMatch[1] : `${uploadIdentifier}±${fileName}`;
+    const anexoToken = anexoTokenMatch ? anexoTokenMatch[1] : `${uploadIdentifier}±${finalFileName}`;
 
     // 3. Salva os metadados do documento externo anexado
     const postParams = new URLSearchParams({
@@ -364,8 +378,13 @@ export class SeiClient {
       success: true,
       idDocumentoAnexo,
       numeroSei: numeroSei || idDocumentoAnexo,
-      fileName
+      fileName: finalFileName
     };
+  }
+
+  // Compatibilidade com chamadas legadas
+  async anexarRelatorioPdf(params) {
+    return this.anexarRelatorio(params);
   }
 
   // --- 4. Gerar e Preencher Memorando ao GPCIU com Minuta de Ofício ---

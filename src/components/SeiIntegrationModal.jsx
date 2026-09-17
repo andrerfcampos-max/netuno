@@ -9,7 +9,8 @@ export const SeiIntegrationModal = ({
   raRomano,
   currentUser,
   memorandoMinuta,
-  getReportPdfBase64 // Função para obter o buffer ou base64 do PDF
+  getReportFile,
+  getReportPdfBase64 // Compatibilidade caso ainda seja passado
 }) => {
   const [step, setStep] = useState('login'); // 'login' | 'enviando_processo' | 'assinar' | 'concluido'
   const [usuario, setUsuario] = useState(() => localStorage.getItem('netuno_sei_usuario') || currentUser?.matricula || '');
@@ -71,11 +72,26 @@ export const SeiIntegrationModal = ({
       setLoadingStatus('Autenticando no SIP/SEI GDF...');
       localStorage.setItem('netuno_sei_usuario', usuario.trim());
 
-      // Obtém o PDF em base64 se a função estiver disponível
+      // Obtém o relatório oficial gerado (HTML do gerador oficial ou PDF)
+      let htmlContent = null;
       let pdfBase64 = null;
-      if (typeof getReportPdfBase64 === 'function') {
+      let fileName = `Relatorio_Vistoria_CAESB_${cidade || 'DF'}.html`;
+      let nomeArvore = `Relatório CAESB - ${cidade || 'DF'}`;
+
+      if (typeof getReportFile === 'function') {
+        setLoadingStatus('Gerando documento oficial do Relatório CAESB...');
+        const reportData = await getReportFile();
+        if (reportData?.html) {
+          htmlContent = reportData.html;
+          if (reportData.docTitle) {
+            fileName = `${reportData.docTitle}.html`;
+            nomeArvore = reportData.docTitle;
+          }
+        }
+      } else if (typeof getReportPdfBase64 === 'function') {
         setLoadingStatus('Gerando documento PDF do Relatório CAESB...');
         pdfBase64 = await getReportPdfBase64();
+        fileName = `Relatorio_Vistoria_CAESB_${cidade || 'DF'}.pdf`;
       }
 
       setLoadingStatus('Criando processo e anexando relatório...');
@@ -89,9 +105,10 @@ export const SeiIntegrationModal = ({
             senha: senhaTemp,
             cidade: cidade || 'Distrito Federal',
             raRomano,
+            htmlContent,
             pdfBase64,
-            fileName: `Relatorio_Vistoria_CAESB_${cidade || 'DF'}.pdf`,
-            nomeArvore: `Relatório CAESB - ${cidade || 'DF'}`,
+            fileName,
+            nomeArvore,
             corpoMemorandoHtml: formatMinutaToSeiHtml(memorandoMinuta)
           }
         })
@@ -210,7 +227,7 @@ export const SeiIntegrationModal = ({
                 </div>
                 <ul className="list-disc list-inside text-slate-300 space-y-1 text-[11px] leading-relaxed">
                   <li>Criação do Processo de Fiscalização no SEI DF</li>
-                  <li>Anexo nato-digital do Relatório CAESB em PDF</li>
+                  <li>Anexo nato-digital do Relatório Oficial CAESB</li>
                   <li>Geração da Minuta do Memorando ao Comandante do GPCIU</li>
                 </ul>
               </div>

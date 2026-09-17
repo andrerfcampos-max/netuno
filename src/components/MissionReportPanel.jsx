@@ -3,11 +3,10 @@ import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSp
 import { extractProblemsList, sanitizeProblem, isHidranteRemovido } from '../utils/problemUtils';
 import { normalizeRAName, getRARoman } from '../utils/raList';
 import { fixEncoding } from '../utils/textUtils';
-import { printGeneralReport, printCaesbReport, generateDocHash, extractPhotos } from '../utils/officialPrintUtils';
+import { printGeneralReport, printCaesbReport, generateCaesbReportHtml, generateDocHash, extractPhotos } from '../utils/officialPrintUtils';
 import { generateSeiMemorandoMinutaText } from '../utils/seiMemorandoUtils';
 import { isHydrantInSet } from '../utils/idMapping';
 import { SeiIntegrationModal } from './SeiIntegrationModal';
-import { generateCaesbReportPdfBase64 } from '../utils/caesbPdfGenerator';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, activeFilters = null }) => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -682,14 +681,18 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
     window.open('https://sei.df.gov.br', '_blank', 'noopener,noreferrer');
   };
 
-  const handleGetCaesbPdfBase64 = async () => {
-    return await generateCaesbReportPdfBase64({
-      cidade: effectiveCity,
-      raRomano: effectiveRaRomano,
-      hidrantes: sortedHidrantesCaesb,
-      emissorNome: currentUser?.nome || 'Gestor de Hidrantes Urbanos',
-      emissorMatricula: currentUser?.matricula ? `Matrícula: ${currentUser.matricula}` : '',
-      docHash
+  const handleGetCaesbReportFile = () => {
+    return generateCaesbReportHtml({
+      currentData: sortedHidrantesCaesb,
+      rasPresentes,
+      currentMission,
+      currentUser,
+      isMultiCity,
+      cityOperabilityStats,
+      topDefeitosComCidades,
+      stats: { total, operantes, inoperantes },
+      topDefeitos,
+      activeFilters
     });
   };
   
@@ -889,7 +892,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       raRomano={effectiveRaRomano}
       currentUser={currentUser}
       memorandoMinuta={minutaText}
-      getReportPdfBase64={handleGetCaesbPdfBase64}
+      getReportFile={handleGetCaesbReportFile}
     />
   )}
   

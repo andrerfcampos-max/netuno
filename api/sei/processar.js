@@ -42,9 +42,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. AÇÃO: Criar Processo, Anexar PDF e Gerar Minuta de Memorando
+    // 2. AÇÃO: Criar Processo, Anexar Relatório e Gerar Minuta de Memorando
     if (action === 'iniciar_expediente') {
-      const { usuario, senha, cidade, raRomano, pdfBase64, fileName, nomeArvore, corpoMemorandoHtml } = payload || {};
+      const { usuario, senha, cidade, raRomano, htmlContent, pdfBase64, fileName, nomeArvore, corpoMemorandoHtml } = payload || {};
 
       if (!usuario || !senha) {
         return res.status(400).json({ error: 'Credenciais do SEI são obrigatórias.' });
@@ -59,14 +59,15 @@ export default async function handler(req, res) {
         raRomano
       });
 
-      // 2. Anexar PDF se fornecido
+      // 2. Anexar Relatório Oficial se fornecido
       let anexoInfo = null;
-      if (pdfBase64) {
-        const pdfBuffer = Buffer.from(pdfBase64, 'base64');
-        anexoInfo = await client.anexarRelatorioPdf({
+      if (htmlContent || pdfBase64) {
+        const pdfBuffer = pdfBase64 ? Buffer.from(pdfBase64, 'base64') : null;
+        anexoInfo = await client.anexarRelatorio({
           idProcedimento: procInfo.idProcedimento,
           pdfBuffer,
-          fileName: fileName || `Relatorio_Vistoria_CAESB_${cidade || 'DF'}.pdf`,
+          htmlContent,
+          fileName: fileName || (htmlContent ? `Relatorio_Vistoria_CAESB_${cidade || 'DF'}.html` : `Relatorio_Vistoria_CAESB_${cidade || 'DF'}.pdf`),
           nomeArvore: nomeArvore || `Relatório CAESB - ${cidade || 'DF'}`
         });
       }

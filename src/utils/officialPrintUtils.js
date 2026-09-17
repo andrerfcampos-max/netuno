@@ -1330,9 +1330,9 @@ export const printGeneralReport = ({
 };
 
 /**
- * 2. IMPRESSÃO DO RELATÓRIO OFICIAL CAESB (SOLICITAÇÃO DE MANUTENÇÃO)
+ * 2. GERAÇÃO E IMPRESSÃO DO RELATÓRIO OFICIAL CAESB (SOLICITAÇÃO DE MANUTENÇÃO)
  */
-export const printCaesbReport = ({
+export const generateCaesbReportHtml = ({
   currentData = [],
   rasPresentes = '',
   currentMission = null,
@@ -2105,6 +2105,16 @@ export const printCaesbReport = ({
     </html>
   `;
 
+  return {
+    html,
+    docTitle,
+    docHash,
+    caesbData
+  };
+};
+
+export const printCaesbReport = (params) => {
+  const { html, docTitle } = generateCaesbReportHtml(params);
   executePrintHtml(html, docTitle);
 };
 
