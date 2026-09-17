@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-138",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -1394,10 +1394,10 @@
       "seq": 138,
       "conversationId": "19dc0a10-370c-4c0a-bfd9-56f74b9d3ea1",
       "description": "Unificar anexo SEI com relatorio oficial de officialPrintUtils sem codigo duplicado",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-17T18:03:29.422Z",
       "startedAt": "2026-09-17T18:03:36.182Z",
-      "completedAt": null
+      "completedAt": "2026-09-17T18:07:47.672Z"
     }
   ]
 }
