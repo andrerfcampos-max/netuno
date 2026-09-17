@@ -682,16 +682,70 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
   };
 
   const handleGetCaesbReportFile = () => {
+    const caesbData = sortedHidrantesCaesb.filter(h => !isHidranteRemovido(h));
+    const caesbTotal = caesbData.length;
+    const caesbOperantes = caesbData.filter(h => h.flgAtivo).length;
+    const caesbInoperantes = caesbTotal - caesbOperantes;
+
+    // Defeitos exclusivos dos hidrantes para manutenção CAESB
+    const defeitosCount = {};
+    caesbData.forEach(h => {
+      let problemas = [];
+      if (h.problemasHidrante) {
+        problemas = Array.from(new Set(extractProblemsList(h.problemasHidrante)));
+      } else if (!h.flgAtivo) {
+        problemas = ['Inoperante (sem detalhe)'];
+      }
+      problemas.forEach(p => {
+        defeitosCount[p] = (defeitosCount[p] || 0) + 1;
+      });
+    });
+    const maxDef = Math.max(...Object.values(defeitosCount), 1);
+    const caesbTopDefeitos = Object.entries(defeitosCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([nome, count]) => ({
+        nome,
+        count,
+        percent: caesbTotal > 0 ? (count / caesbTotal) * 100 : 0,
+        barPercent: (count / maxDef) * 100
+      }));
+
+    // Demanda por cidade calculada estritamente sobre a demanda da CAESB
+    const statsByCity = {};
+    caesbData.forEach(h => {
+      const city = normalizeRAName(h.dscLocalidade) || 'Não informada';
+      if (!statsByCity[city]) {
+        statsByCity[city] = { nome: city, total: 0, operantes: 0, inoperantes: 0 };
+      }
+      statsByCity[city].total += 1;
+      if (h.flgAtivo) {
+        statsByCity[city].operantes += 1;
+      } else {
+        statsByCity[city].inoperantes += 1;
+      }
+    });
+
+    const caesbCityStats = Object.values(statsByCity)
+      .map(c => ({
+        ...c,
+        operantesPercent: c.total > 0 ? ((c.operantes / c.total) * 100).toFixed(1) : '0.0',
+        inoperantesPercent: c.total > 0 ? ((c.inoperantes / c.total) * 100).toFixed(1) : '0.0',
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    const caesbRas = Array.from(new Set(caesbData.map(h => normalizeRAName(h.dscLocalidade)).filter(Boolean))).sort().join(', ');
+
     return generateCaesbReportHtml({
-      currentData: sortedHidrantesCaesb,
-      rasPresentes,
+      currentData: caesbData,
+      rasPresentes: caesbRas || rasPresentes,
       currentMission,
       currentUser,
-      isMultiCity,
-      cityOperabilityStats,
-      topDefeitosComCidades,
-      stats: { total, operantes, inoperantes },
-      topDefeitos,
+      isMultiCity: caesbCityStats.length > 1,
+      cityOperabilityStats: caesbCityStats,
+      topDefeitosComCidades: [],
+      stats: { total: caesbTotal, operantes: caesbOperantes, inoperantes: caesbInoperantes },
+      topDefeitos: caesbTopDefeitos,
       activeFilters
     });
   };

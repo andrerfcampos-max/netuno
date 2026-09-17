@@ -51,25 +51,50 @@ export default async function handler(req, res) {
       }
 
       const client = new SeiClient();
-      await client.login(usuario, senha);
+
+      try {
+        await client.login(usuario, senha);
+      } catch (loginErr) {
+        return res.status(401).json({
+          success: false,
+          error: loginErr.message || 'Falha na autenticação do SEI/SIP DF. Verifique matrícula e senha.'
+        });
+      }
 
       // 1. Criar Processo
-      const procInfo = await client.criarProcesso({
-        cidade,
-        raRomano
-      });
+      let procInfo;
+      try {
+        procInfo = await client.criarProcesso({
+          cidade,
+          raRomano
+        });
+      } catch (procErr) {
+        console.error('[API SEI] Erro ao criar processo:', procErr.message);
+        return res.status(500).json({
+          success: false,
+          error: `[Criação de Processo] ${procErr.message}`
+        });
+      }
 
       // 2. Anexar Relatório Oficial se fornecido
       let anexoInfo = null;
       if (htmlContent || pdfBase64) {
-        const pdfBuffer = pdfBase64 ? Buffer.from(pdfBase64, 'base64') : null;
-        anexoInfo = await client.anexarRelatorio({
-          idProcedimento: procInfo.idProcedimento,
-          pdfBuffer,
-          htmlContent,
-          fileName: fileName || (htmlContent ? `Relatorio_Vistoria_CAESB_${cidade || 'DF'}.html` : `Relatorio_Vistoria_CAESB_${cidade || 'DF'}.pdf`),
-          nomeArvore: nomeArvore || `Relatório CAESB - ${cidade || 'DF'}`
-        });
+        try {
+          const pdfBuffer = pdfBase64 ? Buffer.from(pdfBase64, 'base64') : null;
+          anexoInfo = await client.anexarRelatorio({
+            idProcedimento: procInfo.idProcedimento,
+            pdfBuffer,
+            htmlContent,
+            fileName: fileName || (htmlContent ? `Relatorio_Vistoria_CAESB_${cidade || 'DF'}.html` : `Relatorio_Vistoria_CAESB_${cidade || 'DF'}.pdf`),
+            nomeArvore: nomeArvore || `Relatório CAESB - ${cidade || 'DF'}`
+          });
+        } catch (anexoErr) {
+          console.error('[API SEI] Erro ao anexar relatório:', anexoErr.message);
+          return res.status(500).json({
+            success: false,
+            error: `[Anexo de Relatório] ${anexoErr.message}`
+          });
+        }
       }
 
       // Substitui o placeholder no texto do memorando com o número SEI do documento externo criado
@@ -80,13 +105,22 @@ export default async function handler(req, res) {
       }
 
       // 3. Criar Memorando com Minuta
-      const memoInfo = await client.criarMemorando({
-        idProcedimento: procInfo.idProcedimento,
-        cidade,
-        raRomano,
-        corpoMemorandoHtml: corpoMemorandoFinal || '<p>Memorando institucional de solicitação de manutenção de hidrantes.</p>',
-        docAnexoSei: docRefNumber
-      });
+      let memoInfo;
+      try {
+        memoInfo = await client.criarMemorando({
+          idProcedimento: procInfo.idProcedimento,
+          cidade,
+          raRomano,
+          corpoMemorandoHtml: corpoMemorandoFinal || '<p>Memorando institucional de solicitação de manutenção de hidrantes.</p>',
+          docAnexoSei: docRefNumber
+        });
+      } catch (memoErr) {
+        console.error('[API SEI] Erro ao criar memorando:', memoErr.message);
+        return res.status(500).json({
+          success: false,
+          error: `[Geração de Memorando] ${memoErr.message}`
+        });
+      }
 
       // Serializa os cookies e o sessionState para permitir continuação na assinatura
       const sessionStateSerialized = Buffer.from(JSON.stringify({
@@ -122,17 +156,34 @@ export default async function handler(req, res) {
       }
 
       // 1. Assinar Documento
-      await client.assinarDocumento({
-        idDocumento: idDocumentoMemo,
-        usuario: usuario || client.sessionState.usuario,
-        senhaAssinatura
-      });
+      try {
+        await client.assinarDocumento({
+          idDocumento: idDocumentoMemo,
+          usuario: usuario || client.sessionState.usuario,
+          senhaAssinatura
+        });
+      } catch (assinarErr) {
+        console.error('[API SEI] Erro ao assinar documento:', assinarErr.message);
+        return res.status(500).json({
+          success: false,
+          error: `[Assinatura Eletrônica] ${assinarErr.message}`
+        });
+      }
 
       // 2. Tramitar Processo para a SUTEC (110037655)
-      const tramitacao = await client.tramitarProcesso({
-        idProcedimento,
-        unidadeDestinoId: unidadeDestinoId || '110037655'
-      });
+      let tramitacao;
+      try {
+        tramitacao = await client.tramitarProcesso({
+          idProcedimento,
+          unidadeDestinoId: unidadeDestinoId || '110037655'
+        });
+      } catch (tramitarErr) {
+        console.error('[API SEI] Erro ao tramitar processo:', tramitarErr.message);
+        return res.status(500).json({
+          success: false,
+          error: `[Tramitação SUTEC] ${tramitarErr.message}`
+        });
+      }
 
       return res.status(200).json({
         success: true,
@@ -146,7 +197,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     // Protocolo de Segurança Estrita: Jamais logar payloads contendo credenciais/senhas
-    console.error('[API SEI] Erro no processamento:', error?.message || 'Erro interno');
+    console.error('[API SEI] Erro geral no processamento:', error?.message || 'Erro interno');
     return res.status(500).json({
       success: false,
       error: error?.message || 'Erro inesperado durante processamento com o SEI DF.'
