@@ -54,5 +54,30 @@ Você atua como Engenheiro de Software e Arquitetos neste projeto. Nosso método
         *(Em caso de erro impeditivo, utilize `node scripts/task_queue.cjs fail <taskId> "<motivo>"` para não travar a fila de outras conversas).*
      5. **Consulta Rápida de Status:**
         Para inspecionar a fila a qualquer momento: `node scripts/task_queue.cjs status`.
+8. **Procedimento Padrão: Vistorias em Lote do Militar Vistoriador Sgt Rrm Honorato (Via Chat):**
+   - **Contexto Operacional:** O militar vistoriador **Sgt Rrm Honorato** (acompanhado da equipe de apoio Sgt Freitas e Sgt Santiago pttc) não utiliza diretamente o aplicativo móvel Netuno em campo. Suas vistorias são transcritas periodicamente em mensagens de texto (WhatsApp, relatórios de campo ou Google Docs compartilhados) e **serão lançadas em lote diretamente aqui pelos chats**.
+   - **Fluxo Obrigatório de Processamento em Lote:**
+     1. **Leitura e Normalização dos Códigos:**
+        - Identificar os lotes, datas e anotações técnicas.
+        - Os códigos enviados (ex: `SAM 0082`, `TAG 00001`, `SAM 0061`) devem ser SEMPRE normalizados para o formato canônico com 5 dígitos numéricos (`SAM00082`, `TAG00001`, `SAM00061`).
+     2. **Mapeamento das Perguntas Netuno (Q1 a Q7):**
+        - Traduzir os relatos para o formulário oficial Netuno:
+          - Q1: `SIM` / `NÃO, FALTA LUVA` (cabeçote da haste).
+          - Q2: `SEM ALTERAÇÃO` / `SOTERRADO` / `COM VAZAMENTO` / `EMPERRADO`.
+          - Q3: `SEM ALTERAÇÃO` / `LACRADA` / `QUEBRADA`.
+          - Q4: `SIM` / `FALTA 1 TAMPÃO` / `FALTAM 2 TAMPÕES` / `FALTAM TODOS OS TAMPÕES`.
+          - Q5: `SIM` (Operante) / `NÃO` (Inoperante se houver inativador).
+          - Q6 e Q7: Defeitos catalogados e observações de campo.
+     3. **Gravação Quádrupla Local + Nuvem (Supabase):**
+        - O script de ingestão DEVE atualizar atômica e simultaneamente:
+          - `public/hidrantes_df_oficial.json`
+          - `public/hidrantes_df_oficial.csv`
+          - `public/base-de-dados.xlsx`
+          - `base-de-dados.xlsx` (raiz)
+        - E enviar os registros atualizados para o Supabase (`netuno_hydrant_mutations` tipo `update` e evento de auditoria `audit_event`) para sincronizar em tempo real todos os dispositivos conectados.
+        - O `HISTORICO_VISTORIAS` de cada hidrante deve arquivar a vistoria anterior e registrar o novo apontamento contendo militar, equipe, data e situação.
+     4. **Pipeline Git e Deploy:**
+        - Seguir estritamente o ciclo de Fila (`TASK-QUEUE`), validar o build (`npm run build`), versionar com `git commit` e efetuar o `git push origin main`.
 
 *Sempre siga essa metodologia para evitar assimetria entre código humano e gerado pelo pipeline de IA.*
+

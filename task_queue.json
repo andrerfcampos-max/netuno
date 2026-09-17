@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-139",
   "queue": [
     {
       "id": "TASK-1",
@@ -1398,6 +1398,16 @@
       "createdAt": "2026-09-17T18:03:29.422Z",
       "startedAt": "2026-09-17T18:03:36.182Z",
       "completedAt": "2026-09-17T18:07:47.672Z"
+    },
+    {
+      "id": "TASK-139",
+      "seq": 139,
+      "conversationId": "385e2e5f-67c6-4fb8-81ed-8455cd7045f4",
+      "description": "Subir vistorias em lote do Sgt Honorato para a base de dados e registrar diretriz nos arquivos de controle",
+      "status": "running",
+      "createdAt": "2026-09-17T21:15:30.861Z",
+      "startedAt": "2026-09-17T21:15:34.605Z",
+      "completedAt": null
     }
   ]
 }
