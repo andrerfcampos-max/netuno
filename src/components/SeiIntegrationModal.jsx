@@ -28,6 +28,33 @@ export const SeiIntegrationModal = ({
 
   if (!isOpen) return null;
 
+  const handleClose = () => {
+    setSenha('');
+    setSenhaAssinatura('');
+    onClose?.();
+  };
+
+  const formatMinutaToSeiHtml = (text) => {
+    if (!text) return '<p></p>';
+    const lines = text.split('\n');
+    let html = '';
+    let currentP = [];
+    for (const line of lines) {
+      if (!line.trim()) {
+        if (currentP.length > 0) {
+          html += `<p style="font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; margin-bottom: 12pt; text-align: justify;">${currentP.join('<br/>')}</p>\n`;
+          currentP = [];
+        }
+      } else {
+        currentP.push(line.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+      }
+    }
+    if (currentP.length > 0) {
+      html += `<p style="font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; margin-bottom: 12pt; text-align: justify;">${currentP.join('<br/>')}</p>\n`;
+    }
+    return html;
+  };
+
   // 1. Iniciar Processo e Anexar Documentos
   const handleIniciarProcesso = async (e) => {
     e?.preventDefault();
@@ -35,6 +62,9 @@ export const SeiIntegrationModal = ({
       toast.warn('Informe a matrícula e a senha de acesso ao SEI.');
       return;
     }
+
+    const senhaTemp = senha;
+    setSenha(''); // Limpeza imediata da senha da memória do componente
 
     try {
       setLoading(true);
@@ -56,13 +86,13 @@ export const SeiIntegrationModal = ({
           action: 'iniciar_expediente',
           payload: {
             usuario: usuario.trim(),
-            senha,
+            senha: senhaTemp,
             cidade: cidade || 'Distrito Federal',
             raRomano,
             pdfBase64,
             fileName: `Relatorio_Vistoria_CAESB_${cidade || 'DF'}.pdf`,
             nomeArvore: `Relatório CAESB - ${cidade || 'DF'}`,
-            corpoMemorandoHtml: `<div style="font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5;"><pre style="font-family: inherit; white-space: pre-wrap;">${memorandoMinuta || ''}</pre></div>`
+            corpoMemorandoHtml: formatMinutaToSeiHtml(memorandoMinuta)
           }
         })
       });
@@ -80,7 +110,6 @@ export const SeiIntegrationModal = ({
       });
 
       toast.success(`Processo ${data.numeroProcesso} criado com sucesso!`);
-      setSenha(''); // Limpa a senha de login por segurança
       setStep('assinar');
     } catch (err) {
       console.error('Erro ao iniciar processo SEI:', err);
@@ -99,6 +128,9 @@ export const SeiIntegrationModal = ({
       return;
     }
 
+    const senhaAssinaturaTemp = senhaAssinatura;
+    setSenhaAssinatura(''); // Limpeza imediata da senha de assinatura da memória
+
     try {
       setLoading(true);
       setLoadingStatus('Assinando memorando eletronicamente...');
@@ -112,7 +144,7 @@ export const SeiIntegrationModal = ({
             sessionToken: processoData.sessionToken,
             idProcedimento: processoData.idProcedimento,
             idDocumentoMemo: processoData.idDocumentoMemo,
-            senhaAssinatura,
+            senhaAssinatura: senhaAssinaturaTemp,
             usuario: usuario.trim(),
             unidadeDestinoId: '110037655' // SUTEC
           }
@@ -125,7 +157,6 @@ export const SeiIntegrationModal = ({
       }
 
       toast.success('Memorando assinado e processo tramitado com sucesso!');
-      setSenhaAssinatura('');
       setStep('concluido');
     } catch (err) {
       console.error('Erro ao assinar no SEI:', err);
@@ -160,7 +191,7 @@ export const SeiIntegrationModal = ({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
           >
             <X size={18} />
@@ -195,7 +226,7 @@ export const SeiIntegrationModal = ({
                     onChange={(e) => setUsuario(e.target.value)}
                     placeholder="Ex: 1997400"
                     required
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
                   />
                 </div>
 
@@ -209,10 +240,15 @@ export const SeiIntegrationModal = ({
                     onChange={(e) => setSenha(e.target.value)}
                     placeholder="Sua senha do SEI"
                     required
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                    autoComplete="current-password"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    spellCheck={false}
+                    data-form-type="other"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
                   />
                   <span className="text-[10px] text-slate-400 mt-1 block">
-                    🔒 Conexão segura e direta com o servidor oficial do SEI DF. As senhas não são armazenadas.
+                    🔒 Conexão segura e direta com o servidor oficial do SEI DF. Senhas não são persistidas em disco nem registradas em logs.
                   </span>
                 </div>
               </div>
@@ -264,7 +300,12 @@ export const SeiIntegrationModal = ({
                     placeholder="Digite a senha para assinar"
                     required
                     autoFocus
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-3 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                    autoComplete="current-password"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    spellCheck={false}
+                    data-form-type="other"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-3 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
                   />
                   <Lock size={16} className="absolute right-3 top-3 text-slate-400" />
                 </div>
@@ -322,7 +363,7 @@ export const SeiIntegrationModal = ({
                   <ExternalLink size={14} />
                 </a>
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
                 >
                   Fechar

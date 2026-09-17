@@ -71,13 +71,20 @@ export default async function handler(req, res) {
         });
       }
 
+      // Substitui o placeholder no texto do memorando com o número SEI do documento externo criado
+      const docRefNumber = anexoInfo?.numeroSei || anexoInfo?.idDocumentoAnexo || '';
+      let corpoMemorandoFinal = corpoMemorandoHtml || '';
+      if (docRefNumber) {
+        corpoMemorandoFinal = corpoMemorandoFinal.replaceAll('[Nº SEI DO RELATÓRIO EXTERNO]', docRefNumber);
+      }
+
       // 3. Criar Memorando com Minuta
       const memoInfo = await client.criarMemorando({
         idProcedimento: procInfo.idProcedimento,
         cidade,
         raRomano,
-        corpoMemorandoHtml: corpoMemorandoHtml || '<p>Memorando institucional de solicitação de manutenção de hidrantes.</p>',
-        docAnexoSei: anexoInfo?.idDocumentoAnexo || ''
+        corpoMemorandoHtml: corpoMemorandoFinal || '<p>Memorando institucional de solicitação de manutenção de hidrantes.</p>',
+        docAnexoSei: docRefNumber
       });
 
       // Serializa os cookies e o sessionState para permitir continuação na assinatura
@@ -91,6 +98,7 @@ export default async function handler(req, res) {
         idProcedimento: procInfo.idProcedimento,
         numeroProcesso: procInfo.numeroProcesso,
         idDocumentoMemo: memoInfo.idDocumentoMemo,
+        idDocumentoAnexo: docRefNumber,
         sessionToken: sessionStateSerialized
       });
     }
@@ -136,10 +144,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: `Ação desconhecida: ${action}` });
 
   } catch (error) {
-    console.error('[API SEI] Erro:', error);
+    // Protocolo de Segurança Estrita: Jamais logar payloads contendo credenciais/senhas
+    console.error('[API SEI] Erro no processamento:', error?.message || 'Erro interno');
     return res.status(500).json({
       success: false,
-      error: error.message || 'Erro inesperado durante processamento com o SEI DF.'
+      error: error?.message || 'Erro inesperado durante processamento com o SEI DF.'
     });
   }
 }

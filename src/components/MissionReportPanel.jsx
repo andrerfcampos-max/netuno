@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown, Share2, ChevronDown, Check, FileText } from 'lucide-react';
+import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown, Share2, ChevronDown, Check, FileText, ExternalLink } from 'lucide-react';
 import { extractProblemsList, sanitizeProblem, isHidranteRemovido } from '../utils/problemUtils';
 import { normalizeRAName, getRARoman } from '../utils/raList';
 import { fixEncoding } from '../utils/textUtils';
@@ -7,6 +7,7 @@ import { printGeneralReport, printCaesbReport, generateDocHash, extractPhotos } 
 import { generateSeiMemorandoMinutaText } from '../utils/seiMemorandoUtils';
 import { isHydrantInSet } from '../utils/idMapping';
 import { SeiIntegrationModal } from './SeiIntegrationModal';
+import { generateCaesbReportPdfBase64 } from '../utils/caesbPdfGenerator';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, activeFilters = null }) => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -14,6 +15,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
   const [copied, setCopied] = useState(false);
   const [copiedMinuta, setCopiedMinuta] = useState(false);
   const [seiDocNumber, setSeiDocNumber] = useState('');
+  const [minutaText, setMinutaText] = useState('');
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [showSeiModal, setShowSeiModal] = useState(false);
   const [showDirectSeiModal, setShowDirectSeiModal] = useState(false);
@@ -158,6 +160,38 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
     const r = new Set(currentData.map(h => normalizeRAName(h.dscLocalidade)).filter(Boolean));
     return Array.from(r).sort().join(', ');
   }, [currentData]);
+
+  // Resolução precisa e prioritária da Região Administrativa
+  const effectiveCity = useMemo(() => {
+    if (activeFilters?.ra) {
+      return normalizeRAName(activeFilters.ra);
+    }
+    if (currentMission?.ra) {
+      return normalizeRAName(currentMission.ra);
+    }
+    const ras = rasPresentes ? rasPresentes.split(',').map(s => s.trim()).filter(Boolean) : [];
+    if (ras.length === 1) {
+      return ras[0];
+    }
+    if (ras.length > 1) {
+      return ras[0];
+    }
+    return 'Distrito Federal';
+  }, [activeFilters?.ra, currentMission?.ra, rasPresentes]);
+
+  const effectiveRaRomano = useMemo(() => {
+    return getRARoman(effectiveCity) || '';
+  }, [effectiveCity]);
+
+  // Sincroniza a minuta inicial com a localidade correta
+  useEffect(() => {
+    setMinutaText(generateSeiMemorandoMinutaText({
+      cidade: effectiveCity,
+      raRomano: effectiveRaRomano,
+      ano: new Date().getFullYear(),
+      numeroSeiRelatorio: ''
+    }));
+  }, [effectiveCity, effectiveRaRomano]);
 
   const docHash = useMemo(() => {
     const docSeed = `${new Date().toLocaleDateString('pt-BR')}_${currentData.length}_${operantes}_${inoperantes}_${currentUser?.nome || 'CBMDF'}_${rasPresentes}`;
@@ -610,18 +644,10 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
   };
 
   
-  const handleCopySeiMinuta = async (customDocNum = null) => {
+  const handleCopySeiMinuta = async (customText = null) => {
     try {
-      const docNum = customDocNum !== null ? customDocNum : seiDocNumber;
-      const primeiraCidade = (rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal');
-      const raRomano = getRARoman(primeiraCidade);
-      const texto = generateSeiMemorandoMinutaText({
-        cidade: primeiraCidade,
-        raRomano,
-        ano: new Date().getFullYear(),
-        numeroSeiRelatorio: docNum
-      });
-      await navigator.clipboard.writeText(texto);
+      const text = typeof customText === 'string' && customText.trim() ? customText : (minutaText || '');
+      await navigator.clipboard.writeText(text);
       setCopiedMinuta(true);
       setTimeout(() => setCopiedMinuta(false), 3000);
     } catch (err) {
@@ -635,12 +661,10 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       alert('Acesso restrito: A integração com processo SEI é exclusiva para Gestores e Administradores.');
       return;
     }
-    const primeiraCidade = (rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal');
-    const raRomano = getRARoman(primeiraCidade);
     const dataPack = {
       rasPresentes,
-      cidade: primeiraCidade,
-      raRomano,
+      cidade: effectiveCity,
+      raRomano: effectiveRaRomano,
       total,
       operantes,
       inoperantes,
@@ -649,18 +673,24 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       ano: new Date().getFullYear(),
       origem: 'CBMDF/DIVIS/SEHUR/SUOMA',
       destino: 'CBMDF/DIVIS/SEHUR/SUOMA',
-      seiDocNumber: seiDocNumber.trim(),
+      seiDocNumber: '',
       htmlContent: document.getElementById('report-content-to-print')?.innerHTML || '',
-      memorandoMinuta: generateSeiMemorandoMinutaText({
-        cidade: primeiraCidade,
-        raRomano,
-        ano: new Date().getFullYear(),
-        numeroSeiRelatorio: seiDocNumber
-      })
+      memorandoMinuta: minutaText
     };
     localStorage.setItem('netuno_sei_data', JSON.stringify(dataPack));
     setShowSeiModal(false);
-    window.open('https://sei.df.gov.br', '_blank');
+    window.open('https://sei.df.gov.br', '_blank', 'noopener,noreferrer');
+  };
+
+  const handleGetCaesbPdfBase64 = async () => {
+    return await generateCaesbReportPdfBase64({
+      cidade: effectiveCity,
+      raRomano: effectiveRaRomano,
+      hidrantes: sortedHidrantesCaesb,
+      emissorNome: currentUser?.nome || 'Gestor de Hidrantes Urbanos',
+      emissorMatricula: currentUser?.matricula ? `Matrícula: ${currentUser.matricula}` : '',
+      docHash
+    });
   };
   
   const handleExportCSV = () => {
@@ -761,20 +791,12 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
         </div>
         
         <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-          {/* Diretriz Institucional */}
-          <div className="bg-blue-950/40 border border-blue-500/40 p-3 rounded-lg text-xs text-blue-200">
-            <span className="font-bold text-blue-300">📌 Novo Protocolo de Arquivamento e Tramitação:</span>
-            <div className="mt-1 leading-relaxed">
-              O processo é mantido na unidade interna <strong>CBMDF/DIVIS/SEHUR/SUOMA</strong>. <strong>Não</strong> deve ser feito encaminhamento para o ambiente SEI da CAESB.
-            </div>
-          </div>
-
           {/* Dados da Missão / Localidade */}
           <div className="bg-slate-700/50 p-3.5 rounded-lg space-y-2 text-xs sm:text-sm">
             <div className="flex justify-between items-center">
               <span className="text-slate-400">Região Administrativa:</span>
               <span className="font-bold text-white">
-                {(rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal')} {getRARoman((rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : '')) ? `(RA ${getRARoman((rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : ''))})` : ''}
+                {effectiveCity} {effectiveRaRomano ? `(RA ${effectiveRaRomano})` : ''}
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -795,104 +817,64 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
             <div className="space-y-1.5 pl-2 border-l-2 border-emerald-500/50">
               <div className="flex items-start gap-1.5">
                 <span className="font-bold text-emerald-400">1.</span>
-                <span><strong>Baixar PDF CAESB:</strong> Salve o relatório técnico gerado pelo Netuno e anexe como <em>Documento Externo</em> (1º documento do processo).</span>
+                <span><strong>Relatório CAESB:</strong> Anexo nato-digital do laudo técnico gerado automaticamente pelo Netuno como <em>Documento Externo</em> (1º documento do processo).</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-bold text-emerald-400">2.</span>
-                <span><strong>Criar Memorando no SEI:</strong> Crie um documento interno do tipo <em>Memorando</em> ao Comandante do GPCIU.</span>
+                <span><strong>Memorando ao GPCIU:</strong> Documento interno com minuta de ofício à CAESB anexada no próprio corpo.</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="font-bold text-emerald-400">3.</span>
-                <span><strong>Colar Minuta Integrada:</strong> Cole o texto abaixo no editor do Memorando (já contém a Minuta de Ofício à CAESB anexada no próprio corpo).</span>
+                <span><strong>Numeração Automática:</strong> O número SEI do relatório é inserido no memorando imediatamente após o SEI gerá-lo.</span>
               </div>
             </div>
           </div>
 
-          {/* Campo Número SEI do Documento Externo */}
-          <div className="bg-slate-900/70 p-3 rounded-lg border border-slate-700">
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Nº SEI do Documento Externo (Relatório Anexado):
-            </label>
-            <div className="flex gap-2">
-              <input 
-                type="text"
-                placeholder="Ex: 213296742 (opcional)"
-                value={seiDocNumber}
-                onChange={(e) => setSeiDocNumber(e.target.value)}
-                className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
-              />
+          {/* Prévia do Texto do Memorando (Editável com Altura Dobrada) */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-semibold text-slate-300">Prévia do Texto para o Memorando:</span>
               <button
                 type="button"
-                onClick={() => handleCopySeiMinuta(seiDocNumber)}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded font-bold text-xs flex items-center gap-1 transition-colors"
-                title="Copiar texto com este número SEI"
-              >
-                {copiedMinuta ? <Check size={14} className="text-white" /> : <Copy size={14} />}
-                <span>{copiedMinuta ? 'Copiado!' : 'Copiar'}</span>
-              </button>
-            </div>
-            <div className="text-[11px] text-slate-400 mt-1">
-              O cabeçalho e as assinaturas são preenchidos automaticamente pelo SEI.
-            </div>
-          </div>
-
-          {/* Prévia da Minuta */}
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs font-semibold text-slate-400">Prévia do Texto para o Memorando:</span>
-              <button
-                type="button"
-                onClick={() => handleCopySeiMinuta(seiDocNumber)}
+                onClick={() => handleCopySeiMinuta(minutaText)}
                 className="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer"
               >
                 {copiedMinuta ? '✓ Texto Copiado!' : 'Copiar Minuta'}
               </button>
             </div>
             <textarea
-              readOnly
-              rows={5}
-              value={generateSeiMemorandoMinutaText({
-                cidade: (rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal'),
-                raRomano: getRARoman((rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : '')),
-                ano: new Date().getFullYear(),
-                numeroSeiRelatorio: seiDocNumber
-              })}
-              className="w-full bg-slate-900 border border-slate-700 rounded p-2.5 text-[11px] text-slate-300 font-mono resize-none focus:outline-none"
+              rows={10}
+              value={minutaText}
+              onChange={(e) => setMinutaText(e.target.value)}
+              placeholder="Digite ou edite a minuta do memorando..."
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-slate-200 font-mono resize-y min-h-[220px] focus:outline-none focus:border-emerald-500 leading-relaxed"
             />
+            <div className="text-[11px] text-slate-400">
+              O cabeçalho institucional e as assinaturas eletrônicas são preenchidos automaticamente pelo SEI.
+            </div>
           </div>
         </div>
 
-        <div className="p-4 bg-slate-800/90 border-t border-slate-700 flex justify-between items-center gap-3 shrink-0">
-          <button 
-            onClick={() => handlePrint()} 
-            className="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-colors"
-            title="Baixar PDF do Relatório para anexar como documento externo"
-          >
-            <Printer size={14} className="text-cyan-400" />
-            <span>Baixar PDF CAESB</span>
+        <div className="p-4 bg-slate-800/90 border-t border-slate-700 flex justify-end items-center gap-2 shrink-0">
+          <button onClick={() => setShowSeiModal(false)} className="px-3.5 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 text-xs font-semibold transition-colors">
+            Fechar
           </button>
-          
-          <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowSeiModal(false)} className="px-3.5 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 text-xs font-semibold transition-colors">
-              Fechar
-            </button>
-            <button 
-              onClick={handleGenerateSeiProcess} 
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5"
-              title="Abrir página manual do SEI"
-            >
-              <span>Abrir Manualmente</span>
-              <span>🔗</span>
-            </button>
-            <button 
-              onClick={() => { setShowSeiModal(false); setShowDirectSeiModal(true); }}
-              className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg font-bold text-xs transition-all shadow-lg shadow-emerald-950/50 flex items-center gap-1.5 cursor-pointer"
-              title="Criar processo, anexar PDF, assinar e tramitar automaticamente pelo celular"
-            >
-              <span>⚡ Enviar Direto ao SEI</span>
-              <span>🚀</span>
-            </button>
-          </div>
+          <button 
+            onClick={() => window.open('https://sei.df.gov.br', '_blank', 'noopener,noreferrer')} 
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            title="Acessar página inicial do SEI DF em uma nova aba mantendo o Netuno aberto"
+          >
+            <span>Acessar SEI</span>
+            <ExternalLink size={14} />
+          </button>
+          <button 
+            onClick={() => { setShowSeiModal(false); setShowDirectSeiModal(true); }}
+            className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg font-bold text-xs transition-all shadow-lg shadow-emerald-950/50 flex items-center gap-1.5 cursor-pointer"
+            title="Criar processo, anexar PDF, assinar e tramitar automaticamente pelo celular"
+          >
+            <span>⚡ Enviar Direto ao SEI</span>
+            <span>🚀</span>
+          </button>
         </div>
       </div>
     </div>
@@ -903,15 +885,11 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
     <SeiIntegrationModal
       isOpen={showDirectSeiModal}
       onClose={() => setShowDirectSeiModal(false)}
-      cidade={(rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal')}
-      raRomano={getRARoman((rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : ''))}
+      cidade={effectiveCity}
+      raRomano={effectiveRaRomano}
       currentUser={currentUser}
-      memorandoMinuta={generateSeiMemorandoMinutaText({
-        cidade: (rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Distrito Federal'),
-        raRomano: getRARoman((rasPresentes.split(',')[0] || '').trim() || (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : '')),
-        ano: new Date().getFullYear(),
-        numeroSeiRelatorio: seiDocNumber
-      })}
+      memorandoMinuta={minutaText}
+      getReportPdfBase64={handleGetCaesbPdfBase64}
     />
   )}
   

@@ -109,9 +109,24 @@ const SearchableSelect = ({
     }
   }, [isOpen]);
 
-  // Fechar ao clicar fora
+  // Fechar ao clicar fora (com proteção para arrastar/scroll na tela no mobile)
+  const touchStartPos = useRef({ x: 0, y: 0 });
   useEffect(() => {
-    const handleClickOutside = (e) => {
+    const handleTouchStart = (e) => {
+      if (e.touches && e.touches[0]) {
+        touchStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (e.changedTouches && e.changedTouches[0]) {
+        const deltaX = Math.abs(e.changedTouches[0].clientX - touchStartPos.current.x);
+        const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartPos.current.y);
+        // Se arrastou mais de 10px, o usuário estava fazendo scroll/drag da tela - NÃO fecha o dropdown!
+        if (deltaX > 10 || deltaY > 10) {
+          return;
+        }
+      }
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsOpen(false);
         setIsTyping(false);
@@ -119,11 +134,23 @@ const SearchableSelect = ({
         setHighlightedIndex(-1);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
+
+    const handleMouseDown = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+        setIsTyping(false);
+        setSearchQuery('');
+        setHighlightedIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
     };
   }, []);
 

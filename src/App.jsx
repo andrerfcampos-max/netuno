@@ -327,7 +327,7 @@ syncPreferences({ activeView: view });
   const [openMissionIds, setOpenMissionIds] = useState(initialActiveId ? [initialActiveId] : []);
   const [activeMissionId, setActiveMissionId] = useState(initialActiveId);
   const [routeFitTrigger, setRouteFitTrigger] = useState(null);
-  const [isRouteActiveOnMap, setIsRouteActiveOnMap] = useState(false);
+  const [isRouteActiveOnMap, setIsRouteActiveOnMap] = useState(() => Boolean(initialActiveId));
 
   // Derivações da Missão Ativa
   const currentMission = useMemo(() => {
@@ -368,9 +368,11 @@ syncPreferences({ activeView: view });
     }
   }, [pendingRouteHydrants]);
 
-  // Fecha a rota no mapa caso a missão ativa seja limpa ou fechada
+  // Sempre que uma rota de missão estiver aberta, ativa a plotagem dos pinos na sequência automaticamente no mapa
   useEffect(() => {
-    if (!activeMissionId) {
+    if (activeMissionId) {
+      setIsRouteActiveOnMap(true);
+    } else {
       setIsRouteActiveOnMap(false);
     }
   }, [activeMissionId]);
@@ -2272,7 +2274,20 @@ syncPreferences({ filters: filters });
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
+                  {pendingRouteHydrants.length > 0 && pendingRouteHydrants[0]?.numLatitude && pendingRouteHydrants[0]?.numLongitude && (
+                    <a
+                      href={`https://waze.com/ul?ll=${pendingRouteHydrants[0].numLatitude},${pendingRouteHydrants[0].numLongitude}&navigate=yes`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-bold transition-all shadow-md shadow-blue-950/50 cursor-pointer"
+                      title={`Navegar no Waze para o próximo hidrante (${pendingRouteHydrants[0].nomHidrante || pendingRouteHydrants[0].codHidrante || ''})`}
+                    >
+                      <Navigation size={13} className="text-white fill-white shrink-0" />
+                      <span>Navegar para o Próximo (Waze)</span>
+                    </a>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setRouteFitTrigger(Date.now())}

@@ -1484,7 +1484,7 @@ const MapComponent = ({
               iconAnchor: [13, 13]
             })}
             interactive={false}
-            zIndexOffset={1000}
+            zIndexOffset={5000}
           />
         )}
 

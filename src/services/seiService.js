@@ -168,7 +168,9 @@ export class SeiClient {
 
   // --- 2. Criar Processo de Fiscalização ---
   async criarProcesso({ tipoProcessoId = '100000446', descricao, cidade, raRomano }) {
-    const desc = descricao || `Vistoria em Hidrantes Urbanos - ${cidade || 'DF'} ${raRomano ? `(RA ${raRomano})` : ''} - ${new Date().getFullYear()}`;
+    const nomeCidade = (cidade || '').trim() || 'Distrito Federal';
+    const sufixoRa = raRomano ? `(RA ${raRomano})` : '';
+    const desc = descricao || `Vistoria em Hidrantes Urbanos - ${nomeCidade}${sufixoRa ? ` ${sufixoRa}` : ''} - ${new Date().getFullYear()}`;
     const urlGerar = `${this.seiUrl}/sei/controlador.php?acao=procedimento_gerar&acao_origem=procedimento_escolher_tipo&id_tipo_procedimento=${tipoProcessoId}&infra_sistema=${this.sessionState.infraSistema}&infra_unidade_atual=${this.sessionState.unidadeAtual}&infra_hash=${this.sessionState.infraHash}`;
 
     // Acessa formulário de geração
@@ -348,11 +350,20 @@ export class SeiClient {
     const docIdMatch = salvarDocRes.text.match(/id_documento=(\d+)/i) || salvarDocRes.url.match(/id_documento=(\d+)/i);
     const idDocumentoAnexo = docIdMatch ? docIdMatch[1] : null;
 
+    // Extrai o Número SEI formatado ou protocolo do documento externo gerado
+    const protocoloMatch = salvarDocRes.text.match(/protocolo_formatado=([^&"']+)/i)
+      || salvarDocRes.text.match(/hdnProtocoloFormatado['"]?\s*value=['"]([^'"]+)['"]/i)
+      || salvarDocRes.text.match(/id="txtNumeroDocumento"[^>]*value="([^"]+)"/i)
+      || salvarDocRes.text.match(/id="txtProtocolo"[^>]*value="([^"]+)"/i)
+      || salvarDocRes.text.match(/Relat[oó]rio[^\d]*(\d{7,10})/i);
+    const numeroSei = protocoloMatch ? (protocoloMatch[1] || protocoloMatch[0]) : idDocumentoAnexo;
+
     this.sessionState.infraHash = this.extractInfraHash(salvarDocRes.url) || this.sessionState.infraHash;
 
     return {
       success: true,
       idDocumentoAnexo,
+      numeroSei: numeroSei || idDocumentoAnexo,
       fileName
     };
   }
@@ -442,15 +453,39 @@ export class SeiClient {
     const editorPage = await this.request(editorUrl);
     this.sessionState.infraHash = this.extractInfraHash(editorPage.url) || this.sessionState.infraHash;
 
-    const salvarTextoParams = new URLSearchParams({
-      hdnInfraTipoPagina: '2',
-      txaConteudo: corpoMemorandoHtml,
-      id_documento: idDocumentoMemo,
-      id_procedimento: idProcedimento
+    // Se docAnexoSei foi informado, substitui o placeholder no texto caso ainda esteja presente
+    let htmlSalvar = corpoMemorandoHtml || '';
+    if (docAnexoSei) {
+      htmlSalvar = htmlSalvar.replaceAll('[Nº SEI DO RELATÓRIO EXTERNO]', docAnexoSei);
+    }
+
+    const form = editorPage.$('form#frmEditor').length ? editorPage.$('form#frmEditor') : editorPage.$('form');
+    const formAction = form.attr('action');
+    const salvarTextoParams = new URLSearchParams();
+
+    // Copia todos os parâmetros e tokens do formulário gerado pelo SEI
+    form.find('input, textarea, select').each((_, el) => {
+      const name = editorPage.$(el).attr('name');
+      const val = editorPage.$(el).attr('value') ?? editorPage.$(el).val() ?? '';
+      if (name) {
+        salvarTextoParams.set(name, val);
+      }
     });
 
-    await this.request(
-      `${this.seiUrl}/sei/controlador.php?acao=editor_salvar&infra_sistema=${sistema}&infra_unidade_atual=${unidade}&infra_hash=${this.sessionState.infraHash}`,
+    // Sobrescreve com o conteúdo definitivo do documento
+    salvarTextoParams.set('txaConteudo', htmlSalvar);
+    salvarTextoParams.set('id_documento', idDocumentoMemo);
+    salvarTextoParams.set('hdnIdDocumento', idDocumentoMemo);
+    salvarTextoParams.set('id_procedimento', idProcedimento);
+    salvarTextoParams.set('hdnIdProcedimento', idProcedimento);
+    salvarTextoParams.set('hdnInfraTipoPagina', '2');
+
+    const saveUrl = formAction
+      ? new URL(formAction, editorUrl).toString()
+      : `${this.seiUrl}/sei/controlador.php?acao=editor_salvar&infra_sistema=${sistema}&infra_unidade_atual=${unidade}&infra_hash=${this.sessionState.infraHash}`;
+
+    const saveRes = await this.request(
+      saveUrl,
       {
         method: 'POST',
         headers: {
@@ -460,6 +495,8 @@ export class SeiClient {
         body: salvarTextoParams.toString()
       }
     );
+
+    this.sessionState.infraHash = this.extractInfraHash(saveRes.url) || this.sessionState.infraHash;
 
     return {
       success: true,
