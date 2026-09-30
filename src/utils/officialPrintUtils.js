@@ -23,27 +23,64 @@ export const generateDocHash = (seedStr) => {
   return Math.abs(hashVal).toString(16).toUpperCase().padStart(8, '0');
 };
 
-const formatDateOnly = (dateStr) => {
-  if (!dateStr) return '-';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return String(dateStr).split(' ')[0] || '-';
-    return d.toLocaleDateString('pt-BR');
-  } catch {
+export const formatDateOnly = (dateStr) => {
+  if (!dateStr || dateStr === '-' || dateStr === '.' || String(dateStr).trim().toLowerCase() === 'sem vistoria') {
     return '-';
   }
+  const str = String(dateStr).trim();
+
+  // 1. Se já está no formato brasileiro DD/MM/YYYY (ex: "03/09/2026" ou "03/09/2026 10:00:00" ou "03/09/2026,")
+  const brMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (brMatch) {
+    const d = brMatch[1].padStart(2, '0');
+    const m = brMatch[2].padStart(2, '0');
+    const y = brMatch[3];
+    return `${d}/${m}/${y}`;
+  }
+
+  // 2. Se está no formato ISO ou YYYY-MM-DD (ex: "2026-09-03" ou "2026-09-03T10:00:00")
+  const isoMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (isoMatch) {
+    const y = isoMatch[1];
+    const m = isoMatch[2].padStart(2, '0');
+    const d = isoMatch[3].padStart(2, '0');
+    return `${d}/${m}/${y}`;
+  }
+
+  // 3. Fallback seguro para instâncias de Date ou timestamps
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+  } catch (_) {}
+
+  return str.split(' ')[0].replace(/[,;]/g, '') || '-';
 };
 
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return '-';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return String(dateStr);
-    return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-  } catch {
-    return String(dateStr);
+export const formatDateTime = (dateStr) => {
+  if (!dateStr || dateStr === '-') return '-';
+  if (dateStr instanceof Date) {
+    const day = String(dateStr.getDate()).padStart(2, '0');
+    const month = String(dateStr.getMonth() + 1).padStart(2, '0');
+    const year = dateStr.getFullYear();
+    const hours = String(dateStr.getHours()).padStart(2, '0');
+    const mins = String(dateStr.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} às ${hours}:${mins}`;
   }
+  const str = String(dateStr).trim();
+  const dateOnly = formatDateOnly(str);
+  if (dateOnly === '-') return '-';
+  const timeMatch = str.match(/(\d{2}:\d{2}(?::\d{2})?)/);
+  if (timeMatch) {
+    return `${dateOnly} às ${timeMatch[1].slice(0, 5)}`;
+  }
+  return dateOnly;
 };
+
 
 /**
  * Verifica se um hidrante ou registro de vistoria possui inconformidade/problema cadastrado

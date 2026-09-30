@@ -78,7 +78,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
 
   const formatDateOnly = (dateStr) => {
     if (!dateStr || dateStr === '-') return '-';
-    return String(dateStr).split(' ')[0];
+    return String(dateStr).split(' ')[0].replace(/[,;]/g, '').trim();
   };
 
   const getYear = (dateStr) => {
