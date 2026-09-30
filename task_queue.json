@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-152",
   "queue": [
     {
       "id": "TASK-1",
@@ -1518,6 +1518,26 @@
       "createdAt": "2026-09-30T18:18:44.892Z",
       "startedAt": "2026-09-30T18:32:42.675Z",
       "completedAt": "2026-09-30T18:36:03.085Z"
+    },
+    {
+      "id": "TASK-151",
+      "seq": 151,
+      "conversationId": "ab28720b-3f79-46c7-b4c7-1c49df965dee",
+      "description": "Remover aviso amarelo do historico de vistorias",
+      "status": "completed",
+      "createdAt": "2026-09-30T18:47:37.337Z",
+      "startedAt": "2026-09-30T18:47:40.716Z",
+      "completedAt": "2026-09-30T18:49:59.524Z"
+    },
+    {
+      "id": "TASK-152",
+      "seq": 152,
+      "conversationId": "30a26634-0f70-478f-8408-4a6dd8ad261f",
+      "description": "Remover codigo argos legado da dialog e modais",
+      "status": "running",
+      "createdAt": "2026-09-30T18:48:30.094Z",
+      "startedAt": "2026-09-30T18:50:00.834Z",
+      "completedAt": null
     }
   ]
 }
