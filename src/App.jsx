@@ -32,7 +32,7 @@ import { extractProblemsList, isHidranteRemovido } from './utils/problemUtils';
 import { fixEncoding } from './utils/textUtils';
 import { getLastKnownLocation, startGlobalGeoTracking, subscribeLocation } from './utils/geoTracker';
 import { optimizeRouteEuclidean } from './utils/routeOptimization';
-import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent } from './utils/idMapping';
+import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent, translateId } from './utils/idMapping';
 import { getHydrantPhoto, preloadHydrantPhoto, preloadHydrantsList } from './utils/hydrantPhotoUtils';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -355,11 +355,63 @@ syncPreferences({ activeView: view });
     return hidrantes.filter(h => isHydrantInSet(h, currentMission.selectedIds));
   }, [currentMission, hidrantes]);
 
-  // Extrai APENAS os hidrantes PENDENTES (não vistoriados) da rota da missão ativa
+  // Extrai APENAS os hidrantes PENDENTES (não vistoriados) da rota da missão ativa rigorosamente ordenados pela rota
   const pendingRouteHydrants = useMemo(() => {
     if (!allMissionRouteHydrants || allMissionRouteHydrants.length === 0) return [];
-    return allMissionRouteHydrants.filter(h => !isHydrantInSet(h, currentMission?.completedIds || []));
-  }, [allMissionRouteHydrants, currentMission?.completedIds]);
+    const pendingList = allMissionRouteHydrants.filter(h => !isHydrantInSet(h, currentMission?.completedIds || []));
+    if (pendingList.length === 0) return [];
+
+    // 1. Prioriza a rota otimizada salva em currentMission.orderedIds
+    let ordered = (currentMission?.orderedIds && Array.isArray(currentMission.orderedIds) && currentMission.orderedIds.length > 0)
+      ? currentMission.orderedIds
+      : null;
+
+    // 2. Recuperação ultra-resiliente via cache local se currentMission perdeu orderedIds
+    if (!ordered && currentMission?.id) {
+      try {
+        const cached = localStorage.getItem(`netuno_mission_ordered_${currentMission.id}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            ordered = parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (ordered && ordered.length > 0) {
+      const orderedMap = new Map();
+      ordered.forEach((id, idx) => {
+        const s = String(id).trim();
+        orderedMap.set(s, idx);
+        const trans = translateId(s);
+        if (trans) orderedMap.set(trans, idx);
+      });
+      return [...pendingList].sort((a, b) => {
+        const allA = getHydrantAllIds(a);
+        const allB = getHydrantAllIds(b);
+        let idxA = 999999;
+        for (const id of allA) {
+          if (orderedMap.has(id)) { idxA = Math.min(idxA, orderedMap.get(id)); }
+        }
+        let idxB = 999999;
+        for (const id of allB) {
+          if (orderedMap.has(id)) { idxB = Math.min(idxB, orderedMap.get(id)); }
+        }
+        return idxA - idxB;
+      });
+    }
+
+    // 3. Fallback instantâneo ordenado por distância GPS (idêntico ao MapComponent)
+    try {
+      const loc = userLocation || getLastKnownLocation();
+      const anchorLat = loc?.lat || pendingList[0]?.numLatitude;
+      const anchorLng = loc?.lng || pendingList[0]?.numLongitude;
+      return optimizeRouteEuclidean(pendingList, anchorLat, anchorLng);
+    } catch (e) {
+      return pendingList;
+    }
+  }, [allMissionRouteHydrants, currentMission?.completedIds, currentMission?.orderedIds, currentMission?.id, userLocation]);
 
   // Pré-carregamento agressivo em background dos primeiros hidrantes da rota para acesso instantâneo pós-login
   useEffect(() => {
@@ -2400,7 +2452,7 @@ syncPreferences({ filters: filters });
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-bold transition-all shadow-md shadow-blue-950/50 cursor-pointer"
-                      title={`Navegar no Waze para o próximo hidrante (${pendingRouteHydrants[0].nomHidrante || pendingRouteHydrants[0].codHidrante || ''})`}
+                      title={`Navegar no Waze para o próximo hidrante (Pino 1: ${pendingRouteHydrants[0].nomHidrante || pendingRouteHydrants[0].codHidrante || ''})`}
                     >
                       <Navigation size={13} className="text-white fill-white shrink-0" />
                       <span>Navegar para o Próximo (Waze)</span>
