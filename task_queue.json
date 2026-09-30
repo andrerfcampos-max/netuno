@@ -1514,10 +1514,10 @@
       "seq": 150,
       "conversationId": "e23d115d-18c8-4739-b799-d8e2afb86490",
       "description": "Fix map bounds fit on first open from mission",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-09-30T18:18:44.892Z",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-09-30T18:32:42.675Z",
+      "completedAt": "2026-09-30T18:36:03.085Z"
     }
   ]
 }
