@@ -983,10 +983,10 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
               <button 
                 onClick={() => { handlePrint(); setIsExportMenuOpen(false); }}
                 className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
-                title={reportType === 'caesb' ? 'Baixar PDF CAESB para anexar como Documento Externo no SEI' : 'Abrir visualização para impressão/PDF'}
+                title={reportType === 'caesb' ? 'Baixar PDF CAESB diretamente' : 'Baixar PDF oficial diretamente'}
               >
-                <Printer size={16} className="text-cyan-400 shrink-0" />
-                <span>{reportType === 'caesb' ? 'Abrir / Baixar PDF CAESB' : 'Abrir PDF / Imprimir'}</span>
+                <Download size={16} className="text-cyan-400 shrink-0" />
+                <span>{reportType === 'caesb' ? 'Baixar PDF CAESB' : 'Baixar PDF'}</span>
               </button>
 
               {/* Botão 2: Copiar Minuta SEI (CAESB) ou Copiar Dados (Interno) */}

@@ -128,10 +128,10 @@ export const extractPhotos = (h) => {
 };
 
 /**
- * Utilitário central de abertura no Leitor de PDF / Impressão Nativo do Navegador.
- * Permite ao usuário visualizar o documento em tela cheia, com barra de ações
- * imediatas para Salvar como PDF, Compartilhar ou Fechar.
- * Restaura o nome padronizado original do arquivo no diálogo de download, eliminando 'netuno.pdf'.
+ * Utilitário central de Geração e Impressão Direta do PDF Oficial no Navegador.
+ * Elimina a etapa intermediária de popup/barra manual: ao clicar em "Baixar PDF",
+ * renderiza o documento em plano de fundo e abre imediatamente o diálogo nativo do Chrome
+ * configurado com o nome padronizado oficial (ex: Relatorio_Geral_CBMDF_...).
  */
 export const executePrintHtml = (html, docTitle = '') => {
   try {
@@ -140,187 +140,11 @@ export const executePrintHtml = (html, docTitle = '') => {
     const standardTitle = docTitle || (titleMatch ? titleMatch[1] : 'Relatorio_Netuno_CBMDF');
 
     // 2. Garante que o documento principal também reflita temporariamente o nome padronizado
-    // prevenindo que navegadores desktop/mobile salvem como "netuno.pdf"
+    // para que o Chrome sugira exatamente este nome ao salvar como PDF
     const prevMainTitle = document.title;
     document.title = standardTitle;
-    setTimeout(() => {
-      try { document.title = prevMainTitle; } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
-    }, 20000);
 
-    // 3. Estilos e Barra Superior do Leitor de PDF (ativa em tela, oculta na impressão física/PDF)
-    const readerToolbarStyle = `
-      <style>
-        .netuno-pdf-toolbar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 48px;
-          background: #0f172a;
-          color: #f8fafc;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 16px;
-          z-index: 999999;
-          box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-          font-family: Arial, Helvetica, sans-serif;
-        }
-        .netuno-pdf-title {
-          font-size: 13px;
-          font-weight: bold;
-          color: #38bdf8;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        .netuno-pdf-actions {
-          display: flex;
-          gap: 8px;
-          align-items: center;
-        }
-        .netuno-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 14px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: bold;
-          cursor: pointer;
-          border: none;
-          transition: background 0.2s, transform 0.1s;
-        }
-        .netuno-btn:active { transform: scale(0.97); }
-        .netuno-btn-print {
-          background: #0284c7;
-          color: #ffffff;
-        }
-        .netuno-btn-print:hover { background: #0369a1; }
-        .netuno-btn-share {
-          background: #059669;
-          color: #ffffff;
-        }
-        .netuno-btn-share:hover { background: #047857; }
-        .netuno-btn-close {
-          background: #334155;
-          color: #e2e8f0;
-        }
-        .netuno-btn-close:hover { background: #475569; }
-        @media screen {
-          body {
-            padding-top: 56px !important;
-            background: #cbd5e1 !important;
-            margin: 0 !important;
-          }
-          .netuno-document-sheet {
-            max-width: 210mm;
-            margin: 16px auto !important;
-            background: #ffffff !important;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.18) !important;
-            border-radius: 4px;
-            padding: 12mm 10mm !important;
-            box-sizing: border-box;
-          }
-        }
-        @media print {
-          .netuno-pdf-toolbar {
-            display: none !important;
-          }
-          body {
-            padding-top: 0 !important;
-            background: #ffffff !important;
-            margin: 0 !important;
-          }
-          .netuno-document-sheet {
-            padding: 0 !important;
-            margin: 0 !important;
-            max-width: none !important;
-            box-shadow: none !important;
-            background: transparent !important;
-          }
-        }
-      </style>
-    `;
-
-    const readerToolbarHtml = `
-      <div class="netuno-pdf-toolbar no-print">
-        <div class="netuno-pdf-title">
-          <span>📄</span>
-          <span>${standardTitle.replace(/_/g, ' ')}</span>
-        </div>
-        <div class="netuno-pdf-actions">
-          <button type="button" class="netuno-btn netuno-btn-print" onclick="window.print()" title="Salvar como PDF ou Imprimir">
-            🖨️ Salvar PDF / Imprimir
-          </button>
-          <button type="button" class="netuno-btn netuno-btn-share" onclick="handleShareDocumento()" title="Compartilhar documento">
-            📲 Compartilhar
-          </button>
-          <button type="button" class="netuno-btn netuno-btn-close" onclick="window.close()" title="Fechar leitor">
-            ✕ Fechar
-          </button>
-        </div>
-      </div>
-      <script>
-        function handleShareDocumento() {
-          if (navigator.share) {
-            navigator.share({
-              title: document.title,
-              text: 'Relatório Oficial Sistema Netuno - CBMDF: ' + document.title,
-              url: window.location.href
-            }).catch(function() {});
-          } else {
-            window.print();
-          }
-        }
-      </script>
-    `;
-
-    // Injeta estilo no head e toolbar no body, envolvendo o conteúdo na folha .netuno-document-sheet
-    let fullHtml = html;
-    if (fullHtml.includes('</head>')) {
-      fullHtml = fullHtml.replace('</head>', `${readerToolbarStyle}</head>`);
-    } else {
-      fullHtml = readerToolbarStyle + fullHtml;
-    }
-
-    if (fullHtml.includes('<body')) {
-      fullHtml = fullHtml.replace(/<body([^>]*)>([\s\S]*)<\/body>/i, (match, bodyAttrs, bodyContent) => {
-        return `<body${bodyAttrs}>${readerToolbarHtml}<div class="netuno-document-sheet">${bodyContent}</div></body>`;
-      });
-    } else {
-      fullHtml = `${readerToolbarHtml}<div class="netuno-document-sheet">${fullHtml}</div>`;
-    }
-
-    // 4. Abre em nova aba no leitor padrão/nativo do navegador
-    let printWindow = null;
-    try {
-      printWindow = window.open('', '_blank');
-    } catch (err) {
-      console.warn('Falha ao abrir nova aba para leitor de PDF:', err);
-    }
-
-    if (printWindow && printWindow.document) {
-      printWindow.document.open();
-      printWindow.document.write(fullHtml);
-      printWindow.document.close();
-      if (printWindow.focus) printWindow.focus();
-      return;
-    }
-
-    // Fallback: se o navegador bloquear popup, aciona iframe invisível de impressão
-    fallbackIframePrint(fullHtml);
-  } catch (e) {
-    console.error('Erro ao acionar leitor de PDF/impressão:', e);
-    fallbackPopupPrint(html);
-  }
-};
-
-export const fallbackIframePrint = (html) => {
-  try {
+    // 3. Remove iframe anterior caso existente
     const existing = document.getElementById('netuno-print-iframe');
     if (existing) existing.remove();
 
@@ -342,42 +166,101 @@ export const fallbackIframePrint = (html) => {
     doc.write(html);
     doc.close();
 
+    const cleanup = () => {
+      setTimeout(() => {
+        try { document.title = prevMainTitle; } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
+        const frame = document.getElementById('netuno-print-iframe');
+        if (frame) frame.remove();
+      }, 600);
+    };
+
+    let printDone = false;
     const doPrint = () => {
+      if (printDone) return;
+      printDone = true;
       try {
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
       } catch (err) {
-        fallbackPopupPrint(html);
+        console.warn('Falha no iframe.print, utilizando popup direto:', err);
+        fallbackPopupPrint(html, standardTitle);
       }
     };
 
-    const cleanup = () => {
-      setTimeout(() => {
-        const frame = document.getElementById('netuno-print-iframe');
-        if (frame) frame.remove();
-      }, 500);
-    };
-
     iframe.contentWindow.addEventListener('afterprint', cleanup);
-    setTimeout(doPrint, 350);
-  } catch (err) {
-    fallbackPopupPrint(html);
+
+    // Aguarda fotos/imagens renderizarem antes de abrir o diálogo do PDF
+    const images = iframe.contentWindow.document.images;
+    if (images && images.length > 0) {
+      let loadedCount = 0;
+      const totalImages = images.length;
+
+      const checkAllImages = () => {
+        loadedCount++;
+        if (loadedCount >= totalImages) {
+          setTimeout(doPrint, 150);
+        }
+      };
+
+      for (let i = 0; i < totalImages; i++) {
+        if (images[i].complete) {
+          loadedCount++;
+        } else {
+          images[i].onload = checkAllImages;
+          images[i].onerror = checkAllImages;
+        }
+      }
+
+      if (loadedCount >= totalImages) {
+        setTimeout(doPrint, 150);
+      } else {
+        // Timeout de salvaguarda caso alguma imagem demore
+        setTimeout(doPrint, 1200);
+      }
+    } else {
+      setTimeout(doPrint, 200);
+    }
+  } catch (e) {
+    console.error('Erro ao acionar impressão direta de PDF:', e);
+    fallbackPopupPrint(html, docTitle);
   }
 };
 
-export const fallbackPopupPrint = (html) => {
-  const printWindow = window.open('', '_blank', 'width=1050,height=850');
-  if (!printWindow) {
-    alert('Por favor, autorize a abertura de popups no seu navegador para gerar o PDF oficial.');
-    return;
+export const fallbackIframePrint = (html, docTitle = '') => {
+  executePrintHtml(html, docTitle);
+};
+
+export const fallbackPopupPrint = (html, docTitle = '') => {
+  try {
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+    const standardTitle = docTitle || (titleMatch ? titleMatch[1] : 'Relatorio_Netuno_CBMDF');
+
+    const printWindow = window.open('', '_blank', 'width=1050,height=850');
+    if (!printWindow) {
+      alert('Por favor, autorize popups para que o diálogo de Salvar PDF possa ser acionado.');
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.document.title = standardTitle;
+
+    printWindow.addEventListener('afterprint', () => {
+      try { printWindow.close(); } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
+    });
+
+    setTimeout(() => {
+      try {
+        printWindow.focus();
+        printWindow.print();
+      } catch (e) {
+        console.warn('Falha no printWindow.print:', e);
+      }
+    }, 450);
+  } catch (err) {
+    console.error('Falha no fallbackPopupPrint:', err);
   }
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
-  printWindow.focus();
-  printWindow.addEventListener('afterprint', () => {
-    try { printWindow.close(); } catch (e) { console.warn("[SafeCatch] Erro mitigado:", e); }
-  });
 };
 
 /**
@@ -621,11 +504,11 @@ export const printGeneralReport = ({
   })).filter(item => item.extractedPhotos.length > 0);
 
   const totalFotosCount = hidrantesComFotos.reduce((acc, h) => acc + h.extractedPhotos.length, 0);
-  const shouldBreakPage = currentData.length > 2 || totalFotosCount > 1;
+  const shouldBreakPage = currentData.length > 3 || (currentData.length > 1 && totalFotosCount > 2) || totalFotosCount > 4;
 
   const anexoFotograficoHtml = hidrantesComFotos.length > 0 ? `
     <div class="section-block ${shouldBreakPage ? 'page-break-before' : 'avoid-break'}">
-      <div class="section-title" style="font-size: 12.5px; border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin-top: ${shouldBreakPage ? '16px' : '10px'}; margin-bottom: 12px;">
+      <div class="section-title" style="font-size: 12px; border-bottom: 2px solid #0f172a; padding-bottom: 3px; margin-top: ${shouldBreakPage ? '14px' : '6px'}; margin-bottom: 8px;">
         📷 Anexo Fotográfico - Evidências das Vistorias (${totalFotosCount} ${totalFotosCount === 1 ? 'registro fotográfico' : 'registros fotográficos'}${hidrantesComFotos.length > 1 ? ` em ${hidrantesComFotos.length} hidrantes` : ''})
       </div>
       <div class="photos-grid">
@@ -702,16 +585,23 @@ export const printGeneralReport = ({
   const docSeed = `${nowStr}_${currentData.length}_${operantes}_${inoperantes}_${emissorNome}_${rasPresentes}`;
   const docHash = generateDocHash(docSeed);
 
+  const docTitle = buildReportFileName({
+    prefix: 'Relatorio_Geral_CBMDF',
+    rasPresentes,
+    activeFilters,
+    currentMission
+  });
+
   const html = `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
       <meta charset="utf-8">
-      <title>Relatorio_Geral_CBMDF_${nowStr.replace(/[^0-9]/g, '_')}</title>
+      <title>${docTitle}</title>
       <style>
         @page {
           size: A4 portrait;
-          margin: 8mm 10mm 14mm 10mm;
+          margin: 6mm 8mm 6mm 8mm;
         }
         * {
           box-sizing: border-box;
@@ -724,14 +614,14 @@ export const printGeneralReport = ({
           font-family: Arial, Helvetica, sans-serif;
           color: #0f172a;
           background: #ffffff;
-          line-height: 1.35;
-          font-size: 11px;
-          padding: 2px 2px 22px 2px;
+          line-height: 1.3;
+          font-size: 10.5px;
+          padding: 2px 2px 8px 2px;
         }
         .official-header {
-          border-bottom: 2.5px solid #0f172a;
-          padding-bottom: 10px;
-          margin-bottom: 14px;
+          border-bottom: 2px solid #0f172a;
+          padding-bottom: 6px;
+          margin-bottom: 8px;
           text-align: center;
         }
         .header-title-box {
@@ -772,8 +662,8 @@ export const printGeneralReport = ({
         
         .kpi-overview-container {
           display: flex;
-          gap: 10px;
-          margin-bottom: 14px;
+          gap: 8px;
+          margin-bottom: 8px;
           align-items: stretch;
         }
         .kpi-cards-grid {
@@ -1064,11 +954,11 @@ export const printGeneralReport = ({
         .photo-gallery-2 {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 10px;
+          gap: 8px;
           width: 100%;
         }
         .photo-item-2 {
-          height: 220px;
+          height: 185px;
         }
 
         /* 3 Fotos: 3 Colunas na mesma linha ocupando 100% da largura */
@@ -1117,8 +1007,8 @@ export const printGeneralReport = ({
 
         .charts-row {
           display: flex;
-          gap: 12px;
-          margin-bottom: 12px;
+          gap: 10px;
+          margin-bottom: 8px;
           width: 100%;
         }
         .chart-card {
@@ -1204,8 +1094,8 @@ export const printGeneralReport = ({
         }
 
         .signature-section {
-          margin-top: 20px;
-          padding-top: 8px;
+          margin-top: 10px;
+          padding-top: 4px;
           text-align: center;
           page-break-inside: avoid;
         }
@@ -1320,12 +1210,6 @@ export const printGeneralReport = ({
     </html>
   `;
 
-  const docTitle = buildReportFileName({
-    prefix: 'Relatorio_Geral_CBMDF',
-    rasPresentes,
-    activeFilters,
-    currentMission
-  });
   executePrintHtml(html, docTitle);
 };
 
@@ -1478,11 +1362,11 @@ export const generateCaesbReportHtml = ({
   })).filter(item => item.extractedPhotos.length > 0);
 
   const totalFotosCount = hidrantesComFotos.reduce((acc, h) => acc + h.extractedPhotos.length, 0);
-  const shouldBreakPage = caesbData.length > 2 || totalFotosCount > 1;
+  const shouldBreakPage = caesbData.length > 3 || (caesbData.length > 1 && totalFotosCount > 2) || totalFotosCount > 4;
 
   const anexoFotograficoHtml = hidrantesComFotos.length > 0 ? `
     <div class="section-block ${shouldBreakPage ? 'page-break-before' : 'avoid-break'}">
-      <div class="section-title" style="font-size: 12.5px; border-bottom: 2px solid #047857; color: #065f46; padding-bottom: 4px; margin-top: ${shouldBreakPage ? '16px' : '10px'}; margin-bottom: 12px;">
+      <div class="section-title" style="font-size: 12px; border-bottom: 2px solid #047857; color: #065f46; padding-bottom: 3px; margin-top: ${shouldBreakPage ? '14px' : '6px'}; margin-bottom: 8px;">
         📷 Anexo Fotográfico - Evidências das Vistorias (${totalFotosCount} ${totalFotosCount === 1 ? 'registro fotográfico' : 'registros fotográficos'}${hidrantesComFotos.length > 1 ? ` em ${hidrantesComFotos.length} hidrantes` : ''})
       </div>
       <div class="photos-grid">
@@ -1575,7 +1459,7 @@ export const generateCaesbReportHtml = ({
       <style>
         @page {
           size: A4 portrait;
-          margin: 8mm 10mm 14mm 10mm;
+          margin: 6mm 8mm 6mm 8mm;
         }
         * {
           box-sizing: border-box;
@@ -1588,14 +1472,14 @@ export const generateCaesbReportHtml = ({
           font-family: Arial, Helvetica, sans-serif;
           color: #0f172a;
           background: #ffffff;
-          line-height: 1.35;
-          font-size: 11px;
-          padding: 2px 2px 22px 2px;
+          line-height: 1.3;
+          font-size: 10.5px;
+          padding: 2px 2px 8px 2px;
         }
         .official-header {
-          border-bottom: 2.5px solid #0f172a;
-          padding-bottom: 10px;
-          margin-bottom: 14px;
+          border-bottom: 2px solid #0f172a;
+          padding-bottom: 6px;
+          margin-bottom: 8px;
           text-align: center;
         }
         .header-title-box {
@@ -1953,11 +1837,11 @@ export const generateCaesbReportHtml = ({
         .photo-gallery-2 {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 10px;
+          gap: 8px;
           width: 100%;
         }
         .photo-item-2 {
-          height: 220px;
+          height: 185px;
         }
 
         .photo-gallery-3 {
@@ -2016,8 +1900,8 @@ export const generateCaesbReportHtml = ({
         }
 
         .signature-section {
-          margin-top: 20px;
-          padding-top: 8px;
+          margin-top: 10px;
+          padding-top: 4px;
           text-align: center;
           page-break-inside: avoid;
         }
