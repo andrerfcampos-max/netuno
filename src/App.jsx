@@ -380,7 +380,8 @@ syncPreferences({ activeView: view });
   // Dispara o zoom tático na rota ao retornar para a tela de mapa quando o modo rota estiver ativo
   const prevViewRef = useRef(activeView);
   useEffect(() => {
-    if (prevViewRef.current === 'route' && activeView === 'map' && activeMissionId && isRouteActiveOnMap) {
+    if (prevViewRef.current !== 'map' && activeView === 'map' && activeMissionId && isRouteActiveOnMap) {
+      setMapCenterPosition(null);
       setRouteFitTrigger(Date.now());
     }
     prevViewRef.current = activeView;
@@ -1548,6 +1549,7 @@ syncPreferences({ filters: filters });
   };
 
   const handleOpenMission = (id) => {
+    setMapCenterPosition(null);
     setOpenMissionIds([id]);
     setActiveMissionId(id);
     setIsRouteActiveOnMap(true);
@@ -2584,6 +2586,7 @@ syncPreferences({ filters: filters });
               currentMission={currentMission}
               onUpdateMission={(updates) => updateCurrentMission(updates)}
               onViewOnMap={() => {
+                setMapCenterPosition(null);
                 setIsRouteActiveOnMap(true);
                 setRouteFitTrigger(Date.now());
                 setActiveView('map');

@@ -461,120 +461,155 @@ const AutoFitFilteredBounds = ({ hidrantes, centerPosition, selectedHydrant, has
   return null;
 };
 
-// COMPONENTE DE ZOOM TÁTICO: Centraliza no usuário e nos 4 ou 5 hidrantes mais próximos da rota ativa
+// COMPONENTE DE ZOOM TÁTICO: Centraliza no usuário e nos 4 ou 5 hidrantes mais próximos da rota ativa (ou enquadra a rota)
 const RouteNearbyAutoFitter = ({ 
   routeFitTrigger, 
   activeMissionHydrants, 
   completedMissionIds = [], 
   userLocation, 
   centerPosition, 
-  selectedHydrant 
+  selectedHydrant,
+  activeView
 }) => {
   const map = useMap();
   const lastTriggerRef = useRef(null);
   const pendingFitRef = useRef(false);
 
   const executeFit = (userLoc) => {
-    if (!activeMissionHydrants || activeMissionHydrants.length === 0) return;
+    if (!activeMissionHydrants || activeMissionHydrants.length === 0) {
+      pendingFitRef.current = true;
+      return;
+    }
 
     const validHydrants = activeMissionHydrants.filter(h => 
       isValidDFCoordinate(h.numLatitude, h.numLongitude)
     );
-    if (validHydrants.length === 0) return;
-
-    const completedSet = new Set((completedMissionIds || []).map(String));
-    
-    // Prioriza hidrantes pendentes da rota
-    let targets = validHydrants.filter(h => {
-      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-      const k3 = h._internalId ? String(h._internalId) : null;
-      return !((k1 && completedSet.has(k1)) || (k2 && completedSet.has(k2)) || (k3 && completedSet.has(k3)));
-    });
-
-    if (targets.length === 0) {
-      targets = validHydrants;
+    if (validHydrants.length === 0) {
+      pendingFitRef.current = true;
+      return;
     }
 
-    const hasUserLoc = userLoc && typeof userLoc.lat === 'number' && typeof userLoc.lng === 'number' &&
-      !isNaN(userLoc.lat) && !isNaN(userLoc.lng);
+    const doFit = () => {
+      try {
+        map.invalidateSize({ animate: false });
+      } catch (e) {}
 
-    const isMobile = window.innerWidth < 768;
-
-    if (hasUserLoc) {
-      // Ordena os hidrantes da rota pela proximidade euclidiana com a posição do usuário
-      const sortedByDistance = [...targets].sort((a, b) => {
-        const dLatA = a.numLatitude - userLoc.lat;
-        const dLngA = a.numLongitude - userLoc.lng;
-        const dLatB = b.numLatitude - userLoc.lat;
-        const dLngB = b.numLongitude - userLoc.lng;
-        return (dLatA * dLatA + dLngA * dLngA) - (dLatB * dLatB + dLngB * dLngB);
+      const completedSet = new Set((completedMissionIds || []).map(String));
+      
+      // Prioriza hidrantes pendentes da rota
+      let targets = validHydrants.filter(h => {
+        const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
+        const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+        const k3 = h._internalId ? String(h._internalId) : null;
+        return !((k1 && completedSet.has(k1)) || (k2 && completedSet.has(k2)) || (k3 && completedSet.has(k3)));
       });
 
-      // Pega até 5 hidrantes da rota mais próximos da localização do usuário
-      const nearest5 = sortedByDistance.slice(0, 5);
-
-      // Enquadra a posição do usuário + os 4 ou 5 hidrantes mais próximos
-      const points = [
-        [userLoc.lat, userLoc.lng],
-        ...nearest5.map(h => [h.numLatitude, h.numLongitude])
-      ];
-
-      const bounds = L.latLngBounds(points);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, {
-          paddingTopLeft: isMobile ? [40, 40] : [60, 60],
-          paddingBottomRight: isMobile ? [40, 95] : [60, 60],
-          maxZoom: 17,
-          animate: true,
-          duration: 0.8
-        });
+      if (targets.length === 0) {
+        targets = validHydrants;
       }
-    } else {
-      // Fallback gracioso sem GPS: enquadra os 5 primeiros hidrantes da rota
-      const first5 = targets.slice(0, 5);
-      const points = first5.map(h => [h.numLatitude, h.numLongitude]);
-      const bounds = L.latLngBounds(points);
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, {
-          padding: isMobile ? [40, 40] : [60, 60],
-          maxZoom: 16,
-          animate: true,
-          duration: 0.8
-        });
+
+      const hasUserLoc = userLoc && typeof userLoc.lat === 'number' && typeof userLoc.lng === 'number' &&
+        !isNaN(userLoc.lat) && !isNaN(userLoc.lng);
+
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+      // Verifica se o militar está próximo da rota (distância < ~8 km)
+      let isUserNearby = false;
+      if (hasUserLoc) {
+        const minDistance = Math.min(...targets.map(h => 
+          Math.hypot(h.numLatitude - userLoc.lat, h.numLongitude - userLoc.lng)
+        ));
+        isUserNearby = minDistance < 0.08;
       }
-    }
+
+      let points = [];
+      if (hasUserLoc && isUserNearby) {
+        // Ordena os hidrantes da rota pela proximidade euclidiana com a posição do usuário
+        const sortedByDistance = [...targets].sort((a, b) => {
+          const dLatA = a.numLatitude - userLoc.lat;
+          const dLngA = a.numLongitude - userLoc.lng;
+          const dLatB = b.numLatitude - userLoc.lat;
+          const dLngB = b.numLongitude - userLoc.lng;
+          return (dLatA * dLatA + dLngA * dLngA) - (dLatB * dLatB + dLngB * dLngB);
+        });
+
+        // Pega até 5 hidrantes da rota mais próximos da localização do usuário
+        const nearest5 = sortedByDistance.slice(0, 5);
+
+        // Enquadra a posição do usuário + os 4 ou 5 hidrantes mais próximos
+        points = [
+          [userLoc.lat, userLoc.lng],
+          ...nearest5.map(h => [h.numLatitude, h.numLongitude])
+        ];
+      } else {
+        // Militar longe (> 8km) ou sem GPS: enquadra diretamente os pinos da rota
+        const targetCount = targets.length <= 8 ? targets.length : 6;
+        points = targets.slice(0, targetCount).map(h => [h.numLatitude, h.numLongitude]);
+      }
+
+      if (points.length === 0) return;
+
+      if (points.length === 1) {
+        map.setView(points[0], 16, { animate: true });
+      } else {
+        const bounds = L.latLngBounds(points);
+        if (bounds.isValid()) {
+          map.fitBounds(bounds, {
+            paddingTopLeft: isMobile ? [40, 40] : [60, 60],
+            paddingBottomRight: isMobile ? [40, 95] : [60, 60],
+            maxZoom: 17,
+            animate: true,
+            duration: 0.8
+          });
+        }
+      }
+
+      lastTriggerRef.current = routeFitTrigger;
+      pendingFitRef.current = false;
+    };
+
+    // Garante que o Leaflet tenha dimensões válidas no DOM antes de calcular fitBounds
+    try {
+      map.invalidateSize({ animate: false });
+    } catch (e) {}
+
+    const size = map.getSize();
+    const delay = (!size || size.x === 0 || size.y === 0) ? 120 : 60;
+    const timer = setTimeout(() => {
+      doFit();
+    }, delay);
+    return () => clearTimeout(timer);
   };
 
-  // Dispara quando routeFitTrigger for acionado (ao voltar da rota para o mapa)
+  // Dispara quando routeFitTrigger for acionado OU quando activeView virar 'map' OU hidrantes da missão carregarem
   useEffect(() => {
-    if (!routeFitTrigger || routeFitTrigger === lastTriggerRef.current) return;
     if (centerPosition || selectedHydrant) return;
 
-    lastTriggerRef.current = routeFitTrigger;
+    const hasNewTrigger = Boolean(routeFitTrigger && routeFitTrigger !== lastTriggerRef.current);
+    if (hasNewTrigger) {
+      pendingFitRef.current = true;
+    }
+
+    if (!pendingFitRef.current) return;
+
+    // Se ainda não estiver na visão de mapa, aguarda mudar para 'map'
+    if (activeView !== 'map') return;
+
+    // Se ainda não tiver hidrantes da missão carregados, aguarda
+    if (!activeMissionHydrants || activeMissionHydrants.length === 0) return;
 
     if (userLocation && typeof userLocation.lat === 'number') {
-      executeFit(userLocation);
-      pendingFitRef.current = false;
+      const cleanup = executeFit(userLocation);
+      return cleanup;
     } else {
-      pendingFitRef.current = true;
       const timer = setTimeout(() => {
-        if (pendingFitRef.current) {
-          pendingFitRef.current = false;
+        if (pendingFitRef.current && activeView === 'map') {
           executeFit(null);
         }
-      }, 2500);
+      }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [routeFitTrigger, centerPosition, selectedHydrant, activeMissionHydrants, completedMissionIds]);
-
-  // Se o GPS atualizou e estávamos aguardando o foco inicial
-  useEffect(() => {
-    if (pendingFitRef.current && userLocation && typeof userLocation.lat === 'number') {
-      pendingFitRef.current = false;
-      executeFit(userLocation);
-    }
-  }, [userLocation]);
+  }, [routeFitTrigger, activeView, centerPosition, selectedHydrant, activeMissionHydrants, completedMissionIds, userLocation]);
 
   return null;
 };
@@ -1410,6 +1445,7 @@ const MapComponent = ({
           userLocation={userLocation} 
           centerPosition={centerPosition} 
           selectedHydrant={selectedHydrant} 
+          activeView={activeView}
         />
         <MapMemory currentUser={currentUser} />
         <MapClickHandler selectedHydrant={selectedHydrant} onSelectHydrant={handleCloseHydrant} />
