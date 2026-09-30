@@ -1338,6 +1338,56 @@ syncPreferences({ filters: filters });
 
     syncHydrantMutationToCloud('update', reverted);
 
+    // Reverte o status de hidrante concluído na rota de missões ativas e salvas
+    const targetAllIds = new Set(getHydrantAllIds(sanitized).map(x => String(x).trim().toUpperCase()));
+    if (sanitized._internalId) targetAllIds.add(String(sanitized._internalId).trim().toUpperCase());
+    if (sanitized.codHidrante !== undefined && sanitized.codHidrante !== null) targetAllIds.add(String(sanitized.codHidrante).trim().toUpperCase());
+    if (sanitized.nomHidrante) targetAllIds.add(String(sanitized.nomHidrante).trim().toUpperCase());
+
+    const isMatchHydrantId = (id) => {
+      if (!id) return false;
+      const s = String(id).trim().toUpperCase();
+      if (targetAllIds.has(s)) return true;
+      return areIdsEquivalent(id, sanitized.codHidrante || sanitized.nomHidrante || sanitized._internalId);
+    };
+
+    let missionsChanged = false;
+    const newMissions = missions.map(m => {
+      const curComp = m.completedIds || [];
+      const isCompletedInMission = curComp.some(id => isMatchHydrantId(id));
+      if (isCompletedInMission) {
+        missionsChanged = true;
+        const newCompleted = curComp.filter(id => !isMatchHydrantId(id));
+        
+        // Reinsere o hidrante na lista ordenada da rota, colocando-o no topo para guiar o militar
+        let newOrdered = Array.isArray(m.orderedIds) ? [...m.orderedIds] : [];
+        const primaryKey = String(sanitized.codHidrante || sanitized._internalId || sanitized.nomHidrante);
+        if (!newOrdered.some(id => isMatchHydrantId(id))) {
+          newOrdered.unshift(primaryKey);
+        }
+
+        const updatedM = {
+          ...m,
+          completedIds: newCompleted,
+          orderedIds: newOrdered,
+          updatedAt: new Date().toISOString()
+        };
+
+        try {
+          localStorage.setItem(`netuno_mission_ordered_${m.id}`, JSON.stringify(newOrdered));
+        } catch (e) {}
+
+        syncMissionToCloud(updatedM);
+        return updatedM;
+      }
+      return m;
+    });
+
+    if (missionsChanged) {
+      setMissions(newMissions);
+      saveMissions(newMissions);
+    }
+
     logAuditEvent({
       entityType: 'vistoria',
       action: 'delete',
@@ -1346,12 +1396,12 @@ syncPreferences({ filters: filters });
       entityName: `${reverted.nomHidrante || reverted.codHidrante || 'Hidrante'} - ${reverted.dscEndereco || ''}`.trim(),
       location: reverted.dscLocalidade || '',
       author: currentUser,
-      details: 'Registro de vistoria revertido e excluído do histórico pelo gestor.',
+      details: `Registro de vistoria revertido e excluído do histórico por ${currentUser?.nome || currentUser?.matricula || 'usuário'}.`,
       coords: (reverted.numLatitude && reverted.numLongitude) ? { lat: Number(reverted.numLatitude), lng: Number(reverted.numLongitude) } : null
     });
 
     setInspectingHidrante(null);
-    toast.success('Vistoria revertida com sucesso!');
+    toast.success('Vistoria revertida com sucesso! O hidrante voltou a ser pendente na rota.');
   };
 
   const handleSaveEdit = (updatedHidrante) => {
@@ -2546,6 +2596,7 @@ syncPreferences({ filters: filters });
               onRemoveFromMission={removeHydrantFromMission}
               lastInspectedCoords={lastInspectedCoords} 
               onInspect={handleInspect}
+              onEditInspection={handleEditInspection}
               onEdit={(h) => setEditingHydrante(h)}
               onCenterMap={handleFocusHydrantOnMap}
               currentUser={currentUser}

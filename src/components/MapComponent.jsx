@@ -975,6 +975,20 @@ const MapComponent = ({
     }
   };
 
+  // Sincroniza selectedHydrant com as atualizações mais recentes da base (ex: após exclusão/reversão de vistoria)
+  useEffect(() => {
+    if (selectedHydrant) {
+      const fresh = hidrantes.find(h => 
+        (selectedHydrant._internalId && h._internalId === selectedHydrant._internalId) ||
+        (selectedHydrant.codHidrante && h.codHidrante === selectedHydrant.codHidrante) ||
+        (selectedHydrant.nomHidrante && h.nomHidrante === selectedHydrant.nomHidrante)
+      );
+      if (fresh && fresh !== selectedHydrant) {
+        setSelectedHydrant(fresh);
+      }
+    }
+  }, [hidrantes]);
+
   // Fecha imediatamente a dialog/bottom sheet de hidrante quando o carrinho é aberto
   useEffect(() => {
     if (isCartOpen && selectedHydrant) {
@@ -1155,6 +1169,19 @@ const MapComponent = ({
 
     // Numera apenas os hidrantes pendentes/faltantes da rota
     const pendingOrdered = ordered.filter(id => !completedIdsSet.has(String(id)));
+
+    // Assegura que todos os hidrantes pendentes da rota ativa recebam numeração sequencial
+    if (activeMissionHydrants && activeMissionHydrants.length > 0) {
+      activeMissionHydrants.forEach(h => {
+        if (!isHydrantInSet(h, completedIdsSet)) {
+          const inPending = pendingOrdered.some(id => isHydrantInSet(h, [String(id)]));
+          if (!inPending) {
+            pendingOrdered.push(String(h.codHidrante || h._internalId || h.nomHidrante));
+          }
+        }
+      });
+    }
+
     pendingOrdered.forEach((id, idx) => {
       const orderNum = idx + 1;
       const strId = String(id);

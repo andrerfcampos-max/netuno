@@ -79,6 +79,7 @@ const MissionRoutePanel = ({
   onRemoveFromMission, 
   lastInspectedCoords, 
   onInspect, 
+  onEditInspection,
   onEdit, 
   onCenterMap, 
   currentUser, 
@@ -354,23 +355,29 @@ const MissionRoutePanel = ({
         const trans = translateId(s);
         if (trans) orderedMap.set(trans, idx);
       });
-      const sortedByMission = [...pendingHydrants].sort((a, b) => {
-        const allA = getHydrantAllIds(a);
-        const allB = getHydrantAllIds(b);
-        let idxA = 999;
-        for (const id of allA) {
-          if (orderedMap.has(id)) { idxA = Math.min(idxA, orderedMap.get(id)); }
-        }
-        let idxB = 999;
-        for (const id of allB) {
-          if (orderedMap.has(id)) { idxB = Math.min(idxB, orderedMap.get(id)); }
-        }
-        return idxA - idxB;
-      });
-      setPendingRoute(sortedByMission);
-      lastOptimizedIdsRef.current = sig;
-      isInitialMountRef.current = false;
-      return;
+      const hasAllInCache = pendingHydrants.every(h => 
+        getHydrantAllIds(h).some(id => orderedMap.has(id))
+      );
+
+      if (hasAllInCache) {
+        const sortedByMission = [...pendingHydrants].sort((a, b) => {
+          const allA = getHydrantAllIds(a);
+          const allB = getHydrantAllIds(b);
+          let idxA = 999;
+          for (const id of allA) {
+            if (orderedMap.has(id)) { idxA = Math.min(idxA, orderedMap.get(id)); }
+          }
+          let idxB = 999;
+          for (const id of allB) {
+            if (orderedMap.has(id)) { idxB = Math.min(idxB, orderedMap.get(id)); }
+          }
+          return idxA - idxB;
+        });
+        setPendingRoute(sortedByMission);
+        lastOptimizedIdsRef.current = sig;
+        isInitialMountRef.current = false;
+        return;
+      }
     }
 
     // Executa automaticamente o cálculo mais otimizado a partir do GPS real do vistoriador
@@ -875,7 +882,7 @@ const MissionRoutePanel = ({
             {isCompleted && (
               <button 
                 type="button"
-                onClick={() => onInspect && onInspect(h)} 
+                onClick={() => onEditInspection ? onEditInspection(h) : (onInspect && onInspect(h))} 
                 title="Editar Vistoria Realizada" 
                 className="h-6 px-2 text-amber-200 bg-amber-900/80 hover:bg-amber-800 border border-amber-600/50 rounded-md active:scale-95 transition-all font-bold text-[10px] flex items-center gap-1 shadow-xs cursor-pointer shrink-0"
               >

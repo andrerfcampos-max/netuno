@@ -192,6 +192,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
   }, [hidrante?.codHidrante, hidrante?._internalId, isEditing, initialData]);
 
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
+  const canDeleteInspection = isGestor || currentUser?.role === 'vistoriador';
 
   const isHidranteNaoEncontrado = useMemo(() => {
     if (!q6 || q6.length === 0) return false;
@@ -765,7 +766,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
         </div>
 
         <div className="p-3.5 bg-slate-900 border-t border-slate-700/80 flex gap-3 sticky bottom-0 z-10 shrink-0">
-          {isEditing && isGestor && onDeleteInspection && (
+          {isEditing && canDeleteInspection && onDeleteInspection && (
             <button 
               type="button"
               onClick={() => {
