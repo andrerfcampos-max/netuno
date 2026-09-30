@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-139",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -1404,9 +1404,119 @@
       "seq": 139,
       "conversationId": "385e2e5f-67c6-4fb8-81ed-8455cd7045f4",
       "description": "Subir vistorias em lote do Sgt Honorato para a base de dados e registrar diretriz nos arquivos de controle",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-17T21:15:30.861Z",
       "startedAt": "2026-09-17T21:15:34.605Z",
+      "completedAt": "2026-09-17T21:18:39.820Z"
+    },
+    {
+      "id": "TASK-140",
+      "seq": 140,
+      "conversationId": "2b72d17c-3891-4da6-b470-94f5685b5c5a",
+      "description": "Investigar e corrigir falha na automacao SEI",
+      "status": "completed",
+      "createdAt": "2026-09-17T21:39:34.760Z",
+      "startedAt": "2026-09-17T21:39:39.809Z",
+      "completedAt": "2026-09-17T21:48:42.789Z"
+    },
+    {
+      "id": "TASK-141",
+      "seq": 141,
+      "conversationId": "2b72d17c-3891-4da6-b470-94f5685b5c5a",
+      "description": "Diagnosticar e resolver erro de criacao de processo no SEI",
+      "status": "completed",
+      "createdAt": "2026-09-17T22:55:46.382Z",
+      "startedAt": "2026-09-17T22:55:54.335Z",
+      "completedAt": "2026-09-17T23:01:02.792Z"
+    },
+    {
+      "id": "TASK-142",
+      "seq": 142,
+      "conversationId": "4b28a874-582a-483a-b612-aeebe49f131b",
+      "description": "Otimizar geracao de PDF sem pagina intermediaria e diagramar 1 pagina",
+      "status": "completed",
+      "createdAt": "2026-09-30T17:15:00.933Z",
+      "startedAt": "2026-09-30T17:15:11.275Z",
+      "completedAt": "2026-09-30T17:30:11.648Z"
+    },
+    {
+      "id": "TASK-143",
+      "seq": 143,
+      "conversationId": "89aa3d3e-db66-4828-9157-e0e799bd0765",
+      "description": "Refatorar texto do parecer técnico, dados do hidrante alvo, mapa no PDF e raio de cobertura NBR",
+      "status": "completed",
+      "createdAt": "2026-09-30T17:43:30.927Z",
+      "startedAt": "2026-09-30T17:43:40.089Z",
+      "completedAt": "2026-09-30T17:54:48.139Z"
+    },
+    {
+      "id": "TASK-144",
+      "seq": 144,
+      "conversationId": "89aa3d3e-db66-4828-9157-e0e799bd0765",
+      "description": "Incluir fotos de perfil e da ultima vistoria automaticamente no parecer tecnico",
+      "status": "completed",
+      "createdAt": "2026-09-30T17:58:19.109Z",
+      "startedAt": "2026-09-30T17:58:29.197Z",
+      "completedAt": "2026-09-30T18:03:17.277Z"
+    },
+    {
+      "id": "TASK-145",
+      "seq": 145,
+      "conversationId": "da19e885-e3e0-4b22-bdae-cf32b5320041",
+      "description": "Ajustar cargo na assinatura do relatorio para Gestor de hidrante",
+      "status": "completed",
+      "createdAt": "2026-09-30T18:13:48.225Z",
+      "startedAt": "2026-09-30T18:13:56.608Z",
+      "completedAt": "2026-09-30T18:19:15.614Z"
+    },
+    {
+      "id": "TASK-146",
+      "seq": 146,
+      "conversationId": "2608ee4f-f768-40b6-9732-dccfac2183be",
+      "description": "Permitir navegar no mapa e reposicionar pino no cadastro de novo hidrante sem snap back forçado",
+      "status": "completed",
+      "createdAt": "2026-09-30T18:14:41.699Z",
+      "startedAt": "2026-09-30T18:19:17.504Z",
+      "completedAt": "2026-09-30T18:22:44.837Z"
+    },
+    {
+      "id": "TASK-147",
+      "seq": 147,
+      "conversationId": "11eafda9-316c-4c22-877b-46d628bbfc10",
+      "description": "Fix route pin status reverting to pending after inspection deletion",
+      "status": "completed",
+      "createdAt": "2026-09-30T18:15:26.493Z",
+      "startedAt": "2026-09-30T18:22:44.954Z",
+      "completedAt": "2026-09-30T18:26:51.403Z"
+    },
+    {
+      "id": "TASK-148",
+      "seq": 148,
+      "conversationId": "30a26634-0f70-478f-8408-4a6dd8ad261f",
+      "description": "Exibir codigo do hidrante no dialog do mapa",
+      "status": "completed",
+      "createdAt": "2026-09-30T18:15:47.922Z",
+      "startedAt": "2026-09-30T18:26:53.576Z",
+      "completedAt": "2026-09-30T18:29:25.517Z"
+    },
+    {
+      "id": "TASK-149",
+      "seq": 149,
+      "conversationId": "e91b5abe-c166-47a4-bdfb-e3df6818521b",
+      "description": "Mudar regra calculo rota de 15 para 30",
+      "status": "completed",
+      "createdAt": "2026-09-30T18:16:15.648Z",
+      "startedAt": "2026-09-30T18:29:29.229Z",
+      "completedAt": "2026-09-30T18:32:33.114Z"
+    },
+    {
+      "id": "TASK-150",
+      "seq": 150,
+      "conversationId": "e23d115d-18c8-4739-b799-d8e2afb86490",
+      "description": "Fix map bounds fit on first open from mission",
+      "status": "queued",
+      "createdAt": "2026-09-30T18:18:44.892Z",
+      "startedAt": null,
       "completedAt": null
     }
   ]
