@@ -1684,9 +1684,19 @@ const MapComponent = ({
 
               {/* Título e Endereço (Sobrepostos na Base do Banner) */}
               <div className="absolute bottom-2 left-2 right-2 flex flex-col pointer-events-none">
-                <span className="font-black text-lg text-white tracking-tight leading-none drop-shadow-md">
-                  {fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante}
-                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-900/90 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/40 backdrop-blur-md shadow-sm">
+                    CÓDIGO
+                  </span>
+                  <span className="font-mono font-black text-lg text-white tracking-tight leading-none drop-shadow-md">
+                    {fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante}
+                  </span>
+                  {selectedHydrant.codLegado && String(selectedHydrant.codLegado) !== String(selectedHydrant.nomHidrante) && (
+                    <span className="text-[10px] font-mono font-bold text-slate-300 bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-700/80 backdrop-blur-md shadow-sm" title="Código de registro Argos legado">
+                      Argos: #{selectedHydrant.codLegado}
+                    </span>
+                  )}
+                </div>
                 <span className="text-[11px] text-slate-300 font-semibold flex items-center gap-1 mt-1 truncate drop-shadow-md">
                   <MapPin size={10} className="text-emerald-400 shrink-0" />
                   {fixEncoding(selectedHydrant.dscLocalidade) || 'Região DF'}
@@ -1702,6 +1712,33 @@ const MapComponent = ({
 
             {/* Informações Estruturadas (Estilo Ficha Cadastral Argos) */}
             <div className="flex flex-col gap-1.5 bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/60 text-xs">
+              {/* Identificação Oficial / Código do Hidrante */}
+              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900/80 border border-slate-700/80 shadow-inner">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block mb-0.5">
+                    Código do Hidrante
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-mono font-black text-sm text-emerald-400 select-all">
+                      {fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante || '-'}
+                    </span>
+                    {selectedHydrant.codLegado && String(selectedHydrant.codLegado) !== String(selectedHydrant.nomHidrante) && (
+                      <span className="text-[10px] font-mono text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 select-all" title="Código legado no sistema Argos">
+                        Argos: #{selectedHydrant.codLegado}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end shrink-0">
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block mb-0.5">
+                    Região (RA)
+                  </span>
+                  <span className="text-xs font-bold text-slate-200 truncate max-w-[120px]">
+                    {fixEncoding(selectedHydrant.dscLocalidade) || 'Região DF'}
+                  </span>
+                </div>
+              </div>
+
               <div>
                 <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-0.5">Endereço</span>
                 <span className="text-slate-100 font-medium leading-snug">{fixEncoding(selectedHydrant.dscEndereco) || '-'}</span>
@@ -1890,10 +1927,18 @@ const MapComponent = ({
                   </div>
                 )}
                 <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-lg text-white tracking-tight leading-tight truncate">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                      CÓDIGO
+                    </span>
+                    <span className="font-mono font-black text-lg text-white tracking-tight leading-tight truncate">
                       {fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante}
                     </span>
+                    {selectedHydrant.codLegado && String(selectedHydrant.codLegado) !== String(selectedHydrant.nomHidrante) && (
+                      <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700" title="Código de registro Argos legado">
+                        Argos: #{selectedHydrant.codLegado}
+                      </span>
+                    )}
                   </div>
                   <span className="text-xs text-slate-400 font-semibold flex items-center gap-1 mt-0.5 truncate">
                     <MapPin size={13} className="text-emerald-400 shrink-0" />
@@ -1947,6 +1992,33 @@ const MapComponent = ({
 
             {/* Informações Estruturadas (Estilo Ficha Cadastral Argos) */}
             <div className="flex flex-col gap-2 bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 text-xs">
+              {/* Identificação Oficial / Código do Hidrante */}
+              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900/80 border border-slate-700/80 shadow-inner">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block mb-0.5">
+                    Código do Hidrante
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-mono font-black text-base text-emerald-400 select-all">
+                      {fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante || '-'}
+                    </span>
+                    {selectedHydrant.codLegado && String(selectedHydrant.codLegado) !== String(selectedHydrant.nomHidrante) && (
+                      <span className="text-[11px] font-mono text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 select-all" title="Código legado no sistema Argos">
+                        Argos: #{selectedHydrant.codLegado}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end shrink-0">
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block mb-0.5">
+                    Região (RA)
+                  </span>
+                  <span className="text-xs font-bold text-slate-200 truncate max-w-[150px]">
+                    {fixEncoding(selectedHydrant.dscLocalidade) || 'Região DF'}
+                  </span>
+                </div>
+              </div>
+
               <div>
                 <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 block mb-0.5">Endereço</span>
                 <span className="text-slate-100 font-semibold leading-snug">{fixEncoding(selectedHydrant.dscEndereco) || '-'}</span>
@@ -2135,10 +2207,18 @@ const MapComponent = ({
                 <MapPin size={18} className="text-emerald-400" />
               </div>
               <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-extrabold text-base sm:text-lg leading-tight truncate">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                    CÓDIGO
+                  </span>
+                  <span className="text-white font-mono font-extrabold text-base sm:text-lg leading-tight truncate">
                     {selectedHydrant ? (fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante) : 'Hidrante'}
                   </span>
+                  {selectedHydrant?.codLegado && String(selectedHydrant.codLegado) !== String(selectedHydrant.nomHidrante) && (
+                    <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700" title="Código de registro Argos legado">
+                      Argos: #{selectedHydrant.codLegado}
+                    </span>
+                  )}
                   {selectedHydrant && (
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider shrink-0 ${
                       (selectedHydrant.flgAtivo && selectedHydrant.status === 'Operante')

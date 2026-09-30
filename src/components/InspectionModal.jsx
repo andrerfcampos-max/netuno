@@ -540,8 +540,14 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
                   <span>Cadastrar nova vistoria</span>
                 )}
               </h2>
-              <p className="text-[10.5px] sm:text-xs text-slate-400 truncate">
-                Hidrante: <span className="font-semibold text-emerald-400">{fixEncoding(hidrante.nomHidrante) || hidrante.codHidrante}</span>
+              <p className="text-[10.5px] sm:text-xs text-slate-400 truncate flex items-center gap-1.5 flex-wrap">
+                <span>Código:</span>
+                <span className="font-mono font-bold text-emerald-400 select-all">{fixEncoding(hidrante.nomHidrante) || hidrante.codHidrante}</span>
+                {hidrante.codLegado && String(hidrante.codLegado) !== String(hidrante.nomHidrante) && (
+                  <span className="text-[9.5px] font-mono text-slate-300 bg-slate-800 px-1 py-0.5 rounded border border-slate-700 select-all" title="Código legado no sistema Argos">
+                    Argos: #{hidrante.codLegado}
+                  </span>
+                )}
               </p>
             </div>
           </div>
