@@ -199,15 +199,43 @@
     "dscPontoReferencia": "Qr 2015 conjunto 5 proximo a casa 42",
     "numLatitude": -15.884336,
     "numLongitude": -48.111147,
-    "flgAtivo": false,
-    "status": "Inoperante",
-    "problemasHidrante": "",
-    "dscObservacao": "",
+    "flgAtivo": true,
+    "status": "Operante",
+    "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
+    "dscObservacao": "Falta luva",
     "datHoraVistoria": "10/03/2025 13:30:00",
-    "datHoraUltimaVistoria": "10/03/2025 13:30:00",
-    "vistoriadorNome": "",
+    "datHoraUltimaVistoria": "29/09/2026",
+    "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "vistoriador": "Sgt Rrm Honorato",
+    "vistoriadorMatricula": "-",
+    "matricula": "-",
+    "equipeVistoria": "Sgt Freitas, Sgt Santiago (pttc)",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "10/03/2025 13:30:00",
+        "flgAtivo": false,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador",
+        "vistoriadorMatricula": "-",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      },
+      {
+        "datHoraVistoria": "29/09/2026",
+        "flgAtivo": true,
+        "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
+        "dscObservacao": "Falta luva",
+        "vistoriadorNome": "Sgt Rrm Honorato",
+        "vistoriadorMatricula": "-",
+        "equipe": "Sgt Freitas, Sgt Santiago (pttc)",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      }
+    ],
+    "ultimaAtualizacao": "2026-09-30T18:53:23.938Z"
   },
   {
     "_internalId": "hid_6",
@@ -7052,15 +7080,43 @@
     "dscPontoReferencia": "Qr 419 conjunto 04 casa 16 - Em frente a casa 16",
     "numLatitude": -15.884833,
     "numLongitude": -48.118833,
-    "flgAtivo": false,
-    "status": "Inoperante",
-    "problemasHidrante": "FALTA TAMPÃO DE 2.1/2\"; FALTA TAMPÃO DE 4\"",
+    "flgAtivo": true,
+    "status": "Operante",
+    "problemasHidrante": "",
     "dscObservacao": "",
     "datHoraVistoria": "24/04/2025 12:41:00",
-    "datHoraUltimaVistoria": "24/04/2025 12:41:00",
-    "vistoriadorNome": "",
+    "datHoraUltimaVistoria": "29/09/2026",
+    "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "vistoriador": "Sgt Rrm Honorato",
+    "vistoriadorMatricula": "-",
+    "matricula": "-",
+    "equipeVistoria": "Sgt Freitas, Sgt Santiago (pttc)",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "24/04/2025 12:41:00",
+        "flgAtivo": false,
+        "problemasHidrante": "FALTA TAMPÃO DE 2.1/2\"; FALTA TAMPÃO DE 4\"",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador",
+        "vistoriadorMatricula": "-",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      },
+      {
+        "datHoraVistoria": "29/09/2026",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Sgt Rrm Honorato",
+        "vistoriadorMatricula": "-",
+        "equipe": "Sgt Freitas, Sgt Santiago (pttc)",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      }
+    ],
+    "ultimaAtualizacao": "2026-09-30T18:53:23.938Z"
   },
   {
     "_internalId": "hid_243",
@@ -55095,13 +55151,41 @@
     "numLongitude": -48.1055,
     "flgAtivo": true,
     "status": "Operante",
-    "problemasHidrante": "",
-    "dscObservacao": "",
+    "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
+    "dscObservacao": "Falta luva",
     "datHoraVistoria": "11/04/2025 07:40:00",
-    "datHoraUltimaVistoria": "11/04/2025 07:40:00",
-    "vistoriadorNome": "",
+    "datHoraUltimaVistoria": "29/09/2026",
+    "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "vistoriador": "Sgt Rrm Honorato",
+    "vistoriadorMatricula": "-",
+    "matricula": "-",
+    "equipeVistoria": "Sgt Freitas, Sgt Santiago (pttc)",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "11/04/2025 07:40:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador",
+        "vistoriadorMatricula": "-",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      },
+      {
+        "datHoraVistoria": "29/09/2026",
+        "flgAtivo": true,
+        "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
+        "dscObservacao": "Falta luva",
+        "vistoriadorNome": "Sgt Rrm Honorato",
+        "vistoriadorMatricula": "-",
+        "equipe": "Sgt Freitas, Sgt Santiago (pttc)",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      }
+    ],
+    "ultimaAtualizacao": "2026-09-30T18:53:23.938Z"
   },
   {
     "_internalId": "hid_2444",
@@ -55996,15 +56080,43 @@
     "dscPontoReferencia": "ÁREA PÚBLICA",
     "numLatitude": -15.9,
     "numLongitude": -48.127222,
-    "flgAtivo": true,
-    "status": "Operante",
-    "problemasHidrante": "",
-    "dscObservacao": "",
+    "flgAtivo": false,
+    "status": "Inoperante",
+    "problemasHidrante": "Registro soterrado",
+    "dscObservacao": "Registro soterrado",
     "datHoraVistoria": "16/04/2025 13:13:00",
-    "datHoraUltimaVistoria": "16/04/2025 13:13:00",
-    "vistoriadorNome": "",
+    "datHoraUltimaVistoria": "29/09/2026",
+    "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "vistoriador": "Sgt Rrm Honorato",
+    "vistoriadorMatricula": "-",
+    "matricula": "-",
+    "equipeVistoria": "Sgt Freitas, Sgt Santiago (pttc)",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "16/04/2025 13:13:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador",
+        "vistoriadorMatricula": "-",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      },
+      {
+        "datHoraVistoria": "29/09/2026",
+        "flgAtivo": false,
+        "problemasHidrante": "Registro soterrado",
+        "dscObservacao": "Registro soterrado",
+        "vistoriadorNome": "Sgt Rrm Honorato",
+        "vistoriadorMatricula": "-",
+        "equipe": "Sgt Freitas, Sgt Santiago (pttc)",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      }
+    ],
+    "ultimaAtualizacao": "2026-09-30T18:53:23.938Z"
   },
   {
     "_internalId": "hid_2471",
@@ -56017,15 +56129,43 @@
     "dscPontoReferencia": "FRENTE A CASA 16",
     "numLatitude": -15.900222,
     "numLongitude": -48.125611,
-    "flgAtivo": true,
-    "status": "Operante",
-    "problemasHidrante": "",
-    "dscObservacao": "",
+    "flgAtivo": false,
+    "status": "Inoperante",
+    "problemasHidrante": "Hidrante removido ou não encontrado",
+    "dscObservacao": "Foi removido do local pela CAESB",
     "datHoraVistoria": "16/04/2025 07:40:00",
-    "datHoraUltimaVistoria": "16/04/2025 07:40:00",
-    "vistoriadorNome": "",
+    "datHoraUltimaVistoria": "29/09/2026",
+    "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "vistoriador": "Sgt Rrm Honorato",
+    "vistoriadorMatricula": "-",
+    "matricula": "-",
+    "equipeVistoria": "Sgt Freitas, Sgt Santiago (pttc)",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "16/04/2025 07:40:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador",
+        "vistoriadorMatricula": "-",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      },
+      {
+        "datHoraVistoria": "29/09/2026",
+        "flgAtivo": false,
+        "problemasHidrante": "Hidrante removido ou não encontrado",
+        "dscObservacao": "Foi removido do local pela CAESB",
+        "vistoriadorNome": "Sgt Rrm Honorato",
+        "vistoriadorMatricula": "-",
+        "equipe": "Sgt Freitas, Sgt Santiago (pttc)",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      }
+    ],
+    "ultimaAtualizacao": "2026-09-30T18:53:23.938Z"
   },
   {
     "_internalId": "hid_2472",
@@ -56449,10 +56589,38 @@
     "problemasHidrante": "",
     "dscObservacao": "",
     "datHoraVistoria": "23/04/2025 10:30:00",
-    "datHoraUltimaVistoria": "23/04/2025 10:30:00",
-    "vistoriadorNome": "",
+    "datHoraUltimaVistoria": "29/09/2026",
+    "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "vistoriador": "Sgt Rrm Honorato",
+    "vistoriadorMatricula": "-",
+    "matricula": "-",
+    "equipeVistoria": "Sgt Freitas, Sgt Santiago (pttc)",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "23/04/2025 10:30:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador",
+        "vistoriadorMatricula": "-",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      },
+      {
+        "datHoraVistoria": "29/09/2026",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Sgt Rrm Honorato",
+        "vistoriadorMatricula": "-",
+        "equipe": "Sgt Freitas, Sgt Santiago (pttc)",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      }
+    ],
+    "ultimaAtualizacao": "2026-09-30T18:53:23.938Z"
   },
   {
     "_internalId": "hid_2487",
@@ -56864,15 +57032,43 @@
     "dscPontoReferencia": "EM FRENTE A ESCOLA 123",
     "numLatitude": -15.893889,
     "numLongitude": -48.122083,
-    "flgAtivo": false,
-    "status": "Inoperante",
-    "problemasHidrante": "CAIXA DO HIDRANTE OBSTRUIDA COM ESGOTO.; FALTA TAMPÃO DE 2.1/2\"; FALTA TAMPÃO DE 4\"",
-    "dscObservacao": "",
+    "flgAtivo": true,
+    "status": "Operante",
+    "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
+    "dscObservacao": "Falta luva",
     "datHoraVistoria": "16/04/2025 12:00:00",
-    "datHoraUltimaVistoria": "16/04/2025 12:00:00",
-    "vistoriadorNome": "",
+    "datHoraUltimaVistoria": "29/09/2026",
+    "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "vistoriador": "Sgt Rrm Honorato",
+    "vistoriadorMatricula": "-",
+    "matricula": "-",
+    "equipeVistoria": "Sgt Freitas, Sgt Santiago (pttc)",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "16/04/2025 12:00:00",
+        "flgAtivo": false,
+        "problemasHidrante": "CAIXA DO HIDRANTE OBSTRUIDA COM ESGOTO.; FALTA TAMPÃO DE 2.1/2\"; FALTA TAMPÃO DE 4\"",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador",
+        "vistoriadorMatricula": "-",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      },
+      {
+        "datHoraVistoria": "29/09/2026",
+        "flgAtivo": true,
+        "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
+        "dscObservacao": "Falta luva",
+        "vistoriadorNome": "Sgt Rrm Honorato",
+        "vistoriadorMatricula": "-",
+        "equipe": "Sgt Freitas, Sgt Santiago (pttc)",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      }
+    ],
+    "ultimaAtualizacao": "2026-09-30T18:53:23.938Z"
   },
   {
     "_internalId": "hid_2507",
@@ -56887,13 +57083,41 @@
     "numLongitude": -48.123222,
     "flgAtivo": false,
     "status": "Inoperante",
-    "problemasHidrante": "ROSCA DE TAMPÃO DANIFICADO",
-    "dscObservacao": "",
+    "problemasHidrante": "Falta tampão de 2.1/2\"",
+    "dscObservacao": "Falta tampão",
     "datHoraVistoria": "16/04/2025 11:00:00",
-    "datHoraUltimaVistoria": "16/04/2025 11:00:00",
-    "vistoriadorNome": "",
+    "datHoraUltimaVistoria": "29/09/2026",
+    "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "vistoriador": "Sgt Rrm Honorato",
+    "vistoriadorMatricula": "-",
+    "matricula": "-",
+    "equipeVistoria": "Sgt Freitas, Sgt Santiago (pttc)",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "16/04/2025 11:00:00",
+        "flgAtivo": false,
+        "problemasHidrante": "ROSCA DE TAMPÃO DANIFICADO",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador",
+        "vistoriadorMatricula": "-",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      },
+      {
+        "datHoraVistoria": "29/09/2026",
+        "flgAtivo": false,
+        "problemasHidrante": "Falta tampão de 2.1/2\"",
+        "dscObservacao": "Falta tampão",
+        "vistoriadorNome": "Sgt Rrm Honorato",
+        "vistoriadorMatricula": "-",
+        "equipe": "Sgt Freitas, Sgt Santiago (pttc)",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      }
+    ],
+    "ultimaAtualizacao": "2026-09-30T18:53:23.938Z"
   },
   {
     "_internalId": "hid_2508",
@@ -58241,10 +58465,38 @@
     "problemasHidrante": "",
     "dscObservacao": "",
     "datHoraVistoria": "16/04/2025 08:20:00",
-    "datHoraUltimaVistoria": "16/04/2025 08:20:00",
-    "vistoriadorNome": "",
+    "datHoraUltimaVistoria": "29/09/2026",
+    "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "vistoriador": "Sgt Rrm Honorato",
+    "vistoriadorMatricula": "-",
+    "matricula": "-",
+    "equipeVistoria": "Sgt Freitas, Sgt Santiago (pttc)",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "16/04/2025 08:20:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador",
+        "vistoriadorMatricula": "-",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      },
+      {
+        "datHoraVistoria": "29/09/2026",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Sgt Rrm Honorato",
+        "vistoriadorMatricula": "-",
+        "equipe": "Sgt Freitas, Sgt Santiago (pttc)",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      }
+    ],
+    "ultimaAtualizacao": "2026-09-30T18:53:23.938Z"
   },
   {
     "_internalId": "hid_2543",
@@ -75311,13 +75563,41 @@
     "numLongitude": -48.122886,
     "flgAtivo": false,
     "status": "Inoperante",
-    "problemasHidrante": "FALTA FLANGE; FALTAM BUJÕES E TAMPÕES ; FALTAM DOIS TAMPÕES DE 2 1/2",
-    "dscObservacao": "",
+    "problemasHidrante": "Faltam todos os tampões",
+    "dscObservacao": "Falta os tampões",
     "datHoraVistoria": "28/04/2025 12:02:00",
-    "datHoraUltimaVistoria": "28/04/2025 12:02:00",
-    "vistoriadorNome": "",
+    "datHoraUltimaVistoria": "29/09/2026",
+    "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "vistoriador": "Sgt Rrm Honorato",
+    "vistoriadorMatricula": "-",
+    "matricula": "-",
+    "equipeVistoria": "Sgt Freitas, Sgt Santiago (pttc)",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "28/04/2025 12:02:00",
+        "flgAtivo": false,
+        "problemasHidrante": "FALTA FLANGE; FALTAM BUJÕES E TAMPÕES ; FALTAM DOIS TAMPÕES DE 2 1/2",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador",
+        "vistoriadorMatricula": "-",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      },
+      {
+        "datHoraVistoria": "29/09/2026",
+        "flgAtivo": false,
+        "problemasHidrante": "Faltam todos os tampões",
+        "dscObservacao": "Falta os tampões",
+        "vistoriadorNome": "Sgt Rrm Honorato",
+        "vistoriadorMatricula": "-",
+        "equipe": "Sgt Freitas, Sgt Santiago (pttc)",
+        "fotoVistoria": null,
+        "fotosVistoria": []
+      }
+    ],
+    "ultimaAtualizacao": "2026-09-30T18:53:23.938Z"
   },
   {
     "_internalId": "hid_3248",

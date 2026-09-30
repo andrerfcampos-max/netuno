@@ -12,7 +12,9 @@ const csvPath = path.resolve(baseDir, 'public/hidrantes_df_oficial.csv');
 const publicXlsxPath = path.resolve(baseDir, 'public/base-de-dados.xlsx');
 const rootXlsxPath = path.resolve(baseDir, 'base-de-dados.xlsx');
 
-const parsedInspectionsPath = 'C:/Users/andre/.gemini/antigravity/brain/385e2e5f-67c6-4fb8-81ed-8455cd7045f4/scratch/honorato_parsed.json';
+const parsedInspectionsPath = process.argv[2]
+  ? path.resolve(process.argv[2])
+  : 'C:/Users/andre/.gemini/antigravity/brain/385e2e5f-67c6-4fb8-81ed-8455cd7045f4/scratch/honorato_parsed.json';
 
 function normalizeCode(str) {
   const clean = str.trim().toUpperCase().replace(/[\.,]/g, '');
@@ -146,10 +148,12 @@ async function run() {
   XLSX.writeFile(outWb, publicXlsxPath);
   XLSX.writeFile(outWb, rootXlsxPath);
 
-  // Copiar também o script para scripts/ da aplicação para manter histórico e reutilização
+  // Copiar também o script para scripts/ se executado fora
   const projectScriptPath = path.resolve(baseDir, 'scripts/import_honorato_inspections.cjs');
-  fs.copyFileSync(__filename, projectScriptPath);
-  console.log(`📁 Script versionado em: ${projectScriptPath}`);
+  if (path.resolve(__filename) !== projectScriptPath) {
+    fs.copyFileSync(__filename, projectScriptPath);
+    console.log(`📁 Script versionado em: ${projectScriptPath}`);
+  }
 
   console.log('☁️ Conectando ao Supabase para sincronização em nuvem...');
   try {
