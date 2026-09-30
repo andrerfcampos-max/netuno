@@ -287,11 +287,13 @@ export const solveATSPRoute = (hydrants, startLat, startLng, durations, distance
   };
 };
 
+export const ROUTE_CHUNK_SIZE = 30;
+
 /**
- * Consulta a API de Roteamento OSRM com Matriz Direcionada de Tempos e Distâncias
+ * Consulta a API de Roteamento OSRM para um único lote (até 30 hidrantes)
  * e aplica o otimizador ATSP 2-Opt.
  */
-export const fetchOSRMAndOptimizeRoute = async (hydrants, startLat, startLng, timeoutMs = 4000) => {
+export const fetchOSRMSingleChunk = async (hydrants, startLat, startLng, timeoutMs = 4000) => {
   if (!hydrants || hydrants.length === 0) {
     return { route: [], drivingMetrics: {}, isTrafficMode: false };
   }
@@ -323,7 +325,7 @@ export const fetchOSRMAndOptimizeRoute = async (hydrants, startLat, startLng, ti
       isTrafficMode: true
     };
   } catch (err) {
-    console.warn('[RouteOptimizer] OSRM indisponível. Usando fallback instantâneo euclidiano.', err.message);
+    console.warn('[RouteOptimizer] OSRM indisponível para o lote. Usando fallback instantâneo euclidiano.', err.message);
     const fallbackRoute = optimizeRouteEuclidean(hydrants, startLat, startLng);
     
     // Métricas estimadas em linha reta
@@ -351,4 +353,61 @@ export const fetchOSRMAndOptimizeRoute = async (hydrants, startLat, startLng, ti
       isTrafficMode: false
     };
   }
+};
+
+/**
+ * Consulta a API de Roteamento OSRM com Matriz Direcionada de Tempos e Distâncias
+ * e aplica o otimizador ATSP 2-Opt em lotes sequenciais de 30 em 30 hidrantes.
+ * 
+ * Regra Tática CBMDF:
+ * Lotes de 30 em 30 hidrantes garantem estabilidade de requisição HTTP sem estourar limites
+ * de URL do OSRM, permitindo roteamento de missões de qualquer porte (30, 60, 90, 100+ hidrantes).
+ */
+export const fetchOSRMAndOptimizeRoute = async (hydrants, startLat, startLng, timeoutMs = 4000, chunkSize = ROUTE_CHUNK_SIZE) => {
+  if (!hydrants || hydrants.length === 0) {
+    return { route: [], drivingMetrics: {}, isTrafficMode: false };
+  }
+
+  // Se a lista couber em um único lote (<= 30), executa diretamente
+  if (hydrants.length <= chunkSize) {
+    return await fetchOSRMSingleChunk(hydrants, startLat, startLng, timeoutMs);
+  }
+
+  // Para listas maiores que 30: particiona e calcula sequencialmente de 30 em 30
+  const allOrderedRoute = [];
+  const allDrivingMetrics = {};
+  let isAnyTrafficMode = false;
+  let currentStartLat = startLat;
+  let currentStartLng = startLng;
+
+  for (let i = 0; i < hydrants.length; i += chunkSize) {
+    const chunk = hydrants.slice(i, i + chunkSize);
+    const chunkResult = await fetchOSRMSingleChunk(chunk, currentStartLat, currentStartLng, timeoutMs);
+    
+    if (chunkResult.isTrafficMode) {
+      isAnyTrafficMode = true;
+    }
+
+    const chunkRoute = (chunkResult.route && chunkResult.route.length > 0)
+      ? chunkResult.route
+      : optimizeRouteEuclidean(chunk, currentStartLat, currentStartLng);
+
+    allOrderedRoute.push(...chunkRoute);
+    Object.assign(allDrivingMetrics, chunkResult.drivingMetrics || {});
+
+    // Próximo lote de 30 parte do último hidrante alcançado neste lote
+    if (chunkRoute.length > 0) {
+      const lastHydrant = chunkRoute[chunkRoute.length - 1];
+      if (typeof lastHydrant.numLatitude === 'number' && typeof lastHydrant.numLongitude === 'number') {
+        currentStartLat = lastHydrant.numLatitude;
+        currentStartLng = lastHydrant.numLongitude;
+      }
+    }
+  }
+
+  return {
+    route: allOrderedRoute,
+    drivingMetrics: allDrivingMetrics,
+    isTrafficMode: isAnyTrafficMode
+  };
 };

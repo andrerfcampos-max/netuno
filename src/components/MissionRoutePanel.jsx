@@ -8,7 +8,8 @@ import { normalizeRAName } from '../utils/raList';
 import { 
   calculateDistanceMeters, 
   optimizeRouteEuclidean, 
-  fetchOSRMAndOptimizeRoute 
+  fetchOSRMAndOptimizeRoute,
+  ROUTE_CHUNK_SIZE 
 } from '../utils/routeOptimization';
 import { 
   getLastKnownLocation, 
@@ -256,19 +257,14 @@ const MissionRoutePanel = ({
       } catch (e) {}
     }
 
-    // 2. Refinamento OSRM ATSP com sentidos de vias e trânsito real
-    const CHUNK_LIMIT = 30;
-    const immediateBatch = fastOrdered.slice(0, CHUNK_LIMIT);
-    const remainingBatch = fastOrdered.slice(CHUNK_LIMIT);
-
+    // 2. Refinamento OSRM ATSP com sentidos de vias e trânsito real (lotes sequenciais de 30 em 30)
     try {
-      const osrmResult = await fetchOSRMAndOptimizeRoute(immediateBatch, anchorLat, anchorLng);
+      const osrmResult = await fetchOSRMAndOptimizeRoute(fastOrdered, anchorLat, anchorLng, 4500, ROUTE_CHUNK_SIZE);
       if (osrmResult.route && osrmResult.route.length > 0) {
-        const updatedRoute = [...osrmResult.route, ...remainingBatch];
-        setPendingRoute(updatedRoute);
+        setPendingRoute(osrmResult.route);
         setDrivingMetrics(osrmResult.drivingMetrics);
         setIsTrafficOptimized(osrmResult.isTrafficMode);
-        const updatedIds = updatedRoute.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
+        const updatedIds = osrmResult.route.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
         if (onUpdateMission) {
           onUpdateMission({ orderedIds: updatedIds });
         }
