@@ -24,7 +24,7 @@ const DownloadDatabaseModal = lazy(() => import('./components/DownloadDatabaseMo
 import { logAuditEvent, getUnreadAuditCount, mergeAuditLogs } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers, mergeRbacUsers } from './utils/storage';
-import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, subscribeToCloudRealtime, fetchUserPreferencesFromCloud, syncUserPreferencesToCloud, fetchRbacUsersFromCloud } from './services/syncService';
+import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, getLastMutationTimestamp, subscribeToCloudRealtime, fetchUserPreferencesFromCloud, syncUserPreferencesToCloud, fetchRbacUsersFromCloud } from './services/syncService';
 import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
@@ -721,14 +721,140 @@ syncPreferences({ filters: newFilters });
 
   // Sincronização com o Banco de Dados em Nuvem (Supabase / Cloud DB)
   useEffect(() => {
-    const syncWithCloud = async () => {
+    const applyCloudMutations = (cloudMutations) => {
+      if (!cloudMutations || cloudMutations.empty) return;
+
+      const hasHydrantChanges = (
+        Object.keys(cloudMutations.updated || {}).length > 0 ||
+        (cloudMutations.added || []).length > 0 ||
+        (cloudMutations.deleted || []).length > 0
+      );
+
+      if (hasHydrantChanges) {
+        const localChanges = loadHydrantChanges();
+        const mergedChanges = {
+          updated: { ...localChanges.updated, ...cloudMutations.updated },
+          added: [...localChanges.added, ...cloudMutations.added.filter(ca => !localChanges.added.some(la => (la._internalId || la.codHidrante) === (ca._internalId || ca.codHidrante)))],
+          deleted: Array.from(new Set([...localChanges.deleted, ...cloudMutations.deleted]))
+        };
+        saveHydrantChanges(mergedChanges);
+
+        setHidrantes(prevHidrantes => {
+          if (prevHidrantes.length === 0) return prevHidrantes;
+          let updatedHidrantes = prevHidrantes.filter(h => !mergedChanges.deleted.includes(h._internalId) && !mergedChanges.deleted.includes(h.codHidrante) && !mergedChanges.deleted.includes(h.nomHidrante));
+          updatedHidrantes = updatedHidrantes.map(h => {
+            const k = h._internalId || h.codHidrante || h.nomHidrante;
+            return mergedChanges.updated[k] ? { ...h, ...mergedChanges.updated[k] } : h;
+          });
+          return updatedHidrantes;
+        });
+      }
+
+      // Sincronização em tempo real de Edificações (PPO) vindas da nuvem
+      if (cloudMutations.buildingStudies && Object.keys(cloudMutations.buildingStudies).length > 0) {
+        try {
+          const customsRaw = localStorage.getItem('netuno_custom_building_studies');
+          const currentCustoms = customsRaw ? JSON.parse(customsRaw) : [];
+          const deletedPPO = new Set(cloudMutations.deletedBuildingStudies || []);
+          const updatedPPO = currentCustoms.filter(s => !deletedPPO.has(s.id));
+          Object.values(cloudMutations.buildingStudies).forEach(cs => {
+            if (!deletedPPO.has(cs.id)) {
+              const idx = updatedPPO.findIndex(s => s.id === cs.id);
+              if (idx >= 0) {
+                updatedPPO[idx] = { ...updatedPPO[idx], ...cs };
+              } else {
+                updatedPPO.push(cs);
+              }
+            }
+          });
+          localStorage.setItem('netuno_custom_building_studies', JSON.stringify(updatedPPO));
+        } catch (errPPO) {
+          console.warn('Erro ao mesclar PPO da nuvem:', errPPO);
+        }
+      }
+
+      // Sincronização em tempo real de Estudos Técnicos vindos da nuvem
+      if (cloudMutations.technicalStudies && Object.keys(cloudMutations.technicalStudies).length > 0) {
+        try {
+          const techRaw = localStorage.getItem('netuno_technical_studies');
+          const currentTech = techRaw ? JSON.parse(techRaw) : [];
+          const deletedTech = new Set(cloudMutations.deletedTechnicalStudies || []);
+          const updatedTech = currentTech.filter(s => !deletedTech.has(s.id));
+          Object.values(cloudMutations.technicalStudies).forEach(ts => {
+            if (!deletedTech.has(ts.id)) {
+              const idx = updatedTech.findIndex(s => s.id === ts.id);
+              if (idx >= 0) {
+                updatedTech[idx] = { ...updatedTech[idx], ...ts };
+              } else {
+                updatedTech.push(ts);
+              }
+            }
+          });
+          localStorage.setItem('netuno_technical_studies', JSON.stringify(updatedTech));
+        } catch (errTech) {
+          console.warn('Erro ao mesclar Estudos Técnicos da nuvem:', errTech);
+        }
+      }
+
+      // Sincronização em tempo real do Histórico de Ações / Auditoria
+      if (cloudMutations.auditLogs && cloudMutations.auditLogs.length > 0) {
+        mergeAuditLogs(cloudMutations.auditLogs);
+      }
+
+      // Sincronização em tempo real de Usuários e Perfis RBAC
+      if (cloudMutations.rbacUsers && Array.isArray(cloudMutations.rbacUsers)) {
+        mergeRbacUsers(loadRbacUsers(), cloudMutations.rbacUsers);
+      }
+
+      // Sincronização em tempo real de metadados de missões (ordem otimizada e atribuição)
+      if (cloudMutations.missionMetas && Object.keys(cloudMutations.missionMetas).length > 0) {
+        setMissions(prevMissions => {
+          let hasChange = false;
+          const updated = prevMissions.map(m => {
+            const meta = cloudMutations.missionMetas[String(m.id)];
+            if (meta) {
+              let changedItem = false;
+              const nextOrdered = (Array.isArray(meta.orderedIds) && meta.orderedIds.length > 0)
+                ? meta.orderedIds
+                : m.orderedIds;
+              const nextAtribuicao = meta.atribuicao !== undefined ? meta.atribuicao : m.atribuicao;
+
+              if (JSON.stringify(nextOrdered) !== JSON.stringify(m.orderedIds) || nextAtribuicao !== m.atribuicao) {
+                changedItem = true;
+                hasChange = true;
+              }
+
+              if (changedItem) {
+                if (nextOrdered && nextOrdered.length > 0) {
+                  try {
+                    localStorage.setItem(`netuno_mission_ordered_${m.id}`, JSON.stringify(nextOrdered));
+                  } catch (e) {}
+                }
+                return { ...m, orderedIds: nextOrdered, atribuicao: nextAtribuicao };
+              }
+            }
+            return m;
+          });
+          if (hasChange) {
+            saveMissions(updated);
+            return updated;
+          }
+          return prevMissions;
+        });
+      }
+    };
+
+    const syncWithCloud = async (options = {}) => {
       if (!isCloudConfigured()) return;
+
+      const isDelta = options?.isDelta !== false;
+      const forceFull = options?.forceFull === true;
 
       try {
         const [cloudMissions, cloudFolders, cloudMutations] = await Promise.all([
           fetchMissionsFromCloud(),
           fetchFoldersFromCloud(),
-          fetchHydrantMutationsFromCloud()
+          fetchHydrantMutationsFromCloud({ forceFull: forceFull || (!isDelta) })
         ]);
 
         if (Array.isArray(cloudMissions)) {
@@ -737,6 +863,9 @@ syncPreferences({ filters: newFilters });
             const validPrev = prevMissions.filter(m => !deletedSet.has(String(m.id)));
             const merged = mergeMissions(validPrev, cloudMissions);
             const finalMissions = merged.filter(m => !deletedSet.has(String(m.id)));
+            if (JSON.stringify(prevMissions) === JSON.stringify(finalMissions)) {
+              return prevMissions;
+            }
             saveMissions(finalMissions);
             return finalMissions;
           });
@@ -745,159 +874,82 @@ syncPreferences({ filters: newFilters });
         if (Array.isArray(cloudFolders) && cloudFolders.length > 0) {
           setFolders(prevFolders => {
             const merged = mergeFolders(prevFolders, cloudFolders);
+            if (JSON.stringify(prevFolders) === JSON.stringify(merged)) {
+              return prevFolders;
+            }
             saveFolders(merged);
             return merged;
           });
         }
 
         if (cloudMutations) {
-          const localChanges = loadHydrantChanges();
-          const mergedChanges = {
-            updated: { ...localChanges.updated, ...cloudMutations.updated },
-            added: [...localChanges.added, ...cloudMutations.added.filter(ca => !localChanges.added.some(la => (la._internalId || la.codHidrante) === (ca._internalId || ca.codHidrante)))],
-            deleted: Array.from(new Set([...localChanges.deleted, ...cloudMutations.deleted]))
-          };
-          saveHydrantChanges(mergedChanges);
-
-          setHidrantes(prevHidrantes => {
-            if (prevHidrantes.length === 0) return prevHidrantes;
-            let updatedHidrantes = prevHidrantes.filter(h => !mergedChanges.deleted.includes(h._internalId) && !mergedChanges.deleted.includes(h.codHidrante) && !mergedChanges.deleted.includes(h.nomHidrante));
-            updatedHidrantes = updatedHidrantes.map(h => {
-              const k = h._internalId || h.codHidrante || h.nomHidrante;
-              return mergedChanges.updated[k] ? { ...h, ...mergedChanges.updated[k] } : h;
-            });
-            return updatedHidrantes;
-          });
-
-          // Sincronização em tempo real de Edificações (PPO) vindas da nuvem
-          if (cloudMutations.buildingStudies && Object.keys(cloudMutations.buildingStudies).length > 0) {
-            try {
-              const customsRaw = localStorage.getItem('netuno_custom_building_studies');
-              const currentCustoms = customsRaw ? JSON.parse(customsRaw) : [];
-              const deletedPPO = new Set(cloudMutations.deletedBuildingStudies || []);
-              const updatedPPO = currentCustoms.filter(s => !deletedPPO.has(s.id));
-              Object.values(cloudMutations.buildingStudies).forEach(cs => {
-                if (!deletedPPO.has(cs.id)) {
-                  const idx = updatedPPO.findIndex(s => s.id === cs.id);
-                  if (idx >= 0) {
-                    updatedPPO[idx] = { ...updatedPPO[idx], ...cs };
-                  } else {
-                    updatedPPO.push(cs);
-                  }
-                }
-              });
-              localStorage.setItem('netuno_custom_building_studies', JSON.stringify(updatedPPO));
-            } catch (errPPO) {
-              console.warn('Erro ao mesclar PPO da nuvem:', errPPO);
-            }
-          }
-
-          // Sincronização em tempo real de Estudos Técnicos vindos da nuvem
-          if (cloudMutations.technicalStudies && Object.keys(cloudMutations.technicalStudies).length > 0) {
-            try {
-              const techRaw = localStorage.getItem('netuno_technical_studies');
-              const currentTech = techRaw ? JSON.parse(techRaw) : [];
-              const deletedTech = new Set(cloudMutations.deletedTechnicalStudies || []);
-              const updatedTech = currentTech.filter(s => !deletedTech.has(s.id));
-              Object.values(cloudMutations.technicalStudies).forEach(ts => {
-                if (!deletedTech.has(ts.id)) {
-                  const idx = updatedTech.findIndex(s => s.id === ts.id);
-                  if (idx >= 0) {
-                    updatedTech[idx] = { ...updatedTech[idx], ...ts };
-                  } else {
-                    updatedTech.push(ts);
-                  }
-                }
-              });
-              localStorage.setItem('netuno_technical_studies', JSON.stringify(updatedTech));
-            } catch (errTech) {
-              console.warn('Erro ao mesclar Estudos Técnicos da nuvem:', errTech);
-            }
-          }
-
-          // Sincronização em tempo real do Histórico de Ações / Auditoria
-          if (cloudMutations.auditLogs && cloudMutations.auditLogs.length > 0) {
-            mergeAuditLogs(cloudMutations.auditLogs);
-          }
-
-          // Sincronização em tempo real de Usuários e Perfis RBAC
-          if (cloudMutations.rbacUsers && Array.isArray(cloudMutations.rbacUsers)) {
-            mergeRbacUsers(loadRbacUsers(), cloudMutations.rbacUsers);
-          }
-
-          // Sincronização em tempo real de metadados de missões (ordem otimizada e atribuição)
-          if (cloudMutations.missionMetas && Object.keys(cloudMutations.missionMetas).length > 0) {
-            setMissions(prevMissions => {
-              let hasChange = false;
-              const updated = prevMissions.map(m => {
-                const meta = cloudMutations.missionMetas[String(m.id)];
-                if (meta) {
-                  let changedItem = false;
-                  const nextOrdered = (Array.isArray(meta.orderedIds) && meta.orderedIds.length > 0)
-                    ? meta.orderedIds
-                    : m.orderedIds;
-                  const nextAtribuicao = meta.atribuicao !== undefined ? meta.atribuicao : m.atribuicao;
-
-                  if (JSON.stringify(nextOrdered) !== JSON.stringify(m.orderedIds) || nextAtribuicao !== m.atribuicao) {
-                    changedItem = true;
-                    hasChange = true;
-                  }
-
-                  if (changedItem) {
-                    if (nextOrdered && nextOrdered.length > 0) {
-                      try {
-                        localStorage.setItem(`netuno_mission_ordered_${m.id}`, JSON.stringify(nextOrdered));
-                      } catch (e) {}
-                    }
-                    return { ...m, orderedIds: nextOrdered, atribuicao: nextAtribuicao };
-                  }
-                }
-                return m;
-              });
-              if (hasChange) {
-                saveMissions(updated);
-                return updated;
-              }
-              return prevMissions;
-            });
-          }
+          applyCloudMutations(cloudMutations);
         }
       } catch (e) {
         console.warn('Erro ao sincronizar com banco em nuvem:', e);
       }
     };
 
-    syncWithCloud();
+    // No carregamento inicial, se já houver cache local de hidrantes e timestamp, faz delta; caso contrário, busca completo
+    const localChanges = loadHydrantChanges();
+    const hasCachedMutations = Object.keys(localChanges.updated || {}).length > 0;
+    syncWithCloud({ forceFull: !hasCachedMutations || !getLastMutationTimestamp() });
 
     // Listener Realtime (WebSockets) para atualizações instantâneas entre Mobile e Desktop
     const unsubscribe = subscribeToCloudRealtime({
-      onMissionsChange: () => {
-        syncWithCloud();
+      onMissionsChange: (freshMissions) => {
+        if (Array.isArray(freshMissions)) {
+          setMissions(prevMissions => {
+            const merged = mergeMissions(prevMissions, freshMissions);
+            if (JSON.stringify(prevMissions) === JSON.stringify(merged)) return prevMissions;
+            saveMissions(merged);
+            return merged;
+          });
+        }
       },
       onFoldersChange: (freshFolders) => {
         if (Array.isArray(freshFolders)) {
           setFolders(prevFolders => {
             const merged = mergeFolders(prevFolders, freshFolders);
+            if (JSON.stringify(prevFolders) === JSON.stringify(merged)) return prevFolders;
             saveFolders(merged);
             return merged;
           });
         }
       },
-      onHydrantChange: () => {
-        syncWithCloud();
+      onHydrantChange: (deltaMutations) => {
+        if (deltaMutations && !deltaMutations.empty) {
+          applyCloudMutations(deltaMutations);
+        }
       }
     });
 
-    // Polling inteligente a cada 15 segundos
+    // Polling inteligente e econômico (Fallback de 3 minutos, apenas se a aba estiver em primeiro plano)
+    // O WebSockets Realtime é o canal principal que já atualiza instantaneamente sem tráfego HTTP repetido.
+    const HEARTBEAT_INTERVAL_MS = 3 * 60 * 1000;
     const pollInterval = setInterval(() => {
-      if (isCloudConfigured() && navigator.onLine) {
-        syncWithCloud();
+      if (isCloudConfigured() && navigator.onLine && !document.hidden) {
+        syncWithCloud({ isDelta: true });
       }
-    }, 15000);
+    }, HEARTBEAT_INTERVAL_MS);
+
+    // Sincroniza em background sob demanda quando o usuário retorna à aba após ausência prolongada
+    let lastVisibilitySync = Date.now();
+    const handleVisibilityChange = () => {
+      if (!document.hidden && isCloudConfigured() && navigator.onLine) {
+        const elapsed = Date.now() - lastVisibilitySync;
+        if (elapsed > 45000) { // pelo menos 45s de intervalo para não disparar em alternâncias rápidas
+          lastVisibilitySync = Date.now();
+          syncWithCloud({ isDelta: true });
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       unsubscribe();
       clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [hidrantes.length]);
 

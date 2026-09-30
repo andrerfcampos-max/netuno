@@ -814,3 +814,20 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
      - `storage.js`: `mergeMissions` aprimorado com união de conjuntos para nunca perder IDs concluídos ao mesclar dados locais e da nuvem.
   5. **Diretrizes Atualizadas (`GEMINI.md`):**
      - Regra 8 atualizada com o protocolo operacional definitivo de ingestão em lote para as próximas vezes.
+
+### [30/09/2026] Otimização de Performance de Rede: Delta Sync (Sincronização Incremental) e Redução de Polling
+- **Problema Identificado:** Quando a aba do Netuno permanecia aberta, a aplicação transferia centenas de megabytes continuamente (ex: 418 MB e mais de 1.000 requisições em ~1h30). O tráfego ocorria devido a um `setInterval` de 15 segundos em `App.jsx` que baixava repetidamente a tabela inteira `netuno_hydrant_mutations` (~3 MB por requisição / 929 registros), gerando desperdício massivo de banda móvel 4G/5G, aquecimento de bateria e re-renderizações desnecessárias da lista de 12.000 hidrantes.
+- **Implementações Realizadas:**
+  1. **Delta Sync (Sincronização Incremental em `syncService.js`):**
+     - Criados helpers de persistência de timestamp: `getLastMutationTimestamp()`, `setLastMutationTimestamp(ts)` e `resetMutationSyncTimestamp()`.
+     - `fetchHydrantMutationsFromCloud(options)` agora aceita `{ since, forceFull }`.
+     - Se `since` for informado, executa `.gt('updated_at', since)`. Se nenhuma mutação ocorreu, o banco retorna `[]` (0 linhas, ~100 bytes HTTP) em vez de 3 MB.
+     - Tempo de consulta reduzido de 11.152ms (~11s) para **91ms** (ganho de 120x de velocidade e 100% de payload poupado).
+  2. **Tratamento Inteligente no WebSocket Realtime (`subscribeToCloudRealtime`):**
+     - O listener Realtime de `netuno_hydrant_mutations` agora utiliza delta sync para buscar apenas a mutação recente disparada no evento, repassando o objeto alterado diretamente ao `App.jsx` sem refazer queries de missões e pastas.
+  3. **Refatoração do Ciclo de Polling e Heartbeat (`App.jsx`):**
+     - Eliminado o polling destrutivo de 15 segundos incondicional.
+     - Implementado heartbeat de segurança de 3 minutos (`HEARTBEAT_INTERVAL_MS = 180000ms`), ativo apenas se a aba estiver em primeiro plano (`!document.hidden`).
+     - Adicionado listener de `visibilitychange` para executar checagem delta pontual apenas quando o militar retorna à aba após mais de 45 segundos de ausência.
+  4. **Proteção contra Re-renderizações Fantasma:**
+     - `applyCloudMutations` e `syncWithCloud` verificam se houve mutações antes de reprocessar os 12.000 hidrantes e chamar `saveHydrantChanges`, zerando custo de CPU quando o banco não tiver alterações.

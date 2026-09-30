@@ -261,6 +261,35 @@ export const syncInspectionToCloud = async (hidrante) => {
 // 4. SINCRONIZAÇÃO DE MUTAÇÕES DA BASE DE HIDRANTES (netuno_hydrant_mutations)
 // ------------------------------------------------------------------------------
 
+let lastKnownMutationTimestamp = null;
+
+export const getLastMutationTimestamp = () => {
+  if (lastKnownMutationTimestamp) return lastKnownMutationTimestamp;
+  try {
+    const ts = localStorage.getItem('netuno_last_mutation_timestamp');
+    if (ts) {
+      lastKnownMutationTimestamp = ts;
+      return ts;
+    }
+  } catch {}
+  return null;
+};
+
+export const setLastMutationTimestamp = (ts) => {
+  if (!ts) return;
+  lastKnownMutationTimestamp = ts;
+  try {
+    localStorage.setItem('netuno_last_mutation_timestamp', ts);
+  } catch {}
+};
+
+export const resetMutationSyncTimestamp = () => {
+  lastKnownMutationTimestamp = null;
+  try {
+    localStorage.removeItem('netuno_last_mutation_timestamp');
+  } catch {}
+};
+
 /**
  * Salva uma mutação de hidrante (atualização, adição, auditoria ou exclusão) no banco em nuvem
  */
@@ -290,17 +319,30 @@ export const syncHydrantMutationToCloud = async (type, payloadData) => {
 };
 
 /**
- * Busca todas as mutações de hidrantes da nuvem
+ * Busca mutações de hidrantes da nuvem com suporte nativo a Delta Sync (Sincronização Incremental).
+ * Evita o download repetido de toda a base (centenas de megabytes em polling) buscando apenas alterações recentes.
+ * @param {Object} [options]
+ * @param {boolean} [options.forceFull=false] - Força busca completa de toda a tabela
+ * @param {string|null} [options.since=null] - Busca registros com updated_at maior que este timestamp
  */
-export const fetchHydrantMutationsFromCloud = async () => {
+export const fetchHydrantMutationsFromCloud = async (options = {}) => {
   const client = getSupabaseClient();
   if (!client) return null;
 
+  const forceFull = options?.forceFull === true;
+  const since = forceFull ? null : (options?.since !== undefined ? options.since : getLastMutationTimestamp());
+
   try {
-    const { data, error } = await client
+    let query = client
       .from('netuno_hydrant_mutations')
       .select('*')
       .order('updated_at', { ascending: true });
+
+    if (since) {
+      query = query.gt('updated_at', since);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.warn('Erro ao buscar mutações do Supabase:', error.message);
@@ -318,10 +360,22 @@ export const fetchHydrantMutationsFromCloud = async () => {
       deletedTechnicalStudies: [],
       auditLogs: [],
       rbacUsers: null,
-      missionMetas: {}
+      missionMetas: {},
+      count: (data || []).length,
+      empty: !data || data.length === 0,
+      latestTimestamp: since
     };
 
-    (data || []).forEach(row => {
+    if (!data || data.length === 0) {
+      return result;
+    }
+
+    let maxTs = since;
+    data.forEach(row => {
+      if (row.updated_at && (!maxTs || row.updated_at > maxTs)) {
+        maxTs = row.updated_at;
+      }
+
       if (row.type === 'update' && row.payload) {
         const key = row.payload._internalId || row.payload.codHidrante || row.payload.nomHidrante || row.id;
         result.updated[key] = row.payload;
@@ -362,6 +416,11 @@ export const fetchHydrantMutationsFromCloud = async () => {
         result.missionMetas[mId] = row.payload;
       }
     });
+
+    if (maxTs) {
+      setLastMutationTimestamp(maxTs);
+      result.latestTimestamp = maxTs;
+    }
 
     return result;
   } catch (err) {
@@ -465,14 +524,15 @@ export const subscribeToCloudRealtime = ({ onMissionsChange, onFoldersChange, on
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'netuno_hydrant_mutations' }, async () => {
         if (onHydrantChange) {
+          // Busca apenas a mutação recente via Delta Sync (econômico, sem trafegar megabytes repetidos)
           const freshMutations = await fetchHydrantMutationsFromCloud();
-          if (freshMutations) onHydrantChange(freshMutations);
+          if (freshMutations && !freshMutations.empty) onHydrantChange(freshMutations);
         }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'netuno_inspections' }, async () => {
         if (onHydrantChange) {
           const freshMutations = await fetchHydrantMutationsFromCloud();
-          if (freshMutations) onHydrantChange(freshMutations);
+          if (freshMutations && !freshMutations.empty) onHydrantChange(freshMutations);
         }
       })
       .subscribe();
