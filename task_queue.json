@@ -1548,6 +1548,26 @@
       "createdAt": "2026-09-30T18:50:41.472Z",
       "startedAt": "2026-09-30T18:52:18.516Z",
       "completedAt": "2026-09-30T18:54:25.817Z"
+    },
+    {
+      "id": "TASK-154",
+      "seq": 154,
+      "conversationId": "f64ba0e1-5abe-4a6b-a0db-f726f0d113da",
+      "description": "Garantir que edicao de hidrante atualize registro existente sem cadastrar novo",
+      "status": "completed",
+      "createdAt": "2026-09-30T19:19:41.995Z",
+      "startedAt": "2026-09-30T19:19:49.944Z",
+      "completedAt": "2026-09-30T19:25:57.601Z"
+    },
+    {
+      "id": "TASK-155",
+      "seq": 155,
+      "conversationId": "ca497335-4142-4724-86c4-c59704914326",
+      "description": "Sincronizar botao Waze da tela do mapa com pino 1 da rota",
+      "status": "completed",
+      "createdAt": "2026-09-30T21:10:34.068Z",
+      "startedAt": "2026-09-30T21:10:38.117Z",
+      "completedAt": "2026-09-30T21:12:46.943Z"
     }
   ]
 }
