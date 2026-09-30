@@ -2267,6 +2267,195 @@ export const printBuildingStudyReport = ({ study, currentUser = null }) => {
 /**
  * 4. IMPRESSÃO DO PARECER TÉCNICO (ESTUDO TÉCNICO DE HIDRANTES - PADRÃO SEI)
  */
+/**
+ * Extrai e normaliza informações cadastrais e de vistoria de um hidrante para pareceres técnicos
+ */
+export const getHydrantAuditInfo = (h) => {
+  if (!h) return null;
+  const codigo = h.nomHidrante || h.codHidrante || '-';
+  const endereco = h.dscEndereco || 'Endereço não cadastrado';
+  const ra = h.dscLocalidade || 'Distrito Federal';
+  const latNum = Number(h.numLatitude);
+  const lngNum = Number(h.numLongitude);
+  const coords = (!isNaN(latNum) && !isNaN(lngNum)) 
+    ? `${latNum.toFixed(6)}, ${lngNum.toFixed(6)}` 
+    : '-';
+  const isOperante = (h.flgAtivo === true || h.flgAtivo === 1 || h.flgAtivo === 'true' || h.flgAtivo === '1');
+  const situacao = isOperante ? 'Operante' : 'Inoperante';
+
+  // Extração inteligente da data da última vistoria cadastrada
+  let dataVistoria = 'Não registrada';
+  const rawCandidate = h.datHoraUltimaVistoria || h.datUltimaVistoria || h.dataUltimaVistoria || h.dataVistoria || h.datVistoria;
+  if (rawCandidate && String(rawCandidate).trim().toLowerCase() !== 'sem vistoria') {
+    dataVistoria = String(rawCandidate).split(' ')[0];
+  } else if (Array.isArray(h.HISTORICO_VISTORIAS) && h.HISTORICO_VISTORIAS.length > 0) {
+    const last = h.HISTORICO_VISTORIAS[0];
+    const d = last?.datHoraUltimaVistoria || last?.dataVistoria || last?.datVistoria || last?.timestamp || last?.data;
+    if (d) dataVistoria = String(d).split(' ')[0];
+  } else if (h.datAtualizacao) {
+    dataVistoria = String(h.datAtualizacao).split(' ')[0];
+  }
+
+  // Defeitos e condições verificadas em campo
+  let condicoes = 'Sem anomalias ou defeitos apontados (Pronto emprego operacional)';
+  if (!isOperante) {
+    condicoes = h.problemasHidrante && h.problemasHidrante.trim()
+      ? `Inoperante: ${h.problemasHidrante}`
+      : 'Inoperante (necessita intervenção / manutenção)';
+  } else if (h.problemasHidrante && h.problemasHidrante.trim()) {
+    condicoes = `Operante com apontamentos: ${h.problemasHidrante}`;
+  }
+
+  const vazaoPressao = [
+    h.numVazao ? `Vazão: ${h.numVazao} L/min` : null,
+    h.numPressao ? `Pressão: ${h.numPressao} kgf/cm²` : null
+  ].filter(Boolean).join(' • ') || 'Pressão e vazão nominais da rede de distribuição pública';
+
+  return {
+    codigo,
+    endereco,
+    ra,
+    coords,
+    situacao,
+    isOperante,
+    dataVistoria,
+    condicoes,
+    vazaoPressao
+  };
+};
+
+/**
+ * Gera um mapa cartográfico vetorial em SVG para o parecer técnico impresso em A4 / PDF
+ */
+export const generateTechnicalMapSvg = (targetPos, radius = 600, adjacentHydrants = [], evalHydrant = null) => {
+  if (!targetPos || !targetPos.lat || !targetPos.lng) {
+    return '';
+  }
+
+  const width = 680;
+  const height = 300;
+  const cx = width / 2;
+  const cy = height / 2;
+
+  // Escala gráfica no SVG
+  const rPixels = 105;
+  const scale = rPixels / radius;
+
+  const targetCode = evalHydrant?.nomHidrante || evalHydrant?.codHidrante || 'ALVO';
+  const targetLat = Number(targetPos.lat);
+  const targetLng = Number(targetPos.lng);
+
+  // Bounding box para export de mapa base ArcGIS
+  const metersSpan = width / scale;
+  const latSpan = (height / scale) / 111320;
+  const lngSpan = metersSpan / (111320 * Math.cos(targetLat * Math.PI / 180));
+  const minLat = (targetLat - latSpan * 0.55).toFixed(6);
+  const maxLat = (targetLat + latSpan * 0.55).toFixed(6);
+  const minLng = (targetLng - lngSpan * 0.55).toFixed(6);
+  const maxLng = (targetLng + lngSpan * 0.55).toFixed(6);
+  const esriMapUrl = `https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/export?bbox=${minLng},${minLat},${maxLng},${maxLat}&bboxSR=4326&imageSR=4326&size=${width},${height}&format=png&f=image`;
+
+  const adjacentsRender = (adjacentHydrants || []).map(h => {
+    const lat = Number(h.numLatitude);
+    const lng = Number(h.numLongitude);
+    if (isNaN(lat) || isNaN(lng)) return null;
+
+    const dLat = (lat - targetLat) * 111320;
+    const dLng = (lng - targetLng) * (111320 * Math.cos(targetLat * Math.PI / 180));
+    const px = cx + dLng * scale;
+    const py = cy - dLat * scale;
+    const dist = Math.round(h.distanceToTarget || h.distance || Math.sqrt(dLat * dLat + dLng * dLng));
+    const code = h.nomHidrante || h.codHidrante || '';
+    const isOp = (h.flgAtivo === true || h.flgAtivo === 1 || h.flgAtivo === 'true' || h.flgAtivo === '1');
+
+    return {
+      px,
+      py,
+      dist,
+      code,
+      isOp,
+      midX: (cx + px) / 2,
+      midY: (cy + py) / 2
+    };
+  }).filter(Boolean);
+
+  return `
+    <div style="margin: 12px 0; border: 1.5px solid #334155; border-radius: 6px; overflow: hidden; background: #f8fafc; font-family: Arial, sans-serif; page-break-inside: avoid;">
+      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" style="display: block; background: #f8fafc;">
+        <defs>
+          <pattern id="techGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#cbd5e1" stroke-width="0.75" stroke-dasharray="2,2"/>
+          </pattern>
+        </defs>
+
+        <!-- Fundo de Mapa com Fallback de Grade Geodésica -->
+        <rect width="${width}" height="${height}" fill="url(#techGrid)" />
+        <image href="${esriMapUrl}" x="0" y="0" width="${width}" height="${height}" preserveAspectRatio="none" opacity="0.40" />
+
+        <!-- Círculo de Referência Métrica Concéntrica (300m) -->
+        <circle cx="${cx}" cy="${cy}" r="${rPixels * 0.5}" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+        <text x="${cx + rPixels * 0.5 + 4}" y="${cy - 3}" font-size="8.5" fill="#64748b" font-weight="bold">${Math.round(radius * 0.5)}m</text>
+
+        <!-- Linhas e Círculos de Cobertura dos Hidrantes Adjacentes (Sem Preenchimento) -->
+        ${adjacentsRender.map(a => `
+          <line x1="${cx}" y1="${cy}" x2="${a.px}" y2="${a.py}" stroke="#0284c7" stroke-width="1.2" stroke-dasharray="4,3" opacity="0.7"/>
+          <circle cx="${a.px}" cy="${a.py}" r="${rPixels}" fill="none" stroke="#0284c7" stroke-width="1.4" stroke-dasharray="5,4" opacity="0.85"/>
+          <rect x="${a.midX - 18}" y="${a.midY - 8}" width="36" height="15" rx="3" fill="#ffffff" stroke="#0284c7" stroke-width="1" opacity="0.95"/>
+          <text x="${a.midX}" y="${a.midY + 3}" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#0369a1">${a.dist}m</text>
+        `).join('')}
+
+        <!-- Círculo de Cobertura do Hidrante Alvo (Sombreado Laranja Translúcido) -->
+        <circle cx="${cx}" cy="${cy}" r="${rPixels}" fill="#ea580c" fill-opacity="0.10" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="6,4"/>
+        <text x="${cx}" y="${cy - rPixels - 5}" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#c2410c">Raio Regulamentar de Cobertura: ${radius}m</text>
+
+        <!-- Marcadores dos Hidrantes Adjacentes -->
+        ${adjacentsRender.map(a => `
+          <g>
+            <circle cx="${a.px}" cy="${a.py}" r="6.5" fill="${a.isOp ? '#0284c7' : '#dc2626'}" stroke="#ffffff" stroke-width="2"/>
+            <rect x="${a.px - 22}" y="${a.py + 8}" width="44" height="14" rx="3" fill="#0f172a" opacity="0.85"/>
+            <text x="${a.px}" y="${a.py + 18}" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#ffffff">${a.code}</text>
+          </g>
+        `).join('')}
+
+        <!-- Marcador Central do Hidrante Alvo -->
+        <g>
+          <circle cx="${cx}" cy="${cy}" r="9" fill="#ea580c" stroke="#ffffff" stroke-width="2.5"/>
+          <circle cx="${cx}" cy="${cy}" r="3.5" fill="#ffffff"/>
+          <rect x="${cx - 28}" y="${cy + 12}" width="56" height="16" rx="3" fill="#c2410c" opacity="0.95"/>
+          <text x="${cx}" y="${cy + 24}" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">${targetCode}</text>
+        </g>
+
+        <!-- Indicador de Norte Técnico -->
+        <g transform="translate(${width - 45}, 40)">
+          <circle cx="0" cy="0" r="15" fill="#ffffff" stroke="#475569" stroke-width="1.2" opacity="0.9"/>
+          <polygon points="0,-12 4,0 0,-2 -4,0" fill="#dc2626"/>
+          <polygon points="0,12 4,0 0,2 -4,0" fill="#475569"/>
+          <text x="0" y="-14" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#dc2626">N</text>
+        </g>
+
+        <!-- Escala Gráfica Métrica -->
+        <g transform="translate(18, ${height - 24})">
+          <rect x="-4" y="-12" width="${(200 * scale) + 20}" height="24" rx="3" fill="#ffffff" opacity="0.92" stroke="#94a3b8" stroke-width="0.8"/>
+          <line x1="6" y1="3" x2="${6 + 200 * scale}" y2="3" stroke="#0f172a" stroke-width="2.2"/>
+          <line x1="6" y1="-1" x2="6" y2="7" stroke="#0f172a" stroke-width="1.2"/>
+          <line x1="${6 + 100 * scale}" y1="1" x2="${6 + 100 * scale}" y2="5" stroke="#0f172a" stroke-width="1"/>
+          <line x1="${6 + 200 * scale}" y1="-1" x2="${6 + 200 * scale}" y2="7" stroke="#0f172a" stroke-width="1.2"/>
+          <text x="6" y="-3" font-size="7.5" font-weight="bold" fill="#0f172a">0</text>
+          <text x="${6 + 100 * scale}" y="-3" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#0f172a">100m</text>
+          <text x="${6 + 200 * scale}" y="-3" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#0f172a">200m</text>
+        </g>
+      </svg>
+      
+      <!-- Legenda Oficial Integrada -->
+      <div style="background: #ffffff; border-top: 1px solid #cbd5e1; padding: 6px 12px; font-size: 8pt; display: flex; flex-wrap: wrap; justify-content: space-around; align-items: center; color: #1e293b;">
+        <div><strong style="color: #ea580c;">● Hidrante Alvo:</strong> Raio de ${radius}m (Sombreado Laranja)</div>
+        <div><strong style="color: #0284c7;">- - Hidrantes Adjacentes:</strong> Raio de ${radius}m (Contorno Azul, sem sobreposição)</div>
+        <div><strong>Distâncias Medidas:</strong> Cotas geodésicas em metros</div>
+      </div>
+    </div>
+  `;
+};
+
 export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser = null }) => {
   if (!studyData || !calcResults) {
     alert('Dados do estudo técnico incompletos para impressão.');
@@ -2276,19 +2465,29 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
   const nowStr = formatDateTime(new Date());
   const emissorNome = currentUser?.nome || 'Analista Técnico';
   const emissorMatricula = currentUser?.matricula ? `Matrícula: ${currentUser.matricula}` : '';
-  const isRemocao = studyData.studyType === 'remocao';
+  const isRemocao = studyData.studyType === 'relocation' || studyData.studyType === 'remocao';
   const isApproved = calcResults.isApproved;
 
-  const adjacentsHtml = (calcResults.adjacentHydrants || []).map((h, i) => `
-    <tr>
-      <td class="text-center">${i + 1}</td>
-      <td><strong>${h.codHidrante || h.nomHidrante || '-'}</strong></td>
-      <td class="text-center"><strong>${h.distance ? Math.round(h.distance) + ' m' : '-'}</strong></td>
-      <td style="font-family: monospace;">${h.numLatitude?.toFixed(6) || '-'}, ${h.numLongitude?.toFixed(6) || '-'}</td>
-      <td>${fixEncoding(h.dscEndereco) || '-'}</td>
-      <td class="text-center"><span class="badge ${h.flgAtivo ? 'badge-op' : 'badge-inop'}">${h.flgAtivo ? 'Operante' : 'Inoperante'}</span></td>
-    </tr>
-  `).join('');
+  const evalHydrant = calcResults.evalHydrant || studyData.evalHydrant;
+  const auditInfo = getHydrantAuditInfo(evalHydrant);
+  const targetPos = calcResults.targetPos || (evalHydrant ? { lat: Number(evalHydrant.numLatitude), lng: Number(evalHydrant.numLongitude) } : null);
+
+  const adjacentsHtml = (calcResults.adjacentHydrants || []).map((h, i) => {
+    const distVal = Math.round(h.distanceToTarget || h.distance || 0);
+    const isOp = (h.flgAtivo === true || h.flgAtivo === 1 || h.flgAtivo === 'true' || h.flgAtivo === '1');
+    return `
+      <tr>
+        <td class="text-center">${i + 1}</td>
+        <td><strong>${h.codHidrante || h.nomHidrante || '-'}</strong></td>
+        <td class="text-center font-bold" style="color: #0369a1;">${distVal > 0 ? distVal + ' m' : '-'}</td>
+        <td style="font-family: monospace; font-size: 8.5pt;">${Number(h.numLatitude)?.toFixed(6) || '-'}, ${Number(h.numLongitude)?.toFixed(6) || '-'}</td>
+        <td>${fixEncoding(h.dscEndereco || h.dscLocalidade) || '-'}</td>
+        <td class="text-center"><span class="badge ${isOp ? 'badge-op' : 'badge-inop'}">${isOp ? 'Operante' : 'Inoperante'}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  const mapSvg = generateTechnicalMapSvg(targetPos, calcResults.radius || 600, calcResults.adjacentHydrants || [], evalHydrant);
 
   const html = `
     <!DOCTYPE html>
@@ -2299,75 +2498,79 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
       <style>
         @page {
           size: A4 portrait;
-          margin: 15mm 15mm 15mm 15mm;
+          margin: 12mm 15mm 15mm 15mm;
         }
         * {
           box-sizing: border-box;
           margin: 0;
           padding: 0;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
         body {
           font-family: 'Times New Roman', Times, serif;
-          font-size: 12pt;
-          line-height: 1.5;
+          font-size: 11pt;
+          line-height: 1.45;
           color: #000;
         }
         .header {
           text-align: center;
-          margin-bottom: 25px;
+          margin-bottom: 18px;
         }
-        .inst { font-size: 13pt; font-weight: bold; text-transform: uppercase; }
-        .sub-inst { font-size: 11pt; margin-top: 2px; }
+        .inst { font-size: 12pt; font-weight: bold; text-transform: uppercase; }
+        .sub-inst { font-size: 10.5pt; margin-top: 1px; color: #1e293b; }
         .doc-title {
-          font-size: 14pt;
+          font-size: 13pt;
           font-weight: bold;
           text-transform: uppercase;
-          margin-top: 15px;
+          margin-top: 10px;
           border-top: 2px solid #000;
           border-bottom: 2px solid #000;
-          padding: 6px 0;
+          padding: 5px 0;
         }
-        .section-num { font-weight: bold; margin-top: 14px; text-transform: uppercase; }
-        p { text-align: justify; text-indent: 2.5cm; margin-bottom: 8px; }
+        .section-num { font-weight: bold; margin-top: 12px; margin-bottom: 4px; text-transform: uppercase; font-size: 11pt; }
+        p { text-align: justify; text-indent: 1.5cm; margin-bottom: 6px; }
+        .no-indent { text-indent: 0 !important; }
         
         .data-table {
           width: 100%;
           border-collapse: collapse;
           font-family: Arial, sans-serif;
-          font-size: 9.5pt;
-          margin: 12px 0;
+          font-size: 9pt;
+          margin: 8px 0;
         }
         .data-table th {
           background: #f1f5f9;
-          border: 1px solid #000;
-          padding: 5px;
+          border: 1px solid #475569;
+          padding: 5px 6px;
           text-align: left;
         }
         .data-table td {
-          border: 1px solid #000;
-          padding: 5px;
+          border: 1px solid #475569;
+          padding: 5px 6px;
         }
         .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
         .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 8pt; }
         .badge-op { background: #dcfce7; color: #166534; }
         .badge-inop { background: #fee2e2; color: #991b1b; }
         
         .result-box {
           border: 2px solid #000;
-          padding: 10px;
-          margin: 14px 0;
+          padding: 8px;
+          margin: 10px 0;
           font-family: Arial, sans-serif;
           font-weight: bold;
           text-align: center;
-          font-size: 11pt;
+          font-size: 10.5pt;
         }
         .result-approved { background: #f0fdf4; border-color: #166534; color: #166534; }
         .result-rejected { background: #fef2f2; border-color: #991b1b; color: #991b1b; }
         
-        .signature { margin-top: 40px; text-align: center; page-break-inside: avoid; }
-        .sig-line { width: 320px; border-top: 1px solid #000; margin: 0 auto 6px auto; }
+        .signature { margin-top: 30px; text-align: center; page-break-inside: avoid; }
+        .sig-line { width: 300px; border-top: 1px solid #000; margin: 0 auto 5px auto; }
         .sig-name { font-size: 10.5pt; font-weight: bold; }
-        .sig-role { font-size: 9.5pt; color: #333; }
+        .sig-role { font-size: 9pt; color: #333; }
       </style>
     </head>
     <body>
@@ -2378,44 +2581,83 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
       </div>
 
       <div class="section-num">I - Referência</div>
-      <p><strong>Documento de Origem:</strong> ${studyData.docRef || 'Estudo Técnico'}</p>
+      <p><strong>Documento de Origem:</strong> ${studyData.docRef || 'Estudo Técnico S/N'}</p>
+      <p><strong>Tipo de Pleito:</strong> ${isRemocao ? 'Remanejamento / Remoção de Hidrante Instalado' : 'Projeção / Implantação de Novo Hidrante Urbano'}</p>
       ${studyData.infoGerais ? `<p>${studyData.infoGerais}</p>` : ''}
 
-      <div class="section-num">II - Finalidade</div>
-      <p>
-        O presente estudo tem por finalidade analisar tecnicamente a viabilidade de 
-        <strong>${isRemocao ? 'remanejamento ou desativação de hidrante urbano' : 'projeção de novo hidrante urbano'}</strong> 
-        na localidade de <strong>${studyData.selectedRA || 'Distrito Federal'}</strong>, em atendimento às diretrizes 
-        operacionais de segurança pública e combate a incêndios urbanos.
-      </p>
+      <div class="section-num">II - Objeto de Análise e Equipamento Avaliado</div>
+      ${isRemocao && auditInfo ? `
+        <p>O presente estudo analisa tecnicamente o hidrante urbano abaixo caracterizado, vistoriado e cadastrado na malha do Distrito Federal:</p>
+        <table class="data-table" style="margin-bottom: 8px;">
+          <tbody>
+            <tr>
+              <td style="width: 25%; background: #f8fafc;"><strong>Identificação / Código:</strong></td>
+              <td style="width: 25%; font-weight: bold; font-family: monospace;">${auditInfo.codigo}</td>
+              <td style="width: 25%; background: #f8fafc;"><strong>Situação Operacional:</strong></td>
+              <td style="width: 25%;"><span class="badge ${auditInfo.isOperante ? 'badge-op' : 'badge-inop'}">${auditInfo.situacao}</span></td>
+            </tr>
+            <tr>
+              <td style="background: #f8fafc;"><strong>Endereço / Localidade:</strong></td>
+              <td colspan="3">${auditInfo.endereco} • ${auditInfo.ra}</td>
+            </tr>
+            <tr>
+              <td style="background: #f8fafc;"><strong>Coordenadas Geodésicas:</strong></td>
+              <td style="font-family: monospace;">${auditInfo.coords}</td>
+              <td style="background: #f8fafc;"><strong>Data da Última Vistoria:</strong></td>
+              <td><strong>${auditInfo.dataVistoria}</strong></td>
+            </tr>
+            <tr>
+              <td style="background: #f8fafc;"><strong>Condições Verificadas:</strong></td>
+              <td colspan="3">${auditInfo.condicoes} (${auditInfo.vazaoPressao})</td>
+            </tr>
+          </tbody>
+        </table>
+      ` : `
+        <p>O presente estudo tem por finalidade analisar tecnicamente a viabilidade de projeção e implantação de novo hidrante urbano na localidade de <strong>${studyData.selectedRA || 'Distrito Federal'}</strong>, para expansão e garantia de abastecimento das linhas de combate a incêndio.</p>
+      `}
 
-      <div class="section-num">III - Fundamentação Normativa</div>
+      ${studyData.fotoHidrante ? `
+        <div style="text-align: center; margin: 10px 0; page-break-inside: avoid;">
+          <img src="${studyData.fotoHidrante}" style="max-height: 200px; max-width: 90%; border: 1px solid #475569; border-radius: 4px;" alt="Registro Fotográfico" />
+          <div style="font-size: 8.5pt; color: #475569; margin-top: 3px;">Figura 1: Registro fotográfico da situação motivadora do pleito.</div>
+        </div>
+      ` : ''}
+
+      <div class="section-num">III - Metodologia e Fundamentação Normativa (ABNT NBR 12.218)</div>
       <p>
         A análise de cobertura fundamenta-se estritamente nas prescrições da <strong>ABNT NBR 12.218/2017</strong> 
-        (Projeto de Rede de Distribuição de Água para Abastecimento Público) e Normas Técnicas do CBMDF. 
-        Classificação da ocupação adotada: <strong>${studyData.occupation}</strong>, correspondendo a um raio regulamentar de proteção de 
-        <strong>${calcResults.radius} metros</strong>.
+        (Projeto de Rede de Distribuição de Água para Abastecimento Público) e nas diretrizes técnicas do CBMDF. A referida norma estabelece o dimensionamento de hidrantes urbanos com base nos seguintes raios regulamentares de cobertura por tipologia de ocupação:
+      </p>
+      <div style="margin: 4px 0 6px 3.5cm; font-size: 10pt; line-height: 1.4;">
+        <div>• <strong>Ocupação Unifamiliar (Baixa densidade demográfica):</strong> Raio regulamentar de <strong>800 metros</strong>.</div>
+        <div>• <strong>Ocupação Verticalizada / Comercial (Média e alta densidade):</strong> Raio regulamentar de <strong>600 metros</strong>.</div>
+        <div>• <strong>Ocupações Especiais (Hospitais, shoppings, alta carga de incêndio):</strong> Raio regulamentar de <strong>300 metros</strong>.</div>
+      </div>
+      <p>
+        <strong>Enquadramento e Critério de Adjacência:</strong> O setor em análise classifica-se como <strong>${studyData.occupation}</strong>, correspondendo a um raio de proteção de <strong>${calcResults.radius} metros</strong>. São considerados hidrantes adjacentes com capacidade de salvaguarda mútua exclusivamente os equipamentos situados a uma distância de até <strong>${calcResults.radius} metros</strong> ($d \le ${calcResults.radius}\\text{ m}$) do hidrante avaliado, limite técnico de sobreposição direta de cobertura. Equipamentos além desse raio não garantem a proteção do ponto analisado.
       </p>
 
-      <div class="section-num">IV - Fatos Observados e Equipamentos Adjacentes</div>
+      <div class="section-num">IV - Fatos Observados e Levantamento Espacial</div>
       <p>
-        Por meio de processamento georreferenciado e cálculo geodésico na malha urbana de hidrantes cadastrados, 
-        foram identificados <strong>${(calcResults.adjacentHydrants || []).length} equipamentos adjacentes</strong> com potencial de cobertura:
+        Por meio de processamento georreferenciado e cálculo geodésico na malha urbana, 
+        foram identificados <strong>${(calcResults.adjacentHydrants || []).length} equipamento(s) adjacente(s)</strong> situados dentro do raio regulamentar de ${calcResults.radius}m:
       </p>
+
+      ${mapSvg}
 
       <table class="data-table">
         <thead>
           <tr>
-            <th class="text-center">Item</th>
-            <th>Código</th>
-            <th class="text-center">Distância</th>
-            <th>Coordenadas</th>
+            <th class="text-center" style="width: 35px;">Item</th>
+            <th style="width: 75px;">Código</th>
+            <th class="text-center" style="width: 80px;">Distância</th>
+            <th style="width: 140px;">Coordenadas</th>
             <th>Endereço / Localidade</th>
-            <th class="text-center">Situação</th>
+            <th class="text-center" style="width: 75px;">Situação</th>
           </tr>
         </thead>
         <tbody>
-          ${adjacentsHtml || '<tr><td colspan="6" class="text-center">Nenhum hidrante adjacente detectado</td></tr>'}
+          ${adjacentsHtml || '<tr><td colspan="6" class="text-center">Nenhum hidrante adjacente identificado dentro do raio regulamentar.</td></tr>'}
         </tbody>
       </table>
 
@@ -2426,11 +2668,11 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
       <p>
         ${isApproved 
           ? (isRemocao 
-              ? `Diante da análise espacial executada, constatou-se que a totalidade da área de proteção do hidrante sob exame encontra-se integralmente sobreposta e salvaguardada pelos hidrantes adjacentes da rede pública, preenchendo os requisitos técnicos da ABNT NBR 12.218/2017.`
-              : `A poligonal de interesse encontra-se devidamente contemplada dentro do raio normativo estipulado, garantindo a proteção contra incêndio sem zonas de desabastecimento.`)
+              ? `Diante da análise espacial executada, constatou-se que a totalidade da área de proteção regulamentar (${calcResults.radius}m) do hidrante ${auditInfo?.codigo || 'avaliado'} encontra-se plenamente sobreposta e salvaguardada pelos hidrantes adjacentes operantes da rede pública (${(calcResults.adjacentHydrants || []).length} equipamentos a menos de ${calcResults.radius}m), atendendo aos requisitos técnicos da ABNT NBR 12.218/2017 sem gerar zonas de desabastecimento. Parecer FAVORÁVEL ao remanejamento/remoção.`
+              : `A área de interesse indicada encontra-se devidamente contemplada dentro do raio normativo estipulado de ${calcResults.radius}m, garantindo o pronto emprego operacional e o abastecimento das linhas de combate a incêndio. Parecer FAVORÁVEL à implantação.`)
           : (isRemocao 
-              ? `A remoção pleiteada acarretará desassistência em setores da área de cobertura regulamentar, expondo o perímetro a distâncias superiores ao limite normativo. Não se recomenda o desmantelamento sem reposição tática.`
-              : `A cobertura calculada apontou vértices descobertos que extrapolam a distância regulamentar de ${calcResults.radius}m. Sugere-se a realocação das coordenadas conforme indicado na análise.`)}
+              ? `A desativação do hidrante sob exame acarretará déficit de cobertura na malha urbana de combate a incêndios, deixando edificações desassistidas acima da distância regulamentar de ${calcResults.radius}m por insuficiência de hidrantes adjacentes operantes no raio normativo. Parecer DESFAVORÁVEL à remoção sem a prévia instalação de equipamento substituto na área de influência.`
+              : `A cobertura calculada apontou vértices descobertos que extrapolam a distância regulamentar de ${calcResults.radius}m (maior distância identificada: ${calcResults.maxDist?.toFixed(2)}m). Parecer DESFAVORÁVEL na configuração original, recomendando-se a realocação para as coordenadas sugeridas.`)}
       </p>
 
       <div class="signature">

@@ -38,7 +38,7 @@ import {
   saveTechnicalStudy, 
   deleteTechnicalStudy 
 } from '../utils/technicalStudiesStorage';
-import { printTechnicalStudyReport } from '../utils/officialPrintUtils';
+import { printTechnicalStudyReport, getHydrantAuditInfo } from '../utils/officialPrintUtils';
 
 // Fix Leaflet icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -266,7 +266,8 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
 
     let adjacentHydrants = [];
     if (refPos) {
-      const maxAdjacencyDistance = radius * 2;
+      // Critério normativo NBR 12.218: raio de cobertura mútua direta (d <= radius)
+      const maxAdjacencyDistance = radius;
       adjacentHydrants = hidrantes
         .filter(h => {
           if (!isValidDFCoordinate(h.numLatitude, h.numLongitude)) return false;
@@ -321,6 +322,10 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
         let pointCovered = false;
         let closestDist = Infinity;
         adjacentHydrants.forEach(h => {
+          // Apenas hidrantes comprovadamente operantes conferem salvaguarda de combate a incêndio
+          const isOp = (h.flgAtivo === true || h.flgAtivo === 1 || h.flgAtivo === 'true' || h.flgAtivo === '1');
+          if (!isOp) return;
+
           const d = calculateDistance(point.lat, point.lng, h.numLatitude, h.numLongitude);
           if (d < closestDist) closestDist = d;
           if (d <= radius) pointCovered = true;
@@ -464,6 +469,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
   };
 
   const mapCenter = results?.polyCoords?.[0] || results?.targetPos || [-15.793, -47.882];
+  const auditInfo = useMemo(() => results ? getHydrantAuditInfo(results.evalHydrant) : null, [results]);
   
   const getOccupationName = () => {
     if (occupation === 'unifamiliar') return 'Ocupação Unifamiliar (Adensada, comercial, horizontalizadas)';
@@ -474,85 +480,97 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
   const handleCopySEI = async () => {
     if (!results) return;
     try {
+      const auditInfo = getHydrantAuditInfo(results.evalHydrant);
       let html = `<div style="font-family: Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #000; text-align: justify;">`;
       
       // Item I - REFERÊNCIA
       html += `<p><strong>I - REFERÊNCIA</strong></p>`;
-      html += `<p>De acordo com a solicitação contida no <strong>${docRef || '[Inserir Documento SEI]'}</strong>, a qual versa sobre o estudo técnico de <strong>${studyType === 'relocation' ? 'Remanejamento/remoção de hidrante instalado' : 'Projeção de novo hidrante'}</strong> na localidade especificada.</p>`;
+      html += `<p><strong>Documento SEI / Referência:</strong> ${docRef || '[Inserir Documento SEI]'}</p>`;
+      html += `<p><strong>Tipo de Pleito:</strong> ${studyType === 'relocation' ? 'Remanejamento / Remoção de Hidrante Instalado' : 'Projeção / Implantação de Novo Hidrante Urbano'}</p>`;
       if (infoGerais && infoGerais.trim()) {
         html += `<p>${infoGerais.trim()}</p>`;
       }
 
-      // Item II - FINALIDADE
-      html += `<p><strong>II - FINALIDADE</strong></p>`;
-      html += `<p>Emitir parecer técnico sobre a cobertura e viabilidade espacial do sistema de hidrantes urbanos de incêndio para a área em questão, em conformidade com a normatização vigente.</p>`;
+      // Item II - OBJETO DE ANÁLISE E EQUIPAMENTO AVALIADO
+      html += `<p><strong>II - OBJETO DE ANÁLISE E EQUIPAMENTO AVALIADO</strong></p>`;
+      if (studyType === 'relocation' && auditInfo) {
+        html += `<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 12px; margin: 10px 0; border: 1px solid #444;">`;
+        html += `<tbody>`;
+        html += `<tr><td style="background-color: #f2f2f2; width: 25%;"><strong>Identificação / Código:</strong></td><td style="width: 25%; font-family: monospace; font-weight: bold;">${auditInfo.codigo}</td><td style="background-color: #f2f2f2; width: 25%;"><strong>Situação Operacional:</strong></td><td style="width: 25%; font-weight: bold; color: ${auditInfo.isOperante ? '#166534' : '#991b1b'};">${auditInfo.situacao}</td></tr>`;
+        html += `<tr><td style="background-color: #f2f2f2;"><strong>Endereço / Localidade:</strong></td><td colspan="3">${auditInfo.endereco} • ${auditInfo.ra}</td></tr>`;
+        html += `<tr><td style="background-color: #f2f2f2;"><strong>Coordenadas Geodésicas:</strong></td><td style="font-family: monospace;">${auditInfo.coords}</td><td style="background-color: #f2f2f2;"><strong>Data da Última Vistoria:</strong></td><td><strong>${auditInfo.dataVistoria}</strong></td></tr>`;
+        html += `<tr><td style="background-color: #f2f2f2;"><strong>Condições Verificadas:</strong></td><td colspan="3">${auditInfo.condicoes} (${auditInfo.vazaoPressao})</td></tr>`;
+        html += `</tbody></table>`;
+      } else {
+        html += `<p>Estudo voltado à viabilidade de instalação de hidrante urbano para abastecimento e proteção contra incêndio na localidade de <strong>${selectedRA || 'Distrito Federal'}</strong>.</p>`;
+      }
+
       if (fotoHidrante) {
         html += `<p style="text-align: center; margin: 15px 0;"><img src="${fotoHidrante}" style="max-width: 450px; height: auto; border: 1px solid #ccc; border-radius: 4px;" alt="Situação do Hidrante Atual" /><br><small style="color: #666;">Figura 1: Registro fotográfico da situação motivadora do pleito.</small></p>`;
       }
 
-      // Item III - FUNDAMENTAÇÃO LEGAL
-      html += `<p><strong>III - FUNDAMENTAÇÃO LEGAL</strong></p>`;
-      html += `<p>O presente Parecer possui amparo legal no Decreto Nº 7.163, de 29 de abril de 2010, que regulamenta o inciso I do art. 10-B da Lei nº 8.255, de 20 de novembro de 1991. Regulamento de Segurança Contra Incêndio e Pânico do Distrito Federal - RSIP, aprovado pelo Dec. 21.361, de 20 jul. 2000, publicado no DODF nº 1.398/00.</p>`;
+      // Item III - METODOLOGIA E FUNDAMENTAÇÃO NORMATIVA (ABNT NBR 12.218)
+      html += `<p><strong>III - METODOLOGIA E FUNDAMENTAÇÃO NORMATIVA (ABNT NBR 12.218)</strong></p>`;
+      html += `<p>A análise técnica fundamenta-se nas prescrições da <strong>ABNT NBR 12.218/2017</strong> (Projeto de Rede de Distribuição de Água para Abastecimento Público) e regulamentações do CBMDF. A referida norma baliza a malha de proteção contra incêndio pelos seguintes raios máximos de cobertura por tipologia de ocupação:</p>`;
+      html += `<ul style="margin: 4px 0 8px 30px; font-size: 12px; line-height: 1.4;">`;
+      html += `<li><strong>Ocupação Unifamiliar (Baixa densidade):</strong> Raio regulamentar de <strong>800 metros</strong>.</li>`;
+      html += `<li><strong>Ocupação Verticalizada / Comercial (Média e alta densidade):</strong> Raio regulamentar de <strong>600 metros</strong>.</li>`;
+      html += `<li><strong>Ocupações Especiais (Hospitais, shoppings, alta carga de incêndio):</strong> Raio regulamentar de <strong>300 metros</strong>.</li>`;
+      html += `</ul>`;
+      html += `<p><strong>Enquadramento e Critério de Adjacência:</strong> A localidade em análise classifica-se como <strong>${getOccupationName()}</strong>, estabelecendo um raio de proteção de <strong>${results.radius} metros</strong>. Adotam-se como hidrantes adjacentes com capacidade de salvaguarda mútua apenas os equipamentos situados a uma distância de até <strong>${results.radius} metros</strong> ($d \\le ${results.radius}\\text{ m}$) do hidrante avaliado, limite técnico de sobreposição de atendimento. Equipamentos que extrapolam este raio não asseguram a cobertura da área desassistida.</p>`;
 
-      // Item IV - METODOLOGIA E FATOS OBSERVADOS
-      html += `<p><strong>IV - METODOLOGIA E FATOS OBSERVADOS</strong></p>`;
-      html += `<p><strong>Classificação da Ocupação:</strong> A área em estudo classifica-se como ${getOccupationName()}.</p>`;
-      html += `<p><strong>Exigência Normativa:</strong> Conforme a norma ABNT NBR 12.218/2017, a ocupação predominante exige um raio de cobertura de até <strong>${results.radius} metros</strong> a partir do hidrante para garantir a proteção de todas as edificações contidas no perímetro.</p>`;
-      
-      html += `<p><strong>Equipamentos Próximos e Adjacentes:</strong></p>`;
-      html += `<p>O levantamento da base de dados identificou os seguintes hidrantes adjacentes com áreas de cobertura coincidentes nas imediações do objeto estudado:</p>`;
+      // Item IV - FATOS OBSERVADOS E EQUIPAMENTOS ADJACENTES
+      html += `<p><strong>IV - FATOS OBSERVADOS E EQUIPAMENTOS ADJACENTES</strong></p>`;
+      html += `<p>O processamento computacional georreferenciado identificou os seguintes hidrantes adjacentes consolidados dentro do raio regulamentar de <strong>${results.radius} metros</strong>:</p>`;
       
       // TABELA SEI DE EQUIPAMENTOS ADJACENTES
       html += `<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 12px; margin: 12px 0; border: 1px solid #666;">`;
       html += `<thead>`;
       html += `<tr style="background-color: #f2f2f2; font-weight: bold; text-align: left;">`;
+      html += `<th style="border: 1px solid #666; padding: 6px; width: 40px; text-align: center;">Item</th>`;
       html += `<th style="border: 1px solid #666; padding: 6px;">Código</th>`;
-      html += `<th style="border: 1px solid #666; padding: 6px;">Distância ao Alvo</th>`;
+      html += `<th style="border: 1px solid #666; padding: 6px; text-align: center;">Distância ao Alvo</th>`;
       html += `<th style="border: 1px solid #666; padding: 6px;">Coordenadas Geográficas</th>`;
       html += `<th style="border: 1px solid #666; padding: 6px;">Endereço / Localidade</th>`;
-      html += `<th style="border: 1px solid #666; padding: 6px; text-align: center;">Status</th>`;
+      html += `<th style="border: 1px solid #666; padding: 6px; text-align: center;">Situação</th>`;
       html += `</tr>`;
       html += `</thead>`;
       html += `<tbody>`;
 
       if (results.adjacentHydrants && results.adjacentHydrants.length > 0) {
-        results.adjacentHydrants.forEach(h => {
+        results.adjacentHydrants.forEach((h, idx) => {
           const lat = Number(h.numLatitude).toFixed(6);
           const lng = Number(h.numLongitude).toFixed(6);
-          const dist = Math.round(h.distanceToTarget);
-          const statusText = h.flgAtivo ? 'OPERANTE' : 'INOPERANTE';
-          const statusColor = h.flgAtivo ? '#166534' : '#991b1b';
+          const dist = Math.round(h.distanceToTarget || h.distance || 0);
+          const isOp = (h.flgAtivo === true || h.flgAtivo === 1 || h.flgAtivo === 'true' || h.flgAtivo === '1');
+          const statusText = isOp ? 'OPERANTE' : 'INOPERANTE';
+          const statusColor = isOp ? '#166534' : '#991b1b';
           
           html += `<tr>`;
-          html += `<td style="border: 1px solid #666; padding: 6px; font-weight: bold;">${h.nomHidrante || h.codHidrante}</td>`;
-          html += `<td style="border: 1px solid #666; padding: 6px;">${dist} metros</td>`;
+          html += `<td style="border: 1px solid #666; padding: 6px; text-align: center;">${idx + 1}</td>`;
+          html += `<td style="border: 1px solid #666; padding: 6px; font-weight: bold; font-family: monospace;">${h.nomHidrante || h.codHidrante}</td>`;
+          html += `<td style="border: 1px solid #666; padding: 6px; text-align: center; font-weight: bold; color: #0369a1;">${dist} metros</td>`;
           html += `<td style="border: 1px solid #666; padding: 6px; font-family: monospace;">(${lat}, ${lng})</td>`;
           html += `<td style="border: 1px solid #666; padding: 6px;">${h.dscEndereco || h.dscLocalidade || '-'}</td>`;
           html += `<td style="border: 1px solid #666; padding: 6px; text-align: center; color: ${statusColor}; font-weight: bold;">${statusText}</td>`;
           html += `</tr>`;
         });
       } else {
-        html += `<tr><td colspan="5" style="border: 1px solid #666; padding: 8px; text-align: center; font-style: italic;">Nenhum hidrante adjacente com raio coincidente encontrado.</td></tr>`;
+        html += `<tr><td colspan="6" style="border: 1px solid #666; padding: 8px; text-align: center; font-style: italic;">Nenhum hidrante adjacente identificado dentro do raio regulamentar de ${results.radius} metros.</td></tr>`;
       }
       html += `</tbody>`;
       html += `</table>`;
 
-      html += `<p><strong>Processamento Espacial e Geodésico:</strong></p>`;
-      if (studyType === 'relocation') {
-        html += `<p>A análise computacional avaliou espacialmente a totalidade da área de cobertura do hidrante em questão. Verificou-se que ${results.isApproved ? "toda a área de cobertura do referido hidrante já pertence e encontra-se integralmente sobreposta pelas áreas de cobertura dos hidrantes adjacentes consolidados supracitados." : "a área de cobertura do referido hidrante NÃO está integralmente coberta pelos hidrantes adjacentes, havendo portanto déficit de proteção caso seja removido."}</p>`;
-      } else {
-        html += `<p>O sistema calculou as distâncias entre a coordenada alvo e os vértices do polígono. Maior distância identificada: <strong>${results.maxDist.toFixed(2)} metros.</strong></p>`;
-      }
-
-      // Item V - PARECER TÉCNICO
-      html += `<p><strong>V - PARECER TÉCNICO</strong></p>`;
-      html += `<p>Com base no processamento das coordenadas e na normatização técnica aplicável, o analista signatário possui o seguinte parecer:</p>`;
+      // Item V - PARECER CONCLUSIVO
+      html += `<p><strong>V - PARECER CONCLUSIVO</strong></p>`;
       if (results.isApproved) {
-        html += `<p style="margin-left: 20px;"><strong>1 - FAVORÁVEL</strong> ao pleito de ${studyType === 'relocation' ? 'REMOÇÃO/REMANEJAMENTO' : 'INSTALAÇÃO'}. ${studyType === 'relocation' ? 'Visualiza-se que a região permanece integralmente coberta e protegida pelos hidrantes adjacentes.' : `A maior distância identificada do equipamento até o limite da área é de ${results.maxDist.toFixed(2)} metros, atestando que a totalidade das edificações do polígono encontra-se coberta dentro do raio normativo.`}</p>`;
+        html += `<p><strong>PARECER TÉCNICO: FAVORÁVEL / APROVADO</strong></p>`;
+        html += `<p style="margin-left: 20px;">${studyType === 'relocation' ? `A análise espacial geodésica constatou que a totalidade da área de proteção regulamentar (${results.radius}m) do hidrante analisado encontra-se plenamente sobreposta e salvaguardada pelos hidrantes adjacentes operantes da rede pública (${results.adjacentHydrants.length} equipamentos a menos de ${results.radius}m), atendendo aos parâmetros da ABNT NBR 12.218/2017 sem zonas de desabastecimento.` : `A área de interesse indicada encontra-se devidamente contemplada dentro do raio normativo estipulado de ${results.radius}m, garantindo o pronto emprego operacional e o abastecimento das linhas de combate a incêndio.`}</p>`;
       } else {
-        html += `<p style="margin-left: 20px;"><strong>1 - DESFAVORÁVEL</strong> ao pleito em sua coordenada original / configuração atual, pois ${studyType === 'relocation' ? 'a remoção acarretará em déficit de proteção contra incêndio na região' : `a distância do equipamento até o vértice da área atinge ${results.maxDist.toFixed(2)} metros, ultrapassando o limite normativo exigido para o local.`}</p>`;
+        html += `<p><strong>PARECER TÉCNICO: DESFAVORÁVEL / REPROVADO</strong></p>`;
+        html += `<p style="margin-left: 20px;">${studyType === 'relocation' ? `A desativação do hidrante sob exame acarretará déficit de cobertura na malha urbana de combate a incêndio, deixando edificações desassistidas acima da distância regulamentar de ${results.radius}m por insuficiência de hidrantes adjacentes operantes no raio normativo. Não se recomenda a remoção sem reposição prévia na área de influência.` : `A cobertura calculada apontou vértices descobertos que extrapolam a distância regulamentar de ${results.radius}m (maior distância identificada: ${results.maxDist.toFixed(2)}m). Desfavorável na configuração original, recomendando-se a realocação para as coordenadas sugeridas.`}</p>`;
         if (results.suggestedPos) {
-          html += `<p style="margin-left: 20px;"><strong>2 - SUGESTÃO TÉCNICA:</strong> Para garantir que toda a área fique coberta, sugere-se a instalação/remanejamento de um hidrante para a coordenada centralizada aproximada <strong>${results.suggestedPos.lat.toFixed(6)}, ${results.suggestedPos.lng.toFixed(6)}</strong> ${results.waterCoords.length > 0 ? 'sobre o trecho da rede de água existente.' : '.'}</p>`;
+          html += `<p style="margin-left: 20px;"><strong>Sugestão Técnica:</strong> Sugere-se a instalação/remanejamento de um hidrante para a coordenada centralizada aproximada <strong>${results.suggestedPos.lat.toFixed(6)}, ${results.suggestedPos.lng.toFixed(6)}</strong> ${results.waterCoords.length > 0 ? 'sobre a rede de água existente.' : '.'}</p>`;
         }
       }
       html += `<p>Este é o Parecer.</p>`;
@@ -587,7 +605,8 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
       targetCode: targetCode.trim(),
       rawPolygon,
       rawWaterNetwork,
-      fotoHidrante
+      fotoHidrante,
+      evalHydrant: results.evalHydrant
     };
     printTechnicalStudyReport({ studyData: studyPayload, calcResults: results, currentUser });
   };
@@ -1147,16 +1166,50 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
 
                   <div className="space-y-4 text-justify text-xs sm:text-sm leading-relaxed">
                     <section>
-                      <h5 className="font-bold">I - REFERÊNCIA</h5>
-                      <p>De acordo com a solicitação contida no <strong>{docRef || '[Inserir Documento SEI]'}</strong>, a qual versa sobre o estudo técnico de <strong>{studyType === 'relocation' ? 'Remanejamento/remoção de hidrante instalado' : 'Projeção de novo hidrante'}</strong> na localidade especificada.</p>
+                      <h5 className="font-bold text-slate-900 uppercase tracking-wider text-xs border-b border-slate-200 pb-1 mb-2">I - REFERÊNCIA</h5>
+                      <p><strong>Documento SEI / Referência:</strong> {docRef || '[Inserir Documento SEI]'}</p>
+                      <p><strong>Tipo de Pleito:</strong> {studyType === 'relocation' ? 'Remanejamento / Remoção de Hidrante Instalado' : 'Projeção / Implantação de Novo Hidrante Urbano'}</p>
                       {infoGerais && infoGerais.trim() && (
-                        <p className="mt-2">{infoGerais.trim()}</p>
+                        <p className="mt-2 text-slate-700">{infoGerais.trim()}</p>
                       )}
                     </section>
 
                     <section>
-                      <h5 className="font-bold">II - FINALIDADE</h5>
-                      <p>Emitir parecer técnico sobre a cobertura e viabilidade espacial do sistema de hidrantes urbanos de incêndio para a área em questão, em conformidade com a normatização vigente.</p>
+                      <h5 className="font-bold text-slate-900 uppercase tracking-wider text-xs border-b border-slate-200 pb-1 mb-2">II - OBJETO DE ANÁLISE E EQUIPAMENTO AVALIADO</h5>
+                      {studyType === 'relocation' && auditInfo ? (
+                        <div className="bg-slate-50 border border-slate-300 rounded-xl p-3 my-2 text-xs">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-slate-500 font-semibold block">Identificação / Código:</span>
+                              <strong className="text-sm font-mono text-slate-900">{auditInfo.codigo}</strong>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 font-semibold block">Situação Operacional:</span>
+                              <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${auditInfo.isOperante ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'}`}>
+                                {auditInfo.situacao}
+                              </span>
+                            </div>
+                            <div className="sm:col-span-2">
+                              <span className="text-slate-500 font-semibold block">Endereço e Localidade:</span>
+                              <span className="text-slate-800 font-medium">{auditInfo.endereco} • {auditInfo.ra}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 font-semibold block">Coordenadas Geodésicas:</span>
+                              <span className="font-mono text-slate-700">{auditInfo.coords}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 font-semibold block">Data da Última Vistoria:</span>
+                              <span className="font-bold text-slate-900">{auditInfo.dataVistoria}</span>
+                            </div>
+                            <div className="sm:col-span-2">
+                              <span className="text-slate-500 font-semibold block">Condições e Apontamentos Verificados:</span>
+                              <span className="text-slate-800">{auditInfo.condicoes} <span className="text-slate-500">({auditInfo.vazaoPressao})</span></span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p>Estudo técnico voltado à análise de viabilidade para projeção e instalação de novo hidrante urbano na localidade de <strong>{selectedRA || 'Distrito Federal'}</strong>, para suporte ao combate a incêndio.</p>
+                      )}
                       {fotoHidrante && (
                         <div className="my-4 text-center">
                           <img src={fotoHidrante} alt="Registro Fotográfico" className="max-w-md max-h-64 object-contain mx-auto rounded border border-slate-300 shadow-sm" />
@@ -1166,14 +1219,23 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                     </section>
 
                     <section>
-                      <h5 className="font-bold">III - FUNDAMENTAÇÃO LEGAL</h5>
-                      <p>O presente Parecer possui amparo legal no Decreto Nº 7.163, de 29 de abril de 2010, que regulamenta o inciso I do art. 10-B da Lei nº 8.255, de 20 de novembro de 1991. Regulamento de Segurança Contra Incêndio e Pânico do Distrito Federal - RSIP, aprovado pelo Dec. 21.361, de 20 jul. 2000, publicado no DODF nº 1.398/00.</p>
+                      <h5 className="font-bold text-slate-900 uppercase tracking-wider text-xs border-b border-slate-200 pb-1 mb-2">III - METODOLOGIA E FUNDAMENTAÇÃO NORMATIVA (ABNT NBR 12.218)</h5>
+                      <p>A análise técnica fundamenta-se estritamente nas diretrizes da <strong>ABNT NBR 12.218/2017</strong> (Projeto de Rede de Distribuição de Água para Abastecimento Público) e nas normas técnicas do CBMDF. A referida norma baliza a malha urbana de combate a incêndio pelos seguintes raios regulamentares de cobertura por tipologia de ocupação:</p>
+                      <div className="my-2 pl-4 py-1.5 border-l-2 border-slate-300 space-y-1 text-xs text-slate-800">
+                        <div>• <strong>Ocupação Unifamiliar (Baixa densidade demográfica):</strong> Raio regulamentar de <strong>800 metros</strong>.</div>
+                        <div>• <strong>Ocupação Verticalizada / Comercial (Média e alta densidade):</strong> Raio regulamentar de <strong>600 metros</strong>.</div>
+                        <div>• <strong>Ocupações Especiais (Hospitais, shoppings, alta carga de incêndio):</strong> Raio regulamentar de <strong>300 metros</strong>.</div>
+                      </div>
+                      <p className="mt-2">
+                        <strong>Enquadramento e Critério de Adjacência:</strong> O setor sob exame classifica-se como <strong>{getOccupationName()}</strong>, estabelecendo um raio regulamentar de proteção de <strong>{results.radius} metros</strong>. Consideram-se hidrantes adjacentes com capacidade de salvaguarda mútua exclusivamente os equipamentos situados a uma distância de até <strong>{results.radius} metros</strong> ($d \le {results.radius}\text{ m}$) do hidrante avaliado, limite técnico de sobreposição de atendimento direto. Equipamentos que extrapolam este raio não asseguram a cobertura da área desassistida.
+                      </p>
                     </section>
 
                     <section>
-                      <h5 className="font-bold">IV - METODOLOGIA E FATOS OBSERVADOS</h5>
-                      <p><strong>Classificação da Ocupação:</strong> A área em estudo classifica-se como {getOccupationName()}.</p>
-                      <p><strong>Exigência Normativa:</strong> Conforme a norma ABNT NBR 12.218/2017, a ocupação predominante exige um raio de cobertura de até <strong>{results.radius} metros</strong> a partir do hidrante para garantir a proteção de todas as edificações contidas no perímetro.</p>
+                      <h5 className="font-bold text-slate-900 uppercase tracking-wider text-xs border-b border-slate-200 pb-1 mb-2">IV - FATOS OBSERVADOS E LEVANTAMENTO ESPACIAL</h5>
+                      <p>
+                        Por meio de processamento georreferenciado e cálculo geodésico na malha urbana, foram identificados <strong>{(results.adjacentHydrants || []).length} equipamento(s) adjacente(s)</strong> situados dentro do raio regulamentar de {results.radius}m:
+                      </p>
                       
                       {/* CONTAINER DO MAPA COM ISOLAMENTO DE STACKING CONTEXT */}
                       <div className="my-4 border border-slate-300 rounded-xl overflow-hidden shadow-sm isolate relative z-0">
@@ -1211,17 +1273,17 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                                   center={results.targetPos} 
                                   radius={results.radius} 
                                   pathOptions={{ 
-                                    color: '#f97316', 
-                                    weight: 3, 
+                                    color: '#ea580c', 
+                                    weight: 2.5, 
                                     fillColor: '#f97316', 
-                                    fillOpacity: 0.1, 
+                                    fillOpacity: 0.12, 
                                     dashArray: '6, 6' 
                                   }} 
                                 />
                               </>
                             )}
 
-                            {/* Hidrantes Adjacentes */}
+                            {/* Hidrantes Adjacentes com Contorno Nítido Sem Preenchimento para Evitar Poluição */}
                             {(results.adjacentHydrants || []).map(h => (
                               <React.Fragment key={h.codHidrante || h._internalId || h.nomHidrante}>
                                 <Marker position={[h.numLatitude, h.numLongitude]} icon={customDivIcon('#0284c7', '#ffffff', '3.5px')}>
@@ -1232,7 +1294,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                                     <br />
                                     <span className="text-xs">{h.dscEndereco || '-'}</span>
                                     <br />
-                                    <span className="text-xs font-semibold text-emerald-700">Distância: {Math.round(h.distanceToTarget)}m</span>
+                                    <span className="text-xs font-semibold text-sky-700">Distância ao Alvo: {Math.round(h.distanceToTarget || h.distance || 0)}m</span>
                                   </Popup>
                                 </Marker>
                                 <Circle 
@@ -1240,10 +1302,9 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                                   radius={results.radius} 
                                   pathOptions={{ 
                                     color: '#0284c7', 
-                                    weight: 2.5, 
-                                    fillColor: '#0284c7', 
-                                    fillOpacity: 0.08, 
-                                    dashArray: '6, 6' 
+                                    weight: 2, 
+                                    fill: false, 
+                                    dashArray: '5, 5' 
                                   }} 
                                 />
                               </React.Fragment>
@@ -1274,40 +1335,40 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                         </div>
 
                         {/* Legenda do Mapa */}
-                        <div className="bg-slate-50 border-t border-slate-300 p-3 text-xs flex flex-wrap gap-3 font-sans text-slate-700">
+                        <div className="bg-slate-50 border-t border-slate-300 p-3 text-xs flex flex-wrap items-center gap-4 font-sans text-slate-700">
                           {studyType === 'relocation' && (
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3.5 h-3.5 rounded-full border-2 border-orange-500 bg-orange-100 shrink-0" />
-                              <span className="font-semibold text-orange-950">Hidrante Alvo (Raio {results.radius}m - Tracejado Laranja)</span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded-full border-2 border-orange-600 bg-orange-200/60 shrink-0" />
+                              <span className="font-semibold text-slate-900">Hidrante Alvo (Raio {results.radius}m - Sombreado Laranja)</span>
                             </div>
                           )}
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-3.5 h-3.5 rounded-full border-2 border-black bg-slate-300 shrink-0" style={{ borderStyle: 'dashed' }} />
-                            <span className="font-semibold text-slate-900">Hidrantes Adjacentes (Raio {results.radius}m - Tracejado Preto)</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full border-2 border-sky-600 border-dashed shrink-0" />
+                            <span className="font-semibold text-slate-900">Hidrantes Adjacentes (Raio {results.radius}m - Contorno Azul)</span>
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-3 h-3 rounded-full border-2 border-white bg-emerald-500 shadow-sm shrink-0" />
-                            <span className="font-semibold text-slate-700">Demais Hidrantes da Cidade (Verde)</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3.5 h-3.5 rounded-full border-2 border-white bg-emerald-500 shadow-sm shrink-0" />
+                            <span className="font-semibold text-slate-700">Demais Hidrantes da Região (Verde)</span>
                           </div>
                           {studyType === 'new_hydrant' && (
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3.5 h-3.5 rounded-full border-2 border-emerald-500 bg-emerald-100 shrink-0" />
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded-full border-2 border-emerald-500 bg-emerald-100 shrink-0" />
                               <span className="font-semibold">Nova Coordenada Sugerida</span>
                             </div>
                           )}
                         </div>
                       </div>
 
-                      <p className="mt-4 font-bold">Equipamentos Próximos e Adjacentes:</p>
-                      <p>O levantamento da base de dados identificou os seguintes hidrantes adjacentes com áreas de cobertura coincidentes nas imediações do objeto estudado:</p>
+                      <p className="mt-4 font-bold text-slate-900">Equipamentos Adjacentes Cadastrados:</p>
                       
                       {/* TABELA DE EQUIPAMENTOS ADJACENTES EM TELA */}
                       <div className="overflow-x-auto border border-slate-300 rounded-xl mt-2 mb-3 shadow-xs">
                         <table className="w-full text-left text-xs border-collapse bg-white">
                           <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
                             <tr>
+                              <th className="p-2 border-r border-slate-300 text-center w-10">Item</th>
                               <th className="p-2 border-r border-slate-300">Código</th>
-                              <th className="p-2 border-r border-slate-300">Distância ao Alvo</th>
+                              <th className="p-2 border-r border-slate-300 text-center">Distância ao Alvo</th>
                               <th className="p-2 border-r border-slate-300">Coordenadas (Lat, Lng)</th>
                               <th className="p-2 border-r border-slate-300">Endereço / Localidade</th>
                               <th className="p-2 text-center">Status</th>
@@ -1315,13 +1376,16 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                           </thead>
                           <tbody className="divide-y divide-slate-200">
                             {results.adjacentHydrants && results.adjacentHydrants.length > 0 ? (
-                              results.adjacentHydrants.map(h => (
+                              results.adjacentHydrants.map((h, idx) => (
                                 <tr key={h.codHidrante || h._internalId} className="hover:bg-slate-50">
+                                  <td className="p-2 text-center font-bold text-slate-500 border-r border-slate-200">
+                                    {idx + 1}
+                                  </td>
                                   <td className="p-2 font-mono font-bold text-slate-900 border-r border-slate-200">
                                     {h.nomHidrante || h.codHidrante}
                                   </td>
-                                  <td className="p-2 font-semibold text-emerald-800 border-r border-slate-200">
-                                    {Math.round(h.distanceToTarget)} m
+                                  <td className="p-2 font-semibold text-sky-800 border-r border-slate-200 text-center">
+                                    {Math.round(h.distanceToTarget || h.distance || 0)} m
                                   </td>
                                   <td className="p-2 font-mono text-slate-600 border-r border-slate-200">
                                     {Number(h.numLatitude).toFixed(6)}, {Number(h.numLongitude).toFixed(6)}
@@ -1338,41 +1402,45 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                               ))
                             ) : (
                               <tr>
-                                <td colSpan="5" className="p-3 text-center text-slate-500 italic">
-                                  Nenhum hidrante adjacente com raio coincidente encontrado.
+                                <td colSpan="6" className="p-3 text-center text-slate-500 italic">
+                                  Nenhum hidrante adjacente identificado dentro do raio regulamentar de {results.radius}m.
                                 </td>
                               </tr>
                             )}
                           </tbody>
                         </table>
                       </div>
-
-                      <p className="mt-4 font-bold">Processamento Espacial e Geodésico:</p>
-                      {studyType === 'relocation' ? (
-                        <p>
-                          A análise computacional avaliou espacialmente a totalidade da área de cobertura do hidrante em questão. Verificou-se que {results.isApproved ? "toda a área de cobertura do referido hidrante já pertence e encontra-se integralmente sobreposta pelas áreas de cobertura dos hidrantes adjacentes consolidados supracitados." : "a área de cobertura do referido hidrante NÃO está integralmente coberta pelos hidrantes adjacentes, havendo portanto déficit de proteção caso seja removido."}
-                        </p>
-                      ) : (
-                        <p>O sistema calculou as distâncias entre a coordenada alvo e os vértices do polígono. Maior distância identificada: <strong>{results.maxDist.toFixed(2)} metros.</strong></p>
-                      )}
                     </section>
 
                     <section>
-                      <h5 className="font-bold">V - PARECER TÉCNICO</h5>
-                      <p>Com base no processamento das coordenadas e na normatização técnica aplicável, o analista signatário possui o seguinte parecer:</p>
+                      <h5 className="font-bold text-slate-900 uppercase tracking-wider text-xs border-b border-slate-200 pb-1 mb-2">V - PARECER CONCLUSIVO</h5>
                       <div className="mt-2 pl-4 border-l-2 border-slate-300">
                         {results.isApproved ? (
-                          <p><strong>1 - FAVORÁVEL</strong> ao pleito de {studyType === 'relocation' ? 'REMOÇÃO/REMANEJAMENTO' : 'INSTALAÇÃO'}. {studyType === 'relocation' ? `Visualiza-se que a região permanece integralmente coberta e protegida pelos hidrantes adjacentes.` : `A maior distância identificada do equipamento até o limite da área é de ${results.maxDist.toFixed(2)} metros, atestando que a totalidade das edificações do polígono encontra-se coberta dentro do raio normativo.`}</p>
+                          <>
+                            <p className="font-bold text-emerald-800 text-sm">PARECER TÉCNICO: FAVORÁVEL / APROVADO</p>
+                            <p className="mt-1 text-slate-800">
+                              {studyType === 'relocation' 
+                                ? `A análise espacial geodésica constatou que a totalidade da área de proteção regulamentar (${results.radius}m) do hidrante ${auditInfo?.codigo || 'analisado'} encontra-se plenamente sobreposta e salvaguardada pelos hidrantes adjacentes operantes da rede pública (${results.adjacentHydrants.length} equipamentos a menos de ${results.radius}m), atendendo aos parâmetros da ABNT NBR 12.218/2017 sem zonas de desabastecimento.`
+                                : `A área de interesse indicada encontra-se devidamente contemplada dentro do raio normativo estipulado de ${results.radius}m, garantindo o pronto emprego operacional e o abastecimento das linhas de combate a incêndio.`}
+                            </p>
+                          </>
                         ) : (
                           <>
-                            <p><strong>1 - DESFAVORÁVEL</strong> ao pleito em sua coordenada original / configuração atual, pois {studyType === 'relocation' ? 'a remoção acarretará em déficit de proteção contra incêndio na região' : `a distância do equipamento até o vértice da área atinge ${results.maxDist.toFixed(2)} metros, ultrapassando o limite normativo exigido para o local.`}</p>
+                            <p className="font-bold text-red-800 text-sm">PARECER TÉCNICO: DESFAVORÁVEL / REPROVADO</p>
+                            <p className="mt-1 text-slate-800">
+                              {studyType === 'relocation' 
+                                ? `A desativação do hidrante sob exame acarretará déficit de cobertura na malha urbana de combate a incêndio, deixando edificações desassistidas acima da distância regulamentar de ${results.radius}m por insuficiência de hidrantes adjacentes operantes no raio normativo. Não se recomenda a remoção sem reposição prévia na área de influência.`
+                                : `A cobertura calculada apontou vértices descobertos que extrapolam a distância regulamentar de ${results.radius}m (maior distância identificada: ${results.maxDist.toFixed(2)}m). Desfavorável na configuração original, recomendando-se a realocação para as coordenadas sugeridas.`}
+                            </p>
                             {results.suggestedPos && (
-                              <p className="mt-2"><strong>2 - SUGESTÃO TÉCNICA:</strong> Para garantir que toda a área fique coberta, sugere-se a instalação/remanejamento de um hidrante para a coordenada centralizada aproximada <strong>{results.suggestedPos.lat.toFixed(6)}, {results.suggestedPos.lng.toFixed(6)}</strong> {results.waterCoords.length > 0 ? 'sobre o trecho da rede de água existente.' : '.'}</p>
+                              <p className="mt-2 text-xs font-semibold text-slate-700">
+                                <strong>Sugestão Técnica:</strong> Sugere-se a instalação/remanejamento de um hidrante para a coordenada centralizada aproximada <strong>{results.suggestedPos.lat.toFixed(6)}, {results.suggestedPos.lng.toFixed(6)}</strong> {results.waterCoords.length > 0 ? 'sobre a rede de água existente.' : '.'}
+                              </p>
                             )}
                           </>
                         )}
                       </div>
-                      <p className="mt-4">Este é o Parecer.</p>
+                      <p className="mt-4 text-xs font-bold text-slate-600">Este é o Parecer.</p>
                     </section>
 
                     <div className="pt-16 pb-8 text-center space-y-12 print:pt-32">
