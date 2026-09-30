@@ -1813,7 +1813,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
             {currentUser?.nome ? `${currentUser.nome}` : 'Equipe CBMDF'}
           </p>
           <p className="text-xs text-slate-300 print-text-black mt-0.5">
-            {currentUser?.role === 'admin' ? 'Administrador Técnico' : (currentUser?.role === 'gestor' ? 'Gestor de Hidrante' : 'Vistoriador Operacional')}
+            {(currentUser?.role === 'admin' || currentUser?.role === 'gestor') ? 'Gestor de Hidrante' : 'Vistoriador Operacional'}
             {currentUser?.matricula ? ` • Matrícula: ${currentUser.matricula}` : ''}
           </p>
           <p className="text-xs font-semibold text-slate-400 print-text-gray mt-1">
