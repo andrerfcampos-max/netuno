@@ -74,7 +74,7 @@ const normalizeStr = (s) => {
 };
 
 const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentUser, allHidrantes = [] }) => {
-  const isNew = !hidrante._internalId && !hidrante.codHidrante && !hidrante.nomHidrante;
+  const isNew = hidrante?._mode === 'create' || (!hidrante._internalId && !hidrante.codHidrante && !hidrante.nomHidrante && hidrante?._mode !== 'edit');
   const initialCode = fixEncoding(hidrante.nomHidrante || hidrante.codHidrante || '');
   const initialRA = normalizeRAName(hidrante.dscLocalidade) || '';
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
@@ -466,6 +466,11 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
     onSave({
       ...hidrante,
       ...formData,
+      _originalInternalId: hidrante._internalId,
+      _originalCode: hidrante.codHidrante,
+      _originalNom: hidrante.nomHidrante,
+      _mode: isNew ? 'create' : 'edit',
+      isExplicitCreate: isNew,
       nomHidrante: formData.codHidrante || hidrante.nomHidrante,
       codHidrante: formData.codHidrante || hidrante.codHidrante,
       dscLocalidade: normalizeRAName(formData.dscLocalidade),

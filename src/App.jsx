@@ -526,7 +526,7 @@ syncPreferences({ filters: newFilters });
     } else if ((modal === 'estudo-edificacoes' || modal === 'estudo-edificacao' || modal === 'building-study' || modal === 'ppo') && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
       setIsBuildingStudiesOpen(true);
     } else if ((modal === 'novo-hidrante' || modal === 'new-hydrant') && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
-      setEditingHydrante({});
+      setEditingHydrante({ _mode: 'create' });
     } else if (modal === 'admin' && currentUser?.role === 'admin') {
       setIsUserManagerOpen(true);
     } else if (modal === 'inconsistentes' && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
@@ -1410,33 +1410,102 @@ syncPreferences({ filters: filters });
       ...updatedHidrante,
       dscLocalidade: normalizeRAName(updatedHidrante.dscLocalidade)
     };
-    let exists = false;
-    const isExisting = Boolean(sanitized._internalId);
     
-    let newHidrantes = [];
     const changes = loadHydrantChanges();
+    const isExplicitCreate = updatedHidrante._mode === 'create' || updatedHidrante.isExplicitCreate === true;
 
-    if (isExisting) {
-      newHidrantes = hidrantes.map(h => {
-        if (h._internalId === sanitized._internalId) {
-          exists = true;
-          return sanitized;
+    // Coleta todas as chaves de identificação conhecidas do hidrante a ser salvo
+    const targetKeys = new Set(
+      [
+        updatedHidrante._originalInternalId,
+        updatedHidrante._originalCode,
+        updatedHidrante._originalNom,
+        sanitized._internalId,
+        sanitized.codHidrante,
+        sanitized.nomHidrante,
+        sanitized.codLegado
+      ].filter(Boolean).map(x => String(x).trim().toUpperCase())
+    );
+
+    // Se NÃO for criação explícita, busca com máxima resiliência o hidrante correspondente na base
+    let matchedIndex = -1;
+    if (!isExplicitCreate) {
+      matchedIndex = hidrantes.findIndex(h => {
+        // 1. Correspondência direta por _internalId
+        if (sanitized._internalId && h._internalId && h._internalId === sanitized._internalId) return true;
+        if (updatedHidrante._originalInternalId && h._internalId && h._internalId === updatedHidrante._originalInternalId) return true;
+
+        // 2. Correspondência por conjunto de IDs e aliases conhecidos
+        const hKeys = getHydrantAllIds(h).map(x => String(x).trim().toUpperCase());
+        if (hKeys.some(k => targetKeys.has(k))) return true;
+
+        // 3. Correspondência canônica com tradução de IDs legados/oficiais
+        const targetNomOrCod = updatedHidrante._originalNom || updatedHidrante._originalCode || sanitized.nomHidrante || sanitized.codHidrante;
+        if (targetNomOrCod && (areIdsEquivalent(h.codHidrante, targetNomOrCod) || areIdsEquivalent(h.nomHidrante, targetNomOrCod))) {
+          return true;
         }
-        return h;
+
+        return false;
       });
-      if (exists) {
-        changes.updated[sanitized._internalId] = sanitized;
-      }
     }
 
-    let newlyCreatedEntity = null;
-    if (!exists) {
+    const exists = matchedIndex >= 0;
+    let finalSavedEntity;
+    let newHidrantes = [];
+
+    if (exists) {
+      const original = hidrantes[matchedIndex];
+      const mergedEntity = {
+        ...original,
+        ...sanitized,
+        // Garante a preservação incondicional dos identificadores e dados estruturais/históricos
+        _internalId: original._internalId || sanitized._internalId || `hid_${matchedIndex}`,
+        codHidrante: sanitized.codHidrante || original.codHidrante,
+        nomHidrante: sanitized.nomHidrante || original.nomHidrante,
+        codLegado: original.codLegado || sanitized.codLegado,
+        HISTORICO_VISTORIAS: original.HISTORICO_VISTORIAS || sanitized.HISTORICO_VISTORIAS || [],
+        datHoraUltimaVistoria: original.datHoraUltimaVistoria || sanitized.datHoraUltimaVistoria || '',
+        flgAtivo: sanitized.flgAtivo !== undefined ? sanitized.flgAtivo : original.flgAtivo,
+        status: sanitized.status || original.status || (original.flgAtivo ? 'Operante' : 'Inoperante'),
+        problemasHidrante: sanitized.problemasHidrante !== undefined ? sanitized.problemasHidrante : (original.problemasHidrante || ''),
+        dscObservacao: sanitized.dscObservacao !== undefined ? sanitized.dscObservacao : (original.dscObservacao || '')
+      };
+      delete mergedEntity._mode;
+      delete mergedEntity._originalInternalId;
+      delete mergedEntity._originalCode;
+      delete mergedEntity._originalNom;
+      delete mergedEntity.isExplicitCreate;
+
+      finalSavedEntity = mergedEntity;
+      newHidrantes = [...hidrantes];
+      newHidrantes[matchedIndex] = mergedEntity;
+
+      const saveKey = mergedEntity._internalId || mergedEntity.codHidrante || mergedEntity.nomHidrante;
+      changes.updated[saveKey] = mergedEntity;
+
+      // Se estava na lista de adicionados locais, atualiza lá também
+      if (changes.added && changes.added.length > 0) {
+        changes.added = changes.added.map(a => {
+          const aKeys = getHydrantAllIds(a).map(x => String(x).trim().toUpperCase());
+          return aKeys.some(k => targetKeys.has(k)) ? mergedEntity : a;
+        });
+      }
+    } else {
+      // Criação de novo hidrante
       const newEntity = {
         ...sanitized,
-        _internalId: `hid_new_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+        _internalId: sanitized._internalId && sanitized._internalId.startsWith('hid_new_') 
+          ? sanitized._internalId 
+          : `hid_new_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
       };
-      newlyCreatedEntity = newEntity;
-      newHidrantes = isExisting ? [...newHidrantes, newEntity] : [...hidrantes, newEntity];
+      delete newEntity._mode;
+      delete newEntity._originalInternalId;
+      delete newEntity._originalCode;
+      delete newEntity._originalNom;
+      delete newEntity.isExplicitCreate;
+
+      finalSavedEntity = newEntity;
+      newHidrantes = [...hidrantes, newEntity];
       changes.added.push(newEntity);
 
       // Se houver missão ativa ao cadastrar novo hidrante, inclui na rota de missão e recalcula
@@ -1465,26 +1534,24 @@ syncPreferences({ filters: filters });
     saveHydrantChanges(changes);
     setHidrantes(newHidrantes);
     handleCloseEditHydrant();
-    syncHydrantMutationToCloud(isExisting ? 'update' : 'add', newlyCreatedEntity || sanitized);
+    syncHydrantMutationToCloud(exists ? 'update' : 'add', finalSavedEntity);
 
     // Registra ação de hidrante no Histórico de Auditoria
-    const finalSaved = newlyCreatedEntity || sanitized;
-    const isNew = !exists;
     logAuditEvent({
       entityType: 'hidrante',
-      action: isNew ? 'create' : 'edit',
-      title: isNew 
-        ? `Novo Hidrante Cadastrado: ${finalSaved.nomHidrante || finalSaved.codHidrante || 'Hidrante'}`
-        : `Hidrante Atualizado: ${finalSaved.nomHidrante || finalSaved.codHidrante || 'Hidrante'}`,
-      entityId: String(finalSaved.codHidrante || finalSaved._internalId || finalSaved.nomHidrante || ''),
-      entityName: `${finalSaved.nomHidrante || finalSaved.codHidrante || 'Hidrante'} - ${finalSaved.dscEndereco || ''}`.trim(),
-      location: finalSaved.dscLocalidade || '',
+      action: exists ? 'edit' : 'create',
+      title: exists 
+        ? `Hidrante Atualizado: ${finalSavedEntity.nomHidrante || finalSavedEntity.codHidrante || 'Hidrante'}`
+        : `Novo Hidrante Cadastrado: ${finalSavedEntity.nomHidrante || finalSavedEntity.codHidrante || 'Hidrante'}`,
+      entityId: String(finalSavedEntity.codHidrante || finalSavedEntity._internalId || finalSavedEntity.nomHidrante || ''),
+      entityName: `${finalSavedEntity.nomHidrante || finalSavedEntity.codHidrante || 'Hidrante'} - ${finalSavedEntity.dscEndereco || ''}`.trim(),
+      location: finalSavedEntity.dscLocalidade || '',
       author: currentUser,
-      details: `Status: ${finalSaved.flgAtivo ? 'Operante' : 'Inoperante'} | Vazão: ${finalSaved.numVazao || 'N/I'} | Pressão: ${finalSaved.numPressao || 'N/I'}`,
-      coords: (finalSaved.numLatitude && finalSaved.numLongitude) ? { lat: Number(finalSaved.numLatitude), lng: Number(finalSaved.numLongitude) } : null
+      details: `Status: ${finalSavedEntity.flgAtivo ? 'Operante' : 'Inoperante'} | Vazão: ${finalSavedEntity.numVazao || 'N/I'} | Pressão: ${finalSavedEntity.numPressao || 'N/I'}`,
+      coords: (finalSavedEntity.numLatitude && finalSavedEntity.numLongitude) ? { lat: Number(finalSavedEntity.numLatitude), lng: Number(finalSavedEntity.numLongitude) } : null
     });
 
-    toast.success('Hidrante salvo com sucesso e sincronizado!');
+    toast.success(exists ? 'Hidrante atualizado com sucesso e sincronizado!' : 'Novo hidrante cadastrado com sucesso!');
   };
 
   const handleDeleteHydrant = (hydrantToDelete) => {
@@ -1872,7 +1939,7 @@ syncPreferences({ filters: filters });
             isOpen={isInconsistentModalOpen}
             onClose={() => setIsInconsistentModalOpen(false)}
             hidrantes={hidrantes}
-            onEditHydrant={(h) => setEditingHydrante(h)}
+            onEditHydrant={(h) => setEditingHydrante({ ...h, _mode: 'edit' })}
             onDeleteHydrant={handleDeleteHydrant}
             currentUser={currentUser}
           />
@@ -2095,7 +2162,7 @@ syncPreferences({ filters: filters });
                           onClick={(e) => {
                             if (!e.ctrlKey && !e.metaKey && e.button === 0) {
                               e.preventDefault();
-                              setEditingHydrante({});
+                              setEditingHydrante({ _mode: 'create' });
                               setIsMenuOpen(false);
                             }
                           }}
@@ -2499,7 +2566,7 @@ syncPreferences({ filters: filters });
               hidrantes={mapHidrantes} 
               userLocation={userLocation}
               onInspect={handleInspect}
-              onEdit={(h) => setEditingHydrante(h)}
+              onEdit={(h) => setEditingHydrante({ ...h, _mode: 'edit' })}
               onEditInspection={handleEditInspection}
               centerPosition={mapCenterPosition}
               onDeselectHydrant={() => setMapCenterPosition(null)}
@@ -2537,7 +2604,7 @@ syncPreferences({ filters: filters });
             <DataTable 
               data={filteredList} 
               onInspect={handleInspect}
-              onEdit={(h) => setEditingHydrante(h)}
+              onEdit={(h) => setEditingHydrante({ ...h, _mode: 'edit' })}
               onEditInspection={handleEditInspection}
               onCenterMap={handleFocusHydrantOnMap} 
               selectedMissionIds={cartSelectionIds}
@@ -2600,7 +2667,7 @@ syncPreferences({ filters: filters });
               lastInspectedCoords={lastInspectedCoords} 
               onInspect={handleInspect}
               onEditInspection={handleEditInspection}
-              onEdit={(h) => setEditingHydrante(h)}
+              onEdit={(h) => setEditingHydrante({ ...h, _mode: 'edit' })}
               onCenterMap={handleFocusHydrantOnMap}
               currentUser={currentUser}
               folders={folders}
