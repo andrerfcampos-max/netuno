@@ -505,8 +505,18 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
         html += `<p>Estudo voltado à viabilidade de instalação de hidrante urbano para abastecimento e proteção contra incêndio na localidade de <strong>${selectedRA || 'Distrito Federal'}</strong>.</p>`;
       }
 
-      if (fotoHidrante) {
-        html += `<p style="text-align: center; margin: 15px 0;"><img src="${fotoHidrante}" style="max-width: 450px; height: auto; border: 1px solid #ccc; border-radius: 4px;" alt="Situação do Hidrante Atual" /><br><small style="color: #666;">Figura 1: Registro fotográfico da situação motivadora do pleito.</small></p>`;
+      if (auditInfo?.fotoPerfil || (auditInfo?.fotosVistoria && auditInfo.fotosVistoria.length > 0) || fotoHidrante) {
+        html += `<div style="text-align: center; margin: 15px 0;">`;
+        if (auditInfo?.fotoPerfil) {
+          html += `<div style="display: inline-block; margin: 6px; vertical-align: top; max-width: 320px;"><img src="${auditInfo.fotoPerfil}" style="max-height: 220px; max-width: 100%; border: 1px solid #999; border-radius: 4px;" alt="Foto de Perfil" /><br><small style="color: #444; font-weight: bold;">Figura: Foto de Perfil / Fachada (${auditInfo.codigo})</small></div>`;
+        }
+        if (auditInfo?.fotosVistoria && auditInfo.fotosVistoria.length > 0) {
+          html += `<div style="display: inline-block; margin: 6px; vertical-align: top; max-width: 320px;"><img src="${auditInfo.fotosVistoria[0]}" style="max-height: 220px; max-width: 100%; border: 1px solid #999; border-radius: 4px;" alt="Última Vistoria" /><br><small style="color: #444; font-weight: bold;">Figura: Registro da Última Vistoria (${auditInfo.dataVistoria})</small></div>`;
+        }
+        if (fotoHidrante) {
+          html += `<div style="display: inline-block; margin: 6px; vertical-align: top; max-width: 320px;"><img src="${fotoHidrante}" style="max-height: 220px; max-width: 100%; border: 1px solid #999; border-radius: 4px;" alt="Situação Motivadora" /><br><small style="color: #444; font-weight: bold;">Figura: Situação Motivadora Anexada</small></div>`;
+        }
+        html += `</div>`;
       }
 
       // Item III - METODOLOGIA E FUNDAMENTAÇÃO NORMATIVA (ABNT NBR 12.218)
@@ -1210,10 +1220,44 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                       ) : (
                         <p>Estudo técnico voltado à análise de viabilidade para projeção e instalação de novo hidrante urbano na localidade de <strong>{selectedRA || 'Distrito Federal'}</strong>, para suporte ao combate a incêndio.</p>
                       )}
-                      {fotoHidrante && (
-                        <div className="my-4 text-center">
-                          <img src={fotoHidrante} alt="Registro Fotográfico" className="max-w-md max-h-64 object-contain mx-auto rounded border border-slate-300 shadow-sm" />
-                          <span className="text-xs text-slate-500 block mt-1">Figura 1: Registro fotográfico da situação motivadora do pleito.</span>
+                      {/* Galeria de Fotos: Perfil, Última Vistoria e Pleito */}
+                      {(auditInfo?.fotoPerfil || (auditInfo?.fotosVistoria && auditInfo.fotosVistoria.length > 0) || fotoHidrante) && (
+                        <div className="my-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 block mb-2">Registros Fotográficos Oficiais</span>
+                          <div className="flex flex-wrap items-start justify-center gap-3">
+                            {auditInfo?.fotoPerfil && (
+                              <div className="flex-1 min-w-[180px] max-w-[280px] text-center">
+                                <div className="h-40 bg-slate-900 rounded-lg overflow-hidden border border-slate-300 flex items-center justify-center shadow-xs">
+                                  <img src={auditInfo.fotoPerfil} alt="Perfil do Hidrante" className="h-full w-full object-contain" />
+                                </div>
+                                <span className="text-[11px] text-slate-700 font-semibold block mt-1.5">
+                                  Figura: Foto de Perfil / Fachada ({auditInfo.codigo})
+                                </span>
+                              </div>
+                            )}
+
+                            {auditInfo?.fotosVistoria && auditInfo.fotosVistoria.length > 0 && (
+                              <div className="flex-1 min-w-[180px] max-w-[280px] text-center">
+                                <div className="h-40 bg-slate-900 rounded-lg overflow-hidden border border-slate-300 flex items-center justify-center shadow-xs">
+                                  <img src={auditInfo.fotosVistoria[0]} alt="Última Vistoria" className="h-full w-full object-contain" />
+                                </div>
+                                <span className="text-[11px] text-slate-700 font-semibold block mt-1.5">
+                                  Figura: Registro da Última Vistoria ({auditInfo.dataVistoria})
+                                </span>
+                              </div>
+                            )}
+
+                            {fotoHidrante && (
+                              <div className="flex-1 min-w-[180px] max-w-[280px] text-center">
+                                <div className="h-40 bg-slate-900 rounded-lg overflow-hidden border border-slate-300 flex items-center justify-center shadow-xs">
+                                  <img src={fotoHidrante} alt="Situação Motivadora" className="h-full w-full object-contain" />
+                                </div>
+                                <span className="text-[11px] text-slate-700 font-semibold block mt-1.5">
+                                  Figura: Situação Motivadora Anexada
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </section>

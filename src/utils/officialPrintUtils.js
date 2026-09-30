@@ -1,6 +1,7 @@
 import { fixEncoding } from './textUtils';
 import { normalizeRAName } from './raList';
 import { sanitizeProblem, isHidranteRemovido, extractProblemsList } from './problemUtils';
+import { getHydrantPhoto } from './hydrantPhotoUtils';
 
 /**
  * Utilitário de Geração e Impressão de Documentos Oficiais em Formato A4
@@ -2268,6 +2269,34 @@ export const printBuildingStudyReport = ({ study, currentUser = null }) => {
  * 4. IMPRESSÃO DO PARECER TÉCNICO (ESTUDO TÉCNICO DE HIDRANTES - PADRÃO SEI)
  */
 /**
+ * Extrai fotos de vistoria (atual ou do histórico recente)
+ */
+export const extractVistoriaPhotos = (h) => {
+  if (!h) return [];
+  const photos = [];
+  const add = (p) => {
+    if (typeof p === 'string' && p.trim().length > 10 && !photos.includes(p.trim())) {
+      photos.push(p.trim());
+    }
+  };
+  // 1. Fotos da vistoria atual do hidrante
+  if (Array.isArray(h.fotosVistoria)) h.fotosVistoria.forEach(add);
+  if (h.fotoVistoria) add(h.fotoVistoria);
+
+  // 2. Se não encontrar fotos diretas, procurar no histórico de vistorias (ordem cronológica mais recente)
+  if (photos.length === 0 && Array.isArray(h.HISTORICO_VISTORIAS)) {
+    for (const v of h.HISTORICO_VISTORIAS) {
+      if (Array.isArray(v.fotosVistoria)) v.fotosVistoria.forEach(add);
+      if (v.fotoVistoria) add(v.fotoVistoria);
+      if (Array.isArray(v.fotos)) v.fotos.forEach(add);
+      if (v.foto) add(v.foto);
+      if (photos.length > 0) break;
+    }
+  }
+  return photos;
+};
+
+/**
  * Extrai e normaliza informações cadastrais e de vistoria de um hidrante para pareceres técnicos
  */
 export const getHydrantAuditInfo = (h) => {
@@ -2311,6 +2340,10 @@ export const getHydrantAuditInfo = (h) => {
     h.numPressao ? `Pressão: ${h.numPressao} kgf/cm²` : null
   ].filter(Boolean).join(' • ') || 'Pressão e vazão nominais da rede de distribuição pública';
 
+  // Resolução automática de fotos (Perfil e Última Vistoria)
+  const fotoPerfil = getHydrantPhoto(h);
+  const fotosVistoria = extractVistoriaPhotos(h);
+
   return {
     codigo,
     endereco,
@@ -2320,7 +2353,9 @@ export const getHydrantAuditInfo = (h) => {
     isOperante,
     dataVistoria,
     condicoes,
-    vazaoPressao
+    vazaoPressao,
+    fotoPerfil,
+    fotosVistoria
   };
 };
 
@@ -2616,10 +2651,42 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
         <p>O presente estudo tem por finalidade analisar tecnicamente a viabilidade de projeção e implantação de novo hidrante urbano na localidade de <strong>${studyData.selectedRA || 'Distrito Federal'}</strong>, para expansão e garantia de abastecimento das linhas de combate a incêndio.</p>
       `}
 
-      ${studyData.fotoHidrante ? `
-        <div style="text-align: center; margin: 10px 0; page-break-inside: avoid;">
-          <img src="${studyData.fotoHidrante}" style="max-height: 200px; max-width: 90%; border: 1px solid #475569; border-radius: 4px;" alt="Registro Fotográfico" />
-          <div style="font-size: 8.5pt; color: #475569; margin-top: 3px;">Figura 1: Registro fotográfico da situação motivadora do pleito.</div>
+      ${(auditInfo?.fotoPerfil || (auditInfo?.fotosVistoria && auditInfo.fotosVistoria.length > 0) || studyData.fotoHidrante) ? `
+        <div style="margin: 10px 0 14px 0; page-break-inside: avoid;">
+          <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; align-items: flex-start;">
+            ${auditInfo?.fotoPerfil ? `
+              <div style="text-align: center; flex: 1; min-width: 200px; max-width: 310px;">
+                <div style="border: 1px solid #475569; border-radius: 4px; overflow: hidden; height: 175px; background: #0f172a; display: flex; align-items: center; justify-content: center;">
+                  <img src="${auditInfo.fotoPerfil}" style="max-height: 175px; max-width: 100%; object-fit: contain;" alt="Perfil do Hidrante" />
+                </div>
+                <div style="font-size: 8.5pt; color: #1e293b; margin-top: 3px; font-weight: bold;">
+                  Figura: Foto de Perfil / Fachada (${auditInfo.codigo})
+                </div>
+              </div>
+            ` : ''}
+
+            ${(auditInfo?.fotosVistoria && auditInfo.fotosVistoria.length > 0) ? `
+              <div style="text-align: center; flex: 1; min-width: 200px; max-width: 310px;">
+                <div style="border: 1px solid #475569; border-radius: 4px; overflow: hidden; height: 175px; background: #0f172a; display: flex; align-items: center; justify-content: center;">
+                  <img src="${auditInfo.fotosVistoria[0]}" style="max-height: 175px; max-width: 100%; object-fit: contain;" alt="Última Vistoria" />
+                </div>
+                <div style="font-size: 8.5pt; color: #1e293b; margin-top: 3px; font-weight: bold;">
+                  Figura: Registro da Última Vistoria (${auditInfo.dataVistoria})
+                </div>
+              </div>
+            ` : ''}
+
+            ${studyData.fotoHidrante ? `
+              <div style="text-align: center; flex: 1; min-width: 200px; max-width: 310px;">
+                <div style="border: 1px solid #475569; border-radius: 4px; overflow: hidden; height: 175px; background: #0f172a; display: flex; align-items: center; justify-content: center;">
+                  <img src="${studyData.fotoHidrante}" style="max-height: 175px; max-width: 100%; object-fit: contain;" alt="Motivação do Pleito" />
+                </div>
+                <div style="font-size: 8.5pt; color: #1e293b; margin-top: 3px; font-weight: bold;">
+                  Figura: Situação Motivadora Anexada
+                </div>
+              </div>
+            ` : ''}
+          </div>
         </div>
       ` : ''}
 
