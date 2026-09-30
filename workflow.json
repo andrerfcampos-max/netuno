@@ -576,6 +576,12 @@
       "status": "completed",
       "name": "Extração de Fotos de Perfil dos Hidrantes de Brazlândia (Street View Sniper e Fallback GPS)",
       "prompt": "Atue como Arquiteto e Desenvolvedor Frontend. Execute a extração das fotos de perfil dos hidrantes da RA de Brazlândia (BRZ00001 a BRZ00042): 1) Rodar scripts/extract_brazlandia.cjs com IA Sniper calibrada e Fallback GPS automático. 2) Salvar imagens padrão (800x600) e HD (1200x900) em public/hidrantes/brazlandia/. 3) Sincronizar banco de dados oficial (base-de-dados.xlsx, public/base-de-dados.xlsx, hidrantes_df_oficial.csv e json). 4) Atualizar rascunho_falhas_streetview.md caso haja algum hidrante sem cobertura inicial do Google Street View. Responda ETAPA CONCLUIDA."
+    },
+    {
+      "id": 97,
+      "status": "completed",
+      "name": "Sincronização Total de Vistorias em Lote (Missões, Rotas e Histórico de Atividades)",
+      "prompt": "Implementar ingestão completa de vistorias em lote via chat para que atualizem o sistema exatamente como cadastros manuais: 1) Gravação quádrupla nos arquivos oficiais físicos (JSON, CSV, XLSX público e XLSX raiz); 2) Atualização em tempo real do andamento de todas as Missões (netuno_missions no Supabase), computando hidrantes vistoriados em completed_ids; 3) Geração e envio de registros individuais de auditoria (netuno_hydrant_mutations tipo audit_event) para alimentar o Histórico de Atividades com localização, mapa, autor e problemas; 4) Reconciliação automática no App.jsx e MissionManagerModal.jsx; 5) Atualização das diretrizes e arquivos de controle (GEMINI.md Regra 8)."
     }
   ]
 }

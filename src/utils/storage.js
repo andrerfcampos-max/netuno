@@ -343,34 +343,48 @@ export const mergeMissions = (localMissions = [], cloudMissions = []) => {
         ? localM.orderedIds 
         : (safeCloudM.orderedIds && safeCloudM.orderedIds.length > 0 ? safeCloudM.orderedIds : []);
 
+      // União resiliente de completedIds para nunca perder hidrantes já vistoriados
+      const mergedCompletedIds = Array.from(new Set([
+        ...(Array.isArray(localM.completedIds) ? localM.completedIds : []),
+        ...(Array.isArray(safeCloudM.completedIds) ? safeCloudM.completedIds : [])
+      ]));
+
       if (cloudTime > localTime) {
         // Se a nuvem for mais recente, mas não tiver hidrantes e o local tiver, preserva os hidrantes locais
         if (safeCloudM.selectedIds.length === 0 && localM.selectedIds.length > 0) {
           map.set(key, { 
             ...safeCloudM, 
             selectedIds: localM.selectedIds, 
-            completedIds: localM.completedIds,
+            completedIds: mergedCompletedIds,
             orderedIds: bestOrderedIds,
             atribuicao: safeCloudM.atribuicao || localM.atribuicao || ""
           });
         } else {
           map.set(key, {
             ...safeCloudM,
+            completedIds: mergedCompletedIds,
             orderedIds: bestOrderedIds,
             atribuicao: safeCloudM.atribuicao || localM.atribuicao || ""
           });
         }
       } else if (localTime > cloudTime) {
-        map.set(key, localM);
+        map.set(key, {
+          ...localM,
+          completedIds: mergedCompletedIds
+        });
       } else {
         if (safeCloudM.selectedIds.length >= localM.selectedIds.length) {
           map.set(key, {
             ...safeCloudM,
+            completedIds: mergedCompletedIds,
             orderedIds: bestOrderedIds,
             atribuicao: safeCloudM.atribuicao || localM.atribuicao || ""
           });
         } else {
-          map.set(key, localM);
+          map.set(key, {
+            ...localM,
+            completedIds: mergedCompletedIds
+          });
         }
       }
     }

@@ -6,12 +6,22 @@ import { printMissionDraft } from '../utils/draftPrintUtils';
 import { executePrintHtml } from '../utils/officialPrintUtils';
 import { areIdsEquivalent } from '../utils/idMapping';
 
-const countCompletedInMission = (m) => {
+const countCompletedInMission = (m, hidrantesList = []) => {
   if (!m) return 0;
   const sel = m.selectedIds || [];
   const comp = m.completedIds || [];
-  if (sel.length === 0 || comp.length === 0) return 0;
-  return comp.filter(cId => sel.some(sId => areIdsEquivalent(cId, sId))).length;
+  if (sel.length === 0) return 0;
+
+  return sel.filter(sId => {
+    if (comp.length > 0 && comp.some(cId => areIdsEquivalent(cId, sId))) return true;
+    if (Array.isArray(hidrantesList) && hidrantesList.length > 0) {
+      const h = hidrantesList.find(item => areIdsEquivalent(item.codHidrante || item._internalId || item.nomHidrante, sId));
+      if (h && (h.datHoraUltimaVistoria || (Array.isArray(h.HISTORICO_VISTORIAS) && h.HISTORICO_VISTORIAS.length > 0))) {
+        return true;
+      }
+    }
+    return false;
+  }).length;
 };
 
 const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, hidrantes = [], onClose, onOpenMission, onCloseMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser, isEmbedded = false }) => {
@@ -142,7 +152,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
 
       const missionsDetail = fMissions.map(m => {
         const total = (m.selectedIds || []).length;
-        const completed = countCompletedInMission(m);
+        const completed = countCompletedInMission(m, hidrantes);
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
         const status = total > 0 && completed >= total ? 'concluida' : completed > 0 ? 'em_andamento' : 'nao_iniciada';
         
@@ -236,7 +246,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
 
   const filteredMissions = displayMissions.filter(m => {
     const total = (m.selectedIds || []).length;
-    const completed = countCompletedInMission(m);
+    const completed = countCompletedInMission(m, hidrantes);
     const isCompleted = total > 0 && completed >= total;
     const isNotStarted = completed === 0;
     const isPartial = !isNotStarted && !isCompleted;
@@ -998,7 +1008,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
           {activeTab !== 'dashboard_comando' && filteredMissions.map(mission => {
             const isOpen = (mission.id === activeMissionId);
             const total = (mission.selectedIds || []).length;
-            const completed = countCompletedInMission(mission);
+            const completed = countCompletedInMission(mission, hidrantes);
             const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
             const isCompleted = total > 0 && total === completed;
 

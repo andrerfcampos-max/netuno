@@ -74,9 +74,17 @@ Você atua como Engenheiro de Software e Arquitetos neste projeto. Nosso método
           - `public/hidrantes_df_oficial.csv`
           - `public/base-de-dados.xlsx`
           - `base-de-dados.xlsx` (raiz)
-        - E enviar os registros atualizados para o Supabase (`netuno_hydrant_mutations` tipo `update` e evento de auditoria `audit_event`) para sincronizar em tempo real todos os dispositivos conectados.
         - O `HISTORICO_VISTORIAS` de cada hidrante deve arquivar a vistoria anterior e registrar o novo apontamento contendo militar, equipe, data e situação.
-     4. **Pipeline Git e Deploy:**
+     4. **Atualização Total do Histórico de Atividades / Auditoria Individual:**
+        - Cada vistoria do lote DEVE gerar um evento de auditoria individual no formato do `logAuditEvent` (tipo `audit_event`, ação `create`, `entityType: 'vistoria'`), contendo coordenadas, endereço, problemas, observações e dados do militar vistoriador/equipe.
+        - Os eventos são enviados em lotes (chunks) para `netuno_hydrant_mutations` (tipo `audit_event`), alimentando o `SystemHistoryModal` e os contadores de auditoria do sistema.
+     5. **Atualização Automática do Andamento das Missões e Rotas:**
+        - O script DEVE buscar todas as missões cadastradas no Supabase (`netuno_missions`).
+        - Identificar com resolução ampla (`_internalId`, `codHidrante`, `nomHidrante`, Argos legado) quais hidrantes do lote pertencem a missões existentes (`selected_ids`).
+        - Adicionar imediatamente esses hidrantes a `completed_ids` da respectiva missão e atualizar `updated_at`, garantindo que o progresso (ex: 35/173 concluídos) e a rota ativa reflitam a conclusão exatamente como se tivessem sido vistoriados manualmente no aplicativo móvel.
+     6. **Comando de Execução Padrão:**
+        - Para rodar a ingestão: `node scripts/import_honorato_inspections.cjs [caminho_do_arquivo_json]`
+     7. **Pipeline Git e Deploy:**
         - Seguir estritamente o ciclo de Fila (`TASK-QUEUE`), validar o build (`npm run build`), versionar com `git commit` e efetuar o `git push origin main`.
 
 *Sempre siga essa metodologia para evitar assimetria entre código humano e gerado pelo pipeline de IA.*

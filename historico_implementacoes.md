@@ -792,3 +792,25 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   2. **Pré-Carregamento Agressivo em Cache HTTP (0ms):** Disparo assíncrono via `Image()` e tags `<link rel="preload">` dos banners dos primeiros hidrantes da rota ativa logo no clique de autenticação e no carregamento de missões, eliminando delay percebido.
   3. **Eliminação de White Flash:** Adicionado background escuro nativo (`#0f172a`) diretamente no `<html>` e `<body>` de `index.html`, prevenindo clarão branco do navegador durante transições de estado.
   4. **Skeleton Placeholder e Prioridade de Rede:** Banners do 1º hidrante da rota (`MissionRoutePanel`) e do Hero Banner (`MapComponent`) agora contam com skeleton animado suave e atributos `loading="eager"`, `fetchPriority="high"` e `decoding="async"`. Feedback visual imediato com spinner no botão de login.
+
+### [30/09/2026] Etapa 97 Concluída - Sincronização Total de Vistorias em Lote (Missões, Rotas e Histórico de Atividades)
+- **Contexto Operacional:** Vistorias enviadas em lote pelo militar vistoriador Sgt Rrm Honorato (com equipe de apoio Sgt Freitas e Sgt Santiago pttc) passavam a atualizar apenas as planilhas e o banco de hidrantes, sem refletir no andamento de missões ativas nem gerar os logs detalhados individuais do Histórico de Atividades.
+- **Implementações Realizadas:**
+  1. **Motor de Ingestão em Lote Atualizado (`scripts/import_honorato_inspections.cjs`):**
+     - Leitura resiliente com suporte a caminhos dinâmicos de arquivos JSON de vistoria.
+     - Resolução canônica de códigos (5 dígitos, ex: `SAM00082`, `TAG00196`) e mapeamento reverso com `argosIdMap.json` para códigos numéricos legados.
+     - Atualização simultânea quádrupla das bases físicas (`public/hidrantes_df_oficial.json`, `public/hidrantes_df_oficial.csv`, `public/base-de-dados.xlsx` e `base-de-dados.xlsx` na raiz).
+  2. **Atualização em Tempo Real do Andamento das Missões (`netuno_missions` no Supabase):**
+     - O script consulta todas as missões existentes e mapeia os hidrantes do lote.
+     - Hidrantes vistoriados são imediatamente adicionados a `completed_ids` da respectiva missão (ex: Missão TAGUATINGA PTTC 2026 atualizada com 35 hidrantes concluídos de 173).
+     - Atualização do timestamp `updated_at` disparando recálculo automático via Realtime WebSockets.
+  3. **Histórico de Atividades / Auditoria Individual:**
+     - Cada hidrante vistoriado gera um evento individual completo de auditoria no padrão de `logAuditEvent` (tipo `audit_event`, ação `create`, `entityType: 'vistoria'`) com coordenadas GPS, RA, endereço, militar vistoriador, equipe de apoio, status e catálogo de defeitos.
+     - Envio em chunks otimizados (tamanho 25 a 50) prevenindo timeouts do Postgres no Supabase.
+     - Evento de auditoria macro resumindo o volume da carga em lote.
+  4. **Blindagem e Reconciliação no Frontend (`App.jsx` e `MissionManagerModal.jsx`):**
+     - `App.jsx`: `completedMissionIds` e `pendingRouteHydrants` reconciliam automaticamente hidrantes que já contam com vistoria na base de dados, garantindo que o mapa e a rota de missão reconheçam os concluídos instantaneamente em qualquer dispositivo.
+     - `MissionManagerModal.jsx`: `countCompletedInMission` atualizado para receber a lista de hidrantes e computar o progresso real sem defasagens.
+     - `storage.js`: `mergeMissions` aprimorado com união de conjuntos para nunca perder IDs concluídos ao mesclar dados locais e da nuvem.
+  5. **Diretrizes Atualizadas (`GEMINI.md`):**
+     - Regra 8 atualizada com o protocolo operacional definitivo de ingestão em lote para as próximas vezes.
