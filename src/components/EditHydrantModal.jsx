@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { X, ImagePlus, Save, MapPin, LocateFixed, Loader2, Sparkles, Navigation, Check, Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { X, ImagePlus, Save, MapPin, LocateFixed, Loader2, Sparkles, Navigation, Check, Camera, Image as ImageIcon, Trash2, Crosshair } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { RA_LIST, normalizeRAName, generateNextHydrantCode } from '../utils/raList';
 import { isValidDFCoordinate } from '../utils/geoUtils';
@@ -21,6 +21,48 @@ const redPinIcon = L.divIcon({
   iconAnchor: [20, 40],
   popupAnchor: [0, -40]
 });
+
+// Componente estável para o pino do hidrante no mapa:
+// - Permite arrastar o pino diretamente para o ponto exato (draggable)
+// - Permite clicar em qualquer lugar do mapa para mover o pino
+// - Não reseta a visão nem faz flyTo invasivo ao navegar pelo mapa
+const HydrantMapPin = ({ position, onLocationChange }) => {
+  useMapEvents({
+    click(e) {
+      if (e && e.latlng) {
+        onLocationChange(e.latlng.lat, e.latlng.lng);
+      }
+    },
+  });
+
+  return (
+    <Marker 
+      position={position} 
+      icon={redPinIcon} 
+      draggable={true}
+      eventHandlers={{
+        dragend(e) {
+          const marker = e.target;
+          if (marker) {
+            const pos = marker.getLatLng();
+            onLocationChange(pos.lat, pos.lng);
+          }
+        }
+      }}
+    />
+  );
+};
+
+// Ponte para obter a instância do Leaflet Map e controlar a câmera imperativamente
+const MapInstanceBridge = ({ onMapReady }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (onMapReady && map) {
+      onMapReady(map);
+    }
+  }, [map, onMapReady]);
+  return null;
+};
 
 const normalizeStr = (s) => {
   if (!s) return '';
@@ -80,6 +122,7 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
   const galleryInputRef = useRef(null);
   const addressInputRef = useRef(null);
   const searchTimeoutRef = useRef(null);
+  const mapRef = useRef(null);
 
   // 1. OBTENÇÃO AUTOMÁTICA DE LOCALIZAÇÃO DO USUÁRIO AO ABRIR TELA DE NOVO HIDRANTE
   const handleFetchCurrentGPS = (isInitialAuto = false) => {
@@ -118,8 +161,17 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                 };
               });
 
+              if (mapRef.current) {
+                mapRef.current.flyTo([userLat, userLng], 17);
+              }
+
               // Sugere endereço por proximidade da coordenada obtida
               findNearestAddressSuggestion(userLat, userLng);
+            } else {
+              // Usuário está cadastrando remotamente de outra cidade fora do DF
+              if (!isInitialAuto) {
+                alert("Sua localização GPS atual está fora do Distrito Federal. Para cadastrar remotamente, selecione a RA desejada no formulário ou navegue livremente pelo mapa.");
+              }
             }
           }
         },
@@ -127,10 +179,15 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
           setIsLocatingGPS(false);
           if (!isInitialAuto) {
             console.warn('GPS não obtido:', err);
+            alert("Não foi possível obter a sua localização GPS atual. Verifique as permissões de localização do seu navegador.");
           }
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
       );
+    } else {
+      if (!isInitialAuto) {
+        alert("Geolocalização não é suportada pelo seu navegador.");
+      }
     }
   };
 
@@ -260,15 +317,22 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
       ? generateNextHydrantCode(nextRA, allHidrantes) 
       : formData.codHidrante;
 
+    const newLat = sug.lat ? Number(sug.lat).toFixed(6) : formData.numLatitude;
+    const newLng = sug.lng ? Number(sug.lng).toFixed(6) : formData.numLongitude;
+
     setFormData(prev => ({
       ...prev,
       dscEndereco: sug.address,
       dscPontoReferencia: sug.reference ? sug.reference : prev.dscPontoReferencia,
       dscLocalidade: nextRA || prev.dscLocalidade,
       codHidrante: nextCode || prev.codHidrante,
-      numLatitude: sug.lat ? Number(sug.lat).toFixed(6) : prev.numLatitude,
-      numLongitude: sug.lng ? Number(sug.lng).toFixed(6) : prev.numLongitude
+      numLatitude: newLat,
+      numLongitude: newLng
     }));
+
+    if (sug.lat && sug.lng && mapRef.current) {
+      mapRef.current.flyTo([parseFloat(sug.lat), parseFloat(sug.lng)], 17);
+    }
 
     setShowAddressDropdown(false);
   };
@@ -317,6 +381,9 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
     }));
 
     if (ra) {
+      if (mapRef.current) {
+        mapRef.current.flyTo([ra.lat, ra.lng], 16);
+      }
       findNearestAddressSuggestion(ra.lat, ra.lng);
     }
   };
@@ -414,27 +481,24 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
   const validLat = !isNaN(currentNumericLat) ? currentNumericLat : defaultRAObj.lat;
   const validLng = !isNaN(currentNumericLng) ? (currentNumericLng > 0 ? -currentNumericLng : currentNumericLng) : defaultRAObj.lng;
 
-  const LocationMarker = () => {
-    const map = useMapEvents({
-      click(e) {
-        setFormData(prev => ({
-          ...prev,
-          numLatitude: e.latlng.lat.toFixed(6),
-          numLongitude: e.latlng.lng.toFixed(6)
-        }));
-        findNearestAddressSuggestion(e.latlng.lat, e.latlng.lng);
-      },
-    });
+  const handleMapReady = (mapInstance) => {
+    mapRef.current = mapInstance;
+  };
 
-    useEffect(() => {
-      if (!isNaN(validLat) && !isNaN(validLng)) {
-        map.flyTo([validLat, validLng], map.getZoom() < 13 ? 16 : map.getZoom());
-      }
-    }, [validLat, validLng, map]);
+  const handleLocationChange = (newLat, newLng) => {
+    if (isNaN(newLat) || isNaN(newLng)) return;
+    setFormData(prev => ({
+      ...prev,
+      numLatitude: Number(newLat).toFixed(6),
+      numLongitude: Number(newLng).toFixed(6)
+    }));
+    findNearestAddressSuggestion(newLat, newLng);
+  };
 
-    return !isNaN(validLat) && !isNaN(validLng) ? (
-      <Marker position={[validLat, validLng]} icon={redPinIcon} />
-    ) : null;
+  const handleCenterOnPin = () => {
+    if (mapRef.current && !isNaN(validLat) && !isNaN(validLng)) {
+      mapRef.current.flyTo([validLat, validLng], Math.max(mapRef.current.getZoom(), 16));
+    }
   };
 
   return (
@@ -726,15 +790,27 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                   </div>
                 </div>
                 <span className="text-[10px] sm:text-[11px] text-slate-400 italic leading-tight">
-                  Dica: Toque no mapa de satélite para reposicionar o pino vermelho nas coordenadas exatas.
+                  Dica: Arraste o mapa livremente. Toque em qualquer ponto ou arraste o pino vermelho para ajustar a posição exata.
                 </span>
               </div>
 
-              {/* Container do Mapa com Satélite e Botão de Localização GPS */}
+              {/* Container do Mapa com Satélite, Navegação Livre e Botões de Controle */}
               <div className="w-full md:w-1/2 min-h-[260px] h-[300px] sm:h-[340px] md:h-auto md:min-h-[420px] border border-slate-600 rounded-lg overflow-hidden relative shadow-inner z-0">
                  
-                 {/* Botão de Localização GPS do Usuário */}
-                 <div className="absolute top-2 right-2 z-[1000] flex flex-col items-end gap-1">
+                 {/* Botões de Ação sobre o Mapa */}
+                 <div className="absolute top-2 right-2 z-[1000] flex flex-col items-end gap-1.5 pointer-events-auto">
+                   {/* Botão para Centralizar a Câmera no Pino */}
+                   <button
+                     type="button"
+                     onClick={handleCenterOnPin}
+                     className="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold shadow-xl border bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-600 backdrop-blur-md flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                     title="Centralizar o mapa no pino vermelho"
+                   >
+                     <Crosshair size={12} className="text-red-400" />
+                     <span>Focar no Pino</span>
+                   </button>
+
+                   {/* Botão de Localização GPS do Usuário */}
                    <button
                      type="button"
                      onClick={() => handleFetchCurrentGPS(false)}
@@ -757,6 +833,13 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                    </button>
                  </div>
 
+                 {/* Dica flutuante no rodapé do mapa */}
+                 <div className="absolute bottom-2 left-2 right-2 z-[1000] pointer-events-none flex justify-center">
+                   <span className="bg-slate-950/85 backdrop-blur-md border border-slate-700/80 px-2.5 py-0.5 rounded-full text-[10px] text-slate-300 shadow-lg text-center truncate">
+                     Toque no mapa ou arraste o pino para reposicionar
+                   </span>
+                 </div>
+
                  <MapContainer 
                    center={[validLat, validLng]} 
                    zoom={16} 
@@ -769,7 +852,11 @@ const EditHydrantModal = ({ hidrante, onClose, onSave, onDeleteHydrant, currentU
                       url="https://mt0.google.com/vt/lyrs=y&hl=pt-BR&x={x}&y={y}&z={z}"
                       maxZoom={20}
                     />
-                    <LocationMarker />
+                    <MapInstanceBridge onMapReady={handleMapReady} />
+                    <HydrantMapPin 
+                      position={[validLat, validLng]} 
+                      onLocationChange={handleLocationChange} 
+                    />
                  </MapContainer>
               </div>
             </div>
