@@ -1568,6 +1568,66 @@
       "createdAt": "2026-09-30T21:10:34.068Z",
       "startedAt": "2026-09-30T21:10:38.117Z",
       "completedAt": "2026-09-30T21:12:46.943Z"
+    },
+    {
+      "id": "TASK-156",
+      "seq": 156,
+      "conversationId": "5fba8028-f27a-41bd-af4e-cb2c04f63a4d",
+      "description": "Ajustar ingestao em lote para atualizar missoes e historico de atividades",
+      "status": "completed",
+      "createdAt": "2026-09-30T21:17:33.081Z",
+      "startedAt": "2026-09-30T21:17:37.772Z",
+      "completedAt": "2026-09-30T21:32:32.599Z"
+    },
+    {
+      "id": "TASK-157",
+      "seq": 157,
+      "conversationId": "623328b6-3dfd-4725-98ab-13db7d522cdc",
+      "description": "Diagnostico e correcao do erro 401 No token provided na extensao do Argos",
+      "status": "completed",
+      "createdAt": "2026-09-30T21:24:55.904Z",
+      "startedAt": null,
+      "completedAt": "2026-09-30T21:30:23.527Z"
+    },
+    {
+      "id": "TASK-158",
+      "seq": 158,
+      "conversationId": "31319139-f1ef-49fa-bc07-f4f42231eff3",
+      "description": "Investigar e corrigir erro ao enviar direto ao SEI",
+      "status": "timed_out",
+      "createdAt": "2026-09-30T21:30:43.942Z",
+      "startedAt": "2026-09-30T21:32:34.664Z",
+      "completedAt": "2026-09-30T21:47:43.372Z"
+    },
+    {
+      "id": "TASK-159",
+      "seq": 159,
+      "conversationId": "623328b6-3dfd-4725-98ab-13db7d522cdc",
+      "description": "Corrigir inversao de dia e mes em formatDateOnly no relatorio oficial e adicionar edicao de data na extensao",
+      "status": "completed",
+      "createdAt": "2026-09-30T21:40:29.952Z",
+      "startedAt": null,
+      "completedAt": "2026-09-30T21:42:48.157Z"
+    },
+    {
+      "id": "TASK-160",
+      "seq": 160,
+      "conversationId": "623328b6-3dfd-4725-98ab-13db7d522cdc",
+      "description": "Corrigir formato de datas em relatorios do Netuno e adicionar suporte a CSV na extensao do Argos",
+      "status": "completed",
+      "createdAt": "2026-09-30T21:47:02.408Z",
+      "startedAt": "2026-09-30T21:47:43.373Z",
+      "completedAt": "2026-09-30T23:16:35.499Z"
+    },
+    {
+      "id": "TASK-161",
+      "seq": 161,
+      "conversationId": "63c2192a-8ed1-4b5f-9afe-de3730ebfebe",
+      "description": "Otimizacao de sincronizacao delta sync e reducao de polling de rede",
+      "status": "completed",
+      "createdAt": "2026-09-30T23:26:39.818Z",
+      "startedAt": "2026-09-30T23:26:43.524Z",
+      "completedAt": "2026-09-30T23:31:34.785Z"
     }
   ]
 }
