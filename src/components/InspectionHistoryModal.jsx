@@ -130,21 +130,6 @@ const InspectionHistoryModal = ({ hidrante, onClose, currentUser }) => {
         {/* CORPO ROLÁVEL COM AVISO DE AUDITORIA E LINHA DO TEMPO */}
         <div className="p-3.5 sm:p-5 overflow-y-auto space-y-4 flex-1">
           
-          {/* BANNER DE ALERTA DE SEGURANÇA OPERACIONAL (ANTI-CONFUSÃO) */}
-          <div className="p-3 sm:p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/50 text-amber-200 text-xs shadow-sm flex items-start gap-2.5">
-            <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div className="leading-relaxed">
-              <strong className="text-amber-300 font-bold block mb-0.5 uppercase tracking-wide text-[11px]">
-                Atenção - Registros Históricos Arquivados (Não Vigentes):
-              </strong>
-              <span>
-                As vistorias anteriores listadas abaixo são de caráter estritamente histórico para auditoria. 
-                Elas <strong>NÃO refletem a condição operacional atual</strong> deste hidrante. 
-                O mapa tático, os filtros de busca e os relatórios operacionais utilizam exclusivamente a 
-                <strong className="text-emerald-300"> Vistoria Vigente Atual</strong> no topo.
-              </span>
-            </div>
-          </div>
 
           {/* SEÇÃO 1: VISTORIA VIGENTE ATUAL (SOBREPOSTA E ATIVA) */}
           <div className="space-y-2">
