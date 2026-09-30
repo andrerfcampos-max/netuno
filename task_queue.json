@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-152",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -1534,10 +1534,20 @@
       "seq": 152,
       "conversationId": "30a26634-0f70-478f-8408-4a6dd8ad261f",
       "description": "Remover codigo argos legado da dialog e modais",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-09-30T18:48:30.094Z",
       "startedAt": "2026-09-30T18:50:00.834Z",
-      "completedAt": null
+      "completedAt": "2026-09-30T18:52:12.951Z"
+    },
+    {
+      "id": "TASK-153",
+      "seq": 153,
+      "conversationId": "27f205cb-0894-495d-b1d8-4ffaebda45e6",
+      "description": "Cadastrar vistorias em lote Sgt Honorato Samambaia 29/09/2026",
+      "status": "completed",
+      "createdAt": "2026-09-30T18:50:41.472Z",
+      "startedAt": "2026-09-30T18:52:18.516Z",
+      "completedAt": "2026-09-30T18:54:25.817Z"
     }
   ]
 }
