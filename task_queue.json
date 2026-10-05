@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-163",
   "queue": [
     {
       "id": "TASK-1",
@@ -1628,6 +1628,26 @@
       "createdAt": "2026-09-30T23:26:39.818Z",
       "startedAt": "2026-09-30T23:26:43.524Z",
       "completedAt": "2026-09-30T23:31:34.785Z"
+    },
+    {
+      "id": "TASK-162",
+      "seq": 162,
+      "conversationId": "74028fd8-5de0-4ff6-ad90-66afab57f96a",
+      "description": "Investigar e corrigir missoes marcadas como 100% concluidas indevidamente",
+      "status": "completed",
+      "createdAt": "2026-10-05T20:55:15.711Z",
+      "startedAt": "2026-10-05T20:55:18.804Z",
+      "completedAt": "2026-10-05T21:01:31.886Z"
+    },
+    {
+      "id": "TASK-163",
+      "seq": 163,
+      "conversationId": "d05a3212-9690-4fff-aa70-b898b39a513c",
+      "description": "Modal/popup de progresso e debug detalhado da automacao SEI",
+      "status": "running",
+      "createdAt": "2026-10-05T20:57:01.476Z",
+      "startedAt": "2026-10-05T21:01:32.536Z",
+      "completedAt": null
     }
   ]
 }
