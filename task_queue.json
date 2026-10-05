@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-164",
+  "activeTaskId": "TASK-165",
   "queue": [
     {
       "id": "TASK-1",
@@ -1654,9 +1654,19 @@
       "seq": 164,
       "conversationId": "b49a2b91-0c7b-494b-9fbc-fc4d0fee61b2",
       "description": "Implementar gerenciador de sincronizacao offline",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-05T21:28:41.457Z",
       "startedAt": "2026-10-05T21:28:51.561Z",
+      "completedAt": "2026-10-05T21:32:08.963Z"
+    },
+    {
+      "id": "TASK-165",
+      "seq": 165,
+      "conversationId": "b49a2b91-0c7b-494b-9fbc-fc4d0fee61b2",
+      "description": "Auto-reconciliacao de vistorias locais pendentes e aprimoramento da atualizacao de versao",
+      "status": "running",
+      "createdAt": "2026-10-05T21:40:28.908Z",
+      "startedAt": "2026-10-05T21:40:35.863Z",
       "completedAt": null
     }
   ]

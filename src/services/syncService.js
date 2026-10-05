@@ -80,7 +80,10 @@ const processOfflineQueue = async () => {
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
     console.log('[OfflineSync] Conexão restabelecida. Processando fila offline...');
-    setTimeout(processOfflineQueue, 2000);
+    setTimeout(async () => {
+      await processOfflineQueue();
+      await reconcileLocalChangesToCloud();
+    }, 2000);
   });
 }
 // ============================================================================
@@ -150,6 +153,74 @@ export const fetchMissionsFromCloud = async () => {
  * Salva ou atualiza uma missão no banco em nuvem
  */
 export { getOfflineQueue, saveOfflineQueue, processOfflineQueue };
+
+/**
+ * RECONCILIAÇÃO BIDIRECIONAL DE EMERGÊNCIA / AUTO-PUSH DE VISTORIAS LOCAIS
+ * Varre o localStorage do aparelho e sobe todas as alterações locais (hidrantes e missões)
+ * para a nuvem garantindo que nada fique retido no celular mesmo após vistorias offline antigas.
+ */
+export const reconcileLocalChangesToCloud = async () => {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return { count: 0, missions: 0 };
+  }
+  const client = getSupabaseClient();
+  if (!client) return { count: 0, missions: 0 };
+
+  console.log('[OfflineSync] Iniciando reconciliação de dados locais com o Supabase...');
+  let syncedHydrants = 0;
+  let syncedMissions = 0;
+
+  try {
+    // 1. Processa qualquer pendência na fila offline
+    await processOfflineQueue();
+
+    // 2. Reconcilia alterações de hidrantes que estavam salvas em loadHydrantChanges()
+    const localChanges = loadHydrantChanges();
+    const updatedEntries = Object.entries(localChanges.updated || {});
+
+    if (updatedEntries.length > 0) {
+      console.log(`[OfflineSync] Encontrados ${updatedEntries.length} hidrantes em alterações locais para reconciliar.`);
+      for (const [key, hydrant] of updatedEntries) {
+        if (!hydrant) continue;
+        try {
+          // Sobe a mutação do hidrante para netuno_hydrant_mutations
+          const successMut = await _doSyncHydrantMutationToCloud('update', hydrant);
+          
+          // Se tiver vistoria recente ou histórico, sobe também para netuno_inspections
+          if (hydrant.datHoraUltimaVistoria || (Array.isArray(hydrant.HISTORICO_VISTORIAS) && hydrant.HISTORICO_VISTORIAS.length > 0)) {
+            await _doSyncInspectionToCloud(hydrant);
+          }
+
+          if (successMut) syncedHydrants++;
+        } catch (e) {
+          console.warn(`[OfflineSync] Falha ao reconciliar hidrante ${key}:`, e);
+        }
+      }
+    }
+
+    // 3. Reconcilia missões locais que contenham hidrantes concluídos
+    const localMissions = loadMissions();
+    if (Array.isArray(localMissions) && localMissions.length > 0) {
+      for (const mission of localMissions) {
+        if (mission && Array.isArray(mission.completedIds) && mission.completedIds.length > 0) {
+          try {
+            const successM = await _doSyncMissionToCloud(mission);
+            if (successM) syncedMissions++;
+          } catch (e) {
+            console.warn(`[OfflineSync] Falha ao reconciliar missão ${mission.name}:`, e);
+          }
+        }
+      }
+    }
+
+    console.log(`[OfflineSync] Reconciliação concluída: ${syncedHydrants} hidrantes e ${syncedMissions} missões sincronizados.`);
+  } catch (err) {
+    console.error('[OfflineSync] Erro crítico na reconciliação local:', err);
+  }
+
+  return { count: syncedHydrants, missions: syncedMissions };
+};
+
 
 export const syncMissionToCloud = async (mission) => {
   if (!navigator.onLine) { enqueueOfflineAction('syncMission', [mission]); return; }
