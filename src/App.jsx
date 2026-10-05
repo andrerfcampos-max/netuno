@@ -32,7 +32,7 @@ import { extractProblemsList, isHidranteRemovido } from './utils/problemUtils';
 import { fixEncoding } from './utils/textUtils';
 import { getLastKnownLocation, startGlobalGeoTracking, subscribeLocation } from './utils/geoTracker';
 import { optimizeRouteEuclidean } from './utils/routeOptimization';
-import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent, translateId } from './utils/idMapping';
+import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent, translateId, isHydrantCompletedInMission } from './utils/idMapping';
 import { getHydrantPhoto, preloadHydrantPhoto, preloadHydrantsList } from './utils/hydrantPhotoUtils';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -354,7 +354,21 @@ syncPreferences({ activeView: view });
 
   const selectedMissionIds = useMemo(() => currentMission?.selectedIds || [], [currentMission?.selectedIds]);
   
-  const completedMissionIds = useMemo(() => currentMission?.completedIds || [], [currentMission?.completedIds]);
+  const completedMissionIds = useMemo(() => {
+    if (!currentMission) return [];
+    const directCompleted = Array.isArray(currentMission.completedIds) ? currentMission.completedIds : [];
+    const compSet = new Set(directCompleted.map(String));
+    
+    // Auto-reconcilia com hidrantes vistoriados da rota ativa (inclusive offline/mutações locais)
+    const localChanges = loadHydrantChanges();
+    allMissionRouteHydrants.forEach(h => {
+      if (isHydrantCompletedInMission(h, currentMission, localChanges)) {
+        getHydrantAllIds(h).forEach(id => compSet.add(id));
+      }
+    });
+
+    return Array.from(compSet);
+  }, [currentMission, allMissionRouteHydrants, hidrantes]);
 
   // Extrai APENAS os hidrantes PENDENTES (não vistoriados) da rota da missão ativa rigorosamente ordenados pela rota
   const pendingRouteHydrants = useMemo(() => {
@@ -429,6 +443,40 @@ syncPreferences({ activeView: view });
       setIsRouteActiveOnMap(false);
     }
   }, [activeMissionId]);
+
+  // Autocura e persistência: assegura que hidrantes vistoriados offline ou na base
+  // sejam devidamente gravados em completedIds da missão no localStorage e na nuvem
+  useEffect(() => {
+    if (!currentMission || !currentMission.id || allMissionRouteHydrants.length === 0) return;
+    
+    const localChanges = loadHydrantChanges();
+    const existingComp = Array.isArray(currentMission.completedIds) ? currentMission.completedIds : [];
+    const missingIds = [];
+
+    allMissionRouteHydrants.forEach(h => {
+      if (isHydrantCompletedInMission(h, currentMission, localChanges)) {
+        if (!isHydrantInSet(h, existingComp)) {
+          const canonicalId = String(h.codHidrante || h._internalId || h.nomHidrante);
+          missingIds.push(canonicalId);
+        }
+      }
+    });
+
+    if (missingIds.length > 0) {
+      const mergedComp = Array.from(new Set([...existingComp.map(String), ...missingIds]));
+      const updatedMission = {
+        ...currentMission,
+        completedIds: mergedComp,
+        updatedAt: new Date().toISOString()
+      };
+      setMissions(prev => {
+        const next = prev.map(m => m.id === updatedMission.id ? updatedMission : m);
+        saveMissions(next);
+        return next;
+      });
+      syncMissionToCloud(updatedMission);
+    }
+  }, [currentMission?.id, allMissionRouteHydrants, hidrantes]);
 
   // Dispara o zoom tático na rota ao retornar para a tela de mapa quando o modo rota estiver ativo
   const prevViewRef = useRef(activeView);
@@ -1344,39 +1392,31 @@ syncPreferences({ filters: filters });
     changes.updated[idKey] = sanitized;
     saveHydrantChanges(changes);
 
-    if (activeMissionId && !isEditing) {
+    if (activeMissionId) {
       const currentM = missions.find(m => m.id === activeMissionId);
       if (currentM) {
         const curSel = (currentM.selectedIds || []).map(x => String(x));
         const curComp = (currentM.completedIds || []).map(x => String(x));
         
-        const candidateKeys = [
-          sanitized._internalId ? String(sanitized._internalId) : null,
-          sanitized.codHidrante !== undefined && sanitized.codHidrante !== null ? String(sanitized.codHidrante) : null,
-          sanitized.nomHidrante ? String(sanitized.nomHidrante) : null
-        ].filter(Boolean);
+        const matchedInMission = isHydrantInSet(sanitized, curSel);
+        const allSanitizedIds = getHydrantAllIds(sanitized);
+        const primaryId = String(sanitized.codHidrante || sanitized._internalId || sanitized.nomHidrante);
 
-        const matchedInMission = candidateKeys.some(k => curSel.includes(k));
-        if (matchedInMission || curSel.length > 0) {
-          const idsToAdd = candidateKeys.filter(k => curSel.includes(k));
-          const finalIdToAdd = idsToAdd.length > 0 ? idsToAdd : [candidateKeys[0]];
-          
-          // Se o militar encontrou o hidrante no caminho e vistoriou, inclui na missão e marca como concluído
-          const newSelected = matchedInMission ? curSel : Array.from(new Set([...curSel, finalIdToAdd[0]]));
-          const newCompleted = Array.from(new Set([...curComp, ...finalIdToAdd]));
-          const updatedMission = {
-            ...currentM,
-            selectedIds: newSelected,
-            completedIds: newCompleted,
-            updatedAt: new Date().toISOString()
-          };
-          setMissions(prev => {
-            const updated = prev.map(m => m.id === updatedMission.id ? updatedMission : m);
-            saveMissions(updated);
-            return updated;
-          });
-          syncMissionToCloud(updatedMission);
-        }
+        // Se o militar encontrou o hidrante no caminho e vistoriou, inclui na missão e marca como concluído
+        const newSelected = matchedInMission ? curSel : Array.from(new Set([...curSel, primaryId]));
+        const newCompleted = Array.from(new Set([...curComp, primaryId, ...allSanitizedIds]));
+        const updatedMission = {
+          ...currentM,
+          selectedIds: newSelected,
+          completedIds: newCompleted,
+          updatedAt: new Date().toISOString()
+        };
+        setMissions(prev => {
+          const updated = prev.map(m => m.id === updatedMission.id ? updatedMission : m);
+          saveMissions(updated);
+          return updated;
+        });
+        syncMissionToCloud(updatedMission);
       }
     }
 

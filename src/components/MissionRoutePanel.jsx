@@ -17,7 +17,7 @@ import {
   subscribeLocation, 
   setCachedLocation 
 } from '../utils/geoTracker';
-import { isHydrantInSet, getHydrantAllIds, translateId, areIdsEquivalent } from '../utils/idMapping';
+import { isHydrantInSet, getHydrantAllIds, translateId, areIdsEquivalent, isHydrantCompletedInMission } from '../utils/idMapping';
 import { getHydrantPhoto, getHydrantHdPhoto, preloadHydrantsList } from '../utils/hydrantPhotoUtils';
 
 // Fórmula de Haversine em km para compatibilidade interna
@@ -108,7 +108,7 @@ const MissionRoutePanel = ({
 
   // Hidrantes concluídos na missão em ordem cronológica inversa (mais recente no topo)
   const completedHydrants = useMemo(() => {
-    const raw = missionHydrants.filter(h => isHydrantInSet(h, completedIdsSet));
+    const raw = missionHydrants.filter(h => isHydrantInSet(h, completedIdsSet) || (currentMission && isHydrantCompletedInMission(h, currentMission)));
     const compList = (currentMission?.completedIds || completedMissionIds || []).map(id => String(id));
     
     return [...raw].sort((a, b) => {
@@ -134,12 +134,12 @@ const MissionRoutePanel = ({
       });
       return idxB - idxA; // maior índice primeiro
     });
-  }, [missionHydrants, completedIdsSet, currentMission?.completedIds, completedMissionIds]);
+  }, [missionHydrants, completedIdsSet, currentMission, completedMissionIds]);
 
   // Hidrantes faltantes / pendentes
   const pendingHydrants = useMemo(() => {
-    return missionHydrants.filter(h => !isHydrantInSet(h, completedIdsSet));
-  }, [missionHydrants, completedIdsSet]);
+    return missionHydrants.filter(h => !isHydrantInSet(h, completedIdsSet) && !(currentMission && isHydrantCompletedInMission(h, currentMission)));
+  }, [missionHydrants, completedIdsSet, currentMission]);
 
   // Inicializa a rota respeitando a ordenação prévia salva na missão, se houver
   const [pendingRoute, setPendingRoute] = useState(() => {

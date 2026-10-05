@@ -10,7 +10,7 @@ import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
 import { setCachedLocation, getLastKnownLocation } from '../utils/geoTracker';
 import { optimizeRouteEuclidean } from '../utils/routeOptimization';
-import { isHydrantInSet, getHydrantAllIds } from '../utils/idMapping';
+import { isHydrantInSet, getHydrantAllIds, isHydrantCompletedInMission, translateId } from '../utils/idMapping';
 import { getStreetViewUrl } from '../utils/streetViewUtils';
 import { getHydrantPhoto, preloadHydrantPhoto } from '../utils/hydrantPhotoUtils';
 
@@ -498,10 +498,7 @@ const RouteNearbyAutoFitter = ({
       
       // Prioriza hidrantes pendentes da rota
       let targets = validHydrants.filter(h => {
-        const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-        const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-        const k3 = h._internalId ? String(h._internalId) : null;
-        return !((k1 && completedSet.has(k1)) || (k2 && completedSet.has(k2)) || (k3 && completedSet.has(k3)));
+        return !isHydrantInSet(h, completedSet) && !(activeMission && isHydrantCompletedInMission(h, activeMission));
       });
 
       if (targets.length === 0) {
@@ -1187,10 +1184,7 @@ const MapComponent = ({
     // 3. Fallback instantâneo: se não houver ordenação salva, gera sequenciamento ordenado dos pendentes
     if (!ordered && activeMissionHydrants && activeMissionHydrants.length > 0) {
       const pendingList = activeMissionHydrants.filter(h => {
-        const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-        const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-        const k3 = h._internalId ? String(h._internalId) : null;
-        return !((k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3)));
+        return !isHydrantInSet(h, completedIdsSet) && !(activeMission && isHydrantCompletedInMission(h, activeMission));
       });
       if (pendingList.length > 0) {
         const anchorLat = userLocation?.lat || pendingList[0]?.numLatitude;
@@ -1203,12 +1197,20 @@ const MapComponent = ({
     if (!ordered || ordered.length === 0) return map;
 
     // Numera apenas os hidrantes pendentes/faltantes da rota
-    const pendingOrdered = ordered.filter(id => !completedIdsSet.has(String(id)));
+    const pendingOrdered = ordered.filter(id => {
+      const strId = String(id);
+      if (completedIdsSet.has(strId)) return false;
+      const trans = translateId(strId);
+      if (trans && completedIdsSet.has(trans)) return false;
+      const found = activeMissionHydrants.find(h => isHydrantInSet(h, [strId]));
+      if (found && (isHydrantInSet(found, completedIdsSet) || (activeMission && isHydrantCompletedInMission(found, activeMission)))) return false;
+      return true;
+    });
 
     // Assegura que todos os hidrantes pendentes da rota ativa recebam numeração sequencial
     if (activeMissionHydrants && activeMissionHydrants.length > 0) {
       activeMissionHydrants.forEach(h => {
-        if (!isHydrantInSet(h, completedIdsSet)) {
+        if (!isHydrantInSet(h, completedIdsSet) && !(activeMission && isHydrantCompletedInMission(h, activeMission))) {
           const inPending = pendingOrdered.some(id => isHydrantInSet(h, [String(id)]));
           if (!inPending) {
             pendingOrdered.push(String(h.codHidrante || h._internalId || h.nomHidrante));
@@ -1240,24 +1242,24 @@ const MapComponent = ({
     let comp = 0;
     let pend = 0;
     activeMissionHydrants.forEach(h => {
-      if (isHydrantInSet(h, completedIdsSet)) {
+      if (isHydrantInSet(h, completedIdsSet) || (activeMission && isHydrantCompletedInMission(h, activeMission))) {
         comp++;
       } else {
         pend++;
       }
     });
     return { missionCompletedCount: comp, missionPendingCount: pend };
-  }, [hasActiveRoute, activeMissionHydrants, completedIdsSet]);
+  }, [hasActiveRoute, activeMissionHydrants, completedIdsSet, activeMission]);
 
   const selectedHydrantMissionStatus = useMemo(() => {
     if (!hasActiveRoute || !selectedHydrant) return null;
     const isMission = isHydrantInSet(selectedHydrant, activeMissionIdsSet) || activeMissionHydrants.some(mh => isHydrantInSet(selectedHydrant, getHydrantAllIds(mh)));
     if (!isMission) return null;
-    const isCompleted = isHydrantInSet(selectedHydrant, completedIdsSet);
+    const isCompleted = isHydrantInSet(selectedHydrant, completedIdsSet) || (activeMission && isHydrantCompletedInMission(selectedHydrant, activeMission));
     const allIds = getHydrantAllIds(selectedHydrant);
     const order = !isCompleted ? (allIds.map(k => missionOrderMap[k]).find(v => v !== undefined) || null) : null;
     return { isCompleted, order };
-  }, [hasActiveRoute, selectedHydrant, completedIdsSet, activeMissionIdsSet, activeMissionHydrants, missionOrderMap]);
+  }, [hasActiveRoute, selectedHydrant, completedIdsSet, activeMissionIdsSet, activeMissionHydrants, missionOrderMap, activeMission]);
 
   const renderMarkers = () => {
     return validHidrantes.map((h, i) => {
@@ -1271,30 +1273,19 @@ const MapComponent = ({
         )
       );
 
-      const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-      const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-      const k3 = h._internalId ? String(h._internalId) : null;
-
-      const isMissionCompleted = Boolean(
-        (k1 && completedIdsSet.has(k1)) ||
-        (k2 && completedIdsSet.has(k2)) ||
-        (k3 && completedIdsSet.has(k3))
-      );
+      const allHydrantIds = getHydrantAllIds(h);
+      const isMissionCompleted = isHydrantInSet(h, completedIdsSet) || (activeMission && isHydrantCompletedInMission(h, activeMission));
 
       // Hidrante pertence à missão ativa se a rota estiver ativa no mapa
       const isMissionItem = Boolean(
         hasActiveRoute && (
-          (k1 && activeMissionHydrants.some(mh => String(mh.codHidrante) === k1)) ||
-          (k2 && activeMissionHydrants.some(mh => mh.nomHidrante === k2)) ||
-          (k3 && activeMissionHydrants.some(mh => mh._internalId === k3)) ||
-          (k1 && activeMissionIdsSet.has(k1)) ||
-          (k2 && activeMissionIdsSet.has(k2)) ||
-          (k3 && activeMissionIdsSet.has(k3))
+          isHydrantInSet(h, activeMissionIdsSet) ||
+          activeMissionHydrants.some(mh => isHydrantInSet(h, getHydrantAllIds(mh)))
         )
       );
 
       const missionOrder = (isMissionItem && !isMissionCompleted)
-        ? ((k1 && missionOrderMap[k1]) || (k2 && missionOrderMap[k2]) || (k3 && missionOrderMap[k3]) || null)
+        ? (allHydrantIds.map(k => missionOrderMap[k]).find(v => v !== undefined) || null)
         : null;
 
       const pinCode = fixEncoding(h.nomHidrante) || (h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : '');
@@ -1456,10 +1447,7 @@ const MapComponent = ({
         {hasActiveRoute && (
           (() => {
             const pendingList = activeMissionHydrants.filter(h => {
-              const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-              const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
-              const k3 = h._internalId ? String(h._internalId) : null;
-              return !((k1 && completedIdsSet.has(k1)) || (k2 && completedIdsSet.has(k2)) || (k3 && completedIdsSet.has(k3)));
+              return !isHydrantInSet(h, completedIdsSet) && !(activeMission && isHydrantCompletedInMission(h, activeMission));
             });
 
             if (pendingList.length <= 1) return null;
