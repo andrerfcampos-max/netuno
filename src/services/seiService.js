@@ -97,6 +97,32 @@ export class SeiClient {
     }
   }
 
+  exportSession() {
+    const cookiesByDomainObj = {};
+    for (const [dom, map] of this.cookiesByDomain.entries()) {
+      cookiesByDomainObj[dom] = Array.from(map.entries());
+    }
+    return {
+      cookiesByDomain: cookiesByDomainObj,
+      sessionState: { ...this.sessionState }
+    };
+  }
+
+  importSession(sessionData) {
+    if (!sessionData) return;
+    if (sessionData.cookiesByDomain) {
+      this.cookiesByDomain = new Map();
+      for (const [dom, entries] of Object.entries(sessionData.cookiesByDomain)) {
+        this.cookiesByDomain.set(dom, new Map(entries));
+      }
+    } else if (sessionData.cookies) {
+      this.cookies = new Map(sessionData.cookies);
+    }
+    if (sessionData.sessionState) {
+      this.sessionState = { ...this.sessionState, ...sessionData.sessionState };
+    }
+  }
+
   // --- Helper para extrair mensagens de erro e alertas do HTML do SEI ---
   extractSeiErrorMessage(res, defaultMsg = 'Erro na operação do SEI.') {
     if (!res) return defaultMsg;
