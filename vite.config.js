@@ -41,8 +41,22 @@ const seiApiDevPlugin = () => ({
   }
 });
 
+const getBuildTime = () => {
+  return new Date().toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify('2.1.2'),
+    __BUILD_TIME__: JSON.stringify(getBuildTime())
+  },
   plugins: [
     react(), 
     tailwindcss(),

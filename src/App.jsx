@@ -1982,9 +1982,14 @@ syncPreferences({ filters: filters });
               )}
             </button>
           </form>
-          <p className="text-[11px] text-slate-500 text-center mt-5 font-medium tracking-wide select-none">
-            Desenvolvido por Sgt Roméro
-          </p>
+          <div className="flex flex-col items-center gap-0.5 mt-5 select-none text-center">
+            <span className="text-[10px] text-emerald-400/80 font-semibold">
+              Netuno {typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v2.1.2'} • Build {typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : ''}
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium tracking-wide">
+              Desenvolvido por Sgt Roméro
+            </span>
+          </div>
           <ToastContainer theme="dark" position="top-center" autoClose={2500} />
         </div>
       </div>
@@ -2431,8 +2436,11 @@ syncPreferences({ filters: filters });
                         type="button"
                         onClick={async () => {
                           setIsMenuOpen(false);
-                          toast.info('Atualizando aplicação e limpando cache...');
+                          toast.info('Sincronizando dados pendentes e atualizando...');
                           try {
+                            if (typeof reconcileLocalChangesToCloud === 'function') {
+                              await reconcileLocalChangesToCloud();
+                            }
                             if (typeof window.__netuno_update_sw === 'function') {
                               await window.__netuno_update_sw();
                             }
@@ -2448,17 +2456,22 @@ syncPreferences({ filters: filters });
                             console.warn(e);
                           }
                           setTimeout(() => {
-                            window.location.reload();
-                          }, 400);
+                            window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
+                          }, 500);
                         }}
                         className="flex items-center justify-center gap-2 w-full py-2 px-3 text-xs font-semibold text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 hover:bg-cyan-900/50 border border-cyan-500/30 hover:border-cyan-500/50 rounded-xl transition-all cursor-pointer active:scale-95 shadow-sm"
-                        title="Atalho para testes: força recarregamento e limpa cache do service worker"
+                        title="Força recarregamento limpo, reconcilia dados offline e atualiza versão"
                       >
                         <RefreshCw size={13} className="text-cyan-400 shrink-0" />
                         <span>Atualizar versão / limpar cache</span>
                       </button>
-                      <div className="text-[10px] text-slate-500 font-medium">
-                        Desenvolvido por Sgt Roméro
+                      <div className="flex flex-col items-center gap-0.5 text-center mt-0.5 select-none">
+                        <span className="text-[10px] font-bold text-emerald-400 tracking-wide">
+                          Netuno {typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v2.1.2'} • Build {typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : ''}
+                        </span>
+                        <span className="text-[9px] text-slate-500 font-medium">
+                          Desenvolvido por Sgt Roméro
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -2982,9 +2995,13 @@ syncPreferences({ filters: filters });
               {completedMissionIds.length > 0 && ` (${completedMissionIds.length} concluídos)`}
             </div>
           )}
-          <span className="text-[10px] text-slate-500 opacity-60 mt-0.5 tracking-wide">
-            Desenvolvido por Sgt Roméro
-          </span>
+          <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5 tracking-wide">
+            <span className="text-emerald-400/80 font-semibold">
+              Netuno {typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v2.1.2'} • Build {typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : ''}
+            </span>
+            <span>•</span>
+            <span className="opacity-70">Desenvolvido por Sgt Roméro</span>
+          </div>
         </div>
       </footer>
 
