@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-168",
   "queue": [
     {
       "id": "TASK-1",
@@ -1688,6 +1688,16 @@
       "createdAt": "2026-10-05T21:57:43.838Z",
       "startedAt": "2026-10-05T21:57:45.764Z",
       "completedAt": "2026-10-05T22:05:55.882Z"
+    },
+    {
+      "id": "TASK-168",
+      "seq": 168,
+      "conversationId": "0cfb4aaa-da6f-4536-89c0-7567732b92b7",
+      "description": "Atualizar data e hora automatica no rodape do menu",
+      "status": "running",
+      "createdAt": "2026-10-05T22:08:48.208Z",
+      "startedAt": "2026-10-05T22:08:51.610Z",
+      "completedAt": null
     }
   ]
 }

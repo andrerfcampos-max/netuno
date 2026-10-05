@@ -42,13 +42,19 @@ const seiApiDevPlugin = () => ({
 });
 
 const getBuildTime = () => {
-  return new Date().toLocaleString('pt-BR', {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     day: '2-digit',
     month: '2-digit',
+    year: 'numeric'
+  });
+  const timeStr = now.toLocaleTimeString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
     hour: '2-digit',
     minute: '2-digit'
   });
+  return `${dateStr} às ${timeStr}`;
 };
 
 // https://vite.dev/config/
