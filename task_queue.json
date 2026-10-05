@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-165",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -1664,10 +1664,30 @@
       "seq": 165,
       "conversationId": "b49a2b91-0c7b-494b-9fbc-fc4d0fee61b2",
       "description": "Auto-reconciliacao de vistorias locais pendentes e aprimoramento da atualizacao de versao",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-05T21:40:28.908Z",
       "startedAt": "2026-10-05T21:40:35.863Z",
-      "completedAt": null
+      "completedAt": "2026-10-05T21:42:05.097Z"
+    },
+    {
+      "id": "TASK-166",
+      "seq": 166,
+      "conversationId": "9c90c23b-a892-48bf-b8df-f4dca8b66e36",
+      "description": "Adicionar carimbo de versao no rodape do menu e aprimorar botao de atualizacao",
+      "status": "completed",
+      "createdAt": "2026-10-05T21:53:17.848Z",
+      "startedAt": "2026-10-05T21:53:22.729Z",
+      "completedAt": "2026-10-05T21:55:52.807Z"
+    },
+    {
+      "id": "TASK-167",
+      "seq": 167,
+      "conversationId": "6e8e6465-e6f5-4992-b0fa-0f110f0e497a",
+      "description": "Corrigir status de hidrantes vistoriados offline no mapa de missao numerada",
+      "status": "completed",
+      "createdAt": "2026-10-05T21:57:43.838Z",
+      "startedAt": "2026-10-05T21:57:45.764Z",
+      "completedAt": "2026-10-05T22:05:55.882Z"
     }
   ]
 }
