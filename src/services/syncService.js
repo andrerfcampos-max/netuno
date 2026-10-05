@@ -1,6 +1,90 @@
 import { getSupabaseClient, isCloudConfigured } from './supabase';
 import { loadMissions, saveMissions, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges } from '../utils/storage';
 
+
+// ============================================================================
+// OFFLINE SYNC MANAGER (FILA DE PENDÊNCIAS OFFLINE)
+// ============================================================================
+const OFFLINE_QUEUE_KEY = 'netuno_offline_queue';
+
+const getOfflineQueue = () => {
+  try {
+    const data = localStorage.getItem(OFFLINE_QUEUE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveOfflineQueue = (queue) => {
+  try {
+    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+    window.dispatchEvent(new Event('offline_queue_updated'));
+  } catch {}
+};
+
+const enqueueOfflineAction = (action, args) => {
+  const queue = getOfflineQueue();
+  const newTask = {
+    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+    action,
+    args,
+    timestamp: Date.now()
+  };
+  queue.push(newTask);
+  saveOfflineQueue(queue);
+  console.log('[OfflineSync] Tarefa colocada na fila offline:', action);
+};
+
+const processOfflineQueue = async () => {
+  if (!navigator.onLine) return; 
+  
+  const queue = getOfflineQueue();
+  if (queue.length === 0) return;
+
+  console.log(`[OfflineSync] Iniciando processamento de ${queue.length} pendências offline...`);
+  let remainingQueue = [...queue];
+  let hasErrors = false;
+
+  for (const task of queue) {
+    try {
+      let success = false;
+      if (task.action === 'syncMission') {
+        success = await _doSyncMissionToCloud(...task.args);
+      } else if (task.action === 'syncInspection') {
+        success = await _doSyncInspectionToCloud(...task.args);
+      } else if (task.action === 'syncHydrantMutation') {
+        success = await _doSyncHydrantMutationToCloud(...task.args);
+      }
+
+      if (success) {
+        remainingQueue = remainingQueue.filter(t => t.id !== task.id);
+        saveOfflineQueue(remainingQueue);
+      } else {
+        hasErrors = true;
+        console.warn('[OfflineSync] Falha ao enviar tarefa, mantendo na fila:', task.id);
+        break;
+      }
+    } catch (err) {
+      console.error('[OfflineSync] Erro crítico ao processar fila offline:', err);
+      hasErrors = true;
+      break;
+    }
+  }
+  
+  if (!hasErrors) {
+    console.log('[OfflineSync] Fila offline processada com sucesso (Vazia).');
+  }
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    console.log('[OfflineSync] Conexão restabelecida. Processando fila offline...');
+    setTimeout(processOfflineQueue, 2000);
+  });
+}
+// ============================================================================
+
 /**
  * ==============================================================================
  * SERVIÇO DE SINCRONIZAÇÃO EM NUVEM (CLOUD SYNC SERVICE)
@@ -65,7 +149,15 @@ export const fetchMissionsFromCloud = async () => {
 /**
  * Salva ou atualiza uma missão no banco em nuvem
  */
+export { getOfflineQueue, saveOfflineQueue, processOfflineQueue };
+
 export const syncMissionToCloud = async (mission) => {
+  if (!navigator.onLine) { enqueueOfflineAction('syncMission', [mission]); return; }
+  const success = await _doSyncMissionToCloud(mission);
+  if (!success) enqueueOfflineAction('syncMission', [mission]);
+};
+
+const _doSyncMissionToCloud = async (mission) => {
   const client = getSupabaseClient();
   if (!client || !mission) return;
 
@@ -103,6 +195,7 @@ export const syncMissionToCloud = async (mission) => {
 
     if (error) {
       console.warn(`Erro ao sincronizar missão ${mission.id} na nuvem:`, error.message);
+      return false;
     }
 
     // Sincroniza metadados complementares (orderedIds e atribuicao) via netuno_hydrant_mutations
@@ -114,8 +207,10 @@ export const syncMissionToCloud = async (mission) => {
     });
   } catch (err) {
     console.warn('Falha ao enviar missão para nuvem:', err);
+    return false;
   }
-};
+  return true;
+}
 
 /**
  * Remove uma missão do banco em nuvem
@@ -220,6 +315,12 @@ export const syncFolderToCloud = async (folder) => {
  * Salva uma nova vistoria técnica realizada no banco em nuvem
  */
 export const syncInspectionToCloud = async (hidrante) => {
+  if (!navigator.onLine) { enqueueOfflineAction('syncInspection', [hidrante]); return; }
+  const success = await _doSyncInspectionToCloud(hidrante);
+  if (!success) enqueueOfflineAction('syncInspection', [hidrante]);
+};
+
+const _doSyncInspectionToCloud = async (hidrante) => {
   const client = getSupabaseClient();
   if (!client || !hidrante) return;
 
@@ -251,11 +352,14 @@ export const syncInspectionToCloud = async (hidrante) => {
 
     if (error) {
       console.warn('Erro ao salvar vistoria na nuvem:', error.message);
+      return false;
     }
   } catch (err) {
     console.warn('Falha ao enviar vistoria para nuvem:', err);
+    return false;
   }
-};
+  return true;
+}
 
 // ------------------------------------------------------------------------------
 // 4. SINCRONIZAÇÃO DE MUTAÇÕES DA BASE DE HIDRANTES (netuno_hydrant_mutations)
@@ -294,6 +398,12 @@ export const resetMutationSyncTimestamp = () => {
  * Salva uma mutação de hidrante (atualização, adição, auditoria ou exclusão) no banco em nuvem
  */
 export const syncHydrantMutationToCloud = async (type, payloadData) => {
+  if (!navigator.onLine) { enqueueOfflineAction('syncHydrantMutation', [type, payloadData]); return; }
+  const success = await _doSyncHydrantMutationToCloud(type, payloadData);
+  if (!success) enqueueOfflineAction('syncHydrantMutation', [type, payloadData]);
+};
+
+const _doSyncHydrantMutationToCloud = async (type, payloadData) => {
   const client = getSupabaseClient();
   if (!client || !payloadData) return;
 
@@ -312,11 +422,14 @@ export const syncHydrantMutationToCloud = async (type, payloadData) => {
 
     if (error) {
       console.warn('Erro ao registrar mutação de hidrante na nuvem:', error.message);
+      return false;
     }
   } catch (err) {
     console.warn('Falha ao enviar mutação para nuvem:', err);
+    return false;
   }
-};
+  return true;
+}
 
 /**
  * Busca mutações de hidrantes da nuvem com suporte nativo a Delta Sync (Sincronização Incremental).

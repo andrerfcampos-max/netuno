@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-163",
+  "activeTaskId": "TASK-164",
   "queue": [
     {
       "id": "TASK-1",
@@ -1644,9 +1644,19 @@
       "seq": 163,
       "conversationId": "d05a3212-9690-4fff-aa70-b898b39a513c",
       "description": "Modal/popup de progresso e debug detalhado da automacao SEI",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-05T20:57:01.476Z",
       "startedAt": "2026-10-05T21:01:32.536Z",
+      "completedAt": "2026-10-05T21:04:37.959Z"
+    },
+    {
+      "id": "TASK-164",
+      "seq": 164,
+      "conversationId": "b49a2b91-0c7b-494b-9fbc-fc4d0fee61b2",
+      "description": "Implementar gerenciador de sincronizacao offline",
+      "status": "running",
+      "createdAt": "2026-10-05T21:28:41.457Z",
+      "startedAt": "2026-10-05T21:28:51.561Z",
       "completedAt": null
     }
   ]

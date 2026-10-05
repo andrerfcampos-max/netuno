@@ -24,7 +24,7 @@ const DownloadDatabaseModal = lazy(() => import('./components/DownloadDatabaseMo
 import { logAuditEvent, getUnreadAuditCount, mergeAuditLogs } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers, mergeRbacUsers } from './utils/storage';
-import { fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, getLastMutationTimestamp, subscribeToCloudRealtime, fetchUserPreferencesFromCloud, syncUserPreferencesToCloud, fetchRbacUsersFromCloud } from './services/syncService';
+import { processOfflineQueue, fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, getLastMutationTimestamp, subscribeToCloudRealtime, fetchUserPreferencesFromCloud, syncUserPreferencesToCloud, fetchRbacUsersFromCloud } from './services/syncService';
 import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
@@ -877,6 +877,7 @@ syncPreferences({ filters: newFilters });
     const localChanges = loadHydrantChanges();
     const hasCachedMutations = Object.keys(localChanges.updated || {}).length > 0;
     syncWithCloud({ forceFull: !hasCachedMutations || !getLastMutationTimestamp() });
+    processOfflineQueue();
 
     // Listener Realtime (WebSockets) para atualizações instantâneas entre Mobile e Desktop
     const unsubscribe = subscribeToCloudRealtime({
