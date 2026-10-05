@@ -831,3 +831,16 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
      - Adicionado listener de `visibilitychange` para executar checagem delta pontual apenas quando o militar retorna à aba após mais de 45 segundos de ausência.
   4. **Proteção contra Re-renderizações Fantasma:**
      - `applyCloudMutations` e `syncWithCloud` verificam se houve mutações antes de reprocessar os 12.000 hidrantes e chamar `saveHydrantChanges`, zerando custo de CPU quando o banco não tiver alterações.
+
+
+### [05/10/2026] Correção Crítica: Missões Marcadas como 100% Concluídas Indevidamente
+- **Problema Identificado:** Após a etapa 97, todas as missões (mesmo com andamento parcial ou recém-criadas) estavam aparecendo como 100% Concluídas na Central de Missões e na rota do mapa. Isso ocorria porque foi introduzido um fallback que considerava como concluído qualquer hidrante que possuísse `datHoraUltimaVistoria` ou `HISTORICO_VISTORIAS` na base de dados geral. Como praticamente todos os hidrantes do DF possuem registro histórico de vistorias legadas anteriores, a checagem marcava incorretamente todos os hidrantes de qualquer missão como concluídos.
+- **Implementações Realizadas:**
+  1. **Central de Missões (`MissionManagerModal.jsx`):**
+     - Função `countCompletedInMission` restaurada para contabilizar exclusivamente os hidrantes que pertencem ao array `completedIds` da própria missão.
+     - Removida a checagem espúria contra a lista global de hidrantes da base de dados.
+  2. **Reconciliação e Rota Ativa (`App.jsx`):**
+     - `completedMissionIds` restaurado para refletir fielmente `currentMission?.completedIds || []`.
+     - `pendingRouteHydrants` voltou a exibir a quantidade real de hidrantes pendentes da missão, tanto na listagem de rota quanto nos marcadores do mapa.
+  3. **Mesclagem em Nuvem e Local (`storage.js`):**
+     - Sincronização e mesclagem de missões em `mergeMissions` restaurada para respeitar o timestamp mais recente (`updatedAt`), evitando propagação indevida de conclusões falsas entre abas e dispositivos.

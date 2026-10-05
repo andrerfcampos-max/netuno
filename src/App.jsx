@@ -354,24 +354,7 @@ syncPreferences({ activeView: view });
 
   const selectedMissionIds = useMemo(() => currentMission?.selectedIds || [], [currentMission?.selectedIds]);
   
-  // Lista de concluídos com reconciliação automática contra vistorias já existentes na base
-  const completedMissionIds = useMemo(() => {
-    const explicit = currentMission?.completedIds || [];
-    if (!currentMission || !currentMission.selectedIds || currentMission.selectedIds.length === 0) return explicit;
-    
-    const dbCompletedKeys = [];
-    allMissionRouteHydrants.forEach(h => {
-      if (h.datHoraUltimaVistoria || (Array.isArray(h.HISTORICO_VISTORIAS) && h.HISTORICO_VISTORIAS.length > 0)) {
-        const primaryKey = String(h.codHidrante || h._internalId || h.nomHidrante);
-        if (!isHydrantInSet(h, explicit)) {
-          dbCompletedKeys.push(primaryKey);
-        }
-      }
-    });
-
-    if (dbCompletedKeys.length === 0) return explicit;
-    return Array.from(new Set([...explicit, ...dbCompletedKeys]));
-  }, [currentMission, allMissionRouteHydrants]);
+  const completedMissionIds = useMemo(() => currentMission?.completedIds || [], [currentMission?.completedIds]);
 
   // Extrai APENAS os hidrantes PENDENTES (não vistoriados) da rota da missão ativa rigorosamente ordenados pela rota
   const pendingRouteHydrants = useMemo(() => {
