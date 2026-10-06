@@ -1,4 +1,5 @@
 import argosCodToNom from './argosIdMap.json';
+import { parseDate } from './dateUtils';
 
 // Inversão lazy em memória para resolver nomHidrante -> codHidrante numérico
 let nomToArgosCodCache = null;
@@ -191,44 +192,7 @@ export const isHydrantInSet = (hydrant, idSetOrArray) => {
  * Faz parsing resiliente de datas de vistoria em múltiplos formatos (ISO, DD/MM/YYYY HH:mm, etc.)
  */
 export const parseInspectionDate = (dateStr) => {
-  if (!dateStr || dateStr === '-') return null;
-  const str = String(dateStr).trim();
-  if (!str || str === '-' || str.toLowerCase() === 'sem vistoria') return null;
-
-  // Se tiver T (ISO)
-  if (str.includes('T')) {
-    const d = new Date(str);
-    if (!isNaN(d.getTime())) return d;
-  }
-
-  // DD/MM/YYYY ou DD/MM/YYYY HH:mm(:ss)
-  const matchDmy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if (matchDmy) {
-    const day = parseInt(matchDmy[1], 10);
-    const month = parseInt(matchDmy[2], 10) - 1;
-    const year = parseInt(matchDmy[3], 10);
-    const timeMatch = str.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
-    if (timeMatch) {
-      return new Date(year, month, day, parseInt(timeMatch[1], 10), parseInt(timeMatch[2], 10), parseInt(timeMatch[3] || '0', 10));
-    }
-    return new Date(year, month, day);
-  }
-
-  // YYYY-MM-DD ou YYYY-MM-DD HH:mm(:ss)
-  const matchYmd = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (matchYmd) {
-    const year = parseInt(matchYmd[1], 10);
-    const month = parseInt(matchYmd[2], 10) - 1;
-    const day = parseInt(matchYmd[3], 10);
-    const timeMatch = str.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
-    if (timeMatch) {
-      return new Date(year, month, day, parseInt(timeMatch[1], 10), parseInt(timeMatch[2], 10), parseInt(timeMatch[3] || '0', 10));
-    }
-    return new Date(year, month, day);
-  }
-
-  const d = new Date(str);
-  return isNaN(d.getTime()) ? null : d;
+  return parseDate(dateStr);
 };
 
 /**

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { History, ShieldAlert, CheckCircle2, AlertTriangle, User, Calendar, X, ArrowLeft, ZoomIn } from 'lucide-react';
 import { fixEncoding } from '../utils/textUtils';
+import { formatDateTimeDisplay } from '../utils/dateUtils';
 
 /**
  * Utilitário para formatar datas no padrão brasileiro
  */
 const formatDateTime = (val) => {
-  if (!val || val === '-') return 'Não informado';
-  return String(val);
+  return formatDateTimeDisplay(val, { fallback: 'Não informado' });
 };
 
 /**

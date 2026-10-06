@@ -1,5 +1,6 @@
 import { getSupabaseClient, isCloudConfigured } from './supabase';
 import { loadMissions, saveMissions, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges } from '../utils/storage';
+import { dateToIsoString, parseDate, formatDateTimeDisplay } from '../utils/dateUtils';
 
 
 // ============================================================================
@@ -482,7 +483,7 @@ const _doSyncInspectionToCloud = async (hidrante) => {
       problemas_hidrante: hidrante.problemasHidrante || '',
       nom_vistoriador: hidrante.vistoriadorNome || hidrante.nomVistoriador || '',
       num_matricula: hidrante.vistoriadorMatricula || '',
-      data_hora_vistoria: hidrante.datHoraUltimaVistoria || new Date().toISOString(),
+      data_hora_vistoria: dateToIsoString(hidrante.datHoraUltimaVistoria || hidrante.datHoraVistoria || new Date()),
       observacao: hidrante.dscObservacao || hidrante.observacoes || hidrante.obsVistoria || '',
       foto_url: fotoPrincipal,
       latitude: hidrante.numLatitude ? parseFloat(hidrante.numLatitude) : null,

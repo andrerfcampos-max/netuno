@@ -19,6 +19,7 @@ import {
 } from '../utils/geoTracker';
 import { isHydrantInSet, getHydrantAllIds, translateId, areIdsEquivalent, isHydrantCompletedInMission } from '../utils/idMapping';
 import { getHydrantPhoto, getHydrantHdPhoto, preloadHydrantsList } from '../utils/hydrantPhotoUtils';
+import { parseDateToTimestamp, formatDateOnly, getHydrantVistoriaDate } from '../utils/dateUtils';
 
 // Fórmula de Haversine em km para compatibilidade interna
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -113,12 +114,12 @@ const MissionRoutePanel = ({
     
     return [...raw].sort((a, b) => {
       // 1. Prioriza data e hora de vistoria se disponível
-      const dateA = a.datUltimaVistoria || a.dataVistoria || a.timestamp || a.updatedAt;
-      const dateB = b.datUltimaVistoria || b.dataVistoria || b.timestamp || b.updatedAt;
-      if (dateA && dateB) {
-        const timeA = new Date(dateA).getTime();
-        const timeB = new Date(dateB).getTime();
-        if (!isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+      const dateA = a.datHoraUltimaVistoria || a.datUltimaVistoria || a.dataVistoria || a.timestamp || a.updatedAt;
+      const dateB = b.datHoraUltimaVistoria || b.datUltimaVistoria || b.dataVistoria || b.timestamp || b.updatedAt;
+      if (dateA || dateB) {
+        const timeA = parseDateToTimestamp(dateA);
+        const timeB = parseDateToTimestamp(dateB);
+        if (timeA !== -Infinity && timeB !== -Infinity && timeA !== timeB) {
           return timeB - timeA; // mais recente no topo
         }
       }
@@ -429,8 +430,8 @@ const MissionRoutePanel = ({
         let isRecent = false;
         
         if (lastDate) {
-          const vistoriaTime = new Date(lastDate).getTime();
-          if (!isNaN(vistoriaTime) && (now - vistoriaTime <= 2 * 60 * 1000)) {
+          const vistoriaTime = parseDateToTimestamp(lastDate);
+          if (vistoriaTime !== -Infinity && (now - vistoriaTime <= 2 * 60 * 1000)) {
             isRecent = true;
           }
         } else if (lastInspectedCoords?.timestamp && (now - lastInspectedCoords.timestamp <= 2 * 60 * 1000)) {

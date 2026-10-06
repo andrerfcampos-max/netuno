@@ -34,6 +34,7 @@ import { getLastKnownLocation, startGlobalGeoTracking, subscribeLocation } from 
 import { optimizeRouteEuclidean } from './utils/routeOptimization';
 import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent, translateId, isHydrantCompletedInMission } from './utils/idMapping';
 import { getHydrantPhoto, preloadHydrantPhoto, preloadHydrantsList } from './utils/hydrantPhotoUtils';
+import { parseDate, formatDateOnly, formatDateTimeDisplay, getHydrantVistoriaDate } from './utils/dateUtils';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Raio da Terra em km
@@ -45,35 +46,6 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
     Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
-};
-
-const parseDate = (dateStr) => {
-  if (!dateStr || dateStr === '-') return null;
-  const str = String(dateStr).trim();
-  if (!str || str === '-') return null;
-  const [datePart] = str.split(' ');
-  if (!datePart) return null;
-  const parts = datePart.split('/');
-  if (parts.length === 3) {
-    const d = parseInt(parts[0], 10);
-    const m = parseInt(parts[1], 10) - 1;
-    const y = parseInt(parts[2], 10);
-    if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
-      return new Date(y, m, d);
-    }
-  }
-  if (datePart.includes('-')) {
-    const partsIso = datePart.split('-');
-    if (partsIso.length === 3) {
-      const y = parseInt(partsIso[0], 10);
-      const m = parseInt(partsIso[1], 10) - 1;
-      const d = parseInt(partsIso[2], 10);
-      if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
-        return new Date(y, m, d);
-      }
-    }
-  }
-  return null;
 };
 
 const normalizeSearchText = (str) => {
@@ -938,12 +910,10 @@ syncPreferences({ filters: newFilters });
                 );
                 if (insp) {
                   let dtStr = insp.data_hora_vistoria;
-                  try {
-                    const d = new Date(insp.data_hora_vistoria);
-                    if (!isNaN(d.getTime())) {
-                      dtStr = d.toLocaleDateString('pt-BR') + ', ' + d.toLocaleTimeString('pt-BR');
-                    }
-                  } catch (e) {}
+                  const d = parseDate(insp.data_hora_vistoria);
+                  if (d) {
+                    dtStr = formatDateTimeDisplay(d);
+                  }
 
                   const currentDt = h.datHoraUltimaVistoria || h.datHoraVistoria || '';
                   if (!currentDt || currentDt === '18/06/2025 12:00:00' || currentDt !== dtStr) {

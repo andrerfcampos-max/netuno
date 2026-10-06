@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-186",
+  "activeTaskId": "TASK-187",
   "queue": [
     {
       "id": "TASK-1",
@@ -1877,19 +1877,19 @@
       "seq": 186,
       "conversationId": "154ef160-01a9-469b-bd4b-52b283be43ef",
       "description": "Diagnostico e implementacao de Step-Ahead / navegacao multi-panorama para obstaculos",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-06T20:05:23.376Z",
       "startedAt": "2026-10-06T20:05:29.670Z",
-      "completedAt": null
+      "completedAt": "2026-10-06T20:10:14.425Z"
     },
     {
       "id": "TASK-187",
       "seq": 187,
       "conversationId": "e0a3c5c3-e1c4-4942-ae44-cbf683f2fd69",
       "description": "Unificar formato de data dd/mm/aaaa e corrigir ordenacao de vistorias",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-10-06T20:09:23.117Z",
-      "startedAt": null,
+      "startedAt": "2026-10-06T20:10:15.198Z",
       "completedAt": null
     }
   ]

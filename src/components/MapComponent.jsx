@@ -22,49 +22,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Resolução inteligente da data/status de vistoria (inclusive dados históricos Argos)
-export const getHydrantVistoriaDate = (h) => {
-  if (!h) return 'Sem vistoria';
-  // 1. Campos diretos de data de vistoria
-  const candidate = 
-    h.datHoraUltimaVistoria || 
-    h.datUltimaVistoria || 
-    h.dataUltimaVistoria || 
-    h.dataVistoria || 
-    h.datVistoria || 
-    h.timestamp;
-  if (candidate) {
-    const s = String(candidate).trim();
-    if (s && s.toLowerCase() !== 'sem vistoria') {
-      return s.split(' ')[0];
-    }
-  }
-
-  // 2. Histórico de vistorias se disponível
-  if (Array.isArray(h.HISTORICO_VISTORIAS) && h.HISTORICO_VISTORIAS.length > 0) {
-    const last = h.HISTORICO_VISTORIAS[0];
-    const histDate = last?.datHoraUltimaVistoria || last?.dataVistoria || last?.datVistoria || last?.timestamp || last?.data;
-    if (histDate) {
-      return String(histDate).split(' ')[0];
-    }
-    return 'Registrada';
-  }
-
-  // 3. Se possui dados históricos consolidados do Argos (ex: problemas cadastrados ou vistoriador identificado)
-  if (h.problemasHidrante && h.problemasHidrante.trim() !== '') {
-    return h.datAtualizacao ? String(h.datAtualizacao).split(' ')[0] : 'Dados Argos';
-  }
-  if (h.nomVistoriador || h.numMatriculaVistoriador) {
-    return h.datAtualizacao ? String(h.datAtualizacao).split(' ')[0] : 'Vistoriado (Argos)';
-  }
-
-  // 4. Se possui data de atualização/cadastro recente
-  if (h.datAtualizacao) {
-    return String(h.datAtualizacao).split(' ')[0];
-  }
-
-  return 'Sem vistoria';
-};
+// Resolução inteligente e unificada da data/status de vistoria
+import { getHydrantVistoriaDate, formatDateOnly } from '../utils/dateUtils';
+export { getHydrantVistoriaDate };
 
 // Estilização dos Marcadores (Design Consistente com Desktop e Mobile - Alto Contraste Satélite)
 const createDivIcon = (isOperante, isSelected, isInspected, isMissionItem = false, missionOrder = null, isMissionCompleted = false, showPinCode = false, pinCode = '') => {

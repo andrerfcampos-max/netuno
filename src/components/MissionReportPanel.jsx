@@ -7,6 +7,7 @@ import { printGeneralReport, printCaesbReport, generateCaesbReportHtml, generate
 import { generateSeiMemorandoMinutaText } from '../utils/seiMemorandoUtils';
 import { isHydrantInSet } from '../utils/idMapping';
 import { SeiIntegrationModal } from './SeiIntegrationModal';
+import { formatDateOnly, parseDateToTimestamp } from '../utils/dateUtils';
 
 const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, activeFilters = null }) => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -55,30 +56,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
   }, [isExportMenuOpen]);
 
   const parseDate = (dateStr) => {
-    if (!dateStr || dateStr === '-') return 0;
-    const str = String(dateStr).trim();
-    const parts = str.split(' ');
-    if (parts.length < 2) {
-      if (parts.length === 1 && str.includes('/')) {
-        const [d, m, y] = str.split('/');
-        if (d && m && y) {
-          const t = new Date(`${y}-${m}-${d}T00:00:00`).getTime();
-          return isNaN(t) ? 0 : t;
-        }
-      }
-      return 0;
-    }
-    const [date, time] = parts;
-    const [d, m, y] = date.split('/');
-    if (!d || !m || !y) return 0;
-    const timeVal = time || '00:00:00';
-    const timestamp = new Date(`${y}-${m}-${d}T${timeVal}`).getTime();
-    return isNaN(timestamp) ? 0 : timestamp;
-  };
-
-  const formatDateOnly = (dateStr) => {
-    if (!dateStr || dateStr === '-') return '-';
-    return String(dateStr).split(' ')[0].replace(/[,;]/g, '').trim();
+    const t = parseDateToTimestamp(dateStr);
+    return t === -Infinity ? 0 : t;
   };
 
   const getYear = (dateStr) => {

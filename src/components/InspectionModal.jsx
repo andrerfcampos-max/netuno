@@ -3,6 +3,7 @@ import { Camera, Image as ImageIcon, Trash2, ClipboardCheck, X, Edit3 } from 'lu
 import { fixEncoding } from '../utils/textUtils';
 import { calculateDistanceMeters } from '../utils/geoUtils';
 import SearchableSelect from './SearchableSelect';
+import { formatDateTimeDisplay } from '../utils/dateUtils';
 
 // Lista configurável e modular de problemas que tornam o hidrante automaticamente inativo
 export const PROBLEMAS_INATIVADORES = [
@@ -363,7 +364,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       }
 
       const agora = new Date();
-      const dataFormatada = agora.toLocaleString('pt-BR');
+      const dataFormatada = formatDateTimeDisplay(agora);
       const fotoPrincipal = fotos[0] || null;
 
       let updatedHistorico = Array.isArray(hidrante.HISTORICO_VISTORIAS) ? [...hidrante.HISTORICO_VISTORIAS] : [];

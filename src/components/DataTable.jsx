@@ -4,40 +4,7 @@ import { sanitizeProblem } from '../utils/problemUtils';
 import { fixEncoding } from '../utils/textUtils';
 import { isHydrantSelected } from '../utils/geoUtils';
 import { openStreetView } from '../utils/streetViewUtils';
-
-const parseDateToTimestamp = (dateStr) => {
-  if (!dateStr || dateStr === '-') return -Infinity;
-  const str = String(dateStr).trim();
-  if (!str || str === '-') return -Infinity;
-  const [datePart, timePart] = str.split(' ');
-  let d = 0, m = 0, y = 0, hh = 0, mm = 0, ss = 0;
-  if (datePart && datePart.includes('/')) {
-    const parts = datePart.split('/');
-    if (parts.length === 3) {
-      d = parseInt(parts[0], 10);
-      m = parseInt(parts[1], 10) - 1;
-      y = parseInt(parts[2], 10);
-    }
-  } else if (datePart && datePart.includes('-')) {
-    const parts = datePart.split('-');
-    if (parts.length === 3) {
-      y = parseInt(parts[0], 10);
-      m = parseInt(parts[1], 10) - 1;
-      d = parseInt(parts[2], 10);
-    }
-  }
-  if (timePart && timePart.includes(':')) {
-    const tParts = timePart.split(':');
-    hh = parseInt(tParts[0], 10) || 0;
-    mm = parseInt(tParts[1], 10) || 0;
-    ss = parseInt(tParts[2], 10) || 0;
-  }
-  if (y > 0) {
-    const dateObj = new Date(y, m, d, hh, mm, ss);
-    if (!isNaN(dateObj.getTime())) return dateObj.getTime();
-  }
-  return -Infinity;
-};
+import { parseDateToTimestamp, getHydrantVistoriaDate, formatDateOnly } from '../utils/dateUtils';
 
 const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser, onOpenInspectionHistory }) => {
   const [sortConfig, setSortConfig] = useState({ key: 'datHoraUltimaVistoria', direction: 'descending' });
@@ -54,8 +21,10 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
       let bValue = b[key];
 
       if (key === 'datHoraUltimaVistoria') {
-        const timeA = parseDateToTimestamp(aValue);
-        const timeB = parseDateToTimestamp(bValue);
+        const valA = a?.datHoraUltimaVistoria || a?.datHoraVistoria || (Array.isArray(a?.HISTORICO_VISTORIAS) && a?.HISTORICO_VISTORIAS[0]?.datHoraVistoria);
+        const valB = b?.datHoraUltimaVistoria || b?.datHoraVistoria || (Array.isArray(b?.HISTORICO_VISTORIAS) && b?.HISTORICO_VISTORIAS[0]?.datHoraVistoria);
+        const timeA = parseDateToTimestamp(valA);
+        const timeB = parseDateToTimestamp(valB);
         if (timeA === timeB) return 0;
         if (direction === 'ascending') {
           if (timeA === -Infinity) return 1;
@@ -226,9 +195,8 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
             {sortedData.slice(0, displayCount).map((h, i) => {
               const id = h.codHidrante || h._internalId || h.nomHidrante;
               const isSelected = isHydrantSelected(h, selectedMissionIds);
-              const dataFormatada = h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' 
-                ? String(h.datHoraUltimaVistoria).split(' ')[0] 
-                : 'Não vistoriado';
+              const vDate = getHydrantVistoriaDate(h);
+              const dataFormatada = vDate !== 'Sem vistoria' ? vDate : 'Não vistoriado';
               const sanitizedProb = h.problemasHidrante ? fixEncoding(sanitizeProblem(h.problemasHidrante)) : null;
 
               return (
@@ -490,7 +458,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
                       </span>
                     </td>
                     <td className="p-2 font-mono text-xs">
-                      {h.datHoraUltimaVistoria && h.datHoraUltimaVistoria !== '-' ? String(h.datHoraUltimaVistoria).split(' ')[0] : '-'}
+                      {getHydrantVistoriaDate(h)}
                     </td>
                     <td className="p-2 max-w-[200px]">
                       <div className="truncate text-red-400 font-bold" title={fixEncoding(sanitizeProblem(h.problemasHidrante)) || ''}>

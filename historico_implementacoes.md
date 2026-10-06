@@ -892,3 +892,25 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
      - Criado parser robusto que interpreta tanto strings ISO (UTC/local) quanto formato brasileiro (`DD/MM/YYYY, HH:mm:ss`), corrigindo a contagem de "Hoje" e filtros por período.
   5. **Auto-Reconciliação no Carregamento (`App.jsx`):**
      - `syncWithCloud` agora busca `fetchInspectionsFromCloud()` e `fetchAuditLogsFromCloud()` para garantir que novos dispositivos e limpezas de cache reflitam imediatamente as vistorias e ações do sistema.
+
+### [06/10/2026] Padronização Universal de Datas (DD/MM/AAAA) e Correção da Ordenação Cronológica de Vistorias (TASK-187)
+- **Problema Diagnosticado:** Inconsistência recorrente de datas no sistema: no popup/dialog do hidrante no mapa exibia `10/06/2026,` com vírgula trailing e inversão dia/mês (junho em vez de outubro 06/10/2026), e na tela de lista de vistorias (`DataTable`) os hidrantes vistoriados hoje não apareciam no topo, exibindo primeiro vistorias antigas de setembro (22/09/2026).
+- **Causa Raiz Identificada:**
+  1. **Inversão PostgreSQL/Supabase:** Ao enviar `hidrante.datHoraUltimaVistoria` formatado como string brasileira `DD/MM/AAAA` para uma coluna `timestamptz` no Supabase (`netuno_inspections`), o PostgreSQL interpretava como `DateStyle = MDY` (formato americano), convertendo `06/10/2026` (6 de outubro) em `2026-06-10` (10 de junho). Ao ser lida pelo cliente, `toLocaleDateString('pt-BR')` gerava `10/06/2026`.
+  2. **Inversão JavaScript Nativa:** Chamadas `new Date("DD/MM/YYYY")` em V8 tratam a primeira parte como mês se for <= 12, invertendo sistematicamente dias e meses para todos os dias de 1 a 12.
+  3. **Vírgula Trailing:** O uso de `String(date).split(' ')[0]` gerava `DD/MM/AAAA,` porque o método `toLocaleString('pt-BR')` coloca vírgula entre a data e a hora (`06/10/2026, 09:58:48`).
+  4. **Quebra da Ordenação da Tabela:** No `DataTable`, `parseDateToTimestamp` recebia a data invertida de junho (`10/06/2026`) ou falhava em strings sem sanitização. Como 22 de setembro é cronologicamente posterior a 10 de junho, o algoritmo descendente jogava as vistorias de hoje para trás de setembro!
+- **Soluções Implementadas:**
+  1. **Módulo Central de Datas (`src/utils/dateUtils.js`):**
+     - Criado módulo universal com `parseDate`, `formatDateOnly`, `formatDateTimeDisplay`, `parseDateToTimestamp`, `dateToIsoString`, `getHydrantVistoriaDate` e `sortHydrantsByVistoriaDate`.
+     - `parseDate`: Parser determinístico que prioriza o padrão brasileiro DD/MM/AAAA sem ambiguidades e detecta inversões automáticas.
+     - `dateToIsoString`: Converte qualquer data para ISO-8601 estrito (`YYYY-MM-DDTHH:mm:ss.sssZ`), garantindo que o PostgreSQL no Supabase nunca inverta dia e mês.
+     - `getHydrantVistoriaDate`: Fonte única de verdade sem vírgulas espúrias (`DD/MM/AAAA`).
+  2. **Unificação dos Componentes:**
+     - `MapComponent.jsx`: Utiliza `getHydrantVistoriaDate`, eliminando a vírgula trailing e exibindo `06/10/2026` com precisão no popup e nos detalhes.
+     - `DataTable.jsx`: Ordenação cronológica precisa por timestamp numérico (`timeB - timeA`). Vistorias de hoje (`06/10/2026`) figuram no topo absoluto da lista (#1 a #15), seguidas pelas de 1 de outubro e depois pelas de setembro. Visualização em cards mobile e na tabela desktop sincronizadas via `getHydrantVistoriaDate`.
+     - `syncService.js`: Envio estritamente em ISO-8601 para `netuno_inspections.data_hora_vistoria`.
+     - `App.jsx`, `InspectionModal.jsx`, `InspectionHistoryModal.jsx`, `MissionRoutePanel.jsx`, `MissionReportPanel.jsx`, `officialPrintUtils.js` e `idMapping.js`: Todos integrados ao `dateUtils.js`.
+  3. **Correção de Dados Existentes:**
+     - Corrigidas 55 vistorias com datas invertidas diretamente na tabela `netuno_inspections` do Supabase via `scripts/fix_supabase_inspection_dates.cjs`.
+     - Sanitizadas e normalizadas todas as datas em `public/hidrantes_df_oficial.json`, `public/hidrantes_df_oficial.csv`, `public/base-de-dados.xlsx` e raiz `base-de-dados.xlsx`.

@@ -98,14 +98,12 @@ async function main() {
       const h = currentList[idx];
       appliedInspectionsCount++;
 
-      // Formatar data amigável
+      // Formatar data amigável (DD/MM/AAAA HH:mm:ss) de forma determinística
       let dtStr = insp.data_hora_vistoria;
-      try {
-        const d = new Date(insp.data_hora_vistoria);
-        if (!isNaN(d.getTime())) {
-          dtStr = d.toLocaleDateString('pt-BR') + ', ' + d.toLocaleTimeString('pt-BR');
-        }
-      } catch (e) {}
+      const isoM = String(insp.data_hora_vistoria || '').match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+      if (isoM) {
+        dtStr = `${isoM[3]}/${isoM[2]}/${isoM[1]} ${isoM[4] || '00'}:${isoM[5] || '00'}:${isoM[6] || '00'}`;
+      }
 
       // Atualizar dados principais da vistoria mais recente
       h.datHoraUltimaVistoria = dtStr;
