@@ -43,7 +43,8 @@ function calculateBearing(lat1, lng1, lat2, lng2) {
 }
 
 async function fetchMetadata(lat, lng) {
-  const metaUrl = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&radius=50&key=${GOOGLE_MAPS_API_KEY}`;
+  // source=outdoor garante fotos de vias públicas e elimina interiores de lojas/banheiros
+  const metaUrl = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&radius=50&source=outdoor&key=${GOOGLE_MAPS_API_KEY}`;
   try {
     const res = await (await fetch(metaUrl)).json();
     return res;
@@ -154,8 +155,8 @@ function logAyaEvaluation(hidranteNome, result, finalHeading, sweepLabel) {
   fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
 }
 
-async function downloadStreetView(carLat, carLng, heading, fov, width = 800, height = 600) {
-  const url = `https://maps.googleapis.com/maps/api/streetview?size=${width}x${height}&location=${carLat},${carLng}&heading=${heading}&pitch=-5&fov=${fov}&key=${GOOGLE_MAPS_API_KEY}`;
+async function downloadStreetView(carLat, carLng, heading, fov = 75, width = 800, height = 600, pitch = -8) {
+  const url = `https://maps.googleapis.com/maps/api/streetview?size=${width}x${height}&location=${carLat},${carLng}&heading=${heading}&pitch=${pitch}&fov=${fov}&key=${GOOGLE_MAPS_API_KEY}`;
   return new Promise((resolve, reject) => {
     https.get(url, (res) => {
       const chunks = [];
@@ -168,23 +169,33 @@ async function downloadStreetView(carLat, carLng, heading, fov, width = 800, hei
   });
 }
 
+// Sniper 360 v5: Cobertura contínua de 360° em 6 fatias de 60° (sem pontos cegos)
 async function smartScan(carLat, carLng, gpsLat, gpsLng, prefixLog, hidranteNome) {
   const baseHeading = calculateBearing(carLat, carLng, gpsLat, gpsLng);
+  
+  // Ordem tática: 
+  // 1) Frontal (0°)
+  // 2) Traseira imediata (180° - lado oposto da rua)
+  // 3) Laterais à direita (+60°, +120°)
+  // 4) Laterais à esquerda (-60° / 300°, -120° / 240°)
   const sweeps = [
-    { heading: baseHeading, label: "Frontal" },
-    { heading: (baseHeading + 120) % 360, label: "Sweep Direita (+120°)" },
-    { heading: (baseHeading + 240) % 360, label: "Sweep Esquerda (-120°)" }
+    { heading: baseHeading, label: "Frontal (0°)", pitch: -8 },
+    { heading: (baseHeading + 180) % 360, label: "Traseira Oposta (180°)", pitch: -8 },
+    { heading: (baseHeading + 60) % 360, label: "Lateral Direita (+60°)", pitch: -12 },
+    { heading: (baseHeading + 300) % 360, label: "Lateral Esquerda (-60°)", pitch: -12 },
+    { heading: (baseHeading + 120) % 360, label: "Flanco Direita (+120°)", pitch: -10 },
+    { heading: (baseHeading + 240) % 360, label: "Flanco Esquerda (-120°)", pitch: -10 }
   ];
 
   for (const sweep of sweeps) {
-    console.log(`${prefixLog} 📸 Tirando foto de varredura ampla (${sweep.label}, FOV=100)...`);
-    const scanImage = await downloadStreetView(carLat, carLng, sweep.heading, 100, 640, 640);
+    console.log(`${prefixLog} 📸 [Sniper 360 v5] Varredura (${sweep.label}, FOV=75, Pitch=${sweep.pitch}°)...`);
+    const scanImage = await downloadStreetView(carLat, carLng, sweep.heading, 75, 640, 640, sweep.pitch);
     
     console.log(`${prefixLog} 🧠 Analisando com IA...`);
     const aiResult = await locateHydrantWithGemini(scanImage.base64);
 
     if (aiResult.encontrado && aiResult.confianca >= 60 && aiResult.centro_x !== undefined) {
-      const correctionOffset = (aiResult.centro_x - 0.5) * 100;
+      const correctionOffset = (aiResult.centro_x - 0.5) * 75;
       const finalHeading = (sweep.heading + correctionOffset + 360) % 360;
       console.log(`${prefixLog} 🤖 Sucesso! Confiança: ${aiResult.confianca}%. Correção: ${Math.round(correctionOffset)}° (Mira final: ${Math.round(finalHeading)}°).`);
       
@@ -192,9 +203,10 @@ async function smartScan(carLat, carLng, gpsLat, gpsLng, prefixLog, hidranteNome
       
       return { success: true, finalHeading, scanImage: scanImage.buffer, carLat, carLng };
     } else {
-      console.log(`${prefixLog} ❌ Falhou (${sweep.label}) - Confiança: ${aiResult.confianca || 0}%`);
-      console.log(`${prefixLog} 📝 Justificativa IA: ${aiResult.justificativa || 'Sem justificativa'}`);
-      
+      console.log(`${prefixLog} ❌ Não detectou (${sweep.label}) - Confiança: ${aiResult.confianca || 0}%`);
+      if (aiResult.justificativa) {
+        console.log(`${prefixLog} 📝 Justificativa IA: ${aiResult.justificativa}`);
+      }
       logAyaEvaluation(hidranteNome, aiResult, sweep.heading, sweep.label);
     }
   }

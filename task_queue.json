@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-182",
+  "activeTaskId": "TASK-184",
   "queue": [
     {
       "id": "TASK-1",
@@ -1837,9 +1837,29 @@
       "seq": 182,
       "conversationId": "154ef160-01a9-469b-bd4b-52b283be43ef",
       "description": "Refazer extracao completa do Lago Sul",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-06T17:19:11.110Z",
       "startedAt": "2026-10-06T17:19:15.583Z",
+      "completedAt": "2026-10-06T19:07:02.413Z"
+    },
+    {
+      "id": "TASK-183",
+      "seq": 183,
+      "conversationId": "154ef160-01a9-469b-bd4b-52b283be43ef",
+      "description": "Diagnostico e correcao de angulacao Street View Lago Sul 04, 09, 10",
+      "status": "completed",
+      "createdAt": "2026-10-06T19:34:31.299Z",
+      "startedAt": "2026-10-06T19:34:37.313Z",
+      "completedAt": "2026-10-06T19:37:27.699Z"
+    },
+    {
+      "id": "TASK-184",
+      "seq": 184,
+      "conversationId": "154ef160-01a9-469b-bd4b-52b283be43ef",
+      "description": "Implementacao do modulo Sniper 360 v5 no Street View (Etapa 103)",
+      "status": "running",
+      "createdAt": "2026-10-06T19:43:03.059Z",
+      "startedAt": "2026-10-06T19:43:07.600Z",
       "completedAt": null
     }
   ]
