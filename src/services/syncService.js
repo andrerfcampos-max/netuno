@@ -23,28 +23,65 @@ const saveOfflineQueue = (queue) => {
   } catch {}
 };
 
+const sanitizeKey = (v) => String(v || '').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+
+export const getInspectionCanonicalId = (hidrante) => {
+  const hidKey = sanitizeKey(hidrante?.codHidrante || hidrante?.nomHidrante || hidrante?._internalId || 'HID');
+  const dtKey = sanitizeKey(hidrante?.datHoraUltimaVistoria || (hidrante?.HISTORICO_VISTORIAS?.[0]?.datHoraVistoria) || 'RECENT');
+  return `insp_${hidKey}_${dtKey}`;
+};
+
 const enqueueOfflineAction = (action, args) => {
   const queue = getOfflineQueue();
-  const newTask = {
-    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-    action,
-    args,
-    timestamp: Date.now()
-  };
-  queue.push(newTask);
+
+  // Previne tarefas idênticas redundantes na fila offline para o mesmo hidrante/missão
+  const existingIdx = queue.findIndex(task => {
+    if (task.action !== action) return false;
+    if (action === 'syncInspection' || action === 'syncHydrantMutation') {
+      const existingH = task.args?.[action === 'syncInspection' ? 0 : 1];
+      const newH = args?.[action === 'syncInspection' ? 0 : 1];
+      const existingKey = existingH?.codHidrante || existingH?.nomHidrante || existingH?._internalId;
+      const newKey = newH?.codHidrante || newH?.nomHidrante || newH?._internalId;
+      return existingKey && newKey && String(existingKey) === String(newKey);
+    }
+    if (action === 'syncMission') {
+      const existingMId = task.args?.[0]?.id;
+      const newMId = args?.[0]?.id;
+      return existingMId && newMId && String(existingMId) === String(newMId);
+    }
+    return false;
+  });
+
+  if (existingIdx >= 0) {
+    queue[existingIdx] = {
+      ...queue[existingIdx],
+      args,
+      timestamp: Date.now()
+    };
+  } else {
+    const newTask = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+      action,
+      args,
+      timestamp: Date.now()
+    };
+    queue.push(newTask);
+  }
+
   saveOfflineQueue(queue);
-  console.log('[OfflineSync] Tarefa colocada na fila offline:', action);
+  console.log('[OfflineSync] Tarefa colocada/atualizada na fila offline:', action);
 };
 
 const processOfflineQueue = async () => {
-  if (!navigator.onLine) return; 
+  if (!navigator.onLine) return 0; 
   
   const queue = getOfflineQueue();
-  if (queue.length === 0) return;
+  if (queue.length === 0) return 0;
 
   console.log(`[OfflineSync] Iniciando processamento de ${queue.length} pendências offline...`);
   let remainingQueue = [...queue];
   let hasErrors = false;
+  let processedInspections = 0;
 
   for (const task of queue) {
     try {
@@ -53,6 +90,7 @@ const processOfflineQueue = async () => {
         success = await _doSyncMissionToCloud(...task.args);
       } else if (task.action === 'syncInspection') {
         success = await _doSyncInspectionToCloud(...task.args);
+        if (success) processedInspections++;
       } else if (task.action === 'syncHydrantMutation') {
         success = await _doSyncHydrantMutationToCloud(...task.args);
       }
@@ -75,6 +113,7 @@ const processOfflineQueue = async () => {
   if (!hasErrors) {
     console.log('[OfflineSync] Fila offline processada com sucesso (Vazia).');
   }
+  return processedInspections;
 };
 
 if (typeof window !== 'undefined') {
@@ -171,32 +210,36 @@ export const reconcileLocalChangesToCloud = async () => {
   let syncedMissions = 0;
 
   try {
-    // 1. Processa qualquer pendência na fila offline
-    await processOfflineQueue();
+    // 1. Processa qualquer pendência na fila offline real
+    const offlineInspectionsCount = await processOfflineQueue();
+    syncedHydrants += (offlineInspectionsCount || 0);
 
-    // 2. Reconcilia alterações de hidrantes que estavam salvas em loadHydrantChanges()
+    // 2. Reconcilia alterações de hidrantes marcadas estritamente com pendência local offline (_pendingOfflineSync)
     const localChanges = loadHydrantChanges();
-    const updatedEntries = Object.entries(localChanges.updated || {});
+    const updatedEntries = Object.entries(localChanges.updated || {}).filter(([_, h]) => h && h._pendingOfflineSync === true);
     let hasChangesToSave = false;
 
     if (updatedEntries.length > 0) {
-      console.log(`[OfflineSync] Encontrados ${updatedEntries.length} hidrantes em alterações locais para reconciliar.`);
+      console.log(`[OfflineSync] Encontrados ${updatedEntries.length} hidrantes pendentes de envio offline para reconciliar.`);
       const syncLog = [];
       for (const [key, hydrant] of updatedEntries) {
         if (!hydrant) continue;
         try {
+          const cleanHydrant = { ...hydrant };
+          delete cleanHydrant._pendingOfflineSync;
+
           // Sobe a mutação do hidrante para netuno_hydrant_mutations
-          const successMut = await _doSyncHydrantMutationToCloud('update', hydrant);
+          const successMut = await _doSyncHydrantMutationToCloud('update', cleanHydrant);
           
           // Se tiver vistoria recente ou histórico, sobe também para netuno_inspections
-          if (hydrant.datHoraUltimaVistoria || (Array.isArray(hydrant.HISTORICO_VISTORIAS) && hydrant.HISTORICO_VISTORIAS.length > 0)) {
-            await _doSyncInspectionToCloud(hydrant);
+          if (cleanHydrant.datHoraUltimaVistoria || (Array.isArray(cleanHydrant.HISTORICO_VISTORIAS) && cleanHydrant.HISTORICO_VISTORIAS.length > 0)) {
+            await _doSyncInspectionToCloud(cleanHydrant);
           }
 
           if (successMut) {
             syncedHydrants++;
             syncLog.push(key);
-            delete localChanges.updated[key];
+            localChanges.updated[key] = cleanHydrant;
             hasChangesToSave = true;
           }
         } catch (e) {
@@ -221,14 +264,19 @@ export const reconcileLocalChangesToCloud = async () => {
       }
     }
 
-    // 3. Reconcilia missões locais que contenham hidrantes concluídos
+    // 3. Reconcilia missões locais se houver pendências não sincronizadas
     const localMissions = loadMissions();
     if (Array.isArray(localMissions) && localMissions.length > 0) {
       for (const mission of localMissions) {
-        if (mission && Array.isArray(mission.completedIds) && mission.completedIds.length > 0) {
+        if (mission && mission._pendingOfflineSync === true) {
           try {
-            const successM = await _doSyncMissionToCloud(mission);
-            if (successM) syncedMissions++;
+            const cleanMission = { ...mission };
+            delete cleanMission._pendingOfflineSync;
+            const successM = await _doSyncMissionToCloud(cleanMission);
+            if (successM) {
+              syncedMissions++;
+              mission._pendingOfflineSync = false;
+            }
           } catch (e) {
             console.warn(`[OfflineSync] Falha ao reconciliar missão ${mission.name}:`, e);
           }
@@ -424,8 +472,10 @@ const _doSyncInspectionToCloud = async (hidrante) => {
       hidrante.fotoUrl || 
       null;
 
+    const inspId = getInspectionCanonicalId(hidrante);
+
     const payload = {
-      id: `insp_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      id: inspId,
       cod_hidrante: String(hidrante.codHidrante || ''),
       nom_hidrante: String(hidrante.nomHidrante || ''),
       flg_ativo: Boolean(hidrante.flgAtivo),
@@ -433,7 +483,7 @@ const _doSyncInspectionToCloud = async (hidrante) => {
       nom_vistoriador: hidrante.vistoriadorNome || hidrante.nomVistoriador || '',
       num_matricula: hidrante.vistoriadorMatricula || '',
       data_hora_vistoria: hidrante.datHoraUltimaVistoria || new Date().toISOString(),
-      observacao: hidrante.dscObservacao || '',
+      observacao: hidrante.dscObservacao || hidrante.observacoes || hidrante.obsVistoria || '',
       foto_url: fotoPrincipal,
       latitude: hidrante.numLatitude ? parseFloat(hidrante.numLatitude) : null,
       longitude: hidrante.numLongitude ? parseFloat(hidrante.numLongitude) : null,
@@ -442,7 +492,7 @@ const _doSyncInspectionToCloud = async (hidrante) => {
 
     const { error } = await client
       .from('netuno_inspections')
-      .insert(payload);
+      .upsert(payload, { onConflict: 'id' });
 
     if (error) {
       console.warn('Erro ao salvar vistoria na nuvem:', error.message);

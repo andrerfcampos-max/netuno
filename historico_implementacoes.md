@@ -847,3 +847,25 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
 
 ### [06/10/2026] Etapa 99 Concluída Automaticamente
 - **Correção de Mensagens e Registro de Histórico de Vistorias Offline** foi executada e validada com sucesso pelo agente orquestrador.
+
+### [06/10/2026] Correção Crítica: Eliminação do Loop de Reconciliação Offline, Deduplicação de Vistorias e Higienização do Supabase
+- **Problema Diagnosticado:** Ao abrir o aplicativo mobile, o usuário se deparava com alertas repetidos informando que 8 vistorias cadastradas estavam sendo enviadas como se fossem offline, mesmo após já terem sido registradas com sucesso no sistema pela manhã. A auditoria técnica no Supabase identificou um acúmulo de **3.643 registros duplicados** na tabela `netuno_inspections` (com apenas 156 vistorias únicas reais).
+- **Causa Raiz Identificada:**
+  1. `applyCloudMutations` salvava mutações vindas da nuvem diretamente em `loadHydrantChanges().updated`.
+  2. `reconcileLocalChangesToCloud` varria cegamente `loadHydrantChanges().updated` assumindo que tudo era uma vistoria offline local a ser reenviada.
+  3. `_doSyncInspectionToCloud` gerava um `id` aleatório (`insp_${Date.now()}_...`) com `.insert()`, criando uma nova linha duplicada a cada sincronização/abertura do app em vez de usar idempotência.
+  4. Realtime WebSockets disparava nova atualização ao detectar o insert, recolocando os hidrantes no cache local e perpetuando o ciclo.
+- **Implementações Realizadas:**
+  1. **Idempotência Determinística em `_doSyncInspectionToCloud` (`syncService.js`):**
+     - Criado helper `getInspectionCanonicalId(hidrante)` gerando chave imutável baseada no hidrante e timestamp da vistoria (`insp_${hidKey}_${dtKey}`).
+     - Substituído `.insert()` por `.upsert(payload, { onConflict: 'id' })`. Mesmo se executado repetidas vezes, nunca cria linhas duplicadas.
+  2. **Deduplicação de Tarefas na Fila Offline Real (`enqueueOfflineAction`):**
+     - Evita enfileirar múltiplas tarefas para o mesmo hidrante na fila `netuno_offline_queue`.
+  3. **Desacoplamento do Cache Local e Reconciliação (`syncService.js` e `App.jsx`):**
+     - `reconcileLocalChangesToCloud` agora só sincroniza itens que estejam de fato na fila offline real ou marcados com `_pendingOfflineSync: true`.
+     - `applyCloudMutations` higieniza e remove qualquer flag `_pendingOfflineSync` de mutações vindas da nuvem.
+     - `handleSaveInspection` só adiciona `_pendingOfflineSync` se o dispositivo estiver offline.
+     - Eliminados toasts indevidos na inicialização quando não houver tarefas pendentes (`res.count === 0`).
+  4. **Higienização Completa do Banco de Dados Supabase (`scripts/cleanup_duplicates.cjs`):**
+     - Removidas 3.643 duplicatas em `netuno_inspections`, preservando os 156 registros únicos mais completos com fotos e vistoriadores originais.
+     - Removidos 256 eventos de auditoria redundantes em `netuno_hydrant_mutations`.

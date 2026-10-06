@@ -768,6 +768,12 @@ syncPreferences({ filters: newFilters });
           added: [...localChanges.added, ...cloudMutations.added.filter(ca => !localChanges.added.some(la => (la._internalId || la.codHidrante) === (ca._internalId || ca.codHidrante)))],
           deleted: Array.from(new Set([...localChanges.deleted, ...cloudMutations.deleted]))
         };
+        // Mutações da nuvem nunca devem conter flag de pendência offline local
+        Object.keys(cloudMutations.updated || {}).forEach(k => {
+          if (mergedChanges.updated[k]) {
+            delete mergedChanges.updated[k]._pendingOfflineSync;
+          }
+        });
         saveHydrantChanges(mergedChanges);
 
         setHidrantes(prevHidrantes => {
@@ -1408,6 +1414,11 @@ syncPreferences({ filters: filters });
     // Grava alteração no localStorage para persistir após F5
     const changes = loadHydrantChanges();
     const idKey = sanitized._internalId || sanitized.codHidrante || sanitized.nomHidrante;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      sanitized._pendingOfflineSync = true;
+    } else {
+      delete sanitized._pendingOfflineSync;
+    }
     changes.updated[idKey] = sanitized;
     saveHydrantChanges(changes);
 
