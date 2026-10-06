@@ -1,0 +1,3088 @@
+[
+  {
+    "timestamp": "2026-10-06T17:20:19.864Z",
+    "hidrante": "LAS00001",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 177.4260764152375,
+    "justificativa": "A imagem mostra uma rua com gramado e arbustos densos, mas nenhuma estrutura cilíndrica metálica ou hidrante de coluna visível ao longo da calçada ou na vegetação."
+  },
+  {
+    "timestamp": "2026-10-06T17:20:22.562Z",
+    "hidrante": "LAS00001",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 297.4260764152375,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado ao longo das calçadas ou margens da rua na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T17:20:26.661Z",
+    "hidrante": "LAS00001",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 57.4260764152375,
+    "justificativa": "Após varredura completa da área de calçada e margens da via visíveis na imagem, não foi identificada nenhuma estrutura metálica cilíndrica vertical correspondente a um hidrante de coluna. Há apenas vegetação densa, árvores, uma guarita ao fundo e um cone de trânsito na via."
+  },
+  {
+    "timestamp": "2026-10-06T17:21:24.591Z",
+    "hidrante": "LAS00001",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 327.79735788287866,
+    "justificativa": "Nao foi encontrado nenhum hidrante de coluna metalico nas margens da rua ou junto a vegetacao na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T17:21:27.478Z",
+    "hidrante": "LAS00001",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 87.79735788287866,
+    "justificativa": "A imagem mostra uma calçada com grama, árvores e uma cerca ao fundo, mas após varredura detalhada em toda a extensão da calçada e margens, nenhum hidrante de coluna cilíndrico foi detectado."
+  },
+  {
+    "timestamp": "2026-10-06T17:21:31.735Z",
+    "hidrante": "LAS00001",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 207.7973578828787,
+    "justificativa": "A imagem exibe uma rua arborizada com calçadas e postes de energia elétrica, mas após varredura completa nas margens da via e calçadas, nenhum hidrante de coluna metálico cilíndrico foi detectado."
+  },
+  {
+    "timestamp": "2026-10-06T17:22:04.424Z",
+    "hidrante": "LAS00002",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.645,
+    "mira_final": 118.3061764821216,
+    "justificativa": "Detectado um hidrante de coluna cilíndrico de cor avermelhada localizado na grama, próximo à base da cerca viva verde, com formato e proporções características de um hidrante de calçada do Corpo de Bombeiros."
+  },
+  {
+    "timestamp": "2026-10-06T17:22:41.915Z",
+    "hidrante": "LAS00004",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 74.97640594530185,
+    "justificativa": "Nenhum hidrante de coluna (cilíndrico metálico) visível na área de estacionamento ou calçadas da imagem analisada; apenas veículos e edifícios comerciais."
+  },
+  {
+    "timestamp": "2026-10-06T17:22:50.256Z",
+    "hidrante": "LAS00004",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 194.97640594530185,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado na imagem analisada; a cena mostra um estacionamento ao ar livre com carros, edifícios comerciais e árvores, mas sem estruturas cilíndricas de hidrantes nas calçadas ou áreas visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T17:23:49.168Z",
+    "hidrante": "LAS00004",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 314.97640594530185,
+    "justificativa": "Nenhum hidrante de coluna visivel na imagem. A area analisada contem apenas um estacionamento ao ar livre com carros e vegetacao, sem indicios de equipamentos contra incendio nas calçadas ou margens da via."
+  },
+  {
+    "timestamp": "2026-10-06T17:23:54.718Z",
+    "hidrante": "LAS00004",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 252.5580114290937,
+    "justificativa": "A imagem mostra um ambiente interno (banheiro/lavabo) com uma pia, espelho e elementos decorativos de vidro. Nenhum hidrante de coluna ou urbano está presente no cenário."
+  },
+  {
+    "timestamp": "2026-10-06T17:23:58.085Z",
+    "hidrante": "LAS00004",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 12.55801142909371,
+    "justificativa": "A imagem mostra o interior de um ambiente fechado (parede texturizada, toalha pendurada e tomada elétrica), não havendo nenhum hidrante de calçada ou de rua visível."
+  },
+  {
+    "timestamp": "2026-10-06T17:24:24.907Z",
+    "hidrante": "LAS00004",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 132.5580114290937,
+    "justificativa": "A imagem mostra um ambiente interno escuro, possivelmente um banheiro ou corredor com parede texturizada e iluminação artificial, sem qualquer evidência de calçada, rua ou hidrante de coluna."
+  },
+  {
+    "timestamp": "2026-10-06T17:24:36.414Z",
+    "hidrante": "LAS00006",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 92,
+    "centro_x": 0.491,
+    "mira_final": 182.72558709656835,
+    "justificativa": "Detectado um hidrante de coluna cilíndrico metálico, pintado de amarelo, localizado na margem da calçada próximo ao meio-fio e a um pequeno banco de madeira na grama."
+  },
+  {
+    "timestamp": "2026-10-06T17:24:46.022Z",
+    "hidrante": "LAS00007",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 310.7685710594115,
+    "justificativa": "Nenhum hidrante de coluna metálico cilíndrico foi encontrado na imagem. Há apenas pequenos objetos no gramado (como uma tampa de bueiro ou caixa de inspeção cilíndrica baixa), mas não correspondem a um hidrante de rua do Corpo de Bombeiros."
+  },
+  {
+    "timestamp": "2026-10-06T17:24:50.657Z",
+    "hidrante": "LAS00007",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 70.7685710594115,
+    "justificativa": "A análise detalhada da calçada, meio-fio e áreas adjacentes à via pública não revelou nenhum objeto cilíndrico metálico compatível com um hidrante de coluna. Apenas árvores, postes de iluminação e vegetação rasteira estão presentes."
+  },
+  {
+    "timestamp": "2026-10-06T17:24:56.047Z",
+    "hidrante": "LAS00007",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 190.76857105941144,
+    "justificativa": "A análise minuciosa da imagem não revelou nenhum hidrante de coluna visível nas calçadas, gramados ou margens da via. A resolução e distância da via impedem a identificação de qualquer estrutura cilíndrica metálica característica de hidrantes."
+  },
+  {
+    "timestamp": "2026-10-06T17:25:16.126Z",
+    "hidrante": "LAS00007",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 281.75177171367227,
+    "justificativa": "Nenhum hidrante de coluna metálico e cilíndrico foi encontrado na área analisada após varredura nas calçadas e margens da via."
+  },
+  {
+    "timestamp": "2026-10-06T17:25:19.687Z",
+    "hidrante": "LAS00007",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": true,
+    "confianca": 85,
+    "centro_x": 0.203,
+    "mira_final": 12.05177171367228,
+    "justificativa": "Identificado um objeto cilíndrico avermelhado na grama à margem esquerda da via, característico de um hidrante de coluna típico do Distrito Federal, posicionado logo após a calçada."
+  },
+  {
+    "timestamp": "2026-10-06T17:25:29.989Z",
+    "hidrante": "LAS00008",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 71.36344060967059,
+    "justificativa": "A analise detalhada da imagem nao revela nenhum hidrante de coluna ou estrutura cilindrica caracteristica nas calçadas ou areas visiveis. Apenas carros, vegetacao, postes de iluminacao e edificacoes estao presentes."
+  },
+  {
+    "timestamp": "2026-10-06T17:25:33.633Z",
+    "hidrante": "LAS00008",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 191.3634406096706,
+    "justificativa": "A análise minuciosa da calçada, meio-fio e áreas adjacentes na imagem não revela a presença de nenhum hidrante de coluna cilíndrico metálico. Há uma caçamba de entulho amarela em primeiro plano e veículos, mas nenhum equipamento de combate a incêndio visível."
+  },
+  {
+    "timestamp": "2026-10-06T17:25:36.009Z",
+    "hidrante": "LAS00008",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 311.3634406096706,
+    "justificativa": "Nenhum hidrante de coluna visivel nas calcadas ou margens da rua na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T17:25:47.385Z",
+    "hidrante": "LAS00009",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 183.4374039896958,
+    "justificativa": "A análise da imagem não revelou a presença de nenhum hidrante de coluna nas margens da via ou junto à vegetação e calçadas visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T17:25:50.012Z",
+    "hidrante": "LAS00009",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 303.4374039896958,
+    "justificativa": "A análise minuciosa da via, calçadas e margens da rua não revelou nenhum hidrante de coluna cilíndrico metálico (nem amarelo, vermelho ou de outra cor). Há apenas vegetação densa, cercas e postes de iluminação ao longo da via."
+  },
+  {
+    "timestamp": "2026-10-06T17:26:27.245Z",
+    "hidrante": "LAS00009",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 63.43740398969578,
+    "justificativa": "A imagem mostra apenas uma cerca verde de metal sobre um muro baixo de concreto, grama e o céu com nuvens. Não há nenhum hidrante de coluna visível na calçada ou na área analisada."
+  },
+  {
+    "timestamp": "2026-10-06T17:26:30.211Z",
+    "hidrante": "LAS00009",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 160.83352681897247,
+    "justificativa": "A análise minuciosa da via, calçadas, gramados e margens da rua não revelou a presença de nenhum hidrante de coluna cilíndrico metálico ou estruturas semelhantes. A visibilidade está clara, mas o equipamento não está presente na área enquadrada pela imagem."
+  },
+  {
+    "timestamp": "2026-10-06T17:26:43.555Z",
+    "hidrante": "LAS00009",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 280.8335268189725,
+    "justificativa": "A analise detalhada da imagem mostra uma rua asfaltada com uma cerca viva alta e densa do lado esquerdo. Nao ha nenhum hidrante de coluna metalico ou cilindrico visivel ao longo da calçada ou na vegetacao."
+  },
+  {
+    "timestamp": "2026-10-06T17:27:54.559Z",
+    "hidrante": "LAS00009",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 40.83352681897247,
+    "justificativa": "A imagem mostra apenas uma calçada gramada, um bueiro/caixa de inspeção e um tapume metálico verde. Não há presença de nenhum hidrante de coluna ou estrutura cilíndrica metálica correspondente a um hidrante de rua."
+  },
+  {
+    "timestamp": "2026-10-06T17:29:21.683Z",
+    "hidrante": "LAS00010",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 252.63383252651295,
+    "justificativa": "A imagem mostra apenas uma calçada, gramado e vegetação densa. Nenhum hidrante de coluna ou objeto cilíndrico metálico correspondente a um hidrante foi localizado após varredura detalhada da área."
+  },
+  {
+    "timestamp": "2026-10-06T17:29:25.023Z",
+    "hidrante": "LAS00010",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 12.633832526512947,
+    "justificativa": "Nenhum hidrante de coluna metálico cilíndrico foi encontrado na calçada ou via pública após varredura completa da imagem."
+  },
+  {
+    "timestamp": "2026-10-06T17:29:55.922Z",
+    "hidrante": "LAS00010",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 132.63383252651295,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado na calçada ou margem da via na imagem analisada. Há apenas postes de iluminação e vegetação densa."
+  },
+  {
+    "timestamp": "2026-10-06T17:30:33.052Z",
+    "hidrante": "LAS00010",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 161.09213144919545,
+    "justificativa": "A imagem exibe uma rua residencial com vegetacao densa nas laterais e carros estacionados. Apos varredura detalhada ao longo das calcadas e meios-fios, nao foi detectado nenhum hidrante de coluna ou estrutura cilindrica caracteristica."
+  },
+  {
+    "timestamp": "2026-10-06T17:30:51.368Z",
+    "hidrante": "LAS00010",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 281.09213144919545,
+    "justificativa": "A análise minuciosa da calçada, meio-fio e áreas adjacentes na imagem não revela a presença de nenhum hidrante de coluna cilíndrico metálico."
+  },
+  {
+    "timestamp": "2026-10-06T17:30:59.553Z",
+    "hidrante": "LAS00010",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 41.09213144919545,
+    "justificativa": "A análise detalhada da calçada, meio-fio e áreas adjacentes na imagem não revela nenhum hidrante de coluna (cilíndrico). Há apenas vegetação densa, uma placa de pare à esquerda e um muro residencial, sem a presença do equipamento de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T17:33:32.914Z",
+    "hidrante": "LAS00011",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 100.06213061888354,
+    "justificativa": "Uma análise detalhada da calçada, meio-fio e áreas adjacentes à vegetação densa não revela nenhum hidrante de coluna cilíndrico visível. Há apenas vegetação, asfalto e postes comuns ao longo da via."
+  },
+  {
+    "timestamp": "2026-10-06T17:34:59.008Z",
+    "hidrante": "LAS00011",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 220.06213061888354,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna metalico nas margens da rua ou proximidades. A area apresenta vegetacao densa, postes de iluminacao e gramados, mas nenhum objeto compativel com o formato cilindrico caracteristico de um hidrante de calcada."
+  },
+  {
+    "timestamp": "2026-10-06T17:35:59.225Z",
+    "hidrante": "LAS00011",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 340.06213061888354,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna na imagem analisada. A area da calcada e o muro residencial estao limpos de qualquer estrutura metalica cilindrica caracteristica de hidrantes."
+  },
+  {
+    "timestamp": "2026-10-06T17:36:49.690Z",
+    "hidrante": "LAS00011",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 210.43418671941689,
+    "justificativa": "A análise minuciosa da imagem não revelou nenhum hidrante de coluna nas calçadas ou margens da via. Apenas elementos urbanos comuns como uma placa de pare e vegetação densa estão presentes."
+  },
+  {
+    "timestamp": "2026-10-06T17:38:08.931Z",
+    "hidrante": "LAS00011",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 330.43418671941686,
+    "justificativa": "A analise detalhada da calcada e da frente do muro nao revelou nenhum hidrante de coluna ou estrutura metalica cilindrica caracteristica de hidrantes publicos. Ha apenas postes de iluminacao e vegetacao ornamentais."
+  },
+  {
+    "timestamp": "2026-10-06T17:38:33.143Z",
+    "hidrante": "LAS00011",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 90.43418671941686,
+    "justificativa": "Analisei toda a extensão da calçada e margem da rua visível na imagem e não foi identificado nenhum hidrante de coluna ou estrutura cilíndrica metálica típica de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T17:39:08.957Z",
+    "hidrante": "LAS00012",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 197.55863523213998,
+    "justificativa": "Nao foram encontrados hidrantes de coluna visíveis na calçada ou nas proximidades da via analisada na imagem."
+  },
+  {
+    "timestamp": "2026-10-06T17:39:13.378Z",
+    "hidrante": "LAS00012",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 317.55863523214,
+    "justificativa": "A imagem mostra apenas uma rua com meio-fio, gramado e uma densa vegetacao (arbustos e arvores). Nao ha nenhum hidrante de coluna metalico ou estrutura similar visivel na cena."
+  },
+  {
+    "timestamp": "2026-10-06T17:40:04.531Z",
+    "hidrante": "LAS00012",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 77.55863523213998,
+    "justificativa": "A análise minuciosa da calçada e margens da rua não revelou a presença de nenhum hidrante de coluna cilíndrico. Há apenas vegetação, postes de iluminação e muros residenciais na área visível."
+  },
+  {
+    "timestamp": "2026-10-06T17:41:31.723Z",
+    "hidrante": "LAS00012",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 9.990423673479825,
+    "justificativa": "Nao foi encontrado nenhum hidrante de coluna cilindrico na calçada ou rua analisada. Ha apenas um poste/totem de sinalização na calçada à direita e vegetação ao fundo, mas nenhum hidrante visível."
+  },
+  {
+    "timestamp": "2026-10-06T17:42:02.019Z",
+    "hidrante": "LAS00012",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 129.99042367347982,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico visível foi identificado ao longo das margens da rua ou calçada após varredura detalhada da área urbana e dos acostamentos."
+  },
+  {
+    "timestamp": "2026-10-06T17:42:04.837Z",
+    "hidrante": "LAS00012",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 249.99042367347982,
+    "justificativa": "A imagem mostra uma área gramada aberta com árvores esparsas, meio-fio e fiação elétrica ao fundo. Não foi identificado nenhum hidrante de coluna ou estrutura cilíndrica metálica característica de hidrante de rua na calçada ou gramado."
+  },
+  {
+    "timestamp": "2026-10-06T17:42:38.387Z",
+    "hidrante": "LAS00013",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 230.54056838971036,
+    "justificativa": "A imagem mostra uma rua com calçada, uma cerca viva densa e um reservatório de água azul ao fundo. Nenhum hidrante de coluna metálico (amarelo ou vermelho) ou estrutura cilíndrica correspondente foi encontrada na área visível."
+  },
+  {
+    "timestamp": "2026-10-06T17:42:41.510Z",
+    "hidrante": "LAS00013",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 350.54056838971036,
+    "justificativa": "A análise detalhada da calçada, meio-fio e áreas adjacentes em ambos os lados da rua não revelou nenhum objeto cilíndrico metálico ou estrutura característica de um hidrante de coluna. Apenas vegetação, postes de iluminação e muros estão visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T17:42:44.196Z",
+    "hidrante": "LAS00013",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 110.54056838971036,
+    "justificativa": "A imagem mostra uma rua residencial com uma cerca viva alta à esquerda e calçada. Analisando detalhadamente a calçada e a área verde ao longo de toda a extensão visível, não foi identificado nenhum hidrante de coluna ou estrutura metálica cilíndrica característica de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T17:43:04.850Z",
+    "hidrante": "LAS00013",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 165.80311464285273,
+    "justificativa": "Nenhum hidrante de coluna metálico cilíndrico foi detectado nas calçadas ou margens da via na imagem fornecida. A análise da vegetação e das calçadas ao longo da rua não revela nenhum objeto com as características físicas típicas de um hidrante."
+  },
+  {
+    "timestamp": "2026-10-06T17:43:10.794Z",
+    "hidrante": "LAS00013",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 285.80311464285273,
+    "justificativa": "A análise detalhada da calçada, meio-fio e margem da vegetação densa não revelou nenhum hidrante de coluna ou objeto metálico cilíndrico correspondente às características de um hidrante de rua no local."
+  },
+  {
+    "timestamp": "2026-10-06T17:43:13.468Z",
+    "hidrante": "LAS00013",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 45.803114642852734,
+    "justificativa": "A análise minuciosa da calçada e da área verde frontal da residência não revelou nenhum objeto cilíndrico metálico característico de um hidrante de coluna na área visível da imagem."
+  },
+  {
+    "timestamp": "2026-10-06T17:43:24.168Z",
+    "hidrante": "LAS00014",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 211.7818772476823,
+    "justificativa": "Nao foi encontrado nenhum hidrante de coluna visivel na calcada ou area publica da imagem fornecida; apenas postes de iluminacao e vegetacao."
+  },
+  {
+    "timestamp": "2026-10-06T17:43:28.895Z",
+    "hidrante": "LAS00014",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 331.7818772476823,
+    "justificativa": "A análise da imagem não revelou nenhum hidrante de coluna visível nas calçadas ou margens da via pública. Apenas vegetação, muros, residências e postes de fiação estão presentes."
+  },
+  {
+    "timestamp": "2026-10-06T17:43:36.475Z",
+    "hidrante": "LAS00014",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 91.7818772476823,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico visível foi encontrado nas calçadas ou margens da via na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T17:43:50.495Z",
+    "hidrante": "LAS00015",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 25.654669066210488,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico foi localizado na imagem analisada. Há apenas um caminhão basculante laranja, pilhas de terra e vegetação na calçada e rua, sem a presença de equipamentos de combate a incêndio visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T17:44:48.277Z",
+    "hidrante": "LAS00015",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 145.6546690662105,
+    "justificativa": "A análise minuciosa da calçada, meio-fio e áreas adjacentes na imagem não revela a presença de nenhum hidrante de coluna, seja amarelo, vermelho ou de qualquer outra cor. Os objetos visíveis na calçada e gramados são veículos, vegetação e estruturas residenciais."
+  },
+  {
+    "timestamp": "2026-10-06T17:45:14.550Z",
+    "hidrante": "LAS00015",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 265.6546690662105,
+    "justificativa": "Nenhum hidrante de coluna visível foi encontrado ao longo das calçadas na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T17:45:25.286Z",
+    "hidrante": "LAS00016",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 227.83911551114173,
+    "justificativa": "A análise detalhada da calçada, meio-fio e áreas adjacentes na imagem não revelou nenhum hidrante de coluna cilíndrico metálico (amarelo, vermelho ou de outras cores). Há apenas um poste de energia elétrica, veículos estacionados e vegetação, sem a presença de equipamentos de combate a incêndio visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T17:45:36.059Z",
+    "hidrante": "LAS00016",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 347.8391155111417,
+    "justificativa": "Nenhum hidrante de coluna (amarelo ou vermelho) foi encontrado na imagem analisada. A cena mostra uma rua pavimentada, uma casa em construção, carros, palmeiras e um portão preto, sem a presença de infraestrutura urbana de combate a incêndio visível."
+  },
+  {
+    "timestamp": "2026-10-06T17:45:47.092Z",
+    "hidrante": "LAS00016",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 107.8391155111417,
+    "justificativa": "Nao ha nenhum hidrante de coluna visivel na imagem. Observa-se apenas um pequeno tampao ou caixa de servico no nivel do chao proximo ao canteiro central, mas nenhum elemento estrutural vertical cilindrico correspondente a um hidrante de rua."
+  },
+  {
+    "timestamp": "2026-10-06T17:46:24.083Z",
+    "hidrante": "LAS00017",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.23,
+    "mira_final": 47.26889062110115,
+    "justificativa": "Identificado um hidrante de coluna cilíndrico metálico, com coloração amarela/alaranjada, posicionado na grama próximo à calçada, à esquerda do veículo e em frente aos arbustos."
+  },
+  {
+    "timestamp": "2026-10-06T17:46:35.310Z",
+    "hidrante": "LAS00018",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 85,
+    "centro_x": 0.322,
+    "mira_final": 309.4536512651912,
+    "justificativa": "Detectado um hidrante de coluna metálico e cilíndrico na calçada, localizado logo abaixo da folhagem densa e próximo ao poste de energia, apresentando formato e proporções características de um hidrante de rua padrão."
+  },
+  {
+    "timestamp": "2026-10-06T17:46:49.428Z",
+    "hidrante": "LAS00019",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 323.90754141950606,
+    "justificativa": "Nenhum hidrante de coluna visível foi encontrado na calçada ou na área analisada após varredura detalhada da imagem."
+  },
+  {
+    "timestamp": "2026-10-06T17:46:55.257Z",
+    "hidrante": "LAS00019",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 83.90754141950606,
+    "justificativa": "Nenhum hidrante de coluna ou objeto com características cilíndricas de combate a incêndio foi identificado nas calçadas ou margens da via visíveis na imagem."
+  },
+  {
+    "timestamp": "2026-10-06T17:47:06.925Z",
+    "hidrante": "LAS00019",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 203.90754141950606,
+    "justificativa": "A análise minuciosa da calçada, meio-fio e áreas adjacentes não revela nenhum hidrante de coluna cilíndrico. Apenas vegetação, muros e uma motocicleta estacionada são visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T17:47:15.197Z",
+    "hidrante": "LAS00019",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 326.46776352353834,
+    "justificativa": "A análise da imagem não revela nenhum hidrante de coluna visível nas calçadas ou margens da rua. Apenas postes de iluminação e vegetação são encontrados nas áreas laterais."
+  },
+  {
+    "timestamp": "2026-10-06T17:47:20.413Z",
+    "hidrante": "LAS00019",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 86.46776352353834,
+    "justificativa": "A análise da imagem não revelou nenhum hidrante de coluna nas calçadas ou vias visíveis. Os elementos presentes na calçada e nas proximidades são postes de iluminação e grades, sem a presença do corpo cilíndrico metálico característico de hidrantes de rua."
+  },
+  {
+    "timestamp": "2026-10-06T17:47:42.746Z",
+    "hidrante": "LAS00019",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 206.46776352353834,
+    "justificativa": "A imagem exibe uma fachada de residência com portão de garagem e calçada inclinada. Após varredura completa na calçada, margens da rua e áreas adjacentes, nenhum hidrante de coluna (cilíndrico) foi visualizado."
+  },
+  {
+    "timestamp": "2026-10-06T17:47:53.071Z",
+    "hidrante": "LAS00020",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 98,
+    "centro_x": 0.796,
+    "mira_final": 322.2131878950703,
+    "justificativa": "Detectado claramente um hidrante de coluna amarelo na calçada gramada, próximo ao meio-fio, exibindo o formato cilíndrico metálico característico com saídas laterais e tampa superior."
+  },
+  {
+    "timestamp": "2026-10-06T17:48:06.985Z",
+    "hidrante": "LAS00021",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 92,
+    "centro_x": 0.605,
+    "mira_final": 292.10310591536233,
+    "justificativa": "Detectado um hidrante de coluna metálico de cor amarela localizado na calçada, próximo ao meio-fio e à cerca metálica do canteiro de obras, exibindo formato cilíndrico característico."
+  },
+  {
+    "timestamp": "2026-10-06T17:48:23.412Z",
+    "hidrante": "LAS00022",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 90,
+    "centro_x": 0.272,
+    "mira_final": 80.7478559441106,
+    "justificativa": "Identificado um hidrante de coluna cilíndrico e metálico posicionado próximo ao muro à esquerda, parcialmente encoberto pela vegetação e com coloração envelhecida característica."
+  },
+  {
+    "timestamp": "2026-10-06T17:48:39.824Z",
+    "hidrante": "LAS00024",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 70.02462140092803,
+    "justificativa": "A análise detalhada das calçadas em ambos os lados da rua não revelou a presença de nenhum hidrante de coluna cilíndrico. Há apenas elementos urbanos comuns e tampas circulares no pavimento, mas nenhum hidrante visível."
+  },
+  {
+    "timestamp": "2026-10-06T17:48:47.876Z",
+    "hidrante": "LAS00024",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 190.02462140092803,
+    "justificativa": "Nenhum hidrante de coluna visível na calçada ou via pública após varredura minuciosa da imagem."
+  },
+  {
+    "timestamp": "2026-10-06T17:49:08.746Z",
+    "hidrante": "LAS00024",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 310.024621400928,
+    "justificativa": "A análise minuciosa da calçada e da área frontal da residência não revelou a presença de nenhum hidrante de coluna ou estrutura cilíndrica metálica característica. Apenas postes de iluminação e vegetação são visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T17:50:16.635Z",
+    "hidrante": "LAS00024",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 228.05447398000518,
+    "justificativa": "Nao foram encontrados hidrantes de coluna visíveis na calçada ou margens da via na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T17:50:56.926Z",
+    "hidrante": "LAS00024",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": true,
+    "confianca": 92,
+    "centro_x": 0.574,
+    "mira_final": 355.4544739800051,
+    "justificativa": "Detectado um hidrante de coluna metálico amarelado na calçada, posicionado próximo ao muro de pedra da residência, apresentando o formato cilíndrico característico exigido pelas normas locais."
+  },
+  {
+    "timestamp": "2026-10-06T17:54:47.153Z",
+    "hidrante": "LAS00025",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.068,
+    "mira_final": 109.61451137594037,
+    "justificativa": "Detectado um hidrante de coluna metálico de formato cilíndrico e cor amarelada/envelhecida posicionado na lateral esquerda, junto ao gramado e próximo à cerca viva."
+  },
+  {
+    "timestamp": "2026-10-06T17:56:47.919Z",
+    "hidrante": "LAS00027",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": null,
+    "mira_final": 184.19450321659082,
+    "justificativa": "A imagem mostra um poste de concreto na calçada e uma cerca viva ao fundo. Não há nenhum hidrante de coluna visível na área analisada."
+  },
+  {
+    "timestamp": "2026-10-06T17:59:26.405Z",
+    "hidrante": "LAS00027",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "mira_final": 304.1945032165908,
+    "justificativa": "Erro ao consultar a API após tentativas."
+  },
+  {
+    "timestamp": "2026-10-06T17:59:31.324Z",
+    "hidrante": "LAS00027",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 64.19450321659082,
+    "justificativa": "Nenhum hidrante de coluna visível foi encontrado ao longo das calçadas na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T17:59:40.491Z",
+    "hidrante": "LAS00027",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.106,
+    "mira_final": 40.252177506046394,
+    "justificativa": "Detectado um hidrante de coluna metálico e cilíndrico de cor amarela localizado no gramado da calçada à esquerda da rua."
+  },
+  {
+    "timestamp": "2026-10-06T17:59:51.835Z",
+    "hidrante": "LAS00028",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 98,
+    "centro_x": 0.413,
+    "mira_final": 275.44882922044496,
+    "justificativa": "Detectado um hidrante de coluna metálico de formato cilíndrico e coloração branca/clara localizado no gramado em frente à cerca viva, perfeitamente alinhado com as características padrão de hidrantes urbanos."
+  },
+  {
+    "timestamp": "2026-10-06T18:00:01.436Z",
+    "hidrante": "LAS00029",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 329.62233600727563,
+    "justificativa": "A imagem mostra uma rua residencial com um poste de madeira, cerca e vegetação, mas não há nenhum hidrante de coluna visível ao longo da calçada ou margem da estrada."
+  },
+  {
+    "timestamp": "2026-10-06T18:00:04.095Z",
+    "hidrante": "LAS00029",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 89.62233600727563,
+    "justificativa": "A analise detalhada da imagem e das margens da via nao revelou nenhum objeto vertical metalico cilindrico correspondente a um hidrante de coluna. Apenas carros estacionados, vegetacao e edificacoes estao presentes na paisagem."
+  },
+  {
+    "timestamp": "2026-10-06T18:00:25.019Z",
+    "hidrante": "LAS00029",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 209.62233600727563,
+    "justificativa": "A imagem exibe uma rua residencial com calçadas e vegetação, mas após varredura detalhada ao longo das margens da via e calçadas visíveis, nenhum hidrante de coluna cilíndrico foi localizado."
+  },
+  {
+    "timestamp": "2026-10-06T18:00:29.757Z",
+    "hidrante": "LAS00029",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 204.2286591174828,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico visível foi detectado ao longo das margens da via ou calçadas na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:00:39.287Z",
+    "hidrante": "LAS00029",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 324.22865911748283,
+    "justificativa": "A analise detalhada da calcada e da area verde ao longo da cerca metalica verde nao revela nenhum hidrante de coluna cilindrico. Apenas vegetacao rasteira, solo exposto e postes de iluminacao publica ao fundo sao visiveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:00:42.456Z",
+    "hidrante": "LAS00029",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 84.22865911748283,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico foi localizado na imagem analisada. Há apenas sinalização viária vertical (placas), postes de iluminação e vegetação, sem a presença de estruturas metálicas de hidrante nas calçadas ou margens da via visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:01:28.277Z",
+    "hidrante": "LAS00030",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 92,
+    "centro_x": 0.207,
+    "mira_final": 249.02964515582062,
+    "justificativa": "Detectado um hidrante de coluna cilíndrico metálico pintado de preto/escuro posicionado na calçada, próximo ao canteiro de vegetação e logo atrás do poste de sinalização viária."
+  },
+  {
+    "timestamp": "2026-10-06T18:01:48.113Z",
+    "hidrante": "LAS00031",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 341.1916560104193,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna na calçada ou margem da rua na imagem fornecida. A análise da área gramada ao longo do meio-fio e perto dos postes não revela estruturas cilíndricas características de hidrantes."
+  },
+  {
+    "timestamp": "2026-10-06T18:02:11.557Z",
+    "hidrante": "LAS00031",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 101.19165601041931,
+    "justificativa": "Nenhum hidrante de coluna metálico visível foi detectado na calçada ou na linha da cerca da imagem fornecida."
+  },
+  {
+    "timestamp": "2026-10-06T18:02:16.839Z",
+    "hidrante": "LAS00031",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": true,
+    "confianca": 98,
+    "centro_x": 0.632,
+    "mira_final": 234.3916560104194,
+    "justificativa": "Identificado um hidrante de coluna amarelo clássico localizado na grama à beira da rua, ao lado da cerca verde. O objeto apresenta formato cilíndrico característico com saídas laterais visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:02:28.732Z",
+    "hidrante": "LAS00032",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 303.78840786912906,
+    "justificativa": "Nenhum hidrante de coluna visível na calçada ou canteiro. Apenas postes de iluminação e vegetação estão presentes na imagem."
+  },
+  {
+    "timestamp": "2026-10-06T18:02:31.756Z",
+    "hidrante": "LAS00032",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 63.78840786912906,
+    "justificativa": "Nao foram encontrados hidrantes visíveis nas calçadas ou margens da via na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:03:03.843Z",
+    "hidrante": "LAS00032",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": true,
+    "confianca": 92,
+    "centro_x": 0.547,
+    "mira_final": 188.4884078691291,
+    "justificativa": "Detectado um hidrante de coluna cilíndrico metálico cinza com sinalização azul na calçada, próximo ao tronco da árvore e alinhado com a via pública, conforme características padrão do sistema de combate a incêndio local."
+  },
+  {
+    "timestamp": "2026-10-06T18:03:15.326Z",
+    "hidrante": "LAS00033",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 116.02574020296686,
+    "justificativa": "A análise detalhada da calçada, acostamento e margens da via não revelou nenhum hidrante de coluna cilíndrico metálico (amarelo ou vermelho). Apenas postes, sinalização e vegetação estão presentes, sem estruturas que correspondam a um hidrante."
+  },
+  {
+    "timestamp": "2026-10-06T18:03:21.422Z",
+    "hidrante": "LAS00033",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": true,
+    "confianca": 92,
+    "centro_x": 0.918,
+    "mira_final": 277.8257402029669,
+    "justificativa": "Detectado um hidrante de coluna metálico e cilíndrico posicionado na calçada à direita, próximo à cerca verde, apresentando as características geométricas e localização padrão de um hidrante de rua."
+  },
+  {
+    "timestamp": "2026-10-06T18:03:31.236Z",
+    "hidrante": "LAS00034",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 140.76509717371505,
+    "justificativa": "Nenhum hidrante de coluna metálico e cilíndrico foi localizado nas calçadas ou margens da via na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:04:51.019Z",
+    "hidrante": "LAS00034",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 260.76509717371505,
+    "justificativa": "A análise da imagem revela apenas uma placa de sinalização ou poste na calçada (próximo ao centro-esquerda), mas nenhum hidrante de coluna cilíndrico metálico ou padrão do Corpo de Bombeiros está visível na área inspecionada."
+  },
+  {
+    "timestamp": "2026-10-06T18:04:53.727Z",
+    "hidrante": "LAS00034",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 20.76509717371505,
+    "justificativa": "Nenhum hidrante de coluna ou estrutura cilíndrica característica foi detectada ao longo da calçada ou margem da via na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:05:06.797Z",
+    "hidrante": "LAS00034",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.613,
+    "mira_final": 241.34423027069602,
+    "justificativa": "Detectado um hidrante de coluna característico na esquina gramada próximo ao muro, exibindo a forma cilíndrica vertical e coloração padrão visível na calçada."
+  },
+  {
+    "timestamp": "2026-10-06T18:05:16.751Z",
+    "hidrante": "LAS00036",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 163.6816452199165,
+    "justificativa": "Nenhum hidrante de coluna (amarelo ou vermelho, formato cilíndrico) foi encontrado na calçada ou área visível da imagem analisada, apenas vegetação e gramado."
+  },
+  {
+    "timestamp": "2026-10-06T18:06:25.111Z",
+    "hidrante": "LAS00036",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.582,
+    "mira_final": 291.88164521991644,
+    "justificativa": "Detectado um hidrante de coluna de cor amarela localizado na calçada à direita, próximo à vegetação e ao muro verde, com formato cilíndrico e características típicas de equipamento de combate a incêndio urbano."
+  },
+  {
+    "timestamp": "2026-10-06T18:06:36.572Z",
+    "hidrante": "LAS00037",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 220.92782677185605,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna na imagem analisada. A cena mostra uma rua asfaltada com uma area verde gramada e cerca a esquerda, porem nenhum elemento metalico cilindrico correspondente a um hidrante esta presente nas margens visiveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:06:44.079Z",
+    "hidrante": "LAS00037",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": true,
+    "confianca": 98,
+    "centro_x": 0.265,
+    "mira_final": 317.4278267718561,
+    "justificativa": "Detectado um hidrante de coluna metálico de cor amarela localizado na calçada, próximo ao canto da cerca/muro, com formato cilíndrico característico e conexões laterais visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:06:55.068Z",
+    "hidrante": "LAS00038",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 262.6474514047844,
+    "justificativa": "A análise minuciosa da calçada, meio-fio e linha de vegetação densa não revelou nenhum hidrante de coluna visível. Há apenas um poste de concreto à direita e uma cerca viva contínua, sem a presença de elementos cilíndricos metálicos ou estruturas características de hidrantes urbanos."
+  },
+  {
+    "timestamp": "2026-10-06T18:07:14.510Z",
+    "hidrante": "LAS00038",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 22.64745140478442,
+    "justificativa": "A análise detalhada da calçada, meio-fio e margens da via pública ao longo da extensão visível da imagem não revelou nenhum hidrante de coluna cilíndrico metálico (nem amarelo, vermelho ou cinza). A área é composta por uma via residencial com vegetação densa e muros, sem a presença do equipamento de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T18:08:09.599Z",
+    "hidrante": "LAS00038",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 142.64745140478442,
+    "justificativa": "A análise minuciosa da via, calçadas e margens cobertas por vegetação e cercas vivas não revelou nenhum objeto cilíndrico metálico correspondente a um hidrante de coluna. Apenas postes de iluminação e vegetação densa estão presentes na cena."
+  },
+  {
+    "timestamp": "2026-10-06T18:08:18.994Z",
+    "hidrante": "LAS00038",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 177.49230221638322,
+    "justificativa": "A imagem mostra uma rua residencial ladeada por cercas vivas densas e árvores. Após varredura minuciosa ao longo de ambas as calçadas e margens da via, nenhum hidrante de coluna cilíndrico metálico (amarelo ou vermelho) ou objeto com características semelhantes foi identificado."
+  },
+  {
+    "timestamp": "2026-10-06T18:09:34.697Z",
+    "hidrante": "LAS00038",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 297.4923022163832,
+    "justificativa": "A analise detalhada da imagem mostra uma rua residencial com uma cerca viva densa, um carro estacionado e postes eletricos ao fundo. Nenhum hidrante de coluna metalico ou estrutura cilindrica caracteristica de hidrante foi encontrada nas calcadas ou margens visiveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:09:37.791Z",
+    "hidrante": "LAS00038",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 57.49230221638322,
+    "justificativa": "A análise da imagem revela apenas calçada, gramado, árvores e uma cerca viva densa. Nenhum hidrante de coluna metálico e cilíndrico está visível ao longo da via ou oculto na vegetação."
+  },
+  {
+    "timestamp": "2026-10-06T18:09:51.298Z",
+    "hidrante": "LAS00040",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 304.2900955435783,
+    "justificativa": "A análise detalhada da imagem não revelou nenhum hidrante de coluna visível na calçada ou área gramada. Há apenas vegetação, cercas e postes ao fundo, mas nenhum objeto metálico cilíndrico com as características de um hidrante urbano."
+  },
+  {
+    "timestamp": "2026-10-06T18:09:56.322Z",
+    "hidrante": "LAS00040",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 64.29009554357827,
+    "justificativa": "Nao ha nenhum hidrante de coluna visivel na imagem. O objeto avermelhado proximo ao meio-fio e uma estrutura baixa de alvenaria ou tampa de bueiro/caixa de passagem, nao correspondendo a um hidrante metalico cilindrico de rua."
+  },
+  {
+    "timestamp": "2026-10-06T18:10:42.715Z",
+    "hidrante": "LAS00040",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 184.29009554357822,
+    "justificativa": "Nao foi encontrado nenhum hidrante de coluna visivel ao longo da calçada ou margem da rua na imagem analisada. Apenas árvores, postes de energia e um veículo estacionado estão presentes."
+  },
+  {
+    "timestamp": "2026-10-06T18:11:33.360Z",
+    "hidrante": "LAS00040",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 242.73353537042425,
+    "justificativa": "A análise da imagem não revelou a presença de nenhum hidrante de coluna nas calçadas ou margens da rua visíveis. Apenas postes de iluminação e vegetação são encontrados ao longo da via."
+  },
+  {
+    "timestamp": "2026-10-06T18:11:35.665Z",
+    "hidrante": "LAS00040",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 2.7335353704242493,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado ao longo da calçada na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:11:58.914Z",
+    "hidrante": "LAS00040",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 122.73353537042425,
+    "justificativa": "A imagem mostra apenas uma área gramada, árvores e o meio-fio de uma rua. Nenhum hidrante de coluna metálico cilíndrico está visível na calçada ou na área analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:12:08.702Z",
+    "hidrante": "LAS00041",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.428,
+    "mira_final": 64.68482221618916,
+    "justificativa": "Identificado um hidrante de coluna metálico padrão, de formato cilíndrico e cor amarelada/envelhecida, posicionado claramente no talude de grama logo atrás da guia da calçada."
+  },
+  {
+    "timestamp": "2026-10-06T18:12:42.443Z",
+    "hidrante": "LAS00042",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.392,
+    "mira_final": 24.466607285334476,
+    "justificativa": "Detectado hidrante de coluna metálico de formato cilíndrico localizado próximo à cerca metálica na grama, apresentando as características estruturais típicas dos equipamentos de combate a incêndio da região."
+  },
+  {
+    "timestamp": "2026-10-06T18:13:14.229Z",
+    "hidrante": "LAS00043",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 202.5222648752139,
+    "justificativa": "A análise minuciosa da calçada, meio-fio e gramados adjacentes revela apenas sacos de lixo pretos acumulados na grama e vegetação densa, sem nenhum indicativo de hidrante de coluna cilíndrico metálico."
+  },
+  {
+    "timestamp": "2026-10-06T18:13:16.675Z",
+    "hidrante": "LAS00043",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 322.52226487521386,
+    "justificativa": "A análise detalhada das calçadas e margens da via na imagem não revelou a presença de nenhum hidrante de coluna cilíndrico metálico nas áreas visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:13:22.381Z",
+    "hidrante": "LAS00043",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 82.52226487521386,
+    "justificativa": "Nao foi encontrado nenhum hidrante de coluna visivel na calçada ou na vegetaçao ao longo da via analisada na imagem."
+  },
+  {
+    "timestamp": "2026-10-06T18:14:31.397Z",
+    "hidrante": "LAS00043",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 157.22721849049174,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado nas calçadas ou margens da via pública na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:14:47.811Z",
+    "hidrante": "LAS00043",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 277.22721849049174,
+    "justificativa": "A analise detalhada da calcada e da rua nao revelou nenhum objeto cilindrico ou estrutura metalica caracteristica de um hidrante de coluna. A area proxima as residencias possui vegetacao e muros, mas nenhum dispositivo de incendio visivel."
+  },
+  {
+    "timestamp": "2026-10-06T18:14:52.639Z",
+    "hidrante": "LAS00043",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 37.22721849049174,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna na imagem analisada. A area apresenta vegetacao densa, cercas e residencias, mas nenhum objeto com as caracteristicas cilindricas metalicas de um hidrante de rua visivel."
+  },
+  {
+    "timestamp": "2026-10-06T18:15:39.677Z",
+    "hidrante": "LAS00044",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 24.701019107168804,
+    "justificativa": "A análise minuciosa da imagem revela apenas um poste de concreto no lado direito com equipamentos de telecomunicação e fiação, além de vegetação densa e arbustos ao fundo. Nenhum hidrante de coluna ou estrutura cilíndrica metálica correspondente a um hidrante de rua foi identificada na calçada ou na área visível."
+  },
+  {
+    "timestamp": "2026-10-06T18:17:19.718Z",
+    "hidrante": "LAS00044",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 144.7010191071688,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna na imagem fornecida apos varredura completa das calcadas e margens da via."
+  },
+  {
+    "timestamp": "2026-10-06T18:17:35.137Z",
+    "hidrante": "LAS00044",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 264.7010191071688,
+    "justificativa": "A imagem exibe uma rua residencial com uma cerca e vegetação. Nenhum hidrante de coluna cilíndrico metálico (amarelo ou vermelho) ou qualquer estrutura semelhante a hidrante de rua está visível ao longo da calçada ou margem da via."
+  },
+  {
+    "timestamp": "2026-10-06T18:17:46.705Z",
+    "hidrante": "LAS00044",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 96.91903243104593,
+    "justificativa": "Nao foi encontrado nenhum hidrante de coluna visivel na imagem. A area possui postes de iluminacao, vegetacao densa e uma rua asfaltada, mas nenhum objeto com formato cilindrico ou caracteristicas de hidrante de rua esta presente."
+  },
+  {
+    "timestamp": "2026-10-06T18:18:00.569Z",
+    "hidrante": "LAS00044",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 216.91903243104593,
+    "justificativa": "Nenhum hidrante de coluna metálico foi encontrado na calçada ou na área visível da rua após varredura detalhada da imagem."
+  },
+  {
+    "timestamp": "2026-10-06T18:18:32.956Z",
+    "hidrante": "LAS00044",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 336.91903243104593,
+    "justificativa": "A análise detalhada da imagem ao longo das margens da via e calçadas não revela nenhum hidrante de coluna cilíndrico metálico (nem amarelo, vermelho ou de outras cores). Há apenas vegetação densa, postes de iluminação e árvores, sem a presença do equipamento de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T18:19:06.996Z",
+    "hidrante": "LAS00045",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 98,
+    "centro_x": 0.02,
+    "mira_final": 258.2304906540263,
+    "justificativa": "Detectado hidrante de coluna cilíndrico metálico de cor amarela localizado na calçada à esquerda da via, perfeitamente alinhado com as características de hidrantes urbanos de superfície."
+  },
+  {
+    "timestamp": "2026-10-06T18:19:23.804Z",
+    "hidrante": "LAS00047",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 303.3996173868709,
+    "justificativa": "Nenhum hidrante de coluna foi detectado na imagem. Há apenas um poste de energia à esquerda e vegetação (uma grande palmeira/yucca) no gramado, sem a presença de equipamentos hidráulicos de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T18:19:32.905Z",
+    "hidrante": "LAS00047",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 63.39961738687089,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado na imagem analisada. A cena mostra uma rua pavimentada com vegetação e árvores, mas sem a presença do equipamento solicitado nas calçadas ou margens."
+  },
+  {
+    "timestamp": "2026-10-06T18:20:52.566Z",
+    "hidrante": "LAS00047",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 183.3996173868709,
+    "justificativa": "Nao foi localizado nenhum hidrante de coluna metalico nas areas visiveis da calçada ou rua na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:20:58.868Z",
+    "hidrante": "LAS00047",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 194.1002483125004,
+    "justificativa": "Nenhum hidrante de coluna metálico cilíndrico foi detectado na calçada ou na área visível da imagem. Apenas uma placa de sinalização verde e poste de concreto cinza estão presentes próximo ao canto esquerdo."
+  },
+  {
+    "timestamp": "2026-10-06T18:21:46.542Z",
+    "hidrante": "LAS00047",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 314.1002483125004,
+    "justificativa": "Após varredura minuciosa ao longo das calçadas e margens da via, não foi identificada nenhuma estrutura metálica cilíndrica correspondente a um hidrante de coluna. Apenas árvores, postes de iluminação e cercas estão presentes nas áreas laterais."
+  },
+  {
+    "timestamp": "2026-10-06T18:21:49.683Z",
+    "hidrante": "LAS00047",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 74.10024831250041,
+    "justificativa": "A analise detalhada da calçada, meio-fio e vegetação ao longo da via não revela nenhum hidrante de coluna cilíndrico metálico nas áreas visíveis da imagem."
+  },
+  {
+    "timestamp": "2026-10-06T18:21:58.890Z",
+    "hidrante": "LAS00048",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 98,
+    "centro_x": 0.199,
+    "mira_final": 135.43628230923093,
+    "justificativa": "Detectado claramente um hidrante de coluna metálico e cilíndrico de cor amarela na calçada, próximo a uma base de concreto, com formato inconfundível de equipamento de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T18:23:40.513Z",
+    "hidrante": "LAS00049",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 3.2406841838615037,
+    "justificativa": "A análise da imagem revela uma estrutura de contêiner branco e vegetação densa na calçada, sem a presença de nenhum hidrante de coluna visível."
+  },
+  {
+    "timestamp": "2026-10-06T18:23:47.147Z",
+    "hidrante": "LAS00049",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 123.2406841838615,
+    "justificativa": "A analise detalhada da imagem mostra uma rua asfaltada, uma calcada com mosaico portugues, uma cerca viva densa e uma placa de PARE a esquerda. Nao ha nenhum hidrante de coluna metalico cilindrico visivel na calcada ou margem da rua."
+  },
+  {
+    "timestamp": "2026-10-06T18:24:40.986Z",
+    "hidrante": "LAS00049",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 243.2406841838615,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna na imagem fornecida apos varredura minuciosa ao longo das calcadas e vegetacao."
+  },
+  {
+    "timestamp": "2026-10-06T18:24:45.477Z",
+    "hidrante": "LAS00049",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 185.1860190404812,
+    "justificativa": "Nao foi encontrado nenhum hidrante de coluna na imagem. O objeto cinza visivel na calcada e um poste de sinalizacao de transito/placa, e nao um hidrante metalico cilindrico do Corpo de Bombeiros."
+  },
+  {
+    "timestamp": "2026-10-06T18:24:50.457Z",
+    "hidrante": "LAS00049",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 305.1860190404812,
+    "justificativa": "A análise minuciosa da calçada e da margem da via à esquerda e à direita revela apenas vegetação densa, árvores e postes de iluminação/energia elétrica. Não há nenhum objeto metálico com formato cilíndrico de coluna correspondente a um hidrante visível na imagem."
+  },
+  {
+    "timestamp": "2026-10-06T18:24:53.192Z",
+    "hidrante": "LAS00049",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 65.1860190404812,
+    "justificativa": "A análise detalhada da calçada, gramado e margens da via na imagem não revelou a presença de nenhum hidrante de coluna cilíndrico metálico."
+  },
+  {
+    "timestamp": "2026-10-06T18:25:20.229Z",
+    "hidrante": "LAS00050",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 240.01443265908603,
+    "justificativa": "Nao ha nenhum hidrante de coluna visivel na calcada ou na area verde da imagem. A analise da regiao mostra apenas uma caixa de servico eletrico/telecomunicacoes pintada com graffiti, placas de sinalizacao de rua, postes e tampas de bueiro no chao, mas nenhum hidrante metalico cilindrico."
+  },
+  {
+    "timestamp": "2026-10-06T18:25:49.997Z",
+    "hidrante": "LAS00050",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "mira_final": 0.014432659086025978,
+    "justificativa": "Erro ao consultar a API após tentativas."
+  },
+  {
+    "timestamp": "2026-10-06T18:25:52.639Z",
+    "hidrante": "LAS00050",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 120.01443265908603,
+    "justificativa": "Nenhum hidrante de coluna visível na calçada ou margem da rua. A imagem mostra um poste de energia elétrica à esquerda e vegetação, mas nenhum elemento cilíndrico correspondente a um hidrante."
+  },
+  {
+    "timestamp": "2026-10-06T18:26:09.724Z",
+    "hidrante": "LAS00050",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 195.4867457059284,
+    "justificativa": "Nenhum hidrante de coluna metálico e cilíndrico foi detectado na imagem analisada. Os objetos presentes na calçada e gramado incluem um poste de energia elétrico de concreto, uma placa de sinalização ou poste cinza fino, e vegetação densa, sem a presença do equipamento de combate a incêndio solicitado."
+  },
+  {
+    "timestamp": "2026-10-06T18:26:31.203Z",
+    "hidrante": "LAS00050",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 315.4867457059284,
+    "justificativa": "A análise detalhada da calçada, gramados e margens da via em ambas as direções não revelou nenhum objeto cilíndrico metálico característico de hidrante de coluna. Apenas postes de iluminação e vegetação estão presentes."
+  },
+  {
+    "timestamp": "2026-10-06T18:26:37.082Z",
+    "hidrante": "LAS00050",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 75.4867457059284,
+    "justificativa": "Nenhum hidrante de coluna metálico foi detectado na calçada ou na área visível da imagem. Apenas vegetação, uma cerca metálica e um poste de energia estão presentes."
+  },
+  {
+    "timestamp": "2026-10-06T18:27:21.519Z",
+    "hidrante": "LAS00051",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 85,
+    "centro_x": 0.495,
+    "mira_final": 204.27004195994368,
+    "justificativa": "Detectado um objeto metálico cilíndrico de cor amarela/alaranjada posicionado entre a vegetação e próximo ao limite da calçada, correspondendo às características estruturais de um hidrante de coluna padrão."
+  },
+  {
+    "timestamp": "2026-10-06T18:27:59.518Z",
+    "hidrante": "LAS00052",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 237.00091481667152,
+    "justificativa": "A analise detalhada da imagem revela apenas um muro de pedra, vegetacao densa, grama e uma entrada de garagem. Nao ha nenhum hidrante de coluna visivel na calcada ou na area analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:28:51.474Z",
+    "hidrante": "LAS00052",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 357.0009148166715,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna metalico nas calcadas ou margens da via na imagem fornecida."
+  },
+  {
+    "timestamp": "2026-10-06T18:29:41.883Z",
+    "hidrante": "LAS00052",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 117.00091481667152,
+    "justificativa": "Nao foi encontrado nenhum hidrante de coluna metalico nas calcadas ou margens da via analisada. A imagem mostra uma rua residencial com cercas vivas e postes de energia, mas nenhum equipamento hidraulico de incendio visivel."
+  },
+  {
+    "timestamp": "2026-10-06T18:29:45.142Z",
+    "hidrante": "LAS00052",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 170.8365693353362,
+    "justificativa": "Nenhum hidrante de coluna ou estrutura metálica cilíndrica característica foi identificado nas margens da via ou calçada visível na imagem."
+  },
+  {
+    "timestamp": "2026-10-06T18:29:51.438Z",
+    "hidrante": "LAS00052",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 290.8365693353362,
+    "justificativa": "Nenhum hidrante de coluna visível na calçada ou via pública após varredura completa da área analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:29:54.337Z",
+    "hidrante": "LAS00052",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 50.83656933533621,
+    "justificativa": "Nao foi encontrado nenhum hidrante de coluna visível na calçada ou na frente do lote, apenas vegetação, portões e muros residenciais."
+  },
+  {
+    "timestamp": "2026-10-06T18:30:05.444Z",
+    "hidrante": "LAS00053",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 279.3084348090358,
+    "justificativa": "A análise detalhada da calçada e da margem da vegetação ao longo da via não revela nenhum hidrante de coluna cilíndrico. Há apenas arbustos, cercas vivas e postes de iluminação ao fundo, mas nenhum hidrante de rua visível."
+  },
+  {
+    "timestamp": "2026-10-06T18:30:24.027Z",
+    "hidrante": "LAS00053",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 39.308434809035816,
+    "justificativa": "Analisei a calçada, a rua e as margens da vegetação visíveis na imagem e não foi possível identificar nenhum hidrante de coluna metálico ou estrutura cilíndrica característica de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T18:30:35.444Z",
+    "hidrante": "LAS00053",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 159.30843480903582,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado na imagem. A análise da calçada e margens da via revela postes de iluminação e vegetação densa, mas nenhum objeto cilíndrico metálico correspondente a um hidrante."
+  },
+  {
+    "timestamp": "2026-10-06T18:30:40.859Z",
+    "hidrante": "LAS00053",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 149.49217757714524,
+    "justificativa": "A análise detalhada da calçada, gramado e meio-fio ao longo de toda a extensão visível da rua não revela nenhum hidrante de coluna cilíndrico metálico. Há apenas vegetação densa, cercas e postes de iluminação/energia, sem a presença de equipamentos de combate a incêndio nesta faixa da via."
+  },
+  {
+    "timestamp": "2026-10-06T18:30:43.711Z",
+    "hidrante": "LAS00053",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 269.49217757714524,
+    "justificativa": "A analise detalhada da calcada e da rua nao revelou nenhum hidrante de coluna metalico nas areas visiveis. O poste de energia e os elementos ao longo da via nao correspondem a um hidrante."
+  },
+  {
+    "timestamp": "2026-10-06T18:30:50.521Z",
+    "hidrante": "LAS00053",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 29.49217757714524,
+    "justificativa": "A análise detalhada da calçada, meio-fio e áreas adjacentes não revela nenhum objeto cilíndrico metálico compatível com um hidrante de coluna. Foram identificados apenas cones de sinalização na lateral esquerda e vegetação, mas nenhum hidrante visível."
+  },
+  {
+    "timestamp": "2026-10-06T18:31:16.098Z",
+    "hidrante": "LAS00054",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 245.82619149178862,
+    "justificativa": "A análise da imagem não revelou a presença de nenhum hidrante de coluna. Apenas vegetação, cercas, troncos de árvores e sacos de lixo na calçada foram detectados."
+  },
+  {
+    "timestamp": "2026-10-06T18:31:41.712Z",
+    "hidrante": "LAS00054",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 5.82619149178862,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico foi localizado ao longo da calçada ou via pública visível na imagem. A análise das calçadas e margens da rua revela apenas vegetação, postes de energia e muros residenciais, sem a presença de elementos metálicos verticais característicos de hidrantes."
+  },
+  {
+    "timestamp": "2026-10-06T18:31:46.712Z",
+    "hidrante": "LAS00054",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 125.82619149178862,
+    "justificativa": "Nao foram encontrados hidrantes de coluna visíveis na imagem analisada. Apenas postes de iluminação e vegetação densa são visíveis ao longo da via."
+  },
+  {
+    "timestamp": "2026-10-06T18:32:11.716Z",
+    "hidrante": "LAS00054",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 181.67849713454672,
+    "justificativa": "A análise minuciosa da calçada, meio-fio e áreas adjacentes não revela nenhum objeto cilíndrico metálico característico de um hidrante de coluna. Apenas vegetação, cercas vivas e alguns sacos pretos de lixo próximos ao tronco da palmeira são visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:33:53.576Z",
+    "hidrante": "LAS00054",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 301.6784971345467,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado ao longo das calçadas ou ruas na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:34:04.444Z",
+    "hidrante": "LAS00054",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 61.67849713454672,
+    "justificativa": "Nao foi possivel localizar nenhum hidrante de coluna metalico nas calcadas ou areas visiveis da imagem analisada, apenas vegetacao, calcada e cercas."
+  },
+  {
+    "timestamp": "2026-10-06T18:34:24.329Z",
+    "hidrante": "LAS00055",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.501,
+    "mira_final": 224.14594287949842,
+    "justificativa": "Detectado um hidrante de coluna metálico de formato cilíndrico e coloração amarela localizado próximo à cerca de madeira, posicionado corretamente na calçada em frente à via pública."
+  },
+  {
+    "timestamp": "2026-10-06T18:34:39.296Z",
+    "hidrante": "LAS00056",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 179.73271897954396,
+    "justificativa": "A análise da imagem revela uma rua asfaltada com calçadas e vegetação densa (incluindo arbustos e cactos) à direita. Varredura completa ao longo da calçada e margens da via não identificou nenhum hidrante de coluna cilíndrico metálico."
+  },
+  {
+    "timestamp": "2026-10-06T18:35:12.325Z",
+    "hidrante": "LAS00056",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 299.73271897954396,
+    "justificativa": "A imagem exibe uma rua arborizada com calçadas e vegetação, mas após varredura completa ao longo das margens da via e calçadas, nenhum hidrante de coluna metálico cilíndrico foi localizado."
+  },
+  {
+    "timestamp": "2026-10-06T18:35:15.492Z",
+    "hidrante": "LAS00056",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 59.73271897954396,
+    "justificativa": "A análise minuciosa da imagem, incluindo a calçada, o meio-fio, a grama e a vegetação de cerca viva, não revela a presença de nenhum hidrante de coluna ou estrutura cilíndrica metálica característica de hidrantes urbanos. Há apenas troncos de árvores e arbustos ao fundo."
+  },
+  {
+    "timestamp": "2026-10-06T18:35:22.406Z",
+    "hidrante": "LAS00056",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 153.1436825512244,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado ao longo da calçada ou margem da via na imagem fornecida. Apenas postes de iluminação e vegetação densa estão presentes."
+  },
+  {
+    "timestamp": "2026-10-06T18:35:33.062Z",
+    "hidrante": "LAS00056",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 273.1436825512244,
+    "justificativa": "A análise da imagem não revelou nenhum hidrante de coluna visível ao longo da calçada ou da via pública. A área possui vegetação, cercas e postes de iluminação, mas nenhum objeto cilíndrico metálico característico de hidrante foi encontrado."
+  },
+  {
+    "timestamp": "2026-10-06T18:35:44.758Z",
+    "hidrante": "LAS00056",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 33.1436825512244,
+    "justificativa": "A análise da imagem revela uma calçada, gramado e vegetação densa (arbustos e árvores altas), mas nenhum hidrante de coluna metálico cilíndrico está visível ao longo da calçada ou oculto na vegetação."
+  },
+  {
+    "timestamp": "2026-10-06T18:37:40.058Z",
+    "hidrante": "LAS00057",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.387,
+    "mira_final": 39.17589062714427,
+    "justificativa": "Detectado um hidrante de coluna metálico de cor amarela próximo à cerca, localizado na calçada, apresentando o formato cilíndrico característico e posicionado corretamente na via pública."
+  },
+  {
+    "timestamp": "2026-10-06T18:38:53.816Z",
+    "hidrante": "LAS00058",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.697,
+    "mira_final": 232.08174137359197,
+    "justificativa": "Identificado um hidrante de coluna metálico e cilíndrico posicionado na calçada, próximo ao muro de divisa e à entrada da residência."
+  },
+  {
+    "timestamp": "2026-10-06T18:39:21.203Z",
+    "hidrante": "LAS00059",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 90,
+    "centro_x": 0.42,
+    "mira_final": 197.05862725986083,
+    "justificativa": "Foi detectado um hidrante de coluna cilíndrico e metálico localizado na calçada, próximo à vegetação e ao lado de uma caixa de inspeção de concreto, apresentando formato padrão de pilar de incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T18:41:24.064Z",
+    "hidrante": "LAS00060",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.413,
+    "mira_final": 21.80460362814864,
+    "justificativa": "Detectado um hidrante de coluna cilíndrico metálico localizado no terreno gramado cercado por tapumes verdes, posicionado exatamente alinhado com o padrão urbano de instalação em calçadas/lotes do Distrito Federal."
+  },
+  {
+    "timestamp": "2026-10-06T18:41:34.709Z",
+    "hidrante": "LAS00061",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.643,
+    "mira_final": 156.38561536748557,
+    "justificativa": "Detectado um hidrante de coluna metálico e cilíndrico de cor amarela/esverdeada localizado na margem da via junto à vegetação, apresentando a estrutura característica em relevo e conexões laterais típicas de um hidrante de rua do Distrito Federal."
+  },
+  {
+    "timestamp": "2026-10-06T18:45:23.184Z",
+    "hidrante": "LAS00062",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 90,
+    "centro_x": 0.585,
+    "mira_final": 166.33932693024155,
+    "justificativa": "Foi identificado um hidrante de coluna metálico de cor amarela localizado no gramado próximo ao meio-fio, apresentando o formato cilíndrico padrão características desse tipo de equipamento urbano."
+  },
+  {
+    "timestamp": "2026-10-06T18:45:38.291Z",
+    "hidrante": "LAS00063",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.46,
+    "mira_final": 220.28961208417195,
+    "justificativa": "Identificado um hidrante de coluna de cor amarela/metálica posicionado na calçada, próximo à vegetação/cerca viva, exibindo o formato cilíndrico característico e conexões laterais visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:46:09.461Z",
+    "hidrante": "LAS00064",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 184.04454162745927,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico foi detectado na calçada ou via pública após varredura completa da imagem. Há apenas vegetação densa, postes e muros residenciais, sem a presença do equipamento de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T18:46:36.693Z",
+    "hidrante": "LAS00064",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 304.04454162745924,
+    "justificativa": "A analise detalhada da calcada e da margem da rua nao revelou nenhum hidrante de coluna metalico, cilindrico ou estrutura semelhante nas areas visiveis da imagem."
+  },
+  {
+    "timestamp": "2026-10-06T18:46:40.157Z",
+    "hidrante": "LAS00064",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 64.04454162745924,
+    "justificativa": "Nenhum hidrante de coluna visível na calçada ou via pública. O objeto vertical em primeiro plano é um poste de concreto com equipamentos elétricos/telecomunicações, e não um hidrante."
+  },
+  {
+    "timestamp": "2026-10-06T18:46:44.578Z",
+    "hidrante": "LAS00064",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 355.67537567229397,
+    "justificativa": "Nenhum hidrante de coluna ou de rua foi encontrado na calçada ou nas margens da via visíveis na imagem. Foram inspecionadas as áreas de calçada à esquerda e à direita, além das proximidades da sinalização e vegetação, sem a presença de estrutura cilíndrica metálica característica."
+  },
+  {
+    "timestamp": "2026-10-06T18:46:50.385Z",
+    "hidrante": "LAS00064",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 115.67537567229397,
+    "justificativa": "A análise minuciosa da imagem, cobrindo a calçada, a vegetação e a área ao redor do veículo estacionado, não revelou nenhum hidrante de coluna ou estrutura cilíndrica metálica característica de hidrantes públicos de rua."
+  },
+  {
+    "timestamp": "2026-10-06T18:47:32.826Z",
+    "hidrante": "LAS00064",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 235.67537567229397,
+    "justificativa": "Nenhum hidrante de coluna visível na calçada ou via pública. Os objetos presentes na calçada incluem uma pequena caixa de correio branca próxima ao muro da residência, mas não há hidrantes cilíndricos metálicos característicos."
+  },
+  {
+    "timestamp": "2026-10-06T18:47:43.960Z",
+    "hidrante": "LAS00065",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.612,
+    "mira_final": 189.46630301899927,
+    "justificativa": "Foi detectado um objeto cilíndrico metálico vertical instalado na calçada, próximo ao meio-fio e junto ao canteiro de vegetação à direita (próximo à base da árvore), com coloração clara/amarelada característica de hidrante de coluna padrão."
+  },
+  {
+    "timestamp": "2026-10-06T18:47:54.023Z",
+    "hidrante": "LAS00066",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.426,
+    "mira_final": 240.88851948082106,
+    "justificativa": "Detectado um hidrante de coluna metálico e cilíndrico de cor amarela localizado no gramado próximo ao muro da residência, perfeitamente alinhado com as características padrão de hidrantes de calçada."
+  },
+  {
+    "timestamp": "2026-10-06T18:48:06.776Z",
+    "hidrante": "LAS00067",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 92,
+    "centro_x": 0.525,
+    "mira_final": 214.06570772773182,
+    "justificativa": "Detectado um hidrante de coluna metálico e cilíndrico de cor cinza/prateada localizado na calçada, próximo à cerca de ferro da residência, apresentando o formato característico e proporções corretas para um hidrante de rua."
+  },
+  {
+    "timestamp": "2026-10-06T18:48:21.671Z",
+    "hidrante": "LAS00068",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 85,
+    "centro_x": 0.176,
+    "mira_final": 252.97354649943316,
+    "justificativa": "Detectado um objeto cilíndrico metálico alaranjado/amarelado na calçada, próximo ao meio-fio e em frente à cerca da propriedade, correspondendo exatamente às características físicas e localização padrão de um hidrante de coluna no Distrito Federal."
+  },
+  {
+    "timestamp": "2026-10-06T18:49:29.399Z",
+    "hidrante": "LAS00069",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.535,
+    "mira_final": 276.63675376323886,
+    "justificativa": "Detectados dois hidrantes de coluna amarelos na calçada, próximos ao poste de eletricidade e à vegetação, com formato cilíndrico metálico característico."
+  },
+  {
+    "timestamp": "2026-10-06T18:49:43.487Z",
+    "hidrante": "LAS00070",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 92,
+    "centro_x": 0.491,
+    "mira_final": 243.2246321650075,
+    "justificativa": "Detectado um objeto metálico vertical e cilíndrico de pequeno porte, localizado próximo ao meio-fio na grama, compatível com o formato padrão de um hidrante de coluna típico da região."
+  },
+  {
+    "timestamp": "2026-10-06T18:49:55.111Z",
+    "hidrante": "LAS00071",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.43,
+    "mira_final": 311.1612563109062,
+    "justificativa": "Detectado um hidrante de coluna metálico e cilíndrico posicionado na calçada, próximo ao meio-fio da rua, característico dos modelos utilizados na região."
+  },
+  {
+    "timestamp": "2026-10-06T18:50:23.226Z",
+    "hidrante": "LAS00072",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "mira_final": 310.3756036913128,
+    "justificativa": "Erro ao consultar a API após tentativas."
+  },
+  {
+    "timestamp": "2026-10-06T18:50:30.094Z",
+    "hidrante": "LAS00072",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 70.37560369131279,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico foi localizado nas calçadas ou margens da via visíveis na imagem. Apenas veículos estacionados, vegetação e postes de iluminação são identificados."
+  },
+  {
+    "timestamp": "2026-10-06T18:50:36.434Z",
+    "hidrante": "LAS00072",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 190.3756036913128,
+    "justificativa": "Nenhum hidrante de coluna (cilíndrico, metálico, amarelo ou vermelho) foi encontrado na imagem analisada, que mostra apenas um estacionamento com veículos, grama seca e árvores."
+  },
+  {
+    "timestamp": "2026-10-06T18:50:40.655Z",
+    "hidrante": "LAS00072",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 96.96933527563846,
+    "justificativa": "A imagem exibe uma área de vegetação densa, arbustos secos, solo exposto avermelhado e uma estrutura metálica com tela (cerca ou viveiro). Não foi identificado nenhum hidrante de coluna cilíndrico metálico ou elemento urbano correspondente nas áreas visíveis da cena."
+  },
+  {
+    "timestamp": "2026-10-06T18:50:43.690Z",
+    "hidrante": "LAS00072",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 216.96933527563846,
+    "justificativa": "A imagem exibe uma área externa com vegetação densa, cerca de tela metálica e solo de terra, mas nenhum hidrante de coluna cilíndrico está visível na cena."
+  },
+  {
+    "timestamp": "2026-10-06T18:50:49.001Z",
+    "hidrante": "LAS00072",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 336.96933527563846,
+    "justificativa": "A imagem exibe uma escultura de arte pública vermelha com formas geométricas angulares sobre uma base de concreto, além de placas informativas. Não há nenhum hidrante de coluna ou estrutura cilíndrica de combate a incêndio presente na cena."
+  },
+  {
+    "timestamp": "2026-10-06T18:51:02.876Z",
+    "hidrante": "LAS00083",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.334,
+    "mira_final": 319.11729247151266,
+    "justificativa": "Identificado um hidrante de coluna cilíndrico metálico, com coloração amarela/envelhecida, posicionado na grama próximo ao meio-fio, exatamente nas características descritas e localizado em frente à placa do Brasilia Terminal 2."
+  },
+  {
+    "timestamp": "2026-10-06T18:51:14.400Z",
+    "hidrante": "LAS00084",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 26.10672146644839,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico visível foi identificado na imagem analisada. A estrutura circular vermelha à esquerda é uma escultura ou monumento e não um hidrante."
+  },
+  {
+    "timestamp": "2026-10-06T18:51:37.002Z",
+    "hidrante": "LAS00084",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 146.1067214664484,
+    "justificativa": "Nao foram encontrados hidrantes de coluna visíveis na área da calçada ou nas margens da via na imagem fornecida. Os objetos presentes são cones de sinalização azul e branca na pista e postes de iluminação."
+  },
+  {
+    "timestamp": "2026-10-06T18:51:43.749Z",
+    "hidrante": "LAS00084",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 266.1067214664484,
+    "justificativa": "Nenhum hidrante de coluna visível na imagem. Foram detectados apenas cones de sinalização azuis e brancos na via e carros estacionados/em trânsito, mas nenhum elemento com formato cilíndrico metálico característico de hidrante de calçada."
+  },
+  {
+    "timestamp": "2026-10-06T18:51:47.171Z",
+    "hidrante": "LAS00084",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 74.03593868255007,
+    "justificativa": "Nenhum hidrante de coluna visível foi encontrado na imagem analisada; há apenas uma grande estrutura vermelha em forma de arco ou letra no gramado, mas nenhum hidrante de rua padrão."
+  },
+  {
+    "timestamp": "2026-10-06T18:51:49.972Z",
+    "hidrante": "LAS00084",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 194.03593868255007,
+    "justificativa": "A análise da imagem não revelou nenhum hidrante de coluna visível nas calçadas ou áreas adjacentes. Os objetos presentes são cones de sinalização na pista e postes de iluminação, sem a presença do hidrante cilíndrico metálico característico."
+  },
+  {
+    "timestamp": "2026-10-06T18:51:52.943Z",
+    "hidrante": "LAS00084",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 314.03593868255007,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado na imagem analisada. A cena mostra uma via urbana larga com travessias de pedestres, sinalização aérea e vegetação, mas sem o formato cilíndrico característico de um hidrante de rua nas calçadas ou margens visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:52:17.771Z",
+    "hidrante": "LAS00085",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 85,
+    "centro_x": 0.536,
+    "mira_final": 338.8707993538576,
+    "justificativa": "Identificado um objeto cilíndrico metálico de cor amarela na grama, característico de um hidrante de coluna padrão na via pública."
+  },
+  {
+    "timestamp": "2026-10-06T18:52:46.020Z",
+    "hidrante": "LAS00086",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 7.916018813687117,
+    "justificativa": "Nao ha nenhum hidrante de coluna visivel na area analisada. O objeto proximo ao poste de luz e uma caixa de passagem ou equipamento eletrico, e nao um hidrante."
+  },
+  {
+    "timestamp": "2026-10-06T18:52:48.804Z",
+    "hidrante": "LAS00086",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": null,
+    "mira_final": 127.91601881368712,
+    "justificativa": "A imagem exibe uma rua com gramado e árvores ao longo do meio-fio, mas após varredura detalhada na calçada, gramado e áreas adjacentes, nenhum hidrante de coluna cilíndrico foi detectado na cena."
+  },
+  {
+    "timestamp": "2026-10-06T18:52:53.047Z",
+    "hidrante": "LAS00086",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 247.91601881368712,
+    "justificativa": "Nao foram encontrados hidrantes de coluna visiveis na imagem analisada, apenas postes de iluminacao e vegetacao ao longo da via."
+  },
+  {
+    "timestamp": "2026-10-06T18:52:57.597Z",
+    "hidrante": "LAS00086",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 297.3781590702246,
+    "justificativa": "A análise minuciosa da calçada e da área gramada adjacente à via não revelou nenhum objeto cilíndrico metálico característico de um hidrante de coluna. Apenas árvores, postes de energia e guias estão presentes na cena."
+  },
+  {
+    "timestamp": "2026-10-06T18:53:01.201Z",
+    "hidrante": "LAS00086",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 57.378159070224626,
+    "justificativa": "A analise da imagem nao revelou nenhum hidrante de coluna visivel ao longo da via ou proximo ao meio-fio. Apenas postes de iluminacao, arvore e sinalizacao sao visiveis, mas nenhum objeto compativel com a estrutura cilindrica de um hidrante."
+  },
+  {
+    "timestamp": "2026-10-06T18:53:03.854Z",
+    "hidrante": "LAS00086",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 177.37815907022468,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico foi localizado na imagem analisada. A área verde e o canteiro foram varridos, mas não há estruturas metálicas ou verticais características de hidrantes de rua visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:53:12.685Z",
+    "hidrante": "LAS00087",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 132.68817476562094,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado na calçada ou na área externa da imagem após varredura detalhada."
+  },
+  {
+    "timestamp": "2026-10-06T18:53:15.911Z",
+    "hidrante": "LAS00087",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 252.68817476562094,
+    "justificativa": "A imagem mostra uma via urbana com calçadas e acostamentos, mas após varredura detalhada em toda a extensão visível das margens e calçadas, nenhum hidrante de coluna metálico cilíndrico foi identificado."
+  },
+  {
+    "timestamp": "2026-10-06T18:53:19.291Z",
+    "hidrante": "LAS00087",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 12.688174765620943,
+    "justificativa": "A imagem exibe uma ampla área de estacionamento e vias de circulação ao ar livre com marcações no solo, postes de iluminação e veículos ao fundo. Uma varredura minuciosa ao longo das margens, meios-fios e áreas adjacentes não revelou nenhum hidrante de coluna metálico (amarelo, vermelho ou de outra coloração) característico do padrão exigido."
+  },
+  {
+    "timestamp": "2026-10-06T18:53:24.901Z",
+    "hidrante": "LAS00087",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 197.2899650253429,
+    "justificativa": "Nenhum hidrante de coluna ou objeto correspondente foi identificado na calçada ou área visível da imagem. Apenas postes de iluminação, sinalização e vegetação estão presentes."
+  },
+  {
+    "timestamp": "2026-10-06T18:53:29.085Z",
+    "hidrante": "LAS00087",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 317.2899650253429,
+    "justificativa": "A imagem mostra um grande estacionamento aberto com marcações viárias, carros e postes de iluminação ao fundo. Uma varredura detalhada na área de circulação e calçadas visíveis não revelou nenhum hidrante de coluna cilíndrico metálico."
+  },
+  {
+    "timestamp": "2026-10-06T18:53:31.758Z",
+    "hidrante": "LAS00087",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 77.2899650253429,
+    "justificativa": "A imagem mostra uma via pública urbana com calçadas, canteiros e edificações ao fundo. Após varredura detalhada em toda a extensão das calçadas visíveis, não foi identificado nenhum hidrante de coluna (cilíndrico) ou estrutura correspondente."
+  },
+  {
+    "timestamp": "2026-10-06T18:53:42.158Z",
+    "hidrante": "LAS00090",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 242.41302658796985,
+    "justificativa": "A imagem mostra uma estrutura de alvenaria e portão com cercas de arame farpado. Nenhuma coluna de hidrante de calçada cilíndrica está presente na área visível."
+  },
+  {
+    "timestamp": "2026-10-06T18:53:44.932Z",
+    "hidrante": "LAS00090",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 2.4130265879698527,
+    "justificativa": "Nao foram encontrados hidrantes de coluna visíveis na área de gramado ou ao longo dos muros da edificação na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:54:07.793Z",
+    "hidrante": "LAS00090",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 122.41302658796985,
+    "justificativa": "Nao foram encontrados hidrantes de coluna visíveis na imagem analisada. A área apresenta uma rua residencial com vegetação, postes de iluminação e construções, mas nenhum elemento cilíndrico metálico correspondente a um hidrante nas margens da via ou calçadas."
+  },
+  {
+    "timestamp": "2026-10-06T18:54:11.849Z",
+    "hidrante": "LAS00090",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 323.7764300089292,
+    "justificativa": "A imagem mostra densa vegetação, arbustos e árvores ao longo de uma calçada ou rua, sem a presença visível de nenhum hidrante de coluna metálico ou cilíndrico."
+  },
+  {
+    "timestamp": "2026-10-06T18:54:14.186Z",
+    "hidrante": "LAS00090",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 83.7764300089292,
+    "justificativa": "Nao foi possivel localizar nenhum hidrante de coluna visivel na calcada ou margem da rua na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:54:19.191Z",
+    "hidrante": "LAS00090",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 203.7764300089292,
+    "justificativa": "Nao foram encontrados hidrantes de coluna visíveis na calçada ou na margem da via analisada na imagem."
+  },
+  {
+    "timestamp": "2026-10-06T18:54:29.788Z",
+    "hidrante": "LAS00093",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 85,
+    "centro_x": 0.455,
+    "mira_final": 103.4542824491702,
+    "justificativa": "Identificado um objeto cilíndrico metálico de coloração amarela/alaranjada posicionado no gramado próximo ao meio-fio da calçada, correspondendo exatamente às características padrão de um hidrante de coluna urbano."
+  },
+  {
+    "timestamp": "2026-10-06T18:54:40.214Z",
+    "hidrante": "LAS00099",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 90,
+    "centro_x": 0.585,
+    "mira_final": 293.08298700551904,
+    "justificativa": "Foi detectado um hidrante de coluna cilíndrico metálico, pintado de amarelo, localizado próximo à calçada e à grama, exatamente no ponto central horizontal correspondente a 0.585 da imagem."
+  },
+  {
+    "timestamp": "2026-10-06T18:54:51.013Z",
+    "hidrante": "LAS00100",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 333.6210338828817,
+    "justificativa": "Nenhum hidrante de coluna metálico e cilíndrico foi detectado na calçada ou via pública na imagem analisada. Há apenas placas de sinalização, postes e vegetação."
+  },
+  {
+    "timestamp": "2026-10-06T18:54:54.438Z",
+    "hidrante": "LAS00100",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 93.6210338828817,
+    "justificativa": "Nenhum hidrante de coluna visível na calçada ou na área analisada da imagem; apenas lixeiras, cercas, veículos e vegetação."
+  },
+  {
+    "timestamp": "2026-10-06T18:54:57.349Z",
+    "hidrante": "LAS00100",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 213.62103388288165,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna metalico nas margens da via ou proximo aos muros e arvores na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:55:01.888Z",
+    "hidrante": "LAS00100",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 195.05490909889812,
+    "justificativa": "Nao foi encontrado nenhum hidrante de coluna na imagem. O ambiente e uma area coberta com piso de ceramica, cercada por grades e lonas, sem elementos urbanos de rede hidraulica visiveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:55:06.667Z",
+    "hidrante": "LAS00100",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 315.0549090988981,
+    "justificativa": "Nao ha nenhum hidrante de calcaada ou rua visivel na imagem. Apenas o interior de um estabelecimento comercial e uma fachada com porta de vidro podem ser observados, havendo apenas um extintor interno pendurado na parede."
+  },
+  {
+    "timestamp": "2026-10-06T18:55:11.310Z",
+    "hidrante": "LAS00100",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 75.05490909889812,
+    "justificativa": "A imagem mostra uma área coberta com piso de cerâmica e uma estrutura metálica de estacionamento. Nao há nenhum hidrante de coluna visível na cena."
+  },
+  {
+    "timestamp": "2026-10-06T18:55:22.620Z",
+    "hidrante": "LAS00101",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.237,
+    "mira_final": 55.41789712298328,
+    "justificativa": "Detectado um hidrante de coluna metálico e cilíndrico posicionado na ilha de grama próxima à calçada, exibindo formato e proporções características de hidrante urbano."
+  },
+  {
+    "timestamp": "2026-10-06T18:55:35.863Z",
+    "hidrante": "LAS00102",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 21.070823164785452,
+    "justificativa": "Nenhum hidrante de coluna (amarelo ou vermelho, formato cilíndrico) foi encontrado na calçada ou área visível da imagem. Há apenas vegetação, veículos e a fachada de um estabelecimento comercial."
+  },
+  {
+    "timestamp": "2026-10-06T18:55:40.090Z",
+    "hidrante": "LAS00102",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 141.07082316478545,
+    "justificativa": "Após varredura minuciosa nas calçadas, áreas gramadas, estacionamentos e margens da via, nenhum hidrante de coluna cilíndrico foi localizado na imagem. Os objetos visíveis são veículos, motocicletas, postes de iluminação e sinalização de trânsito."
+  },
+  {
+    "timestamp": "2026-10-06T18:55:57.020Z",
+    "hidrante": "LAS00102",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 261.07082316478545,
+    "justificativa": "A análise da imagem não revelou nenhum hidrante de coluna visível na calçada ou via pública. Há apenas veículos estacionados, pedestres, um cone de sinalização e estabelecimentos comerciais."
+  },
+  {
+    "timestamp": "2026-10-06T18:56:01.998Z",
+    "hidrante": "LAS00102",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 291.8911011730835,
+    "justificativa": "A imagem mostra uma calçada comercial com mesas, cadeiras e vitrines de lojas. Não há nenhum hidrante de coluna visível no campo de visão analisado."
+  },
+  {
+    "timestamp": "2026-10-06T18:56:05.698Z",
+    "hidrante": "LAS00102",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 51.891101173083484,
+    "justificativa": "A imagem mostra o interior e a área externa de um estabelecimento comercial (barbearia) com clientes sentados. Não há nenhum hidrante de coluna visível na cena."
+  },
+  {
+    "timestamp": "2026-10-06T18:56:29.590Z",
+    "hidrante": "LAS00102",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 171.89110117308348,
+    "justificativa": "A imagem exibe a fachada de um estabelecimento comercial com mesas, cadeiras e vasos de plantas (palmeiras). Uma varredura minuciosa na calçada e ao longo da área externa não revela nenhum hidrante de coluna metálico ou cilíndrico."
+  },
+  {
+    "timestamp": "2026-10-06T18:56:43.868Z",
+    "hidrante": "LAS00107",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.529,
+    "mira_final": 232.69308498744704,
+    "justificativa": "Detectado um objeto metálico cilíndrico de cor amarela localizado na grama logo após o meio-fio, correspondendo exatamente às características padrão de um hidrante de coluna urbano."
+  },
+  {
+    "timestamp": "2026-10-06T18:56:54.419Z",
+    "hidrante": "LAS00110",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 295.6275280779039,
+    "justificativa": "A analise da imagem revela uma calcada com gramado, um poste de sinalizacao/identificacao de logradouro e uma estrutura com caixa de correio/lixeira, mas nenhum hidrante de coluna e visivel na area analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:56:56.966Z",
+    "hidrante": "LAS00110",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 55.62752807790389,
+    "justificativa": "A análise detalhada da imagem revela uma placa de trânsito 'PARE', portões de residência, vegetação e uma tampa de bueiro/poço de visita no canto inferior direito, mas nenhum hidrante de coluna cilíndrico metálico visível nas calçadas ou margens da rua."
+  },
+  {
+    "timestamp": "2026-10-06T18:56:59.543Z",
+    "hidrante": "LAS00110",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 175.6275280779039,
+    "justificativa": "A imagem mostra uma rua residencial com casas, calçadas e postes de iluminação, mas após varredura detalhada ao longo das calçadas e margens da rua, nenhum hidrante de coluna cilíndrico metálico (amarelo, vermelho ou de outra cor) está visível."
+  },
+  {
+    "timestamp": "2026-10-06T18:57:02.813Z",
+    "hidrante": "LAS00110",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 160.94634672326663,
+    "justificativa": "Nenhum hidrante de coluna metálico visível foi encontrado nas calçadas ou margens da via na imagem fornecida."
+  },
+  {
+    "timestamp": "2026-10-06T18:57:05.613Z",
+    "hidrante": "LAS00110",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 280.94634672326663,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado ao longo das calçadas ou margens da via na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:57:08.917Z",
+    "hidrante": "LAS00110",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 40.94634672326663,
+    "justificativa": "A imagem mostra uma rua com um muro metálico, postes de energia e vegetação densa. Após uma varredura completa na calçada e áreas adjacentes, nenhum hidrante de coluna cilíndrico foi detectado."
+  },
+  {
+    "timestamp": "2026-10-06T18:57:20.844Z",
+    "hidrante": "LAS00111",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.12,
+    "mira_final": 272.08584496363346,
+    "justificativa": "Detectado um hidrante de coluna cilíndrico metálico posicionado na calçada, próximo à vegetação e à placa de sinalização. O formato vertical, a localização típica junto ao meio-fio e os detalhes estruturais confirmam que se trata de um hidrante de rua convencional."
+  },
+  {
+    "timestamp": "2026-10-06T18:57:31.649Z",
+    "hidrante": "LAS00112",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 303.2539526480506,
+    "justificativa": "Uma varredura detalhada na calçada, gramados e área frontal dos imóveis na imagem não revelou nenhum hidrante de coluna cilíndrico metálico (amarelo, vermelho ou de outras colorações). Há apenas vegetação densa, postes de iluminação e veículos, mas nenhum equipamento de combate a incêndio visível."
+  },
+  {
+    "timestamp": "2026-10-06T18:57:34.713Z",
+    "hidrante": "LAS00112",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 63.253952648050586,
+    "justificativa": "Nao ha nenhum hidrante de coluna visivel na imagem. Foram inspecionadas as calcadas, gramados e areas proximas aos postes e vegetacao, mas nenhum objeto cilindrico metalico caracteristico de hidrante foi encontrado. Ha apenas tampas de bueiro/poco de visita circulares no chao e postes de energia eletrica."
+  },
+  {
+    "timestamp": "2026-10-06T18:58:13.849Z",
+    "hidrante": "LAS00112",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 183.25395264805059,
+    "justificativa": "Nao foram encontrados hidrantes de coluna visiveis nas calcadas ou margens da via na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:58:18.789Z",
+    "hidrante": "LAS00112",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 220.79248602599066,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado na calçada ou via pública analisada na imagem."
+  },
+  {
+    "timestamp": "2026-10-06T18:58:23.044Z",
+    "hidrante": "LAS00112",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 340.7924860259907,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna na imagem analisada. A imagem mostra uma rua residencial com casas, carros e vegetacao, mas nenhum equipamento de combate a incendio e visivel nas calcadas ou margens da via."
+  },
+  {
+    "timestamp": "2026-10-06T18:58:25.537Z",
+    "hidrante": "LAS00112",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 100.79248602599068,
+    "justificativa": "Nenhum hidrante de coluna (amarelo, vermelho ou de qualquer outra cor/estado) foi identificado ao longo da calçada ou na área visível da rua na imagem fornecida."
+  },
+  {
+    "timestamp": "2026-10-06T18:58:36.201Z",
+    "hidrante": "LAS00113",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.355,
+    "mira_final": 71.65603197846224,
+    "justificativa": "Detectado um hidrante de coluna de cor amarela localizado na grama próxima à calçada e à curva da rua, apresentando formato cilíndrico característico e conexões laterais visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T18:58:45.643Z",
+    "hidrante": "LAS00114",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.548,
+    "mira_final": 271.05424736829013,
+    "justificativa": "Identificado um hidrante de coluna metálico e cilíndrico de cor amarela localizado na calçada, próximo à base da placa de sinalização verde e da van prata estacionada."
+  },
+  {
+    "timestamp": "2026-10-06T18:58:56.172Z",
+    "hidrante": "LAS00115",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.368,
+    "mira_final": 116.60588325675394,
+    "justificativa": "Detectado um hidrante de coluna metálico de cor amarela/bege localizado na grama próxima à calçada, ao lado da cerca metálica e em frente ao pilar cinza, exibindo claramente o formato cilíndrico característico."
+  },
+  {
+    "timestamp": "2026-10-06T18:59:23.697Z",
+    "hidrante": "LAS00116",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "mira_final": 153.69275730956053,
+    "justificativa": "Erro ao consultar a API após tentativas."
+  },
+  {
+    "timestamp": "2026-10-06T18:59:26.875Z",
+    "hidrante": "LAS00116",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 273.69275730956053,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico visível foi identificado na área da calçada ou gramado ao longo da via analisada."
+  },
+  {
+    "timestamp": "2026-10-06T18:59:29.811Z",
+    "hidrante": "LAS00116",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 33.692757309560534,
+    "justificativa": "Nao foram encontrados hidrantes de coluna visíveis na calçada ou no canteiro gramado da via analisada, apenas árvores, postes de iluminação e veículos ao longe."
+  },
+  {
+    "timestamp": "2026-10-06T18:59:32.820Z",
+    "hidrante": "LAS00116",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 192.4237968054467,
+    "justificativa": "A análise minuciosa da calçada e da margem da via em toda a extensão visível da imagem não revelou nenhum hidrante de coluna (metálico ou cilíndrico). Há apenas postes de energia elétrica, vegetação densa e veículos na pista, sem indícios de infraestrutura de combate a incêndio neste trecho."
+  },
+  {
+    "timestamp": "2026-10-06T18:59:36.668Z",
+    "hidrante": "LAS00116",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 312.4237968054467,
+    "justificativa": "A imagem mostra uma área gramada com árvores e uma rua ao fundo. Após varredura detalhada ao longo da calçada e gramado visível, nenhum hidrante de coluna ou estrutura metálica cilíndrica característica foi detectada."
+  },
+  {
+    "timestamp": "2026-10-06T18:59:38.957Z",
+    "hidrante": "LAS00116",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 72.42379680544673,
+    "justificativa": "A análise da imagem não revelou nenhum hidrante de coluna nas margens da via ou áreas adjacentes. Foram detectados postes de iluminação e vegetação, mas nenhum objeto com as características geométricas e de coloração de um hidrante urbano."
+  },
+  {
+    "timestamp": "2026-10-06T18:59:49.156Z",
+    "hidrante": "LAS00117",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.508,
+    "mira_final": 144.12087150778103,
+    "justificativa": "Detectado um hidrante de coluna metálico de cor amarela, perfeitamente visível na área gramada logo após a calçada, com formato cilíndrico característico e saídas laterais evidentes."
+  },
+  {
+    "timestamp": "2026-10-06T19:00:00.154Z",
+    "hidrante": "LAS00118",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 90,
+    "centro_x": 0.787,
+    "mira_final": 287.4396327062782,
+    "justificativa": "Identificado um hidrante de coluna metálico e cilíndrico posicionado na calçada, próximo ao limite da cerca e à vegetação, apresentando as características estruturais padrão exigidas."
+  },
+  {
+    "timestamp": "2026-10-06T19:00:12.279Z",
+    "hidrante": "LAS00119",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 241.5567297009992,
+    "justificativa": "A imagem mostra uma rua residencial com uma placa de PARE, postes de energia e uma cerca viva densa, mas nao foi possivel identificar nenhum hidrante de coluna visivel na calçada ou na vegetação."
+  },
+  {
+    "timestamp": "2026-10-06T19:00:16.248Z",
+    "hidrante": "LAS00119",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": true,
+    "confianca": 85,
+    "centro_x": 0.24,
+    "mira_final": 335.5567297009992,
+    "justificativa": "Identificado um objeto cilíndrico metálico amarelo posicionado na calçada à esquerda, junto à base da cerca viva, com características padrão de hidrante de coluna."
+  },
+  {
+    "timestamp": "2026-10-06T19:00:26.409Z",
+    "hidrante": "LAS00122",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 98,
+    "centro_x": 0.457,
+    "mira_final": 321.0354760005707,
+    "justificativa": "Foi detectado um hidrante de coluna amarelo na calçada, próximo ao portão e à cerca da propriedade, apresentando o formato cilíndrico metálico característico com saídas laterais padrão."
+  },
+  {
+    "timestamp": "2026-10-06T19:00:36.581Z",
+    "hidrante": "LAS00123",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.351,
+    "mira_final": 294.4031507371893,
+    "justificativa": "Detectado um hidrante de coluna amarelo característico posicionado no gramado próximo ao meio-fio da rua, apresentando formato cilíndrico vertical e colorível típica de sinalização de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T19:00:47.120Z",
+    "hidrante": "LAS00124",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.38,
+    "mira_final": 335.32588353203346,
+    "justificativa": "Detectado um hidrante de coluna metálico e cilíndrico de coloração amarela localizado na grama, próximo ao meio-fio, em frente à cerca viva."
+  },
+  {
+    "timestamp": "2026-10-06T19:00:58.551Z",
+    "hidrante": "LAS00125",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 294.0091409271355,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico foi localizado nas calçadas ou margens da via na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T19:01:01.473Z",
+    "hidrante": "LAS00125",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 54.00914092713549,
+    "justificativa": "A análise minuciosa da calçada e margens da rua não revelou a presença de nenhum hidrante de coluna cilíndrico. Há apenas um poste de energia elétrica à direita, árvores e muros residenciais, sem nenhum dispositivo de combate a incêndio visível."
+  },
+  {
+    "timestamp": "2026-10-06T19:01:03.907Z",
+    "hidrante": "LAS00125",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 174.0091409271355,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico foi identificado ao longo da calçada ou margem da via na imagem fornecida."
+  },
+  {
+    "timestamp": "2026-10-06T19:01:07.593Z",
+    "hidrante": "LAS00125",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 0.16731311010806849,
+    "justificativa": "Analisei toda a extensão da calçada e margens da rua visíveis na imagem, incluindo áreas próximas aos muros e postes, mas não foi identificado nenhum hidrante de coluna metálico ou cilíndrico. Apenas postes de iluminação e vegetação estão presentes."
+  },
+  {
+    "timestamp": "2026-10-06T19:01:10.855Z",
+    "hidrante": "LAS00125",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 120.16731311010807,
+    "justificativa": "Nenhum hidrante de coluna ou estrutura metálica cilíndrica característica foi identificado na calçada ou área visível da imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T19:01:13.415Z",
+    "hidrante": "LAS00125",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 240.16731311010807,
+    "justificativa": "A imagem mostra uma rua residencial com casas, carros e postes, mas após varredura detalhada nas calçadas e margens da via, nenhum hidrante de coluna cilíndrico foi visualizado."
+  },
+  {
+    "timestamp": "2026-10-06T19:01:36.917Z",
+    "hidrante": "LAS00126",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 333.00091984401297,
+    "justificativa": "Nenhum hidrante de coluna metálico e cilíndrico foi encontrado na calçada ou área visível da imagem. A análise da calçada e da linha de muro/cerca revela apenas vegetação, calçamento de terra/concreto e cercas metálicas, sem a presença de equipamentos de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T19:01:54.486Z",
+    "hidrante": "LAS00126",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 93.00091984401297,
+    "justificativa": "Nenhum hidrante de coluna visível na calçada ou gramado. A imagem mostra apenas postes de energia, vegetação, grama e uma placa branca à direita, sem a presença do cilindro metálico característico do hidrante."
+  },
+  {
+    "timestamp": "2026-10-06T19:01:58.727Z",
+    "hidrante": "LAS00126",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 213.00091984401297,
+    "justificativa": "A imagem exibe uma rua residencial com vegetação e calçadas, mas após varredura detalhada em toda a extensão visível, não foram identificados hidrantes de coluna cilíndricos. Há apenas placas de trânsito e postes de iluminação ao fundo."
+  },
+  {
+    "timestamp": "2026-10-06T19:02:02.586Z",
+    "hidrante": "LAS00126",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 243.7961565743312,
+    "justificativa": "A análise da imagem não revelou nenhum hidrante de coluna visível nas calçadas ou margens da rua. Há apenas vegetação densa, árvores, cercas e um veículo ao fundo, mas nenhum objeto cilíndrico metálico correspondente a um hidrante."
+  },
+  {
+    "timestamp": "2026-10-06T19:02:07.879Z",
+    "hidrante": "LAS00126",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 3.796156574331235,
+    "justificativa": "A análise detalhada da calçada, junto à cerca verde e sob a copa das árvores, não revela nenhum hidrante de coluna visível. Há apenas vegetação densa, sombras e o meio-fio, sem o formato cilíndrico metálico característico do equipamento de combate a incêndio."
+  },
+  {
+    "timestamp": "2026-10-06T19:02:10.835Z",
+    "hidrante": "LAS00126",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 123.79615657433123,
+    "justificativa": "A análise da imagem não revelou nenhum hidrante de coluna visível nas calçadas ou áreas adjacentes. Foram identificados apenas postes de sinalização/placas na grama, mas nenhum objeto com o formato cilíndrico metálico característico de hidrantes."
+  },
+  {
+    "timestamp": "2026-10-06T19:02:20.601Z",
+    "hidrante": "LAS00127",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 352.9321660744245,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna metalico nas margens da via ou junto a vegetacao na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T19:02:23.195Z",
+    "hidrante": "LAS00127",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 112.93216607442452,
+    "justificativa": "A analise detalhada das margens da rua e calçadas na imagem não revela a presença de nenhum hidrante de coluna ou objeto cilíndrico correspondente às características de um hidrante de rua."
+  },
+  {
+    "timestamp": "2026-10-06T19:02:26.304Z",
+    "hidrante": "LAS00127",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 232.93216607442446,
+    "justificativa": "A analise detalhada da calcada e da area verde adjacente ao muro nao revela nenhum hidrante de coluna visivel. A regiao apresenta apenas vegetacao densa (cerca viva), calcamento e rua asfalta, sem objetos metalicos verticais cilindricos caracteristicos de hidrantes de rua."
+  },
+  {
+    "timestamp": "2026-10-06T19:02:55.698Z",
+    "hidrante": "LAS00127",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 95.43033721781819,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna visivel na calçada ou margem da rua analisada na imagem."
+  },
+  {
+    "timestamp": "2026-10-06T19:02:59.050Z",
+    "hidrante": "LAS00127",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 215.4303372178182,
+    "justificativa": "A imagem mostra uma rua asfaltada, um meio-fio de concreto e uma grande cerca viva (vegetação densa) cobrindo a calçada e a frente de uma residência. Após varredura em toda a extensão da calçada e margens visíveis, nenhum hidrante de coluna cilíndrico foi detectado."
+  },
+  {
+    "timestamp": "2026-10-06T19:03:03.882Z",
+    "hidrante": "LAS00127",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 335.4303372178182,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado ao longo da rua ou calçada na imagem fornecida. A área apresenta vegetação densa, postes de eletricidade e cercas, mas nenhum objeto cilíndrico metálico correspondente a um hidrante de rua padrão."
+  },
+  {
+    "timestamp": "2026-10-06T19:03:12.842Z",
+    "hidrante": "LAS00128",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.662,
+    "mira_final": 339.8432847882126,
+    "justificativa": "Identificado um hidrante de coluna cilíndrico de cor amarela localizado na margem direita da via, posicionado próximo à vegetação e logo atrás da traseira da van branca."
+  },
+  {
+    "timestamp": "2026-10-06T19:03:22.527Z",
+    "hidrante": "LAS00129",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 281.3692123367632,
+    "justificativa": "Nenhum hidrante de coluna metálico visível foi detectado ao longo da calçada ou margem da rua na imagem fornecida."
+  },
+  {
+    "timestamp": "2026-10-06T19:03:25.165Z",
+    "hidrante": "LAS00129",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 41.36921233676321,
+    "justificativa": "Nenhum hidrante de coluna cilíndrico foi localizado na imagem. Os objetos visíveis incluem um poste de energia elétrica à esquerda, uma placa de sinalização de trânsito e uma cerca viva extensa, sem a presença de elementos metálicos ou estruturas características de hidrantes de rua."
+  },
+  {
+    "timestamp": "2026-10-06T19:03:27.845Z",
+    "hidrante": "LAS00129",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.88,
+    "mira_final": 199.3692123367632,
+    "justificativa": "Identificado um hidrante de coluna metálico cilíndrico posicionado na calçada, à direita da imagem, apresentando formato característico e base circular pavimentada."
+  },
+  {
+    "timestamp": "2026-10-06T19:04:06.411Z",
+    "hidrante": "LAS00130",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 98,
+    "centro_x": 0.501,
+    "mira_final": 288.40679008010875,
+    "justificativa": "Detectado um hidrante de coluna metálico de cor amarela localizado no canteiro de terra próximo à calçada, exibindo o formato cilíndrico padrão e saídas laterais características."
+  },
+  {
+    "timestamp": "2026-10-06T19:04:17.613Z",
+    "hidrante": "LAS00131",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 10,
+    "centro_x": 0,
+    "mira_final": 170.02421265334033,
+    "justificativa": "A análise detalhada da calçada, meio-fio e áreas adjacentes na imagem revela apenas uma placa de sinalização e vegetação densa, sem a presença de nenhum hidrante de coluna cilíndrico metálico."
+  },
+  {
+    "timestamp": "2026-10-06T19:04:21.940Z",
+    "hidrante": "LAS00131",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 290.0242126533403,
+    "justificativa": "A analise detalhada da imagem revela apenas um poste de madeira/concreto a esquerda e vegetacao densa (cercas vivas) ao longo da rua. Nao ha nenhum hidrante de coluna visivel nas calcadas ou margens da via."
+  },
+  {
+    "timestamp": "2026-10-06T19:04:24.668Z",
+    "hidrante": "LAS00131",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 50.02421265334033,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna na imagem analisada. A calçada está limpa e visível ao longo da curva, sem estruturas metálicas cilíndricas características de hidrantes urbanos."
+  },
+  {
+    "timestamp": "2026-10-06T19:04:28.288Z",
+    "hidrante": "LAS00131",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 140.383862429901,
+    "justificativa": "Nenhum hidrante de coluna visível foi detectado ao longo da calçada ou margem da via na imagem analisada."
+  },
+  {
+    "timestamp": "2026-10-06T19:04:31.698Z",
+    "hidrante": "LAS00131",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 260.383862429901,
+    "justificativa": "A análise minuciosa da calçada, meio-fio e vegetação ao longo da via não revelou nenhum objeto cilíndrico ou estrutura metálica característica de um hidrante de coluna. A área está livre de hidrantes visíveis."
+  },
+  {
+    "timestamp": "2026-10-06T19:04:35.002Z",
+    "hidrante": "LAS00131",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 20.383862429901,
+    "justificativa": "A analise detalhada da calcada e da vegetacao na imagem nao revela nenhum hidrante de coluna ou estrutura metalica cilindrica caracteristica proxima a calçada ou meio-fio."
+  },
+  {
+    "timestamp": "2026-10-06T19:05:05.978Z",
+    "hidrante": "LAS00133",
+    "sweep_label": "Frontal",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 328.1594411132795,
+    "justificativa": "A análise detalhada da imagem mostra uma rua residencial com um poste de concreto e fiação elétrica, cercas, vegetação e casas ao fundo. Não há nenhum hidrante de coluna cilíndrico visível na calçada ou próximo à via."
+  },
+  {
+    "timestamp": "2026-10-06T19:05:10.309Z",
+    "hidrante": "LAS00133",
+    "sweep_label": "Sweep Direita (+120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 88.15944111327951,
+    "justificativa": "Nao foi possivel identificar nenhum hidrante de coluna metalico nas calcadas ou margens da via na imagem fornecida, apenas vegetacao, cercas e postes ao longe."
+  },
+  {
+    "timestamp": "2026-10-06T19:05:12.553Z",
+    "hidrante": "LAS00133",
+    "sweep_label": "Sweep Esquerda (-120°)",
+    "encontrado": false,
+    "confianca": 0,
+    "centro_x": 0,
+    "mira_final": 208.1594411132795,
+    "justificativa": "Nenhum hidrante de coluna visível foi localizado na calçada ou na área gramada ao longo da via analisada após varredura detalhada."
+  },
+  {
+    "timestamp": "2026-10-06T19:05:30.402Z",
+    "hidrante": "LAS00133",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 95,
+    "centro_x": 0.866,
+    "mira_final": 55.435001140141935,
+    "justificativa": "Detectado um objeto cilíndrico de cor amarela metálica posicionado na calçada, próximo à cerca do terreno baldio e alinhado com a infraestrutura urbana (poste), característico de um hidrante de coluna padrão."
+  },
+  {
+    "timestamp": "2026-10-06T19:05:40.067Z",
+    "hidrante": "LAS00134",
+    "sweep_label": "Frontal",
+    "encontrado": true,
+    "confianca": 92,
+    "centro_x": 0.486,
+    "mira_final": 2.3446069512249323,
+    "justificativa": "Detectado um hidrante de coluna metálico cilíndrico posicionado rente ao meio-fio e ao muro verde, apresentando as características estruturais padrão exigidas."
+  }
+]

@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-180",
+  "activeTaskId": "TASK-182",
   "queue": [
     {
       "id": "TASK-1",
@@ -1816,10 +1816,10 @@
       "seq": 180,
       "conversationId": "154ef160-01a9-469b-bd4b-52b283be43ef",
       "description": "Analyze Street View photo extraction and Aya evaluations",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-06T17:07:16.197Z",
       "startedAt": "2026-10-06T17:13:05.292Z",
-      "completedAt": null
+      "completedAt": "2026-10-06T17:16:10.006Z"
     },
     {
       "id": "TASK-181",
@@ -1831,6 +1831,16 @@
       "startedAt": null,
       "completedAt": "2026-10-06T17:13:16.871Z",
       "error": "Falha durante execução do agente"
+    },
+    {
+      "id": "TASK-182",
+      "seq": 182,
+      "conversationId": "154ef160-01a9-469b-bd4b-52b283be43ef",
+      "description": "Refazer extracao completa do Lago Sul",
+      "status": "running",
+      "createdAt": "2026-10-06T17:19:11.110Z",
+      "startedAt": "2026-10-06T17:19:15.583Z",
+      "completedAt": null
     }
   ]
 }
