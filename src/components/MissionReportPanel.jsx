@@ -627,12 +627,16 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       text += `\n`;
     }
     
-    if (currentMission) {
-      const baseUrl = window.location.origin + window.location.pathname;
-      const idsString = currentData.map(h => h.nomHidrante || h.codHidrante).join(',');
-      text += `🔗 *Link dos Hidrantes Vistoriados:* ${baseUrl}?ds=${idsString}\n`;
+    const baseUrl = window.location.origin;
+    if (currentMission?.id) {
+      const magicLink = `${baseUrl}/?m=${encodeURIComponent(currentMission.id)}`;
+      text += `📲 *Abrir no App Netuno:*\n${magicLink}\n`;
+    } else if (currentData.length > 0) {
+      const idsString = currentData.slice(0, 15).map(h => h.nomHidrante || h.codHidrante).filter(Boolean).join(',');
+      const magicLink = `${baseUrl}/?ds=${idsString}`;
+      text += `📲 *Abrir no App Netuno:*\n${magicLink}\n`;
     } else {
-      text += `🌐 *Netuno Web:* ${window.location.origin}\n`;
+      text += `🌐 *Netuno Web:*\n${baseUrl}/\n`;
     }
     
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);

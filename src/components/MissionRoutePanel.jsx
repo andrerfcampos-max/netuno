@@ -489,14 +489,14 @@ const MissionRoutePanel = ({
     const totalCount = completedHydrants.length + pendingRoute.length;
     if (totalCount === 0) return;
     
-    const baseUrl = window.location.origin + window.location.pathname;
+    const baseUrl = window.location.origin;
     const missionId = currentMission?.id;
     let magicLink = '';
     if (missionId) {
-      magicLink = `${baseUrl}?m=${encodeURIComponent(missionId)}`;
+      magicLink = `${baseUrl}/?m=${encodeURIComponent(missionId)}`;
     } else {
       const allIds = [...pendingRoute, ...completedHydrants].map(h => h.nomHidrante || h.codHidrante).filter(Boolean);
-      magicLink = `${baseUrl}?ds=${allIds.slice(0, 30).join(',')}`;
+      magicLink = `${baseUrl}/?ds=${allIds.slice(0, 20).join(',')}`;
     }
     
     const defaultCity = missionHydrants[0]?.dscLocalidade ? (normalizeRAName(missionHydrants[0].dscLocalidade) || missionHydrants[0].dscLocalidade) : 'Brasília';
@@ -539,7 +539,7 @@ const MissionRoutePanel = ({
       text += `\n`;
     }
     
-    text += `🔗 *Link da Missão:* ${magicLink}\n`;
+    text += `📲 *Abrir Missão no App Netuno:*\n${magicLink}\n`;
     
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const url = isMobile

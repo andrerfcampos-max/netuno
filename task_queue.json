@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-175",
+  "activeTaskId": "TASK-178",
   "queue": [
     {
       "id": "TASK-1",
@@ -1766,9 +1766,39 @@
       "seq": 175,
       "conversationId": "d99a3b98-c604-4f83-9b98-9414f0a48f4e",
       "description": "Instalar exceljs e remover xlsx",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-06T15:10:22.670Z",
       "startedAt": "2026-10-06T15:11:10.620Z",
+      "completedAt": "2026-10-06T15:17:57.029Z"
+    },
+    {
+      "id": "TASK-176",
+      "seq": 176,
+      "conversationId": "d99a3b98-c604-4f83-9b98-9414f0a48f4e",
+      "description": "Suspender Step 101 no workflow.json",
+      "status": "completed",
+      "createdAt": "2026-10-06T15:46:11.240Z",
+      "startedAt": "2026-10-06T15:46:15.909Z",
+      "completedAt": "2026-10-06T15:46:34.982Z"
+    },
+    {
+      "id": "TASK-177",
+      "seq": 177,
+      "conversationId": "56626251-0262-4c0b-9963-ffbd0a78a1c2",
+      "description": "Otimizacao do modal do hidrante com foto sempre visivel e layout compacto",
+      "status": "completed",
+      "createdAt": "2026-10-06T16:31:09.931Z",
+      "startedAt": "2026-10-06T16:31:21.396Z",
+      "completedAt": "2026-10-06T16:45:17.691Z"
+    },
+    {
+      "id": "TASK-178",
+      "seq": 178,
+      "conversationId": "e86fa9dc-1034-4276-a2cd-4753a509cc51",
+      "description": "Opcao D - Link curto e PWA deep link para missao",
+      "status": "running",
+      "createdAt": "2026-10-06T16:41:15.596Z",
+      "startedAt": "2026-10-06T16:45:20.069Z",
       "completedAt": null
     }
   ]

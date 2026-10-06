@@ -1145,7 +1145,10 @@ const MapComponent = ({
 
   const handleShareWhatsApp = (h) => {
     const id = h.codHidrante || h._internalId || h.nomHidrante;
-    const text = `🚒 *Hidrante:* ${h.nomHidrante || h.codHidrante}\n📍 *RA:* ${h.dscLocalidade || '-'}\n${h.flgAtivo ? '🟢 *Status:* OPERANTE' : '🔴 *Status:* INOPERANTE'}\n📅 *Última Vistoria:* ${h.datHoraUltimaVistoria || 'Sem registro'}\n⚠️ *Problemas:* ${h.problemasHidrante || 'Nenhum'}\n🗺️ *Endereço:* ${h.dscEndereco || ''} ${h.dscPontoReferencia ? `(${h.dscPontoReferencia})` : ''}\n\n🌐 *Netuno:* ${window.location.origin}${window.location.pathname}?hid=${id}\n🚗 *Waze:* https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}`;
+    const baseUrl = window.location.origin;
+    const netunoUrl = `${baseUrl}/?hid=${encodeURIComponent(id)}`;
+    const wazeUrl = `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}`;
+    const text = `🚒 *Hidrante:* ${h.nomHidrante || h.codHidrante}\n📍 *RA:* ${h.dscLocalidade || '-'}\n${h.flgAtivo ? '🟢 *Status:* OPERANTE' : '🔴 *Status:* INOPERANTE'}\n📅 *Última Vistoria:* ${h.datHoraUltimaVistoria || 'Sem registro'}\n⚠️ *Problemas:* ${h.problemasHidrante || 'Nenhum'}\n🗺️ *Endereço:* ${h.dscEndereco || ''} ${h.dscPontoReferencia ? `(${h.dscPontoReferencia})` : ''}\n\n📲 *Abrir no App Netuno:*\n${netunoUrl}\n\n🚗 *Navegar pelo Waze:*\n${wazeUrl}`;
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const waUrl = isMobile 
       ? `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}` 

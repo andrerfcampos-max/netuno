@@ -1031,6 +1031,25 @@ syncPreferences({ filters: newFilters });
         setActiveMissionId(existingM.id);
         setActiveView('route');
         window.history.replaceState({}, document.title, window.location.pathname);
+      } else {
+        // Se ainda não estiver em cache local no aparelho, busca direto na nuvem
+        fetchMissionsFromCloud().then(cloudMissions => {
+          if (cloudMissions && cloudMissions.length > 0) {
+            const found = cloudMissions.find(m => String(m.id) === String(missionIdParam));
+            if (found) {
+              setMissions(prev => {
+                const exists = prev.some(p => String(p.id) === String(found.id));
+                const updated = exists ? prev : [found, ...prev];
+                saveMissions(updated);
+                return updated;
+              });
+              setOpenMissionIds([found.id]);
+              setActiveMissionId(found.id);
+              setActiveView('route');
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          }
+        }).catch(err => console.warn('Falha ao carregar missão remota por deep link:', err));
       }
     }
 

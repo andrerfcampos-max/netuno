@@ -74,19 +74,45 @@ export default defineConfig({
         name: 'Netuno - Sistema de Vistoria',
         short_name: 'Netuno',
         description: 'Sistema de Mapeamento de Hidrantes Urbanos de Incêndio - SEHUR/GPCIU',
+        start_url: '/',
+        scope: '/',
+        id: '/',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
+        display_override: ['standalone', 'minimal-ui', 'window-controls-overlay'],
+        handle_links: 'preferred',
+        launch_handler: {
+          client_mode: ['navigate-existing', 'auto']
+        },
         icons: [
           {
             src: 'favicon.svg',
             sizes: '192x192',
-            type: 'image/svg+xml'
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
           },
           {
             src: 'favicon.svg',
             sizes: '512x512',
-            type: 'image/svg+xml'
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
+          }
+        ],
+        shortcuts: [
+          {
+            name: 'Rotas de Missão',
+            short_name: 'Missões',
+            description: 'Acessar rotas e missões ativas',
+            url: '/?view=route',
+            icons: [{ src: 'favicon.svg', sizes: '192x192' }]
+          },
+          {
+            name: 'Mapa Operacional',
+            short_name: 'Mapa',
+            description: 'Visualizar hidrantes no mapa',
+            url: '/?view=map',
+            icons: [{ src: 'favicon.svg', sizes: '192x192' }]
           }
         ]
       },
