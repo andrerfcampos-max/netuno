@@ -597,9 +597,9 @@
     },
     {
       "id": 101,
-      "status": "pending",
-      "name": "Migração de Autenticação para Supabase Auth (Itens 2 e 7)",
-      "prompt": "Migrar o sistema de autenticação e controle de perfis (RBAC) do modelo atual (baseado em Matrícula no Frontend) para o Supabase Auth oficial. Implementar restrições RLS (Row Level Security) e Rate Limiting diretamente no Supabase, garantindo a proteção contra acesso indevido às APIs e rotas do projeto, protegendo as operações essenciais."
+      "status": "suspended",
+      "name": "Migração de Autenticação para SSO CBMDF (Itens 2 e 7)",
+      "prompt": "Migrar o sistema de autenticação para o sistema próprio do CBMDF (SSO) conforme os outros sistemas da corporação. Esta etapa está suspensa aguardando definições do usuário e acesso às APIs de autenticação corporativa."
     }
   ]
 }
