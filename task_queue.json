@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-185",
+  "activeTaskId": "TASK-186",
   "queue": [
     {
       "id": "TASK-1",
@@ -1867,9 +1867,29 @@
       "seq": 185,
       "conversationId": "e2948b25-f2dc-40e6-b46a-a403d4d6e899",
       "description": "Investigar e corrigir historico de atividades zerado",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-06T19:45:52.407Z",
       "startedAt": "2026-10-06T19:45:58.862Z",
+      "completedAt": "2026-10-06T20:04:48.329Z"
+    },
+    {
+      "id": "TASK-186",
+      "seq": 186,
+      "conversationId": "154ef160-01a9-469b-bd4b-52b283be43ef",
+      "description": "Diagnostico e implementacao de Step-Ahead / navegacao multi-panorama para obstaculos",
+      "status": "running",
+      "createdAt": "2026-10-06T20:05:23.376Z",
+      "startedAt": "2026-10-06T20:05:29.670Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-187",
+      "seq": 187,
+      "conversationId": "e0a3c5c3-e1c4-4942-ae44-cbf683f2fd69",
+      "description": "Unificar formato de data dd/mm/aaaa e corrigir ordenacao de vistorias",
+      "status": "queued",
+      "createdAt": "2026-10-06T20:09:23.117Z",
+      "startedAt": null,
       "completedAt": null
     }
   ]

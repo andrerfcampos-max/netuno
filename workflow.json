@@ -612,6 +612,12 @@
       "status": "completed",
       "name": "Refatoração Sniper 360 v5: Eliminação de Pontos Cegos e Filtro Outdoor",
       "prompt": "Atualizar os motores de busca do Street View para o algoritmo Sniper 360 v5: 1) Varredura panorâmica sem pontos cegos em 6 fatias de 60 graus sobrepostas; 2) Prioridade imediata de verificação no ângulo oposto de 180 graus caso o azimute frontal falhe; 3) Inclusão do parâmetro source=outdoor na API do Google Maps para eliminar panoramas privados/internos; 4) Pitch adaptativo (-10 graus e -18 graus) para capturar hidrantes colados ao meio-fio."
+    },
+    {
+      "id": 104,
+      "status": "completed",
+      "name": "Navegação Adaptativa com Step-Ahead e Detecção de Obstáculos no Street View",
+      "prompt": "Implementar navegação adaptativa no agente de Street View: quando um obstáculo (carros estacionados, muros, vegetação densa) bloquear a visão do hidrante no panorama inicial, o agente não deve aceitar o fallback estático da coordenada cega. Ele deve avançar ao longo da via/estacionamento (passo à frente e passos laterais de 10-20m) e rotacionar a câmera com inclinação de calçada (pitch negativo) para contornar veículos e barreiras visuais, garantindo captura nítida do equipamento."
     }
   ]
 }
