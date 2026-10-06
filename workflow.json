@@ -603,7 +603,7 @@
     },
     {
       "id": 102,
-      "status": "pending",
+      "status": "completed",
       "name": "Log e Otimização das Avaliações da IA no Street View",
       "prompt": "Atue como Desenvolvedor e Especialista em Visão Computacional. Altere os scripts de extração do Street View (ex: extract_lago_sul.cjs, poc_streetview_v4_smart.cjs) para salvar um log detalhado das avaliações do modelo (Aya/Gemini). 1. Modifique o prompt do modelo para solicitar, além de encontrado, centro_x e confianca, também uma justificativa descrevendo o que foi detectado (se certificando de que não é um hidrante subterrâneo, mas sim um de coluna). 2. Salve os resultados da IA em um arquivo de log (ex: \u0007ya_evaluations_log.json ou similar junto com a imagem) registrando o nome do hidrante, a imagem, a nota de confiança e a justificativa. 3. Isso ajudará na investigação e otimização dos casos onde a IA classifica incorretamente as fotos. Responda ETAPA CONCLUIDA ao finalizar."
     }

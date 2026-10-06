@@ -1820,6 +1820,17 @@
       "createdAt": "2026-10-06T17:07:16.197Z",
       "startedAt": "2026-10-06T17:13:05.292Z",
       "completedAt": null
+    },
+    {
+      "id": "TASK-181",
+      "seq": 181,
+      "conversationId": "run_automation",
+      "description": "Orquestrador Etapa 100: Refatoração da exportação XLSX (Item 9)",
+      "status": "failed",
+      "createdAt": "2026-10-06T17:13:16.839Z",
+      "startedAt": null,
+      "completedAt": "2026-10-06T17:13:16.871Z",
+      "error": "Falha durante execução do agente"
     }
   ]
 }

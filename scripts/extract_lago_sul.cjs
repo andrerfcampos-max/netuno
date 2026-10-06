@@ -73,7 +73,7 @@ async function findAdjacentPanorama(baseLat, baseLng, excludePanoId) {
 }
 
 async function locateHydrantWithGemini(base64Image) {
-  const prompt = "Você é um sistema de visão computacional de alta precisão do Corpo de Bombeiros. Analise a imagem fornecida e localize um hidrante de calçada/rua (geralmente de cor AMARELA ou VERMELHA, metálico, cilíndrico). ATENÇÃO: Ele pode estar cinza, envelhecido, com pintura descascada, pintado de outras cores para camuflagem ou parcialmente escondido na vegetação densa. Todos no DF são de coluna e formato cilíndrico (não há hidrante de caixa subterrânea). Se encontrado, retorne a coordenada horizontal exata do centro do hidrante na imagem, e uma nota de confiança de 0 a 100.\n\nRetorne ESTRITAMENTE um JSON válido neste formato:\n{\"encontrado\": true/false, \"centro_x\": <float entre 0.0 e 1.0>, \"confianca\": <int>}\n\nSó marque como encontrado se a confiança for >= 60.";
+  const prompt = "Você é um sistema de visão computacional de alta precisão do Corpo de Bombeiros. Analise a imagem fornecida e localize um hidrante de calçada/rua (geralmente de cor AMARELA ou VERMELHA, metálico, cilíndrico). ATENÇÃO: Ele pode estar cinza, envelhecido, com pintura descascada, pintado de outras cores para camuflagem ou parcialmente escondido na vegetação densa. Todos no DF são de coluna e formato cilíndrico (não há hidrante de caixa subterrânea). Se encontrado, retorne a coordenada horizontal exata do centro do hidrante na imagem, e uma nota de confiança de 0 a 100. ALÉM DISSO, forneça uma 'justificativa' explicando brevemente o que você detectou na imagem que te fez ter certeza de que é (ou não é) um hidrante de coluna e não um objeto qualquer ou hidrante subterrâneo.\n\nRetorne ESTRITAMENTE um JSON válido neste formato:\n{\"encontrado\": true/false, \"centro_x\": <float entre 0.0 e 1.0>, \"confianca\": <int>, \"justificativa\": \"<sua explicacao detalhada>\"}\n\nSó marque como encontrado se a confiança for >= 60.";
   
   const payload = JSON.stringify({
     contents: [{
@@ -130,9 +130,28 @@ async function locateHydrantWithGemini(base64Image) {
         await new Promise(r => setTimeout(r, 6000));
         continue;
       }
-      return { encontrado: false, confianca: 0 };
+      return { encontrado: false, confianca: 0, justificativa: "Erro ao consultar a API após tentativas." };
     }
   }
+}
+
+function logAyaEvaluation(hidranteNome, result, finalHeading, sweepLabel) {
+  const logFile = path.join(OUTPUT_DIR, 'aya_evaluations_log.json');
+  let logs = [];
+  if (fs.existsSync(logFile)) {
+    try { logs = JSON.parse(fs.readFileSync(logFile, 'utf8')); } catch (e) {}
+  }
+  logs.push({
+    timestamp: new Date().toISOString(),
+    hidrante: hidranteNome,
+    sweep_label: sweepLabel,
+    encontrado: result.encontrado,
+    confianca: result.confianca,
+    centro_x: result.centro_x,
+    mira_final: finalHeading,
+    justificativa: result.justificativa
+  });
+  fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
 }
 
 async function downloadStreetView(carLat, carLng, heading, fov, width = 800, height = 600) {
@@ -149,7 +168,7 @@ async function downloadStreetView(carLat, carLng, heading, fov, width = 800, hei
   });
 }
 
-async function smartScan(carLat, carLng, gpsLat, gpsLng, prefixLog) {
+async function smartScan(carLat, carLng, gpsLat, gpsLng, prefixLog, hidranteNome) {
   const baseHeading = calculateBearing(carLat, carLng, gpsLat, gpsLng);
   const sweeps = [
     { heading: baseHeading, label: "Frontal" },
@@ -168,9 +187,15 @@ async function smartScan(carLat, carLng, gpsLat, gpsLng, prefixLog) {
       const correctionOffset = (aiResult.centro_x - 0.5) * 100;
       const finalHeading = (sweep.heading + correctionOffset + 360) % 360;
       console.log(`${prefixLog} 🤖 Sucesso! Confiança: ${aiResult.confianca}%. Correção: ${Math.round(correctionOffset)}° (Mira final: ${Math.round(finalHeading)}°).`);
+      
+      logAyaEvaluation(hidranteNome, aiResult, finalHeading, sweep.label);
+      
       return { success: true, finalHeading, scanImage: scanImage.buffer, carLat, carLng };
     } else {
       console.log(`${prefixLog} ❌ Falhou (${sweep.label}) - Confiança: ${aiResult.confianca || 0}%`);
+      console.log(`${prefixLog} 📝 Justificativa IA: ${aiResult.justificativa || 'Sem justificativa'}`);
+      
+      logAyaEvaluation(hidranteNome, aiResult, sweep.heading, sweep.label);
     }
   }
 
@@ -230,7 +255,7 @@ async function runLagoSul() {
     let carLng = metaRes.location.lng;
 
     console.log(`   [Passo 1] Scan no Pano Original...`);
-    let result = await smartScan(carLat, carLng, gpsLat, gpsLng, "   ");
+    let result = await smartScan(carLat, carLng, gpsLat, gpsLng, "   ", nom);
 
     if (!result.success) {
       console.log(`   🚧 Obstáculo detectado ou hidrante escondido. Iniciando [Passo 2] Step-Around...`);
@@ -241,7 +266,7 @@ async function runLagoSul() {
         carLat = altMeta.location.lat;
         carLng = altMeta.location.lng;
         
-        result = await smartScan(carLat, carLng, gpsLat, gpsLng, "      ");
+        result = await smartScan(carLat, carLng, gpsLat, gpsLng, "      ", nom);
       } else {
         console.log(`   🛑 Não foi possível achar um panorama adjacente diferente.`);
       }
