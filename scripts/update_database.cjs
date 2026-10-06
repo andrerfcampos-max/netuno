@@ -11,7 +11,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
+const Papa = require('papaparse');
 
 // 1. Mapeamento Canônico de Prefixos para Regiões Administrativas (RAs)
 const PREFIX_TO_RA = {
@@ -217,7 +218,7 @@ function findLatestSourceFile() {
   throw new Error('Nenhum arquivo de origem encontrado.');
 }
 
-function runPipeline() {
+async function runPipeline() {
   console.log('====================================================');
   console.log('🔄 NETUNO - PIPELINE DE ATUALIZAÇÃO DA BASE DE DADOS');
   console.log('====================================================');
@@ -417,20 +418,23 @@ function runPipeline() {
   }
 
   // 4. Salvar base atualizada no formato Excel padronizado
-  const outWb = XLSX.utils.book_new();
-  const outWs = XLSX.utils.json_to_sheet(processedData);
-  XLSX.utils.book_append_sheet(outWb, outWs, 'data');
+  const outWb = new ExcelJS.Workbook();
+  const outWs = outWb.addWorksheet('data');
+  if (processedData.length > 0) {
+    outWs.columns = Object.keys(processedData[0]).map(k => ({ header: k, key: k }));
+    outWs.addRows(processedData);
+  }
 
   const publicDest = path.join(__dirname, '../public/base-de-dados.xlsx');
   const rootDest = path.join(__dirname, '../base-de-dados.xlsx');
   const jsonDest = path.join(__dirname, '../public/hidrantes_df_oficial.json');
   const csvDest = path.join(__dirname, '../public/hidrantes_df_oficial.csv');
 
-  XLSX.writeFile(outWb, publicDest);
-  XLSX.writeFile(outWb, rootDest);
+  await outWb.xlsx.writeFile(publicDest);
+  await outWb.xlsx.writeFile(rootDest);
   fs.writeFileSync(jsonDest, JSON.stringify(processedData, null, 2), 'utf8');
   
-  const csvContent = '\uFEFF' + XLSX.utils.sheet_to_csv(outWs, { FS: ';' });
+  const csvContent = '\uFEFF' + Papa.unparse(processedData, { delimiter: ';' });
   fs.writeFileSync(csvDest, csvContent, 'utf8');
 
   console.log('----------------------------------------------------');

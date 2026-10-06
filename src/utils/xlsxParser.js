@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { normalizeRAName, PREFIX_TO_RA_MAP, RA_LOCALIDADE_MAP } from './raList';
 import { sanitizeProblem } from './problemUtils';
 import { fixEncoding } from './textUtils';
@@ -23,12 +23,27 @@ export const loadPreloadedDatabase = async (onComplete) => {
     const response = await fetch(`/base-de-dados.xlsx?t=${Date.now()}`, { cache: 'no-store' });
     const arrayBuffer = await response.arrayBuffer();
     
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(arrayBuffer);
+    const worksheet = workbook.worksheets[0];
     
     // Converte para JSON
-    const rawData = XLSX.utils.sheet_to_json(worksheet);
+    const rawData = [];
+    let headers = [];
+    worksheet.eachRow((row, rowNumber) => {
+      const values = row.values;
+      if (rowNumber === 1) {
+        headers = values;
+      } else {
+        let rowObj = {};
+        headers.forEach((h, index) => {
+          if (h && index > 0) {
+            rowObj[h] = values[index];
+          }
+        });
+        rawData.push(rowObj);
+      }
+    });
     
     const parsedData = [];
     
@@ -107,7 +122,7 @@ export const loadPreloadedDatabase = async (onComplete) => {
       }
       const cleanRA = normalizeRAName(rawRA);
 
-      // Resolução do código alfa-numérico oficial com prefixo da RA (ex: GUA00123, BSB00511, TAG00142)
+      // Resolução do código alfa-numérico oficial com prefixo da RA
       const officialNom = String(row.nomHidrante || row['Código'] || `HID${i + 1}`).trim();
       const legacyCod = String(row.codHidrante || '').trim();
       const cleanNom = fixEncoding(officialNom);

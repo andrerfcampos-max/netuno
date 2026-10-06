@@ -1,4 +1,5 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import Papa from 'papaparse';
 import { loadPrepopBuildingStudies } from './buildingStudiesStorage';
 import { getTechnicalStudies } from './technicalStudiesStorage';
 import { loadMissions } from './storage';
@@ -18,8 +19,7 @@ export const exportHidrantesCSV = async (hidrantes) => {
     'Vistoriador / Matrícula': h.vistoriador || h.matricula || '',
   }));
 
-  const wsHidrantes = XLSX.utils.json_to_sheet(hidrantesData);
-  const csvContent = '\uFEFF' + XLSX.utils.sheet_to_csv(wsHidrantes, { FS: ';' });
+  const csvContent = '\uFEFF' + Papa.unparse(hidrantesData, { delimiter: ';' });
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -33,8 +33,16 @@ export const exportHidrantesCSV = async (hidrantes) => {
 };
 
 export const exportGlobalDatabaseXLSX = async (hidrantes) => {
-  // Cria um workbook do XLSX
-  const wb = XLSX.utils.book_new();
+  // Cria um workbook do exceljs
+  const wb = new ExcelJS.Workbook();
+
+  const addSheet = (name, data) => {
+    const ws = wb.addWorksheet(name);
+    if (data.length > 0) {
+      ws.columns = Object.keys(data[0]).map(key => ({ header: key, key: key }));
+      ws.addRows(data);
+    }
+  };
 
   // 1. Aba: Hidrantes e Vistorias
   const hidrantesData = (hidrantes || []).map(h => ({
@@ -50,8 +58,7 @@ export const exportGlobalDatabaseXLSX = async (hidrantes) => {
     'Observações': h.dscObservacao || '',
     'Vistoriador / Matrícula': h.vistoriador || h.matricula || '',
   }));
-  const wsHidrantes = XLSX.utils.json_to_sheet(hidrantesData);
-  XLSX.utils.book_append_sheet(wb, wsHidrantes, "Hidrantes e Vistorias");
+  addSheet("Hidrantes e Vistorias", hidrantesData);
 
   // 2. Aba: Estudos Pré-Pop (Edificações)
   const prepop = await loadPrepopBuildingStudies();
@@ -67,8 +74,7 @@ export const exportGlobalDatabaseXLSX = async (hidrantes) => {
     'Posicionamento ABT': p.posicionamentoABT || '',
     'Hidrantes Próximos': Array.isArray(p.hidrantesProximos) ? p.hidrantesProximos.map(h => h.codigo).join(', ') : (p.hidrantesProximos || '')
   }));
-  const wsPrepop = XLSX.utils.json_to_sheet(prepopData);
-  XLSX.utils.book_append_sheet(wb, wsPrepop, "Estudos PrePop");
+  addSheet("Estudos PrePop", prepopData);
 
   // 3. Aba: Pareceres Técnicos
   const pareceres = getTechnicalStudies();
@@ -81,8 +87,7 @@ export const exportGlobalDatabaseXLSX = async (hidrantes) => {
     'Responsável': p.responsavel || '',
     'Data': p.dataCriacao || ''
   }));
-  const wsPareceres = XLSX.utils.json_to_sheet(pareceresData);
-  XLSX.utils.book_append_sheet(wb, wsPareceres, "Pareceres Técnicos");
+  addSheet("Pareceres Técnicos", pareceresData);
 
   // 4. Aba: Missões e Rotas
   const missoes = loadMissions();
@@ -95,12 +100,20 @@ export const exportGlobalDatabaseXLSX = async (hidrantes) => {
     'Status Rascunho': m.isDraft ? 'Rascunho' : 'Definitiva',
     'Criado em': m.createdAt || ''
   }));
-  const wsMissoes = XLSX.utils.json_to_sheet(missoesData);
-  XLSX.utils.book_append_sheet(wb, wsMissoes, "Missões");
+  addSheet("Missões", missoesData);
 
   // Gera o arquivo Excel (.xlsx) que atende a organização exigida
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
   const dateStr = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `Base_Completa_Netuno_${dateStr}.xlsx`);
+  link.setAttribute("download", `Base_Completa_Netuno_${dateStr}.xlsx`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 export const exportGlobalDatabaseCSV = async (hidrantes) => {
