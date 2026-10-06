@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-171",
   "queue": [
     {
       "id": "TASK-1",
@@ -1698,6 +1698,47 @@
       "createdAt": "2026-10-05T22:08:48.208Z",
       "startedAt": "2026-10-05T22:08:51.610Z",
       "completedAt": "2026-10-05T22:11:19.950Z"
+    },
+    {
+      "id": "TASK-169",
+      "seq": 169,
+      "conversationId": "4a083c1b-2268-406f-879f-50de75c48563",
+      "description": "Registrar nova etapa para correcao de vistorias offline no workflow.json",
+      "status": "completed",
+      "createdAt": "2026-10-06T14:37:47.111Z",
+      "startedAt": "2026-10-06T14:37:59.256Z",
+      "completedAt": "2026-10-06T14:38:50.199Z"
+    },
+    {
+      "id": "TASK-170",
+      "seq": 170,
+      "conversationId": "d99a3b98-c604-4f83-9b98-9414f0a48f4e",
+      "description": "Correções de segurança",
+      "status": "completed",
+      "createdAt": "2026-10-06T14:45:20.579Z",
+      "startedAt": "2026-10-06T14:45:30.575Z",
+      "completedAt": "2026-10-06T14:47:15.123Z"
+    },
+    {
+      "id": "TASK-171",
+      "seq": 171,
+      "conversationId": "4a083c1b-2268-406f-879f-50de75c48563",
+      "description": "Rodar run_automation.js para Etapa 98",
+      "status": "running",
+      "createdAt": "2026-10-06T14:46:49.782Z",
+      "startedAt": "2026-10-06T14:47:18.330Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-172",
+      "seq": 172,
+      "conversationId": "run_automation",
+      "description": "Orquestrador Etapa 99: Correção de Mensagens e Registro de Histórico de Vistorias Offline",
+      "status": "failed",
+      "createdAt": "2026-10-06T14:47:28.878Z",
+      "startedAt": null,
+      "completedAt": "2026-10-06T14:47:28.912Z",
+      "error": "Falha durante execução do agente"
     }
   ]
 }

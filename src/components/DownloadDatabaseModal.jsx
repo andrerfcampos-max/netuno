@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { X, FileSpreadsheet, FileText, Download, Loader2, Database } from 'lucide-react';
 import { exportHidrantesCSV, exportGlobalDatabaseXLSX } from '../utils/exportGlobalCsv';
 import { toast } from 'react-toastify';
@@ -158,6 +158,54 @@ const DownloadDatabaseModal = ({ isOpen, onClose, hidrantes = [] }) => {
                   <span>Baixar XLSX (Todos os Dados)</span>
                 </>
               )}
+            </button>
+          </div>
+
+          {/* Opção 3: Logs de Sincronização */}
+          <div className="flex flex-col gap-2.5 p-4 rounded-xl border border-slate-700/70 bg-slate-800/50 hover:bg-slate-800/80 hover:border-amber-500/50 transition-all">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+                  <FileText size={18} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-white">
+                      Logs de Sincronização Offline
+                    </h4>
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      .JSON
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    Exporta o histórico de eventos de reconciliação de vistorias offline realizadas no seu dispositivo para análise técnica de erros ou acertos (logs).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const logs = localStorage.getItem('netuno_offline_sync_logs') || '[]';
+                  const blob = new Blob([logs], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `netuno_sync_logs_${new Date().toISOString().slice(0,10)}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast.success('Download dos logs concluído!');
+                } catch (e) {
+                  toast.error('Erro ao baixar logs.');
+                }
+              }}
+              disabled={loadingType !== null}
+              className="mt-2 w-full py-2 px-3 bg-amber-600/20 hover:bg-amber-600/30 active:bg-amber-600/40 text-amber-200 hover:text-white border border-amber-500/40 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            >
+              <Download size={16} />
+              <span>Baixar Logs JSON</span>
             </button>
           </div>
         </div>

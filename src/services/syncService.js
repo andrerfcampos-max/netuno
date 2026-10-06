@@ -177,9 +177,11 @@ export const reconcileLocalChangesToCloud = async () => {
     // 2. Reconcilia alterações de hidrantes que estavam salvas em loadHydrantChanges()
     const localChanges = loadHydrantChanges();
     const updatedEntries = Object.entries(localChanges.updated || {});
+    let hasChangesToSave = false;
 
     if (updatedEntries.length > 0) {
       console.log(`[OfflineSync] Encontrados ${updatedEntries.length} hidrantes em alterações locais para reconciliar.`);
+      const syncLog = [];
       for (const [key, hydrant] of updatedEntries) {
         if (!hydrant) continue;
         try {
@@ -191,10 +193,31 @@ export const reconcileLocalChangesToCloud = async () => {
             await _doSyncInspectionToCloud(hydrant);
           }
 
-          if (successMut) syncedHydrants++;
+          if (successMut) {
+            syncedHydrants++;
+            syncLog.push(key);
+            delete localChanges.updated[key];
+            hasChangesToSave = true;
+          }
         } catch (e) {
           console.warn(`[OfflineSync] Falha ao reconciliar hidrante ${key}:`, e);
         }
+      }
+      
+      if (hasChangesToSave) {
+        saveHydrantChanges(localChanges);
+        // Registra o histórico detalhado da sincronização para viabilizar verificação de erros e acertos
+        try {
+          const logs = JSON.parse(localStorage.getItem('netuno_offline_sync_logs') || '[]');
+          logs.push({
+            timestamp: new Date().toISOString(),
+            type: 'RECONCILE_HYDRANTS',
+            count: syncedHydrants,
+            keys: syncLog
+          });
+          if (logs.length > 100) logs.shift();
+          localStorage.setItem('netuno_offline_sync_logs', JSON.stringify(logs));
+        } catch (err) {}
       }
     }
 
