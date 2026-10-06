@@ -2528,7 +2528,75 @@ syncPreferences({ filters: filters });
       {!isMapFullscreen && !isPhotoFullscreen && activeView !== 'route' && (
         isRouteActiveOnMap && currentMission && activeView === 'map' ? (
           <div className="flex-shrink-0 px-2 pt-1.5 z-20 w-full">
-            <div className="bg-slate-900/98 border border-cyan-500/80 shadow-xl rounded-xl p-2.5 sm:px-4 sm:py-2.5 flex flex-wrap items-center justify-between gap-2.5 backdrop-blur-md">
+            {/* VERSÃO MOBILE: Ultra-compacta (2 linhas finas, economizando espaço no mapa) */}
+            <div className="sm:hidden bg-slate-900/98 border border-cyan-500/80 shadow-lg rounded-xl p-2 flex flex-col gap-1.5 backdrop-blur-md">
+              <div className="flex items-center justify-between gap-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+                  </span>
+                  <span className="text-xs font-black text-white truncate max-w-[140px]">
+                    {currentMission.name || 'Missão Ativa'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="bg-emerald-950/90 border border-emerald-500/60 text-emerald-300 text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold">
+                    ✓ {completedMissionIds.filter(id => (currentMission?.selectedIds || []).map(String).includes(String(id))).length}
+                  </span>
+                  <span className="bg-cyan-950/90 border border-cyan-500/60 text-cyan-300 text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold">
+                    {pendingRouteHydrants.length} rest.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsRouteActiveOnMap(false)}
+                    className="p-1 bg-rose-950/90 hover:bg-rose-900 border border-rose-500/80 text-rose-300 rounded-lg text-xs font-bold transition-all active:scale-95 ml-0.5"
+                    title="Sair do modo rota"
+                  >
+                    <X size={13} className="text-rose-300" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 w-full">
+                {pendingRouteHydrants.length > 0 && pendingRouteHydrants[0]?.numLatitude && pendingRouteHydrants[0]?.numLongitude && (
+                  <a
+                    href={`https://waze.com/ul?ll=${pendingRouteHydrants[0].numLatitude},${pendingRouteHydrants[0].numLongitude}&navigate=yes`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 h-7.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-lg text-[11px] font-extrabold flex items-center justify-center gap-1 shadow-sm transition-all truncate px-2"
+                    title={`Navegar no Waze para o próximo hidrante (#1: ${pendingRouteHydrants[0].nomHidrante || pendingRouteHydrants[0].codHidrante || ''})`}
+                  >
+                    <Navigation size={12} className="text-white fill-white shrink-0" />
+                    <span className="truncate">Próximo (Waze)</span>
+                  </a>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setRouteFitTrigger(Date.now())}
+                  className="h-7.5 px-2 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all active:scale-95 shrink-0"
+                  title="Centralizar no seu GPS e nos hidrantes mais próximos da rota"
+                >
+                  <Navigation size={12} className="text-cyan-400 shrink-0" />
+                  <span>Focar</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveView('route')}
+                  className="h-7.5 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all active:scale-95 shrink-0"
+                  title="Abrir lista completa da missão"
+                >
+                  <RouteIcon size={12} className="text-cyan-300 shrink-0" />
+                  <span>Lista</span>
+                </button>
+              </div>
+            </div>
+
+            {/* VERSÃO DESKTOP / TABLET (sm:flex): Completa e espaçosa */}
+            <div className="hidden sm:flex bg-slate-900/98 border border-cyan-500/80 shadow-xl rounded-xl sm:px-4 sm:py-2.5 items-center justify-between gap-2.5 backdrop-blur-md">
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className="relative flex h-3.5 w-3.5 shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
@@ -2536,9 +2604,9 @@ syncPreferences({ filters: filters });
                 </span>
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-400">Modo Rota de Missão</span>
-                    <span className="text-slate-600 hidden sm:inline">•</span>
-                    <span className="text-xs sm:text-sm font-extrabold text-white truncate max-w-[150px] sm:max-w-[280px]">
+                    <span className="text-xs font-black uppercase tracking-wider text-cyan-400">Modo Rota de Missão</span>
+                    <span className="text-slate-600">•</span>
+                    <span className="text-sm font-extrabold text-white truncate max-w-[280px]">
                       {currentMission.name || 'Missão Ativa'}
                     </span>
                   </div>
@@ -2548,23 +2616,23 @@ syncPreferences({ filters: filters });
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap justify-between sm:justify-end w-full sm:w-auto">
+              <div className="flex items-center gap-2 justify-end">
                 <div className="flex items-center gap-1.5">
-                  <span className="bg-emerald-950/90 border border-emerald-500/60 text-emerald-300 text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm whitespace-nowrap">
+                  <span className="bg-emerald-950/90 border border-emerald-500/60 text-emerald-300 text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm whitespace-nowrap">
                     ✓ {completedMissionIds.filter(id => (currentMission?.selectedIds || []).map(String).includes(String(id))).length} concluídos
                   </span>
-                  <span className="bg-cyan-950/90 border border-cyan-500/60 text-cyan-300 text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm whitespace-nowrap">
+                  <span className="bg-cyan-950/90 border border-cyan-500/60 text-cyan-300 text-[11px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm whitespace-nowrap">
                     {pendingRouteHydrants.length} faltantes
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-1.5 shrink-0">
                   {pendingRouteHydrants.length > 0 && pendingRouteHydrants[0]?.numLatitude && pendingRouteHydrants[0]?.numLongitude && (
                     <a
                       href={`https://waze.com/ul?ll=${pendingRouteHydrants[0].numLatitude},${pendingRouteHydrants[0].numLongitude}&navigate=yes`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-bold transition-all shadow-md shadow-blue-950/50 cursor-pointer"
+                      className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md shadow-blue-950/50 cursor-pointer"
                       title={`Navegar no Waze para o próximo hidrante (Pino 1: ${pendingRouteHydrants[0].nomHidrante || pendingRouteHydrants[0].codHidrante || ''})`}
                     >
                       <Navigation size={13} className="text-white fill-white shrink-0" />
@@ -2575,32 +2643,31 @@ syncPreferences({ filters: filters });
                   <button
                     type="button"
                     onClick={() => setRouteFitTrigger(Date.now())}
-                    className="flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 px-2 py-1.5 sm:px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
+                    className="flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
                     title="Centralizar no seu GPS e nos hidrantes mais próximos da rota"
                   >
                     <Navigation size={13} className="text-cyan-400" />
-                    <span className="hidden sm:inline">Focar Próximos</span>
+                    <span>Focar Próximos</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setActiveView('route')}
-                    className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-2 py-1.5 sm:px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
+                    className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
                     title="Abrir lista completa da missão"
                   >
                     <RouteIcon size={13} className="text-cyan-300" />
-                    <span className="hidden sm:inline">Lista da Rota</span>
+                    <span>Lista da Rota</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setIsRouteActiveOnMap(false)}
-                    className="flex items-center gap-1 bg-rose-950/90 hover:bg-rose-900 border border-rose-500/80 hover:border-rose-400 text-rose-200 px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-black transition-all cursor-pointer shadow-md active:scale-95 shrink-0"
+                    className="flex items-center gap-1 bg-rose-950/90 hover:bg-rose-900 border border-rose-500/80 hover:border-rose-400 text-rose-200 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer shadow-md active:scale-95 shrink-0"
                     title="Sair do modo rota e reativar a navegação por filtros de cidades"
                   >
                     <X size={14} className="text-rose-300 shrink-0" />
-                    <span className="hidden sm:inline">Sair da Rota / Ver Cidades</span>
-                    <span className="sm:hidden">Sair</span>
+                    <span>Sair da Rota / Ver Cidades</span>
                   </button>
                 </div>
               </div>

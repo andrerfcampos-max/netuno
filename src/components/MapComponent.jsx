@@ -1598,27 +1598,27 @@ const MapComponent = ({
       {/* ======================================================== */}
       {selectedHydrant && (
         <>
-          {/* 1. VERSÃO MOBILE (md:hidden): Bottom Sheet Tático com Arrastar */}
+          {/* 1. VERSÃO MOBILE (md:hidden): Bottom Sheet Tático Compacto com Foto em Destaque */}
           <div 
             onClick={(e) => e.stopPropagation()} 
             style={{ transform: dragOffsetY > 0 ? `translateY(${dragOffsetY}px)` : undefined }}
-            className="md:hidden absolute bottom-0 inset-x-0 z-[1050] bg-slate-900/98 backdrop-blur-xl border-t border-slate-700/90 shadow-[0_-10px_35px_rgba(0,0,0,0.85)] rounded-t-2xl p-3.5 text-slate-100 flex flex-col gap-2.5 transition-transform duration-150 ease-out select-text pointer-events-auto"
+            className="md:hidden absolute bottom-0 inset-x-0 z-[1050] bg-slate-900/98 backdrop-blur-xl border-t border-slate-700/90 shadow-[0_-10px_35px_rgba(0,0,0,0.85)] rounded-t-2xl p-2.5 pb-3 text-slate-100 flex flex-col gap-2 transition-transform duration-150 ease-out select-text pointer-events-auto max-h-[50vh] overflow-y-auto no-scrollbar"
           >
             {/* Barra de puxar / Handle visual para mobile com suporte a arrastar para baixo */}
             <div 
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="w-full pt-1 pb-2 cursor-grab active:cursor-grabbing flex items-center justify-center -mt-2 -mb-1"
+              className="w-full pt-0.5 pb-1 cursor-grab active:cursor-grabbing flex items-center justify-center -mt-1"
             >
-              <div className="w-12 h-1.5 bg-slate-600 hover:bg-slate-500 rounded-full"></div>
+              <div className="w-10 h-1 bg-slate-600 hover:bg-slate-500 rounded-full"></div>
             </div>
 
             {/* ==================================================== */}
-            {/* HERO BANNER (FOTO DE PERFIL PANORÂMICA 16:9 MOBILE) */}
+            {/* HERO BANNER (FOTO DO HIDRANTE - ELEMENTO PRINCIPAL)  */}
             {/* ==================================================== */}
             <div 
-              className="relative w-full h-[120px] shrink-0 bg-slate-900 overflow-hidden cursor-pointer active:opacity-90"
+              className="relative w-full h-[110px] shrink-0 bg-slate-950 rounded-xl overflow-hidden cursor-pointer active:opacity-95 border border-slate-700/60 shadow-md group"
               onClick={() => handleSetFullscreenPhoto(hydrantPhoto || 'placeholder')}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
@@ -1636,27 +1636,28 @@ const MapComponent = ({
                     loading="eager"
                     fetchPriority="high"
                     decoding="async"
-                    className="relative z-10 w-full h-full object-cover"
+                    className="relative z-10 w-full h-full object-cover group-hover:scale-102 transition-transform duration-200"
                   />
                 </>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 border-b border-slate-700/50">
-                  <div className="w-10 h-10 rounded-full bg-slate-700/50 flex items-center justify-center mb-1 border border-slate-600">
-                    <MapPin size={18} className="text-slate-400" />
+                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800/90 border-b border-slate-700/50">
+                  <div className="w-8 h-8 rounded-full bg-slate-700/70 flex items-center justify-center mb-1 border border-slate-600">
+                    <MapPin size={16} className="text-slate-400" />
                   </div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Foto não disponível</span>
+                  <span className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wider">Foto não disponível</span>
                 </div>
               )}
 
-              {/* Gradiente Escuro na Base para Contraste do Texto */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent pointer-events-none"></div>
+              {/* Gradiente Escuro Suave na Base e no Topo para Máximo Contraste */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent pointer-events-none z-10"></div>
+              <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-10"></div>
 
               {/* Badge de Status (Canto Superior Esquerdo) */}
-              <div className="absolute top-2 left-2 z-10 pointer-events-none">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black tracking-widest border shadow-lg backdrop-blur-md ${
+              <div className="absolute top-1.5 left-1.5 z-20 pointer-events-none">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black tracking-wider border shadow-md backdrop-blur-md ${
                   selectedHydrant.flgAtivo 
-                    ? 'bg-emerald-900/80 text-emerald-300 border-emerald-500/50' 
-                    : 'bg-red-900/80 text-red-300 border-red-500/50'
+                    ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/60' 
+                    : 'bg-red-950/90 text-red-300 border-red-500/60'
                 }`}>
                   {selectedHydrant.flgAtivo ? '● OPERANTE' : '● INOPERANTE'}
                 </span>
@@ -1671,7 +1672,7 @@ const MapComponent = ({
                       e.stopPropagation();
                       onBackToRoute();
                     }}
-                    className="absolute top-2 right-10 z-20 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/70 shadow-sm backdrop-blur-md cursor-pointer active:scale-95 transition-all"
+                    className="absolute top-1.5 right-9 z-20 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9.5px] font-bold bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/70 shadow-sm backdrop-blur-md cursor-pointer active:scale-95 transition-all"
                     title="Retornar para a tela de Rota de Missão"
                   >
                     <span>← Rota</span>
@@ -1680,14 +1681,14 @@ const MapComponent = ({
                     )}
                   </button>
                 ) : (
-                  <div className="absolute top-2 right-10 z-10 pointer-events-none">
+                  <div className="absolute top-1.5 right-9 z-20 pointer-events-none">
                     {selectedHydrantMissionStatus.isCompleted ? (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 shadow-sm backdrop-blur-md">
                         ✓ Concluído
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-500/60 shadow-sm backdrop-blur-md">
-                        #{selectedHydrantMissionStatus.order || ''} Faltante
+                        #{selectedHydrantMissionStatus.order || ''}
                       </span>
                     )}
                   </div>
@@ -1700,87 +1701,67 @@ const MapComponent = ({
                   e.stopPropagation();
                   handleCloseHydrant();
                 }}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors active:scale-95 text-xs font-bold border border-white/20 backdrop-blur-md z-20 shadow-lg"
+                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition-colors active:scale-95 text-xs font-bold border border-white/20 backdrop-blur-md z-30 shadow-lg"
                 title="Fechar Detalhes"
               >
                 ✕
               </button>
 
-              {/* Título e Endereço (Sobrepostos na Base do Banner) */}
-              <div className="absolute bottom-2 left-2 right-2 flex flex-col pointer-events-none">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-900/90 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/40 backdrop-blur-md shadow-sm">
-                    CÓDIGO
-                  </span>
-                  <span className="font-mono font-black text-lg text-white tracking-tight leading-none drop-shadow-md">
-                    {fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante}
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-300 font-semibold flex items-center gap-1 mt-1 truncate drop-shadow-md">
+              {/* Identificação Oficial do Hidrante Sobreposta na Base da Foto */}
+              <div className="absolute bottom-1.5 left-2 right-8 flex items-baseline gap-2 pointer-events-none z-20 truncate">
+                <span className="font-mono font-black text-base text-emerald-400 tracking-tight leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] select-all">
+                  {fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante}
+                </span>
+                <span className="text-[11px] text-slate-200 font-bold flex items-center gap-0.5 truncate drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                   <MapPin size={10} className="text-emerald-400 shrink-0" />
                   {fixEncoding(selectedHydrant.dscLocalidade) || 'Região DF'}
                 </span>
               </div>
 
-              {/* Ícone de Expandir Discreto */}
-              <div className="absolute bottom-2 right-2 pointer-events-none bg-black/40 rounded p-1 border border-white/10 backdrop-blur-sm">
-                <Maximize2 size={12} className="text-white/80" />
+              {/* Ícone de Expandir Foto */}
+              <div className="absolute bottom-1.5 right-2 pointer-events-none bg-black/50 rounded p-1 border border-white/10 backdrop-blur-sm z-20">
+                <Maximize2 size={11} className="text-white/80" />
               </div>
             </div>
 
-
-            {/* Informações Estruturadas (Estilo Ficha Cadastral Argos) */}
-            <div className="flex flex-col gap-1.5 bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/60 text-xs">
-              {/* Identificação Oficial / Código do Hidrante */}
-              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900/80 border border-slate-700/80 shadow-inner">
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block mb-0.5">
-                    Código do Hidrante
-                  </span>
-                  <span className="font-mono font-black text-sm text-emerald-400 select-all">
-                    {fixEncoding(selectedHydrant.nomHidrante) || selectedHydrant.codHidrante || '-'}
-                  </span>
-                </div>
-                <div className="flex flex-col items-end shrink-0">
-                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block mb-0.5">
-                    Região (RA)
-                  </span>
-                  <span className="text-xs font-bold text-slate-200 truncate max-w-[120px]">
-                    {fixEncoding(selectedHydrant.dscLocalidade) || 'Região DF'}
+            {/* ==================================================== */}
+            {/* INFORMAÇÕES DE LOCALIZAÇÃO E STATUS COMPACTAS        */}
+            {/* ==================================================== */}
+            <div className="flex flex-col gap-1 bg-slate-800/60 rounded-xl p-2 border border-slate-700/60 text-xs">
+              {/* Endereço e Ponto de Referência */}
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-start gap-1">
+                  <MapPin size={12} className="text-emerald-400 shrink-0 mt-0.5" />
+                  <span className="text-slate-100 font-semibold leading-snug line-clamp-2">
+                    {fixEncoding(selectedHydrant.dscEndereco) || 'Endereço não cadastrado'}
                   </span>
                 </div>
+                {selectedHydrant.dscPontoReferencia && (
+                  <span className="text-[10.5px] text-slate-300 italic pl-4 truncate mt-0.5">
+                    Ref: {fixEncoding(selectedHydrant.dscPontoReferencia)}
+                  </span>
+                )}
               </div>
-
-              <div>
-                <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-0.5">Endereço</span>
-                <span className="text-slate-100 font-medium leading-snug">{fixEncoding(selectedHydrant.dscEndereco) || '-'}</span>
-              </div>
-
-              {selectedHydrant.dscPontoReferencia && (
-                <div className="pt-1 border-t border-slate-700/50">
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-0.5">Ponto de Referência</span>
-                  <span className="text-slate-300 italic font-medium">{fixEncoding(selectedHydrant.dscPontoReferencia)}</span>
-                </div>
-              )}
 
               {/* Tarja de Alerta em caso de Inoperância/Defeito */}
               {selectedHydrant.problemasHidrante && selectedHydrant.problemasHidrante.trim() !== '' && (
-                <div className="mt-0.5 p-2 rounded-lg bg-red-950/80 border border-red-500/50 text-red-200 font-bold text-xs flex items-center gap-2">
-                  <AlertTriangle size={15} className="text-red-400 shrink-0" />
-                  <span className="leading-tight">{fixEncoding(sanitizeProblem(selectedHydrant.problemasHidrante))}</span>
+                <div className="p-1.5 rounded-lg bg-red-950/80 border border-red-500/50 text-red-200 font-bold text-[10.5px] flex items-center gap-1.5">
+                  <AlertTriangle size={13} className="text-red-400 shrink-0" />
+                  <span className="leading-tight truncate">{fixEncoding(sanitizeProblem(selectedHydrant.problemasHidrante))}</span>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-700/50 text-[10px]">
-                <div>
-                  <span className="text-slate-400 block font-medium">Vistoria Vigente:</span>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className={`w-2 h-2 rounded-full inline-block shrink-0 ${
+              {/* Metadados: Vistoria Vigente + Histórico + GPS */}
+              <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-700/50 text-[10px]">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-slate-400">Vistoria:</span>
+                  <div className="flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${
                       getHydrantVistoriaDate(selectedHydrant) !== 'Sem vistoria'
                         ? (selectedHydrant.flgAtivo ? 'bg-emerald-400' : 'bg-red-400')
                         : 'bg-slate-500'
                     }`}></span>
-                    <span className="text-slate-200 font-semibold">{getHydrantVistoriaDate(selectedHydrant)}</span>
+                    <span className="text-slate-200 font-bold truncate">{getHydrantVistoriaDate(selectedHydrant)}</span>
                   </div>
                   {isGestor && onOpenInspectionHistory && (
                     <button
@@ -1789,121 +1770,126 @@ const MapComponent = ({
                         e.stopPropagation();
                         onOpenInspectionHistory(selectedHydrant);
                       }}
-                      className="mt-1 px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[9.5px] font-bold flex items-center gap-1 transition-all active:scale-95 shadow-sm"
-                      title="Auditar Histórico de Vistorias Anteriores (Exclusivo Gestor)"
+                      className="px-1.5 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[9px] font-bold flex items-center gap-0.5 transition-all active:scale-95 shrink-0"
+                      title="Auditar Histórico de Vistorias"
                     >
-                      <History size={11} className="text-amber-400 shrink-0" />
+                      <History size={10} className="text-amber-400 shrink-0" />
                       <span>Histórico ({Array.isArray(selectedHydrant.HISTORICO_VISTORIAS) ? selectedHydrant.HISTORICO_VISTORIAS.length : (getHydrantVistoriaDate(selectedHydrant) !== 'Sem vistoria' ? 1 : 0)})</span>
                     </button>
                   )}
                 </div>
-                <div>
-                  <span className="text-slate-400 block font-medium">Coordenadas:</span>
-                  <span className="text-slate-200 font-mono mt-0.5 block">{typeof selectedHydrant.numLatitude === 'number' ? selectedHydrant.numLatitude.toFixed(6) : selectedHydrant.numLatitude}, {typeof selectedHydrant.numLongitude === 'number' ? selectedHydrant.numLongitude.toFixed(6) : selectedHydrant.numLongitude}</span>
+                <div className="text-right shrink-0">
+                  <span className="text-slate-400 font-mono text-[9px]">
+                    {typeof selectedHydrant.numLatitude === 'number' ? selectedHydrant.numLatitude.toFixed(5) : selectedHydrant.numLatitude}, {typeof selectedHydrant.numLongitude === 'number' ? selectedHydrant.numLongitude.toFixed(5) : selectedHydrant.numLongitude}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Barra de Ações Táticas: Linha 1 (Waze 4x e Street View 3x) + Linha 2 (Secundários 1x) */}
-            <div className="flex flex-col gap-2 pt-1">
-              {/* LINHA 1: Waze 4x e Street View 3x */}
-              <div className="flex items-center gap-2 w-full">
+            {/* ==================================================== */}
+            {/* BARRA DE AÇÕES TÁTICAS (HIERARQUIA ERGONÔMICA)       */}
+            {/* ==================================================== */}
+            <div className="flex flex-col gap-1.5">
+              {/* LINHA 1: AÇÕES PRIMÁRIAS DE CAMPO (ALTURA CONFORTÁVEL) */}
+              <div className="flex items-center gap-1.5 w-full">
+                {/* Cadastrar Nova Vistoria (Ação Prioritária nº 1) */}
+                <button 
+                  onClick={() => { onInspect(selectedHydrant); }}
+                  className="flex-[1.2] h-10 bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white rounded-xl font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition-all border border-emerald-400/40"
+                  title="Cadastrar Nova Vistoria Técnica"
+                >
+                  <Plus size={16} strokeWidth={3} className="shrink-0" />
+                  <span className="tracking-wide">+ VISTORIA</span>
+                </button>
+
+                {/* Navegar pelo Waze */}
                 <a 
                   href={`https://waze.com/ul?ll=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}&navigate=yes`} 
                   target="_blank" 
                   rel="noreferrer" 
                   style={{ backgroundColor: '#2563eb' }}
-                  className="flex-[4] h-12 bg-blue-600 hover:bg-blue-500 active:scale-98 text-white rounded-xl font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all tracking-wide min-w-0 border border-blue-400/40" 
+                  className="flex-1 h-10 bg-blue-600 hover:bg-blue-500 active:scale-98 text-white rounded-xl font-extrabold text-xs shadow-md flex items-center justify-center gap-1 transition-all min-w-0 border border-blue-400/40" 
                   title="Navegar pelo Waze"
                 >
-                  <Navigation size={18} className="shrink-0 text-white" />
-                  <span className="truncate font-black text-white">NAVEGAR NO WAZE</span>
+                  <Navigation size={15} className="shrink-0 text-white fill-white" />
+                  <span className="truncate">WAZE</span>
                 </a>
 
+                {/* Street View 360° */}
                 <a 
                   href={getStreetViewUrl(selectedHydrant)} 
                   target="_blank" 
                   rel="noreferrer" 
                   style={{ backgroundColor: '#d97706' }}
-                  className="flex-[3] h-12 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all tracking-wide min-w-0 border border-amber-400/40" 
-                  title="Google Street View 360° com enquadramento calibrado"
+                  className="flex-1 h-10 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1 transition-all min-w-0 border border-amber-400/40" 
+                  title="Google Street View 360°"
                 >
-                  <MapPin size={17} className="shrink-0 text-amber-200" />
-                  <span className="truncate text-white">STREET VIEW</span>
+                  <MapPin size={15} className="shrink-0 text-amber-200" />
+                  <span className="truncate">360° VIEW</span>
                 </a>
               </div>
 
-              {/* LINHA 2: Ações Secundárias (1x de tamanho homogêneo) */}
-              <div className="flex items-center gap-1.5 w-full">
-                {/* Cadastrar Nova Vistoria */}
-                <button 
-                  onClick={() => { onInspect(selectedHydrant); }}
-                  className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 shadow-sm transition-all min-w-0"
-                  title="Cadastrar Nova Vistoria Técnica"
-                >
-                  <Plus size={15} strokeWidth={3} />
-                  <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">VISTORIA</span>
-                </button>
-
-                {/* Editar Vistoria Cadastrada (Diferenciada com Laranja e Edit3) */}
-                {Boolean((selectedHydrant.datHoraUltimaVistoria && selectedHydrant.datHoraUltimaVistoria !== '-') || (selectedHydrant.HISTORICO_VISTORIAS && selectedHydrant.HISTORICO_VISTORIAS.length > 0)) && onEditInspection && (
-                  <button 
-                    onClick={() => { onEditInspection(selectedHydrant); }}
-                    className="flex-1 h-11 bg-orange-600 hover:bg-orange-500 active:scale-95 text-white rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 shadow-sm transition-all min-w-0 border border-orange-400/40"
-                    title="Editar Vistoria Cadastrada"
-                  >
-                    <Edit3 size={14} strokeWidth={2.5} />
-                    <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">EDIT VIST.</span>
-                  </button>
-                )}
-
-                {/* Editar Cadastro do Hidrante (Diferenciado com Wrench e Ciano/Slate para Gestores) */}
-                {isGestor && (
-                  <button 
-                    onClick={() => onEdit && onEdit(selectedHydrant)}
-                    className="flex-1 h-11 bg-slate-750 hover:bg-slate-700 active:scale-95 text-cyan-300 rounded-xl flex flex-col items-center justify-center gap-0.5 shadow-sm transition-colors min-w-0 border border-cyan-500/40"
-                    title="Editar Cadastro do Hidrante (Coordenadas, RA e Endereço)"
-                  >
-                    <Wrench size={14} className="text-cyan-400" />
-                    <span className="text-[9px] uppercase tracking-wider font-extrabold truncate text-slate-100">EDIT HIDR.</span>
-                  </button>
-                )}
-
+              {/* LINHA 2: FERRAMENTAS SECUNDÁRIAS (CHIPS COMPACTOS h-7.5) */}
+              <div className="flex items-center gap-1 w-full overflow-x-auto no-scrollbar">
                 {/* Google Maps */}
                 <a 
                   href={`https://maps.google.com/maps?q=${selectedHydrant.numLatitude},${selectedHydrant.numLongitude}`} 
                   target="_blank" 
                   rel="noreferrer" 
-                  className="flex-1 h-11 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700 rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 transition-all shadow-sm min-w-0" 
+                  className="flex-1 h-7.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700 rounded-lg text-[9.5px] font-bold flex items-center justify-center gap-1 transition-all shadow-sm min-w-0 px-1" 
                   title="Abrir no Google Maps"
                 >
-                  <MapIcon size={15} className="text-emerald-400" />
-                  <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">Maps</span>
+                  <MapIcon size={11} className="text-emerald-400 shrink-0" />
+                  <span className="truncate">Maps</span>
                 </a>
 
                 {/* WhatsApp */}
                 <button 
                   onClick={() => handleShareWhatsApp(selectedHydrant)}
-                  className="flex-1 h-11 bg-green-600 hover:bg-green-500 active:scale-95 text-white rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 shadow-md transition-all min-w-0" 
+                  className="flex-1 h-7.5 bg-emerald-950/80 hover:bg-emerald-900 active:scale-95 text-emerald-300 border border-emerald-500/40 rounded-lg text-[9.5px] font-bold flex items-center justify-center gap-1 shadow-sm transition-all min-w-0 px-1" 
                   title="Compartilhar no WhatsApp"
                 >
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a5.8 5.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-                  <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">Zap</span>
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" className="shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a5.8 5.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+                  <span className="truncate">Zap</span>
                 </button>
 
-                {/* Rota da Missão */}
+                {/* Editar Vistoria Cadastrada (se houver) */}
+                {Boolean((selectedHydrant.datHoraUltimaVistoria && selectedHydrant.datHoraUltimaVistoria !== '-') || (selectedHydrant.HISTORICO_VISTORIAS && selectedHydrant.HISTORICO_VISTORIAS.length > 0)) && onEditInspection && (
+                  <button 
+                    onClick={() => { onEditInspection(selectedHydrant); }}
+                    className="flex-1 h-7.5 bg-orange-950/80 hover:bg-orange-900 active:scale-95 text-orange-300 rounded-lg text-[9.5px] font-bold flex items-center justify-center gap-1 shadow-sm transition-all min-w-0 border border-orange-500/40 px-1"
+                    title="Editar Vistoria Cadastrada"
+                  >
+                    <Edit3 size={11} strokeWidth={2.5} className="shrink-0" />
+                    <span className="truncate">Editar Vist.</span>
+                  </button>
+                )}
+
+                {/* Editar Cadastro do Hidrante (Gestor) */}
+                {isGestor && (
+                  <button 
+                    onClick={() => onEdit && onEdit(selectedHydrant)}
+                    className="flex-1 h-7.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-cyan-300 rounded-lg text-[9.5px] font-bold flex items-center justify-center gap-1 shadow-sm transition-colors min-w-0 border border-cyan-500/40 px-1"
+                    title="Editar Cadastro do Hidrante"
+                  >
+                    <Wrench size={11} className="text-cyan-400 shrink-0" />
+                    <span className="truncate">Editar Hidr.</span>
+                  </button>
+                )}
+
+                {/* Rota da Missão (Gestor) */}
                 {isGestor && (
                   <button 
                     onClick={() => onToggleMission && onToggleMission(selectedHydrant.codHidrante || selectedHydrant._internalId || selectedHydrant.nomHidrante)}
-                    className={`flex-1 h-11 rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 shadow-md transition-all active:scale-95 min-w-0 ${
+                    className={`flex-1 h-7.5 rounded-lg text-[9.5px] font-bold flex items-center justify-center gap-0.5 shadow-sm transition-all active:scale-95 min-w-0 px-1 ${
                       (selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId))
-                        ? 'bg-rose-600 text-white ring-1 ring-rose-400' 
-                        : 'bg-cyan-600 hover:bg-cyan-500 text-white ring-1 ring-cyan-400/40'
+                        ? 'bg-rose-950/90 text-rose-300 border border-rose-500/60' 
+                        : 'bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/50'
                     }`}
                     title={(selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? 'Remover da Missão' : 'Adicionar à Missão'}
                   >
-                    <span className="text-xs leading-none">{(selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? '✕' : '➕'}</span>
-                    <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">Rota</span>
+                    <span className="text-[10px] leading-none shrink-0">{(selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? '✕' : '+'}</span>
+                    <span className="truncate">Rota</span>
                   </button>
                 )}
               </div>
