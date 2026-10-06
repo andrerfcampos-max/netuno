@@ -24,7 +24,7 @@ const DownloadDatabaseModal = lazy(() => import('./components/DownloadDatabaseMo
 import { logAuditEvent, getUnreadAuditCount, mergeAuditLogs } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers, mergeRbacUsers } from './utils/storage';
-import { processOfflineQueue, reconcileLocalChangesToCloud, fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, getLastMutationTimestamp, subscribeToCloudRealtime, fetchUserPreferencesFromCloud, syncUserPreferencesToCloud, fetchRbacUsersFromCloud } from './services/syncService';
+import { processOfflineQueue, reconcileLocalChangesToCloud, fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, fetchAuditLogsFromCloud, fetchInspectionsFromCloud, getLastMutationTimestamp, subscribeToCloudRealtime, fetchUserPreferencesFromCloud, syncUserPreferencesToCloud, fetchRbacUsersFromCloud } from './services/syncService';
 import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
 import { isValidDFCoordinate } from './utils/geoUtils';
@@ -921,6 +921,61 @@ syncPreferences({ filters: newFilters });
 
         if (cloudMutations) {
           applyCloudMutations(cloudMutations);
+        }
+
+        // Reconciliação direta de vistorias técnicas (netuno_inspections) para blindar o mapa e rotas
+        fetchInspectionsFromCloud(500).then(cloudInspections => {
+          if (Array.isArray(cloudInspections) && cloudInspections.length > 0) {
+            setHidrantes(prevHidrantes => {
+              if (!prevHidrantes || prevHidrantes.length === 0) return prevHidrantes;
+              let hasChanges = false;
+              const updated = prevHidrantes.map(h => {
+                const nom = (h.nomHidrante || '').toUpperCase();
+                const cod = (h.codHidrante || '').toUpperCase();
+                const insp = cloudInspections.find(ci => 
+                  (ci.nom_hidrante && ci.nom_hidrante.toUpperCase() === nom) ||
+                  (ci.cod_hidrante && ci.cod_hidrante.toUpperCase() === cod)
+                );
+                if (insp) {
+                  let dtStr = insp.data_hora_vistoria;
+                  try {
+                    const d = new Date(insp.data_hora_vistoria);
+                    if (!isNaN(d.getTime())) {
+                      dtStr = d.toLocaleDateString('pt-BR') + ', ' + d.toLocaleTimeString('pt-BR');
+                    }
+                  } catch (e) {}
+
+                  const currentDt = h.datHoraUltimaVistoria || h.datHoraVistoria || '';
+                  if (!currentDt || currentDt === '18/06/2025 12:00:00' || currentDt !== dtStr) {
+                    hasChanges = true;
+                    return {
+                      ...h,
+                      datHoraUltimaVistoria: dtStr,
+                      datHoraVistoria: dtStr,
+                      vistoriadorNome: insp.nom_vistoriador || h.vistoriadorNome,
+                      vistoriador: insp.nom_vistoriador || h.vistoriador,
+                      flgAtivo: Boolean(insp.flg_ativo),
+                      status: insp.flg_ativo ? 'Operante' : 'Inoperante',
+                      problemasHidrante: insp.problemas_hidrante || h.problemasHidrante,
+                      fotoVistoria: insp.foto_url || h.fotoVistoria
+                    };
+                  }
+                }
+                return h;
+              });
+              return hasChanges ? updated : prevHidrantes;
+            });
+          }
+        }).catch(e => console.warn('Erro ao reconciliar vistorias da nuvem:', e));
+
+        // Se o histórico de auditoria local estiver vazio, busca da nuvem
+        const currentAudits = getAuditLogs();
+        if (currentAudits.length === 0) {
+          fetchAuditLogsFromCloud(250).then(cloudAudits => {
+            if (Array.isArray(cloudAudits) && cloudAudits.length > 0) {
+              mergeAuditLogs(cloudAudits);
+            }
+          }).catch(e => console.warn('Erro ao carregar audit logs na inicialização:', e));
         }
       } catch (e) {
         console.warn('Erro ao sincronizar com banco em nuvem:', e);

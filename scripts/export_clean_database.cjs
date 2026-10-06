@@ -57,7 +57,13 @@ function generateCleanDatabase() {
       datHoraUltimaVistoria: String(row.datHoraUltimaVistoria || row.datHoraVistoria || '').trim(),
       vistoriadorNome: String(row.vistoriadorNome || row['Vistoriador'] || '').trim(),
       diametro: String(row.diametro || '100mm').trim(),
-      fotoPerfil: String(row.fotoPerfil || '').trim()
+      fotoPerfil: String(row.fotoPerfil || '').trim(),
+      HISTORICO_VISTORIAS: Array.isArray(row.HISTORICO_VISTORIAS) ? row.HISTORICO_VISTORIAS : [],
+      vistoriador: row.vistoriador || row.vistoriadorNome || '',
+      vistoriadorMatricula: row.vistoriadorMatricula || row.matricula || '',
+      matricula: row.matricula || row.vistoriadorMatricula || '',
+      equipeVistoria: row.equipeVistoria || row.equipe || '',
+      ultimaAtualizacao: row.ultimaAtualizacao || new Date().toISOString()
     };
 
     cleanRecords.push(record);

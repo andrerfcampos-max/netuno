@@ -505,6 +505,32 @@ const _doSyncInspectionToCloud = async (hidrante) => {
   return true;
 }
 
+/**
+ * Busca as vistorias técnicas salvas no Supabase (netuno_inspections)
+ */
+export const fetchInspectionsFromCloud = async (limit = 1000) => {
+  const client = getSupabaseClient();
+  if (!client) return [];
+
+  try {
+    const { data, error } = await client
+      .from('netuno_inspections')
+      .select('*')
+      .order('data_hora_vistoria', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn('Erro ao buscar vistorias da nuvem:', error.message);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.warn('Falha na requisição de vistorias da nuvem:', err);
+    return [];
+  }
+};
+
 // ------------------------------------------------------------------------------
 // 4. SINCRONIZAÇÃO DE MUTAÇÕES DA BASE DE HIDRANTES (netuno_hydrant_mutations)
 // ------------------------------------------------------------------------------
@@ -683,6 +709,34 @@ export const fetchHydrantMutationsFromCloud = async (options = {}) => {
   } catch (err) {
     console.warn('Falha ao carregar mutações da nuvem:', err);
     return null;
+  }
+};
+
+/**
+ * Busca os eventos mais recentes do histórico de auditoria (netuno_hydrant_mutations type: audit_event)
+ * Garante que o modal Histórico e Notificações seja preenchido mesmo se o delta sync não tiver registros novos.
+ */
+export const fetchAuditLogsFromCloud = async (limit = 250) => {
+  const client = getSupabaseClient();
+  if (!client) return [];
+
+  try {
+    const { data, error } = await client
+      .from('netuno_hydrant_mutations')
+      .select('payload')
+      .eq('type', 'audit_event')
+      .order('updated_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn('Erro ao buscar audit logs do Supabase:', error.message);
+      return [];
+    }
+
+    return (data || []).map(r => r.payload).filter(Boolean);
+  } catch (err) {
+    console.warn('Falha na requisição de audit logs da nuvem:', err);
+    return [];
   }
 };
 

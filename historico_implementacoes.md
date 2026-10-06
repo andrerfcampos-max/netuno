@@ -869,3 +869,26 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   4. **Higienização Completa do Banco de Dados Supabase (`scripts/cleanup_duplicates.cjs`):**
      - Removidas 3.643 duplicatas em `netuno_inspections`, preservando os 156 registros únicos mais completos com fotos e vistoriadores originais.
      - Removidos 256 eventos de auditoria redundantes em `netuno_hydrant_mutations`.
+
+### [06/10/2026] Correção Crítica: Restauração do Histórico de Atividades e Reconciliação Geral das Vistorias do Lago Sul (TASK-185)
+- **Problema Diagnosticado:** Após as atualizações de fotos do Lago Sul (TASK-182/184), o modal "Histórico e Notificações" do gestor ficou completamente zerado ("Hoje: 0 vistorias", "Todas 0", "Nenhum registro de auditoria"), e as vistorias realizadas no Lago Sul desapareceram do mapa.
+- **Causa Raiz Identificada:**
+  1. O script `export_clean_database.cjs` executado durante a extração de fotos reescreveu `public/hidrantes_df_oficial.json` a partir de `public/base-de-dados.xlsx` sem mapear o campo `HISTORICO_VISTORIAS`, limpando acidentalmente o histórico embutido de 265 hidrantes.
+  2. As 156 vistorias técnicas reais (incluindo as 36 do Lago Sul, com 8 realizadas hoje pelo Sgt Roméro) estavam preservadas com segurança na nuvem (`netuno_inspections` e `netuno_hydrant_mutations`), porém a aplicação dependia exclusivamente do Delta Sync baseado em `netuno_last_mutation_timestamp`. Como esse timestamp avançou, o aplicativo móvel ignorou mutações anteriores.
+  3. O modal `SystemHistoryModal.jsx` chamava `fetchHydrantMutationsFromCloud()` sem parâmetros (filtrando apenas `updated_at > lastMutationTimestamp`), retornando 0 eventos de auditoria quando o cache local estava vazio.
+  4. Falha de parsing de data no helper `isToday` no formato brasileiro (`DD/MM/YYYY`), interpretando o dia como mês e zerando o contador de hoje.
+- **Implementações Realizadas:**
+  1. **Recuperação e Reconciliação Completa da Base Oficial (`scripts/reconcile_all_inspections.cjs`):**
+     - Restaurados os 265 históricos de vistoria originais preservados no Git anterior.
+     - Integradas todas as 156 vistorias técnicas do Supabase (`netuno_inspections`) e 380 mutações de `netuno_hydrant_mutations` diretamente em `public/hidrantes_df_oficial.json`, `.csv` e `base-de-dados.xlsx`.
+     - 377 hidrantes com `HISTORICO_VISTORIAS` completo restabelecidos.
+     - 106 hidrantes do Lago Sul com vistorias recentes ativos e visíveis no mapa e relatórios.
+  2. **Blindagem do Script de Exportação (`scripts/export_clean_database.cjs`):**
+     - O script agora preserva explicitamente `HISTORICO_VISTORIAS`, dados de vistoriador, equipe e datas da vistoria.
+  3. **Consulta Direta e Resiliente de Auditoria (`fetchAuditLogsFromCloud`):**
+     - Implementada a função dedicada `fetchAuditLogsFromCloud(limit)` em `syncService.js` buscando especificamente os últimos 250 eventos de auditoria sem interferência do Delta Sync.
+     - `SystemHistoryModal.jsx` agora invoca `fetchAuditLogsFromCloud` em segundo plano sempre que aberto, garantindo exibição instantânea do histórico em qualquer aparelho.
+  4. **Parser Universal de Datas (`parseAnyDate`):**
+     - Criado parser robusto que interpreta tanto strings ISO (UTC/local) quanto formato brasileiro (`DD/MM/YYYY, HH:mm:ss`), corrigindo a contagem de "Hoje" e filtros por período.
+  5. **Auto-Reconciliação no Carregamento (`App.jsx`):**
+     - `syncWithCloud` agora busca `fetchInspectionsFromCloud()` e `fetchAuditLogsFromCloud()` para garantir que novos dispositivos e limpezas de cache reflitam imediatamente as vistorias e ações do sistema.

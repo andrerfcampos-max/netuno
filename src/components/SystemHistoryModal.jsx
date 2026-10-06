@@ -27,14 +27,38 @@ import {
   mergeAuditLogs
 } from '../utils/auditLogger';
 import { isCloudConfigured } from '../services/supabase';
-import { fetchHydrantMutationsFromCloud } from '../services/syncService';
+import { fetchHydrantMutationsFromCloud, fetchAuditLogsFromCloud } from '../services/syncService';
 import { getHydrantAllIds } from '../utils/idMapping';
+
+// Parser resiliente de qualquer formato de data (ISO UTC, ISO local, DD/MM/YYYY, etc.)
+const parseAnyDate = (timestamp) => {
+  if (!timestamp) return null;
+  if (timestamp instanceof Date) return isNaN(timestamp.getTime()) ? null : timestamp;
+  const str = String(timestamp).trim();
+  
+  // DD/MM/YYYY ou DD/MM/YYYY, HH:mm:ss
+  const brMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ ,]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+  if (brMatch) {
+    const day = parseInt(brMatch[1], 10);
+    const month = parseInt(brMatch[2], 10) - 1;
+    const year = parseInt(brMatch[3], 10);
+    const hour = brMatch[4] ? parseInt(brMatch[4], 10) : 0;
+    const min = brMatch[5] ? parseInt(brMatch[5], 10) : 0;
+    const sec = brMatch[6] ? parseInt(brMatch[6], 10) : 0;
+    const d = new Date(year, month, day, hour, min, sec);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+};
 
 // Formatação amigável de tempo relativo
 const formatRelativeTime = (isoString) => {
   if (!isoString) return '';
   try {
-    const date = new Date(isoString);
+    const date = parseAnyDate(isoString);
+    if (!date) return isoString;
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffSec = Math.floor(diffMs / 1000);
@@ -68,10 +92,10 @@ export default function SystemHistoryModal({
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedLogId, setExpandedLogId] = useState(null);
 
-  // Helper para verificar se uma data é hoje
+  // Helper para verificar se uma data é hoje (suporta ISO e DD/MM/YYYY)
   const isToday = (timestamp) => {
-    if (!timestamp) return false;
-    const d = new Date(timestamp);
+    const d = parseAnyDate(timestamp);
+    if (!d) return false;
     const now = new Date();
     return d.getDate() === now.getDate() &&
            d.getMonth() === now.getMonth() &&
@@ -80,11 +104,10 @@ export default function SystemHistoryModal({
 
   // Helper para verificar se está dentro de N dias
   const isWithinDays = (timestamp, days) => {
-    if (!timestamp) return false;
-    const time = new Date(timestamp).getTime();
-    if (isNaN(time)) return false;
-    const diffMs = Date.now() - time;
-    return diffMs <= days * 24 * 60 * 60 * 1000;
+    const d = parseAnyDate(timestamp);
+    if (!d) return false;
+    const diffMs = Date.now() - d.getTime();
+    return diffMs >= 0 && diffMs <= days * 24 * 60 * 60 * 1000;
   };
 
   // Carrega e assina atualizações do histórico
@@ -99,9 +122,9 @@ export default function SystemHistoryModal({
 
     // Sincroniza da nuvem em segundo plano para garantir o histórico multiusuário mais recente
     if (isCloudConfigured() && navigator.onLine) {
-      fetchHydrantMutationsFromCloud().then(mutations => {
-        if (mutations && Array.isArray(mutations.auditLogs) && mutations.auditLogs.length > 0) {
-          const merged = mergeAuditLogs(mutations.auditLogs);
+      fetchAuditLogsFromCloud(250).then(cloudLogs => {
+        if (Array.isArray(cloudLogs) && cloudLogs.length > 0) {
+          const merged = mergeAuditLogs(cloudLogs);
           setLogs(merged);
         }
       }).catch(err => console.warn('Erro ao atualizar histórico da nuvem no modal:', err));
