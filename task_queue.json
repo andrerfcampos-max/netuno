@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-190",
+  "activeTaskId": "TASK-191",
   "queue": [
     {
       "id": "TASK-1",
@@ -1917,9 +1917,19 @@
       "seq": 190,
       "conversationId": "b9403cbd-f206-4a63-be79-c0c6e2f9d750",
       "description": "Audit Argos gabarito and fix Taguatinga date confusion",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-07T15:00:36.201Z",
       "startedAt": "2026-10-07T15:01:04.697Z",
+      "completedAt": "2026-10-07T15:02:20.834Z"
+    },
+    {
+      "id": "TASK-191",
+      "seq": 191,
+      "conversationId": "154ef160-01a9-469b-bd4b-52b283be43ef",
+      "description": "Diagnostico visual e aprimoramento de regras do agente para 112 e 125",
+      "status": "running",
+      "createdAt": "2026-10-07T15:06:35.163Z",
+      "startedAt": "2026-10-07T15:06:50.131Z",
       "completedAt": null
     }
   ]

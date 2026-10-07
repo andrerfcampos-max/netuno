@@ -618,6 +618,12 @@
       "status": "completed",
       "name": "Navegação Adaptativa com Step-Ahead e Detecção de Obstáculos no Street View",
       "prompt": "Implementar navegação adaptativa no agente de Street View: quando um obstáculo (carros estacionados, muros, vegetação densa) bloquear a visão do hidrante no panorama inicial, o agente não deve aceitar o fallback estático da coordenada cega. Ele deve avançar ao longo da via/estacionamento (passo à frente e passos laterais de 10-20m) e rotacionar a câmera com inclinação de calçada (pitch negativo) para contornar veículos e barreiras visuais, garantindo captura nítida do equipamento."
+    },
+    {
+      "id": 105,
+      "status": "completed",
+      "name": "Calibragem de Sensibilidade Visual e Heurística de Reconhecimento Urbano",
+      "prompt": "Aprimorar o prompt e as diretrizes de visão computacional do agente de Street View com base nos casos 112 e 125: 1) Ensinar o modelo a reconhecer hidrantes de coluna envelhecidos, sem pintura amarela/vermelha viva (tons de concreto, bronze, cinza metálico ou ferro fundido escuro); 2) Priorizar o escaneamento na borda da calçada/canteiro entre garagens e na linha de meio-fio em cruzamentos residenciais; 3) Ajustar o FOV e aproximação para não perder hidrantes de menor porte visual; 4) Nunca classificar como ausente sem testar a visada oposta de 180 graus na calçada reversa."
     }
   ]
 }
