@@ -775,6 +775,10 @@ export const printGeneralReport = ({
           padding: 5px 6px;
           vertical-align: middle;
         }
+        .data-table tr {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
         .data-table tbody tr:nth-child(even) { background: #fafafa; }
         .col-seq { width: 3.5%; text-align: center; font-weight: bold; color: #64748b; }
         .col-code { width: 16.5%; }

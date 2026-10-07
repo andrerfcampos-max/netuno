@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-193",
+  "activeTaskId": "TASK-196",
   "queue": [
     {
       "id": "TASK-1",
@@ -1947,9 +1947,39 @@
       "seq": 193,
       "conversationId": "16c7ea8c-8e92-4b91-8420-e839f2be2783",
       "description": "Ajustar abertura direta de relatorios PDF no Chrome/navegador",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-07T15:35:42.124Z",
       "startedAt": "2026-10-07T15:36:13.125Z",
+      "completedAt": "2026-10-07T15:38:22.843Z"
+    },
+    {
+      "id": "TASK-194",
+      "seq": 194,
+      "conversationId": "b04959cd-e6d2-441a-92e5-86762aca8fd9",
+      "description": "Ajustar barra de operabilidade por cidade na tela para 100% de largura",
+      "status": "completed",
+      "createdAt": "2026-10-07T16:22:32.018Z",
+      "startedAt": "2026-10-07T16:22:44.419Z",
+      "completedAt": "2026-10-07T16:26:26.131Z"
+    },
+    {
+      "id": "TASK-195",
+      "seq": 195,
+      "conversationId": "b04959cd-e6d2-441a-92e5-86762aca8fd9",
+      "description": "Restaurar barra proporcional ao volume na tela e aplicar mesma proporcao ao PDF",
+      "status": "completed",
+      "createdAt": "2026-10-07T17:27:19.571Z",
+      "startedAt": "2026-10-07T17:27:31.594Z",
+      "completedAt": "2026-10-07T17:33:10.692Z"
+    },
+    {
+      "id": "TASK-196",
+      "seq": 196,
+      "conversationId": "cea82f0d-54dc-44c6-85fe-30057993a81e",
+      "description": "Fix PDF page break issue",
+      "status": "running",
+      "createdAt": "2026-10-07T17:47:12.202Z",
+      "startedAt": "2026-10-07T17:48:20.048Z",
       "completedAt": null
     }
   ]
