@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-191",
+  "activeTaskId": "TASK-193",
   "queue": [
     {
       "id": "TASK-1",
@@ -1927,9 +1927,29 @@
       "seq": 191,
       "conversationId": "154ef160-01a9-469b-bd4b-52b283be43ef",
       "description": "Diagnostico visual e aprimoramento de regras do agente para 112 e 125",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-07T15:06:35.163Z",
       "startedAt": "2026-10-07T15:06:50.131Z",
+      "completedAt": "2026-10-07T15:10:58.869Z"
+    },
+    {
+      "id": "TASK-192",
+      "seq": 192,
+      "conversationId": "e37246d4-be12-4825-947e-2d853c18642b",
+      "description": "Corrigir ReferenceError m is not defined em TechnicalStudyModal",
+      "status": "completed",
+      "createdAt": "2026-10-07T15:32:39.109Z",
+      "startedAt": "2026-10-07T15:32:42.316Z",
+      "completedAt": "2026-10-07T15:36:13.014Z"
+    },
+    {
+      "id": "TASK-193",
+      "seq": 193,
+      "conversationId": "16c7ea8c-8e92-4b91-8420-e839f2be2783",
+      "description": "Ajustar abertura direta de relatorios PDF no Chrome/navegador",
+      "status": "running",
+      "createdAt": "2026-10-07T15:35:42.124Z",
+      "startedAt": "2026-10-07T15:36:13.125Z",
       "completedAt": null
     }
   ]
