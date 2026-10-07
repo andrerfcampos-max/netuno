@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-188",
+  "activeTaskId": "TASK-190",
   "queue": [
     {
       "id": "TASK-1",
@@ -1897,9 +1897,29 @@
       "seq": 188,
       "conversationId": "b9403cbd-f206-4a63-be79-c0c6e2f9d750",
       "description": "Fix date parsing corruption for Recanto das Emas and scope sanitize script",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-07T14:37:19.219Z",
       "startedAt": "2026-10-07T14:37:28.670Z",
+      "completedAt": "2026-10-07T14:38:24.850Z"
+    },
+    {
+      "id": "TASK-189",
+      "seq": 189,
+      "conversationId": "154ef160-01a9-469b-bd4b-52b283be43ef",
+      "description": "Execucao de Step-Ahead Ativo nos hidrantes 56, 72, 90, 100, 102, 112, 116, 125, 126 do Lago Sul",
+      "status": "completed",
+      "createdAt": "2026-10-07T14:52:26.264Z",
+      "startedAt": "2026-10-07T14:52:32.781Z",
+      "completedAt": "2026-10-07T14:57:57.321Z"
+    },
+    {
+      "id": "TASK-190",
+      "seq": 190,
+      "conversationId": "b9403cbd-f206-4a63-be79-c0c6e2f9d750",
+      "description": "Audit Argos gabarito and fix Taguatinga date confusion",
+      "status": "running",
+      "createdAt": "2026-10-07T15:00:36.201Z",
+      "startedAt": "2026-10-07T15:01:04.697Z",
       "completedAt": null
     }
   ]

@@ -14,8 +14,8 @@
     "status": "Operante",
     "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
     "dscObservacao": "Falta luva",
-    "datHoraVistoria": "03/09/2026",
-    "datHoraUltimaVistoria": "03/09/2026",
+    "datHoraVistoria": "09/03/2026 10:00:00",
+    "datHoraUltimaVistoria": "09/03/2026 10:00:00",
     "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
     "fotoPerfil": "",
@@ -31,7 +31,7 @@
         "fotosVistoria": []
       },
       {
-        "datHoraVistoria": "03/09/2026",
+        "datHoraVistoria": "09/03/2026 10:00:00",
         "flgAtivo": true,
         "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
         "dscObservacao": "Falta luva",
@@ -73,8 +73,8 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "03/09/2026",
-    "datHoraUltimaVistoria": "03/09/2026",
+    "datHoraVistoria": "09/03/2026 10:00:00",
+    "datHoraUltimaVistoria": "09/03/2026 10:00:00",
     "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
     "fotoPerfil": "",
@@ -90,7 +90,7 @@
         "fotosVistoria": []
       },
       {
-        "datHoraVistoria": "03/09/2026",
+        "datHoraVistoria": "09/03/2026 10:00:00",
         "flgAtivo": true,
         "problemasHidrante": "",
         "dscObservacao": "",
@@ -153,8 +153,8 @@
     "status": "Inoperante",
     "problemasHidrante": "Tampa da caixa lacrada (concretada)",
     "dscObservacao": "Caixa lacrada",
-    "datHoraVistoria": "03/09/2026",
-    "datHoraUltimaVistoria": "03/09/2026",
+    "datHoraVistoria": "09/03/2026 10:00:00",
+    "datHoraUltimaVistoria": "09/03/2026 10:00:00",
     "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
     "fotoPerfil": "",
@@ -170,7 +170,7 @@
         "fotosVistoria": []
       },
       {
-        "datHoraVistoria": "03/09/2026",
+        "datHoraVistoria": "09/03/2026 10:00:00",
         "flgAtivo": false,
         "problemasHidrante": "Tampa da caixa lacrada (concretada)",
         "dscObservacao": "Caixa lacrada",
@@ -471,8 +471,8 @@
     "status": "Operante",
     "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
     "dscObservacao": "Falta luva",
-    "datHoraVistoria": "03/09/2026",
-    "datHoraUltimaVistoria": "03/09/2026",
+    "datHoraVistoria": "09/03/2026 10:00:00",
+    "datHoraUltimaVistoria": "09/03/2026 10:00:00",
     "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
     "fotoPerfil": "",
@@ -488,7 +488,7 @@
         "fotosVistoria": []
       },
       {
-        "datHoraVistoria": "03/09/2026",
+        "datHoraVistoria": "09/03/2026 10:00:00",
         "flgAtivo": true,
         "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
         "dscObservacao": "Falta luva",
@@ -27294,11 +27294,20 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "21/03/2025 09:00:00",
-    "datHoraUltimaVistoria": "21/03/2025 09:00:00",
+    "datHoraVistoria": "11/09/2026 15:06:00",
+    "datHoraUltimaVistoria": "11/09/2026 15:06:00",
     "vistoriadorNome": "",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "21/03/2025 09:00:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador"
+      }
+    ]
   },
   {
     "_internalId": "hid_1161",
@@ -27708,8 +27717,8 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "03/09/2026",
-    "datHoraUltimaVistoria": "03/09/2026",
+    "datHoraVistoria": "09/03/2026 10:00:00",
+    "datHoraUltimaVistoria": "09/03/2026 10:00:00",
     "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
     "fotoPerfil": "",
@@ -27725,7 +27734,7 @@
         "fotosVistoria": []
       },
       {
-        "datHoraVistoria": "03/09/2026",
+        "datHoraVistoria": "09/03/2026 10:00:00",
         "flgAtivo": true,
         "problemasHidrante": "",
         "dscObservacao": "",
@@ -27767,8 +27776,8 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "03/09/2026",
-    "datHoraUltimaVistoria": "03/09/2026",
+    "datHoraVistoria": "09/03/2026 10:00:00",
+    "datHoraUltimaVistoria": "09/03/2026 10:00:00",
     "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
     "fotoPerfil": "",
@@ -27784,7 +27793,7 @@
         "fotosVistoria": []
       },
       {
-        "datHoraVistoria": "03/09/2026",
+        "datHoraVistoria": "09/03/2026 10:00:00",
         "flgAtivo": true,
         "problemasHidrante": "",
         "dscObservacao": "",
@@ -27826,8 +27835,8 @@
     "status": "Operante",
     "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
     "dscObservacao": "Falta luva",
-    "datHoraVistoria": "03/09/2026",
-    "datHoraUltimaVistoria": "03/09/2026",
+    "datHoraVistoria": "09/03/2026 10:00:00",
+    "datHoraUltimaVistoria": "09/03/2026 10:00:00",
     "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
     "fotoPerfil": "",
@@ -27843,7 +27852,7 @@
         "fotosVistoria": []
       },
       {
-        "datHoraVistoria": "03/09/2026",
+        "datHoraVistoria": "09/03/2026 10:00:00",
         "flgAtivo": true,
         "problemasHidrante": "Falta cabeçote da haste do registro (luva)",
         "dscObservacao": "Falta luva",
@@ -27934,8 +27943,8 @@
     "status": "Inoperante",
     "problemasHidrante": "Registro soterrado",
     "dscObservacao": "Registro soterrado",
-    "datHoraVistoria": "03/09/2026",
-    "datHoraUltimaVistoria": "03/09/2026",
+    "datHoraVistoria": "09/03/2026 10:00:00",
+    "datHoraUltimaVistoria": "09/03/2026 10:00:00",
     "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
     "fotoPerfil": "",
@@ -27951,7 +27960,7 @@
         "fotosVistoria": []
       },
       {
-        "datHoraVistoria": "03/09/2026",
+        "datHoraVistoria": "09/03/2026 10:00:00",
         "flgAtivo": false,
         "problemasHidrante": "Registro soterrado",
         "dscObservacao": "Registro soterrado",
@@ -28077,11 +28086,20 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "21/03/2025 08:00:00",
-    "datHoraUltimaVistoria": "21/03/2025 08:00:00",
+    "datHoraVistoria": "11/09/2026 15:08:00",
+    "datHoraUltimaVistoria": "11/09/2026 15:08:00",
     "vistoriadorNome": "",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "21/03/2025 08:00:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador"
+      }
+    ]
   },
   {
     "_internalId": "hid_1185",
@@ -28119,11 +28137,20 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "20/02/2025 12:52:00",
-    "datHoraUltimaVistoria": "20/02/2025 12:52:00",
+    "datHoraVistoria": "11/09/2026 15:08:00",
+    "datHoraUltimaVistoria": "11/09/2026 15:08:00",
     "vistoriadorNome": "",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "20/02/2025 12:52:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador"
+      }
+    ]
   },
   {
     "_internalId": "hid_1187",
@@ -28245,11 +28272,20 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "20/02/2025 14:15:00",
-    "datHoraUltimaVistoria": "20/02/2025 14:15:00",
+    "datHoraVistoria": "11/09/2026 15:08:00",
+    "datHoraUltimaVistoria": "11/09/2026 15:08:00",
     "vistoriadorNome": "",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "20/02/2025 14:15:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador"
+      }
+    ]
   },
   {
     "_internalId": "hid_1193",
@@ -28287,11 +28323,20 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "20/02/2025 11:02:00",
-    "datHoraUltimaVistoria": "20/02/2025 11:02:00",
+    "datHoraVistoria": "11/09/2026 15:07:00",
+    "datHoraUltimaVistoria": "11/09/2026 15:07:00",
     "vistoriadorNome": "",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "20/02/2025 11:02:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador"
+      }
+    ]
   },
   {
     "_internalId": "hid_1195",
@@ -28308,11 +28353,20 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "20/02/2025 10:45:00",
-    "datHoraUltimaVistoria": "20/02/2025 10:45:00",
+    "datHoraVistoria": "11/09/2026 15:07:00",
+    "datHoraUltimaVistoria": "11/09/2026 15:07:00",
     "vistoriadorNome": "",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "20/02/2025 10:45:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador"
+      }
+    ]
   },
   {
     "_internalId": "hid_1196",
@@ -28350,11 +28404,20 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "20/02/2025 13:36:00",
-    "datHoraUltimaVistoria": "20/02/2025 13:36:00",
+    "datHoraVistoria": "11/09/2026 15:07:00",
+    "datHoraUltimaVistoria": "11/09/2026 15:07:00",
     "vistoriadorNome": "",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "20/02/2025 13:36:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador"
+      }
+    ]
   },
   {
     "_internalId": "hid_1198",
@@ -28392,11 +28455,20 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "20/02/2025 09:17:00",
-    "datHoraUltimaVistoria": "20/02/2025 09:17:00",
+    "datHoraVistoria": "11/09/2026 15:07:00",
+    "datHoraUltimaVistoria": "11/09/2026 15:07:00",
     "vistoriadorNome": "",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "20/02/2025 09:17:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador"
+      }
+    ]
   },
   {
     "_internalId": "hid_1200",
@@ -28413,11 +28485,20 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "21/02/2025 09:15:00",
-    "datHoraUltimaVistoria": "21/02/2025 09:15:00",
+    "datHoraVistoria": "11/09/2026 15:07:00",
+    "datHoraUltimaVistoria": "11/09/2026 15:07:00",
     "vistoriadorNome": "",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "21/02/2025 09:15:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador"
+      }
+    ]
   },
   {
     "_internalId": "hid_1201",
@@ -28651,11 +28732,20 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "21/02/2025 11:03:00",
-    "datHoraUltimaVistoria": "21/02/2025 11:03:00",
+    "datHoraVistoria": "11/09/2026 15:08:00",
+    "datHoraUltimaVistoria": "11/09/2026 15:08:00",
     "vistoriadorNome": "",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "21/02/2025 11:03:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador"
+      }
+    ]
   },
   {
     "_internalId": "hid_1211",
@@ -28672,11 +28762,20 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "21/02/2025 09:50:00",
-    "datHoraUltimaVistoria": "21/02/2025 09:50:00",
+    "datHoraVistoria": "11/09/2026 15:08:00",
+    "datHoraUltimaVistoria": "11/09/2026 15:08:00",
     "vistoriadorNome": "",
     "diametro": "100mm",
-    "fotoPerfil": ""
+    "fotoPerfil": "",
+    "HISTORICO_VISTORIAS": [
+      {
+        "datHoraVistoria": "21/02/2025 09:50:00",
+        "flgAtivo": true,
+        "problemasHidrante": "",
+        "dscObservacao": "",
+        "vistoriadorNome": "Militar Vistoriador"
+      }
+    ]
   },
   {
     "_internalId": "hid_1212",
@@ -28840,8 +28939,8 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "03/09/2026",
-    "datHoraUltimaVistoria": "03/09/2026",
+    "datHoraVistoria": "09/03/2026 10:00:00",
+    "datHoraUltimaVistoria": "09/03/2026 10:00:00",
     "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
     "fotoPerfil": "",
@@ -28857,7 +28956,7 @@
         "fotosVistoria": []
       },
       {
-        "datHoraVistoria": "03/09/2026",
+        "datHoraVistoria": "09/03/2026 10:00:00",
         "flgAtivo": true,
         "problemasHidrante": "",
         "dscObservacao": "",
@@ -28899,8 +28998,8 @@
     "status": "Operante",
     "problemasHidrante": "",
     "dscObservacao": "",
-    "datHoraVistoria": "03/09/2026",
-    "datHoraUltimaVistoria": "03/09/2026",
+    "datHoraVistoria": "09/03/2026 10:00:00",
+    "datHoraUltimaVistoria": "09/03/2026 10:00:00",
     "vistoriadorNome": "Sgt Rrm Honorato",
     "diametro": "100mm",
     "fotoPerfil": "",
@@ -28916,7 +29015,7 @@
         "fotosVistoria": []
       },
       {
-        "datHoraVistoria": "03/09/2026",
+        "datHoraVistoria": "09/03/2026 10:00:00",
         "flgAtivo": true,
         "problemasHidrante": "",
         "dscObservacao": "",
