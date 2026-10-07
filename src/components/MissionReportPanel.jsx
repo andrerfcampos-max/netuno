@@ -1267,23 +1267,18 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
                             </span>
                           </div>
                         </div>
-                        {/* Barra Proporcional ao Volume da Cidade com Divisão Operante / Inoperante */}
+                        {/* Barra de Operabilidade da Cidade Normalizada (100% de largura) com Divisão Operante / Inoperante */}
                         <div className="w-full h-3 bg-slate-900/60 rounded-full overflow-hidden flex shadow-inner print-bg-gray border border-slate-700/50">
                           <div 
-                            className="h-full rounded-full overflow-hidden flex transition-all duration-700"
-                            style={{ width: `${Math.max(6, (c.total / maxCityTotal) * 100)}%` }}
-                          >
-                            <div 
-                              className="bg-emerald-500 h-full transition-all duration-700 hover:brightness-110" 
-                              style={{ width: `${c.operantesPercent}%` }}
-                              title={`${c.nome}: ${c.operantes} operantes (${c.operantesPercent}%)`}
-                            ></div>
-                            <div 
-                              className="bg-red-500 h-full transition-all duration-700 hover:brightness-110" 
-                              style={{ width: `${c.inoperantesPercent}%` }}
-                              title={`${c.nome}: ${c.inoperantes} inoperantes (${c.inoperantesPercent}%)`}
-                            ></div>
-                          </div>
+                            className="bg-emerald-500 h-full transition-all duration-700 hover:brightness-110" 
+                            style={{ width: `${c.operantesPercent}%` }}
+                            title={`${c.nome}: ${c.operantes} operantes (${c.operantesPercent}%)`}
+                          ></div>
+                          <div 
+                            className="bg-red-500 h-full transition-all duration-700 hover:brightness-110" 
+                            style={{ width: `${c.inoperantesPercent}%` }}
+                            title={`${c.nome}: ${c.inoperantes} inoperantes (${c.inoperantesPercent}%)`}
+                          ></div>
                         </div>
                       </div>
                     ))}
