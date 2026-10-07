@@ -9,19 +9,22 @@ const xlsxRootPath = path.resolve(__dirname, '../base-de-dados.xlsx');
 
 const rawData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
 
-function normalizeDateStr(str) {
+function normalizeDateStr(str, loc = '') {
   if (!str || str === '-' || str.toLowerCase() === 'sem vistoria' || str.toLowerCase() === 'dados argos') {
     return str || '';
   }
 
   let s = String(str).trim().replace(/[,;]+$/, '').trim();
 
+  const dsc = String(loc).toUpperCase();
+  if (dsc.includes('LAGO SUL')) {
   // Caso específico das vistorias de Lago Sul que foram invertidas no histórico:
   // 10/06/2026 -> 06/10/2026 (outubro)
   s = s.replace(/\b10\/06\/2026\b/g, '06/10/2026');
   // 10/01/2026 -> 01/10/2026 (outubro)
   s = s.replace(/\b10\/01\/2026\b/g, '01/10/2026');
 
+  }
   // Normalizar separador de vírgula espúria: "06/10/2026, 09:58:48" -> "06/10/2026 09:58:48"
   s = s.replace(/(\d{2}\/\d{2}\/\d{4}),\s*(\d{2}:\d{2}(?::\d{2})?)/, '$1 $2');
 
@@ -32,17 +35,17 @@ let fixedCount = 0;
 
 const cleanedList = rawData.map(h => {
   const oldDt = h.datHoraUltimaVistoria;
-  const newDt = normalizeDateStr(oldDt);
+  const newDt = normalizeDateStr(oldDt, h.dscLocalidade);
   if (oldDt !== newDt) fixedCount++;
 
   h.datHoraUltimaVistoria = newDt;
-  h.datHoraVistoria = normalizeDateStr(h.datHoraVistoria);
+  h.datHoraVistoria = normalizeDateStr(h.datHoraVistoria, h.dscLocalidade);
 
   if (Array.isArray(h.HISTORICO_VISTORIAS)) {
     h.HISTORICO_VISTORIAS = h.HISTORICO_VISTORIAS.map(v => {
       return {
         ...v,
-        datHoraVistoria: normalizeDateStr(v.datHoraVistoria)
+        datHoraVistoria: normalizeDateStr(v.datHoraVistoria, h.dscLocalidade)
       };
     });
 

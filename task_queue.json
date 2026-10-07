@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-187",
+  "activeTaskId": "TASK-188",
   "queue": [
     {
       "id": "TASK-1",
@@ -1887,9 +1887,19 @@
       "seq": 187,
       "conversationId": "e0a3c5c3-e1c4-4942-ae44-cbf683f2fd69",
       "description": "Unificar formato de data dd/mm/aaaa e corrigir ordenacao de vistorias",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-06T20:09:23.117Z",
       "startedAt": "2026-10-06T20:10:15.198Z",
+      "completedAt": "2026-10-06T20:34:35.053Z"
+    },
+    {
+      "id": "TASK-188",
+      "seq": 188,
+      "conversationId": "b9403cbd-f206-4a63-be79-c0c6e2f9d750",
+      "description": "Fix date parsing corruption for Recanto das Emas and scope sanitize script",
+      "status": "running",
+      "createdAt": "2026-10-07T14:37:19.219Z",
+      "startedAt": "2026-10-07T14:37:28.670Z",
       "completedAt": null
     }
   ]
