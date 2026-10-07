@@ -527,7 +527,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
       html += `<li><strong>Ocupação Verticalizada / Comercial (Média e alta densidade):</strong> Raio regulamentar de <strong>600 metros</strong>.</li>`;
       html += `<li><strong>Ocupações Especiais (Hospitais, shoppings, alta carga de incêndio):</strong> Raio regulamentar de <strong>300 metros</strong>.</li>`;
       html += `</ul>`;
-      html += `<p><strong>Enquadramento e Critério de Adjacência:</strong> A localidade em análise classifica-se como <strong>${getOccupationName()}</strong>, estabelecendo um raio de proteção de <strong>${results.radius} metros</strong>. Adotam-se como hidrantes adjacentes com capacidade de salvaguarda mútua apenas os equipamentos situados a uma distância de até <strong>${results.radius} metros</strong> ($d \\le ${results.radius}\\text{ m}$) do hidrante avaliado, limite técnico de sobreposição de atendimento. Equipamentos que extrapolam este raio não asseguram a cobertura da área desassistida.</p>`;
+      html += `<p><strong>Enquadramento e Critério de Adjacência:</strong> A localidade em análise classifica-se como <strong>${getOccupationName()}</strong>, estabelecendo um raio de proteção de <strong>${results.radius} metros</strong>. Adotam-se como hidrantes adjacentes com capacidade de salvaguarda mútua apenas os equipamentos situados a uma distância de até <strong>${results.radius} metros</strong> (distância d ≤ ${results.radius} m) do hidrante avaliado, limite técnico de sobreposição de atendimento. Equipamentos que extrapolam este raio não asseguram a cobertura da área desassistida.</p>`;
 
       // Item IV - FATOS OBSERVADOS E EQUIPAMENTOS ADJACENTES
       html += `<p><strong>IV - FATOS OBSERVADOS E EQUIPAMENTOS ADJACENTES</strong></p>`;
@@ -1271,7 +1271,7 @@ const TechnicalStudyModal = ({ isOpen, onClose, hidrantes = [], currentUser }) =
                         <div>• <strong>Ocupações Especiais (Hospitais, shoppings, alta carga de incêndio):</strong> Raio regulamentar de <strong>300 metros</strong>.</div>
                       </div>
                       <p className="mt-2">
-                        <strong>Enquadramento e Critério de Adjacência:</strong> O setor sob exame classifica-se como <strong>{getOccupationName()}</strong>, estabelecendo um raio regulamentar de proteção de <strong>{results.radius} metros</strong>. Consideram-se hidrantes adjacentes com capacidade de salvaguarda mútua exclusivamente os equipamentos situados a uma distância de até <strong>{results.radius} metros</strong> ($d \le {results.radius}\text{ m}$) do hidrante avaliado, limite técnico de sobreposição de atendimento direto. Equipamentos que extrapolam este raio não asseguram a cobertura da área desassistida.
+                        <strong>Enquadramento e Critério de Adjacência:</strong> O setor sob exame classifica-se como <strong>{getOccupationName()}</strong>, estabelecendo um raio regulamentar de proteção de <strong>{results.radius} metros</strong>. Consideram-se hidrantes adjacentes com capacidade de salvaguarda mútua exclusivamente os equipamentos situados a uma distância de até <strong>{results.radius} metros</strong> (distância d ≤ {results.radius} m) do hidrante avaliado, limite técnico de sobreposição de atendimento direto. Equipamentos que extrapolam este raio não asseguram a cobertura da área desassistida.
                       </p>
                     </section>
 

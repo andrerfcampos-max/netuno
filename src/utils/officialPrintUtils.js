@@ -2686,7 +2686,7 @@ export const printTechnicalStudyReport = ({ studyData, calcResults, currentUser 
         <div>• <strong>Ocupações Especiais (Hospitais, shoppings, alta carga de incêndio):</strong> Raio regulamentar de <strong>300 metros</strong>.</div>
       </div>
       <p>
-        <strong>Enquadramento e Critério de Adjacência:</strong> O setor em análise classifica-se como <strong>${studyData.occupation}</strong>, correspondendo a um raio de proteção de <strong>${calcResults.radius} metros</strong>. São considerados hidrantes adjacentes com capacidade de salvaguarda mútua exclusivamente os equipamentos situados a uma distância de até <strong>${calcResults.radius} metros</strong> ($d \le ${calcResults.radius}\\text{ m}$) do hidrante avaliado, limite técnico de sobreposição direta de cobertura. Equipamentos além desse raio não garantem a proteção do ponto analisado.
+        <strong>Enquadramento e Critério de Adjacência:</strong> O setor em análise classifica-se como <strong>${studyData.occupation}</strong>, correspondendo a um raio de proteção de <strong>${calcResults.radius} metros</strong>. São considerados hidrantes adjacentes com capacidade de salvaguarda mútua exclusivamente os equipamentos situados a uma distância de até <strong>${calcResults.radius} metros</strong> (distância d ≤ ${calcResults.radius} m) do hidrante avaliado, limite técnico de sobreposição direta de cobertura. Equipamentos além desse raio não garantem a proteção do ponto analisado.
       </p>
 
       <div class="section-num">IV - Fatos Observados e Levantamento Espacial</div>
