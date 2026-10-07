@@ -388,6 +388,8 @@ export const printGeneralReport = ({
     `;
   }).join('');
 
+  const maxCityTotal = cityOperabilityStats.reduce((max, c) => Math.max(max, c.total || 0), 1);
+
   const multiCityHtml = (isMultiCity && cityOperabilityStats.length > 0) ? `
     <div class="section-block avoid-break">
       <div class="section-title">📊 Comparativo de Operacionalidade por Região Administrativa (RA)</div>
@@ -402,7 +404,9 @@ export const printGeneralReport = ({
           </tr>
         </thead>
         <tbody>
-          ${cityOperabilityStats.map(c => `
+          ${cityOperabilityStats.map(c => {
+            const barWidth = Math.max(6, ((c.total / maxCityTotal) * 100)).toFixed(1);
+            return `
             <tr>
               <td><strong>${c.nome}</strong></td>
               <td class="text-center">${c.total}</td>
@@ -410,12 +414,15 @@ export const printGeneralReport = ({
               <td class="text-center text-red"><strong>${c.inoperantes}</strong> (${c.inoperantesPercent}%)</td>
               <td>
                 <div class="bar-container">
-                  <div class="bar-fill bar-green" style="width: ${c.operantesPercent}%;"></div>
-                  <div class="bar-fill bar-red" style="width: ${c.inoperantesPercent}%;"></div>
+                  <div style="width: ${barWidth}%; height: 100%; display: flex;">
+                    <div class="bar-fill bar-green" style="width: ${c.operantesPercent}%;"></div>
+                    <div class="bar-fill bar-red" style="width: ${c.inoperantesPercent}%;"></div>
+                  </div>
                 </div>
               </td>
             </tr>
-          `).join('')}
+          `;
+          }).join('')}
         </tbody>
       </table>
     </div>
