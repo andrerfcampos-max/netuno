@@ -258,7 +258,8 @@ export const buildReportFileName = ({
   cidade = '',
   rasPresentes = '',
   activeFilters = null,
-  currentMission = null
+  currentMission = null,
+  currentData = []
 }) => {
   const parts = [prefix];
 
@@ -282,13 +283,17 @@ export const buildReportFileName = ({
   }
 
   if (cidadeStr) {
-    parts.push(cidadeStr.replace(/[^a-zA-Z0-9]/g, '_'));
+    const cleanCidade = cidadeStr.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '_');
+    parts.push(cleanCidade);
   }
 
   // 2. Missão (se ativa)
   if (currentMission?.name) {
-    const isPartial = Boolean(currentMission.selectedIds && currentMission.selectedIds.length > currentData.length);
-    parts.push(`Missao_${currentMission.name.replace(/[^a-zA-Z0-9]/g, '_')}${isPartial ? '_Parcial' : ''}`);
+    const totalPlanned = currentMission.selectedIds?.length || 0;
+    const completedCount = currentMission.completedIds?.length || (Array.isArray(currentData) ? currentData.length : 0);
+    const isPartial = Boolean(totalPlanned > 0 && completedCount < totalPlanned);
+    const cleanMission = currentMission.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '_');
+    parts.push(`Missao_${cleanMission}${isPartial ? '_Parcial' : ''}`);
   }
 
   // 3. Filtros aplicados
@@ -296,14 +301,36 @@ export const buildReportFileName = ({
     if (activeFilters.status && activeFilters.status !== 'Todos') {
       parts.push(activeFilters.status.replace(/[^a-zA-Z0-9]/g, '_'));
     }
-    if (activeFilters.periodo) {
-      parts.push(`Ano_${String(activeFilters.periodo).replace(/[^a-zA-Z0-9]/g, '_')}`);
+    if (activeFilters.periodo && String(activeFilters.periodo).trim() !== '') {
+      const periodoStr = String(activeFilters.periodo).trim();
+      if (periodoStr === 'hoje') {
+        parts.push('Hoje');
+      } else if (periodoStr === 'semana') {
+        parts.push('Esta_Semana');
+      } else if (periodoStr === 'mes') {
+        parts.push('Este_Mes');
+      } else if (periodoStr === 'ano_atual') {
+        parts.push(`Ano_${new Date().getFullYear()}`);
+      } else if (/^ano[_-]?\d{4}$/i.test(periodoStr)) {
+        const anoNum = periodoStr.replace(/[^0-9]/g, '');
+        parts.push(`Ano_${anoNum}`);
+      } else if (/^\d{4}$/.test(periodoStr)) {
+        parts.push(`Ano_${periodoStr}`);
+      } else if (periodoStr !== 'personalizado') {
+        // Remove "ano" duplicado caso já venha no início (ex: ano_..., ano-...)
+        const clean = periodoStr.replace(/^ano[_-]+/i, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '_');
+        if (clean) {
+          parts.push(`Ano_${clean}`);
+        }
+      }
     }
     if (activeFilters.problema && activeFilters.problema.trim()) {
-      parts.push(`Defeito_${activeFilters.problema.trim().replace(/[^a-zA-Z0-9]/g, '_')}`);
+      const cleanProb = activeFilters.problema.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '_');
+      parts.push(`Defeito_${cleanProb}`);
     }
     if (activeFilters.buscaGeral && activeFilters.buscaGeral.trim()) {
-      parts.push(`Busca_${activeFilters.buscaGeral.trim().replace(/[^a-zA-Z0-9]/g, '_')}`);
+      const cleanBusca = activeFilters.buscaGeral.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '_');
+      parts.push(`Busca_${cleanBusca}`);
     }
     if (activeFilters.dataInicio || activeFilters.dataFim) {
       const dIni = activeFilters.dataInicio ? activeFilters.dataInicio.replace(/[^0-9]/g, '') : '';
@@ -319,7 +346,13 @@ export const buildReportFileName = ({
   const day = String(d.getDate()).padStart(2, '0');
   parts.push(`${year}${month}${day}`);
 
-  return parts.filter(Boolean).join('_').replace(/_+/g, '_');
+  // Limpeza final contra repetições de "ano" ou "Ano" (ex: Ano_ano, ano_ano, etc.) e múltiplos underscores
+  return parts
+    .filter(Boolean)
+    .join('_')
+    .replace(/(?:^|_)(ano)[_-]+(ano)(?=[_-]|$)/gi, '_$1')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
 };
 
 /**
@@ -582,7 +615,8 @@ export const printGeneralReport = ({
     prefix: 'Relatorio_Geral_CBMDF',
     rasPresentes,
     activeFilters,
-    currentMission
+    currentMission,
+    currentData
   });
 
   const html = `
@@ -1444,7 +1478,8 @@ export const generateCaesbReportHtml = ({
     prefix: 'Relatorio_Vistoria_Fiscalizacao',
     rasPresentes,
     activeFilters,
-    currentMission
+    currentMission,
+    currentData: caesbData
   });
 
   const html = `
