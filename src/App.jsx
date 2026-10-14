@@ -33,7 +33,7 @@ import { extractProblemsList, isHidranteRemovido } from './utils/problemUtils';
 import { fixEncoding } from './utils/textUtils';
 import { getLastKnownLocation, startGlobalGeoTracking, subscribeLocation } from './utils/geoTracker';
 import { optimizeRouteEuclidean } from './utils/routeOptimization';
-import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent, translateId, isHydrantCompletedInMission } from './utils/idMapping';
+import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent, translateId, isHydrantCompletedInMission, getMissionProgressMetrics } from './utils/idMapping';
 import { getHydrantPhoto, preloadHydrantPhoto, preloadHydrantsList } from './utils/hydrantPhotoUtils';
 import { parseDate, formatDateOnly, formatDateTimeDisplay, getHydrantVistoriaDate } from './utils/dateUtils';
 
@@ -326,6 +326,10 @@ syncPreferences({ activeView: view });
   }, [currentMission, hidrantes]);
 
   const selectedMissionIds = useMemo(() => currentMission?.selectedIds || [], [currentMission?.selectedIds]);
+  
+  const activeMissionMetrics = useMemo(() => {
+    return getMissionProgressMetrics(currentMission, hidrantes);
+  }, [currentMission, hidrantes]);
   
   const completedMissionIds = useMemo(() => {
     if (!currentMission) return [];
@@ -2780,7 +2784,7 @@ syncPreferences({ filters: filters });
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
                   <span className="text-xs text-slate-200 truncate">
-                    Rota aberta em 2º plano: <strong className="text-emerald-300">{currentMission.name}</strong> ({selectedMissionIds.length} hidrantes)
+                    Rota aberta em 2º plano: <strong className="text-emerald-300">{currentMission.name}</strong> ({activeMissionMetrics.total} hidrantes)
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -2865,12 +2869,12 @@ syncPreferences({ filters: filters });
               className={`min-h-[38px] sm:min-h-[40px] py-1.5 px-2 border rounded-lg text-xs sm:text-sm font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center truncate ${
                 activeView === 'route' 
                   ? 'bg-emerald-600 border-emerald-500 text-white ring-2 ring-emerald-400/30' 
-                  : (selectedMissionIds.length === 0 
+                  : (activeMissionMetrics.total === 0 
                      ? 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-slate-200' 
                      : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-slate-200')
               }`}
             >
-              Rota de Missão ({selectedMissionIds.length})
+              Rota de Missão ({activeMissionMetrics.total})
             </button>
             {(currentUser?.role === 'gestor' || currentUser?.role === 'admin') && (
               <button 
@@ -3169,14 +3173,14 @@ syncPreferences({ filters: filters });
             className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all relative ${
               activeView === 'route' 
                 ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-400 font-bold' 
-                : (!activeMissionId || selectedMissionIds.length === 0 ? 'text-slate-400 hover:text-slate-200' : 'text-slate-300 hover:text-slate-200')
+                : (!activeMissionId || activeMissionMetrics.total === 0 ? 'text-slate-400 hover:text-slate-200' : 'text-slate-300 hover:text-slate-200')
             }`}
           >
             <Navigation size={20} className={activeView === 'route' ? 'text-emerald-400' : ''} />
             <span className="text-[10px] font-semibold mt-0.5">Rota de Missão</span>
-            {activeMissionId && selectedMissionIds.length > 0 && (
+            {activeMissionId && activeMissionMetrics.total > 0 && (
               <span className="absolute top-0.5 right-3 bg-emerald-500 text-slate-950 font-black text-[9px] px-1.5 py-0.2 rounded-full min-w-[16px] text-center shadow">
-                {selectedMissionIds.length}
+                {activeMissionMetrics.total}
               </span>
             )}
           </button>
@@ -3200,8 +3204,8 @@ syncPreferences({ filters: filters });
         <div className="flex flex-col">
           {activeMissionId && currentMission && (
             <div className="text-sm font-semibold text-slate-400">
-              <span className="text-emerald-400 font-bold">{selectedMissionIds.length}</span> hidrantes na {currentMission?.name} 
-              {completedMissionIds.length > 0 && ` (${completedMissionIds.length} concluídos)`}
+              <span className="text-emerald-400 font-bold">{activeMissionMetrics.total}</span> hidrantes na {currentMission?.name} 
+              {activeMissionMetrics.completed > 0 && ` (${activeMissionMetrics.completed} concluídos)`}
             </div>
           )}
           <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5 tracking-wide">

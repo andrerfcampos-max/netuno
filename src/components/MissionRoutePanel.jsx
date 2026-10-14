@@ -17,7 +17,7 @@ import {
   subscribeLocation, 
   setCachedLocation 
 } from '../utils/geoTracker';
-import { isHydrantInSet, getHydrantAllIds, translateId, areIdsEquivalent, isHydrantCompletedInMission } from '../utils/idMapping';
+import { isHydrantInSet, getHydrantAllIds, translateId, areIdsEquivalent, isHydrantCompletedInMission, getMissionProgressMetrics } from '../utils/idMapping';
 import { getHydrantPhoto, getHydrantHdPhoto, preloadHydrantsList } from '../utils/hydrantPhotoUtils';
 import { parseDateToTimestamp, formatDateOnly, getHydrantVistoriaDate } from '../utils/dateUtils';
 
@@ -144,7 +144,7 @@ const MissionRoutePanel = ({
 
   // Inicializa a rota respeitando a ordenação prévia salva na missão, se houver
   const [pendingRoute, setPendingRoute] = useState(() => {
-    if (!currentMission?.orderedIds || currentMission.orderedIds.length === 0) return [];
+    if (!currentMission?.orderedIds || currentMission.orderedIds.length === 0) return pendingHydrants;
     const orderedMap = new Map();
     currentMission.orderedIds.forEach((id, idx) => {
       const s = String(id).trim();
@@ -202,7 +202,11 @@ const MissionRoutePanel = ({
 
   // Motor Central de Otimização Tática (0ms Instantâneo Euclidiano + Refinamento OSRM ATSP)
   const runRouteOptimization = async (overrideLat = null, overrideLng = null, isSilent = true) => {
-    if (pendingHydrants.length === 0) return;
+    if (pendingHydrants.length === 0) {
+      setPendingRoute([]);
+      setIsOptimizing(false);
+      return;
+    }
     setIsOptimizing(true);
 
     let anchorLat = overrideLat;
@@ -486,8 +490,23 @@ const MissionRoutePanel = ({
     }
   };
 
+  // Métricas oficiais unificadas da missão (100% idênticas à Central de Missões)
+  const { total: totalCount, completed: completedCount, percent: progressPercent, isCompleted: isMissionFullyCompleted } = useMemo(() => {
+    return getMissionProgressMetrics(currentMission, hidrantes);
+  }, [currentMission, hidrantes]);
+
+  // Lista de hidrantes pendentes ordenada: utiliza pendingRoute se válida e sincronizada; fallback em pendingHydrants
+  const displayedPendingRoute = useMemo(() => {
+    if (pendingHydrants.length === 0) return [];
+    if (pendingRoute.length === pendingHydrants.length) {
+      const pendingKeys = new Set(pendingHydrants.map(h => String(h.codHidrante || h._internalId || h.nomHidrante)));
+      const allMatch = pendingRoute.every(h => pendingKeys.has(String(h.codHidrante || h._internalId || h.nomHidrante)));
+      if (allMatch) return pendingRoute;
+    }
+    return pendingHydrants;
+  }, [pendingRoute, pendingHydrants]);
+
   const handleShareWhatsApp = () => {
-    const totalCount = completedHydrants.length + pendingRoute.length;
     if (totalCount === 0) return;
     
     const baseUrl = window.location.origin;
@@ -496,7 +515,7 @@ const MissionRoutePanel = ({
     if (missionId) {
       magicLink = `${baseUrl}/?m=${encodeURIComponent(missionId)}`;
     } else {
-      const allIds = [...pendingRoute, ...completedHydrants].map(h => h.nomHidrante || h.codHidrante).filter(Boolean);
+      const allIds = [...displayedPendingRoute, ...completedHydrants].map(h => h.nomHidrante || h.codHidrante).filter(Boolean);
       magicLink = `${baseUrl}/?ds=${allIds.slice(0, 20).join(',')}`;
     }
     
@@ -516,7 +535,7 @@ const MissionRoutePanel = ({
     let text = `🚒 *NETUNO - STATUS DE MISSÃO*\n\n`;
     text += `📋 *Missão:* ${missionName}\n`;
     text += `👤 *Vistoriador:* ${vistoriadorText}\n`;
-    text += `📊 *Progresso:* ${completedHydrants.length}/${totalCount} Concluídos (${Math.round((completedHydrants.length / totalCount) * 100)}%)\n\n`;
+    text += `📊 *Progresso:* ${completedCount}/${totalCount} Concluídos (${progressPercent}%)\n\n`;
     
     if (completedHydrants.length > 0) {
       text += `✅ *CONCLUÍDOS (${completedHydrants.length}):*\n`;
@@ -530,9 +549,9 @@ const MissionRoutePanel = ({
       text += `\n`;
     }
     
-    if (pendingRoute.length > 0) {
-      text += `⏳ *FALTANTES (${pendingRoute.length}):*\n`;
-      pendingRoute.forEach(h => {
+    if (displayedPendingRoute.length > 0) {
+      text += `⏳ *FALTANTES (${displayedPendingRoute.length}):*\n`;
+      displayedPendingRoute.forEach(h => {
         const id = h.nomHidrante || h.codHidrante;
         const end = h.dscEndereco ? ` - ${h.dscEndereco}` : (h.dscLocalidade ? ` - ${h.dscLocalidade}` : '');
         text += `• ${id}${end}\n`;
@@ -569,10 +588,7 @@ const MissionRoutePanel = ({
     }
   };
 
-  const totalCount = completedHydrants.length + pendingRoute.length;
-  const completedCount = completedHydrants.length;
-  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const currentTarget = pendingRoute.length > 0 ? pendingRoute[0] : null;
+  const currentTarget = displayedPendingRoute.length > 0 ? displayedPendingRoute[0] : null;
 
   const renderHydrantItem = (h, index, isCompleted) => {
     const id = h.codHidrante || h.nomHidrante;
@@ -1072,9 +1088,9 @@ const MissionRoutePanel = ({
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
-            {pendingRoute.length > 0 && (
+            {displayedPendingRoute.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                {pendingRoute.map((h, index) => renderHydrantItem(h, index, false))}
+                {displayedPendingRoute.map((h, index) => renderHydrantItem(h, index, false))}
               </div>
             )}
 
@@ -1088,7 +1104,7 @@ const MissionRoutePanel = ({
               </div>
             )}
             
-            {pendingRoute.length === 0 && completedHydrants.length > 0 && (
+            {pendingHydrants.length === 0 && completedHydrants.length > 0 && (
                <div className="p-4 text-center text-emerald-300 font-black bg-emerald-950/60 rounded-xl border border-emerald-500/60 mt-2 text-sm shadow-lg flex flex-col items-center gap-1 animate-fadeIn">
                  <CheckCircle2 size={32} className="text-emerald-400 animate-bounce" />
                  <span>🎉 Missão 100% Concluída!</span>

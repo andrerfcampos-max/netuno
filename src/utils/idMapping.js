@@ -295,6 +295,85 @@ export const isHydrantCompletedInMission = (hydrant, mission, localChanges = nul
   return false;
 };
 
+/**
+ * Calcula com precisão unificada o progresso de uma missão
+ * (total de hidrantes, concluídos, pendentes, percentual e status de conclusão).
+ * Garante que Central de Missões, Rota de Missão e Relatórios exibam rigorosamente
+ * os mesmos números, eliminando discrepâncias por estados locais ou IDs parciais.
+ *
+ * @param {Object} mission Objeto da missão
+ * @param {Array<Object>} [hidrantes] Catálogo completo de hidrantes da aplicação
+ * @param {Object} [localChanges] Mutações locais offline (opcional)
+ * @returns {{ total: number, completed: number, pending: number, percent: number, isCompleted: boolean }}
+ */
+export const getMissionProgressMetrics = (mission, hidrantes = [], localChanges = null) => {
+  if (!mission) {
+    return { total: 0, completed: 0, pending: 0, percent: 0, isCompleted: false };
+  }
+
+  const selectedIds = Array.isArray(mission.selectedIds) ? mission.selectedIds : [];
+  if (selectedIds.length === 0) {
+    return { total: 0, completed: 0, pending: 0, percent: 0, isCompleted: false };
+  }
+
+  const completedIds = Array.isArray(mission.completedIds) ? mission.completedIds : [];
+  const completedIdsSet = new Set(completedIds.map(id => String(id).trim()));
+
+  // 1. Quando hidrantes está disponível, calcula baseado nos hidrantes físicos reais da missão
+  if (Array.isArray(hidrantes) && hidrantes.length > 0) {
+    const selectedIdsSet = new Set(selectedIds.map(id => String(id).trim()));
+    const missionHydrants = hidrantes.filter(h => isHydrantInSet(h, selectedIdsSet));
+
+    if (missionHydrants.length > 0) {
+      let completedCount = 0;
+      missionHydrants.forEach(h => {
+        if (
+          isHydrantInSet(h, completedIdsSet) || 
+          isHydrantCompletedInMission(h, mission, localChanges)
+        ) {
+          completedCount++;
+        }
+      });
+
+      const total = missionHydrants.length;
+      const completed = Math.min(completedCount, total);
+      const pending = Math.max(0, total - completed);
+      const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+      const isCompleted = total > 0 && completed >= total;
+
+      return {
+        total,
+        completed,
+        pending,
+        percent,
+        isCompleted
+      };
+    }
+  }
+
+  // 2. Fallback caso a lista de hidrantes ainda não tenha sido carregada (apenas IDs)
+  let fallbackCompleted = 0;
+  selectedIds.forEach(sId => {
+    if (completedIds.some(cId => areIdsEquivalent(cId, sId))) {
+      fallbackCompleted++;
+    }
+  });
+
+  const total = selectedIds.length;
+  const completed = Math.min(fallbackCompleted, total);
+  const pending = Math.max(0, total - completed);
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const isCompleted = total > 0 && completed >= total;
+
+  return {
+    total,
+    completed,
+    pending,
+    percent,
+    isCompleted
+  };
+};
+
 export default {
   translateId,
   normalizeCode,
@@ -304,5 +383,7 @@ export default {
   parseInspectionDate,
   getHydrantLatestInspectionDate,
   isSameCalendarDay,
-  isHydrantCompletedInMission
+  isHydrantCompletedInMission,
+  getMissionProgressMetrics
 };
+

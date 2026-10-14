@@ -4,18 +4,10 @@ import { createNewFolder } from '../utils/storage';
 import { syncMissionToCloud, syncFolderToCloud, syncUserPreferencesToCloud, fetchUserPreferencesFromCloud } from '../services/syncService';
 import { printMissionDraft } from '../utils/draftPrintUtils';
 import { executePrintHtml } from '../utils/officialPrintUtils';
-import { areIdsEquivalent } from '../utils/idMapping';
-
-const countCompletedInMission = (m) => {
-  if (!m) return 0;
-  const sel = m.selectedIds || [];
-  const comp = m.completedIds || [];
-  if (sel.length === 0 || comp.length === 0) return 0;
-
-  return sel.filter(sId => comp.some(cId => areIdsEquivalent(cId, sId))).length;
-};
+import { areIdsEquivalent, getMissionProgressMetrics } from '../utils/idMapping';
 
 const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, hidrantes = [], onClose, onOpenMission, onCloseMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser, isEmbedded = false }) => {
+  const getMissionMetrics = (m) => getMissionProgressMetrics(m, hidrantes);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [activeTab, setActiveTab] = useState('todas'); // todas, nao_iniciadas, em_andamento, finalizadas, dashboard_comando
   const [searchTerm, setSearchTerm] = useState('');
@@ -142,10 +134,11 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
       let qConcluidas = 0;
 
       const missionsDetail = fMissions.map(m => {
-        const total = (m.selectedIds || []).length;
-        const completed = countCompletedInMission(m);
-        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-        const status = total > 0 && completed >= total ? 'concluida' : completed > 0 ? 'em_andamento' : 'nao_iniciada';
+        const metrics = getMissionMetrics(m);
+        const total = metrics.total;
+        const completed = metrics.completed;
+        const percent = metrics.percent;
+        const status = metrics.isCompleted ? 'concluida' : completed > 0 ? 'em_andamento' : 'nao_iniciada';
         
         qHidrantes += total;
         qConcluidos += completed;
@@ -236,9 +229,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
   displayFolders = sortFoldersWithFavorite(displayFolders, defaultFolderId);
 
   const filteredMissions = displayMissions.filter(m => {
-    const total = (m.selectedIds || []).length;
-    const completed = countCompletedInMission(m);
-    const isCompleted = total > 0 && completed >= total;
+    const { total, completed, isCompleted } = getMissionMetrics(m);
     const isNotStarted = completed === 0;
     const isPartial = !isNotStarted && !isCompleted;
 
@@ -998,10 +989,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
 
           {activeTab !== 'dashboard_comando' && filteredMissions.map(mission => {
             const isOpen = (mission.id === activeMissionId);
-            const total = (mission.selectedIds || []).length;
-            const completed = countCompletedInMission(mission);
-            const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
-            const isCompleted = total > 0 && total === completed;
+            const { total, completed, percent: progress, isCompleted } = getMissionMetrics(mission);
 
             return (
               <div 
