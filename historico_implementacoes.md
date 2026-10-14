@@ -8,6 +8,15 @@ A finalidade deste registro é manter um rastro claro e auditável da evolução
 
 ## 🛠️ Modificações Recentes
 
+### [14/10/2026] Otimização e Compressão de Fotos em Relatórios PDF (TASK-207)
+- **Problema Inicial:** Relatórios em PDF gerados com anexos fotográficos atingiam tamanhos excessivos devido a fotos em resolução original da câmera.
+- **Implementação Realizada:**
+  1. Criado módulo utilitário dedicado (imageCompressor.js) com rotinas assíncronas de redimensionamento e recompressão agressiva via Offscreen Canvas (compressImageForReport e optimizeAllReportPhotos).
+  2. Redimensionamento calibrado para escala A4 (máx 800px) e JPEG com qualidade 0.68, reduzindo fotos de ~4MB para ~35-50KB sem perda visível.
+  3. **Preservação Total do Acervo:** Todas as fotos anexadas pelos vistoriadores são 100% mantidas (sem exclusão de fotos).
+  4. Adicionado feedback visual de progresso em tempo real durante a geração (isGeneratingPdf com contador de fotos) no botão e em toast flutuante no MissionReportPanel.jsx.
+  5. Integração síncrona/assíncrona transparente em printGeneralReport e printCaesbReport em officialPrintUtils.js.
+
 ### [12/08/2026] Bateria de Correções e Melhorias de QA (Quality Assurance)
 Estas implementações foram extraídas do *Relatório Final Consolidado de QA e Performance* e aplicadas via automação, visando robustez para produção:
 

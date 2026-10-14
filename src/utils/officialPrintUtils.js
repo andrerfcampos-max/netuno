@@ -3,7 +3,8 @@ import { normalizeRAName } from './raList';
 import { sanitizeProblem, isHidranteRemovido, extractProblemsList } from './problemUtils';
 import { getHydrantPhoto } from './hydrantPhotoUtils';
 import { formatDateOnly, formatDateTimeDisplay } from './dateUtils';
-export { formatDateOnly };
+import { optimizeAllReportPhotos } from './imageCompressor';
+export { formatDateOnly, optimizeAllReportPhotos };
 
 /**
  * Utilitário de Geração e Impressão de Documentos Oficiais em Formato A4
@@ -358,8 +359,8 @@ export const buildReportFileName = ({
 /**
  * 1. IMPRESSÃO DO RELATÓRIO GERAL (CBMDF)
  */
-export const printGeneralReport = ({
-  currentData = [],
+export const printGeneralReport = async ({
+  currentData: rawData = [],
   currentMission = null,
   rasPresentes = '',
   currentUser = null,
@@ -373,8 +374,12 @@ export const printGeneralReport = ({
   inoperantesPercent = 0,
   topDefeitos = [],
   yearStats = [],
-  activeFilters = null
+  activeFilters = null,
+  onProgress = null
 }) => {
+  // Otimização prévia de fotos para garantir PDF ultraleve mantendo todas as fotos anexadas
+  const currentData = await optimizeAllReportPhotos(rawData, onProgress);
+
   const nowStr = formatDateTime(new Date());
   const emissorNome = currentUser?.nome || 'Militar Responsável';
   const emissorMatricula = currentUser?.matricula ? `Matrícula: ${currentUser.matricula}` : '';
@@ -2029,8 +2034,15 @@ export const generateCaesbReportHtml = ({
   };
 };
 
-export const printCaesbReport = (params) => {
-  const { html, docTitle } = generateCaesbReportHtml(params);
+export const printCaesbReport = async (params) => {
+  let optimizedData = params.currentData;
+  if (Array.isArray(params.currentData)) {
+    optimizedData = await optimizeAllReportPhotos(params.currentData, params.onProgress);
+  }
+  const { html, docTitle } = generateCaesbReportHtml({
+    ...params,
+    currentData: optimizedData
+  });
   executePrintHtml(html, docTitle);
 };
 

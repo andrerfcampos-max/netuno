@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown, Share2, ChevronDown, Check, FileText, ExternalLink } from 'lucide-react';
+import { X, Maximize2, Minimize2, Printer, Copy, MessageCircle, Download, FileSpreadsheet, Building2, ShieldHalf, ArrowUp, ArrowDown, Share2, ChevronDown, Check, FileText, ExternalLink, Loader2 } from 'lucide-react';
 import { extractProblemsList, sanitizeProblem, isHidranteRemovido } from '../utils/problemUtils';
 import { normalizeRAName, getRARoman } from '../utils/raList';
 import { fixEncoding } from '../utils/textUtils';
@@ -22,6 +22,8 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
   const [reportType, setReportType] = useState(() => {
     return localStorage.getItem('lastReportType') || 'interno';
   });
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfProgressStatus, setPdfProgressStatus] = useState('');
 
   const isGestorOrAdmin = currentUser?.role === 'admin' || currentUser?.role === 'gestor';
   const isVistoriador = currentUser?.role === 'vistoriador';
@@ -306,38 +308,55 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       .map(([nome, count]) => ({ nome, count, percent: (count / max) * 100 }));
   }, [currentData]);
 
-  const handlePrint = () => {
-    if (reportType === 'caesb') {
-      printCaesbReport({
-        currentData,
-        rasPresentes,
-        currentMission,
-        currentUser,
-        isMultiCity,
-        cityOperabilityStats,
-        topDefeitosComCidades,
-        stats: { total, operantes, inoperantes },
-        topDefeitos,
-        activeFilters
-      });
-    } else {
-      printGeneralReport({
-        currentData,
-        currentMission,
-        rasPresentes,
-        currentUser,
-        isMultiCity,
-        cityOperabilityStats,
-        topDefeitosComCidades,
-        total,
-        operantes,
-        operantesPercent,
-        inoperantes,
-        inoperantesPercent,
-        topDefeitos,
-        yearStats,
-        activeFilters
-      });
+  const handlePrint = async () => {
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+    setPdfProgressStatus('Iniciando processamento...');
+
+    const handleProgress = (current, totalUrls) => {
+      setPdfProgressStatus(`Otimizando fotos: ${current}/${totalUrls}`);
+    };
+
+    try {
+      if (reportType === 'caesb') {
+        await printCaesbReport({
+          currentData,
+          rasPresentes,
+          currentMission,
+          currentUser,
+          isMultiCity,
+          cityOperabilityStats,
+          topDefeitosComCidades,
+          stats: { total, operantes, inoperantes },
+          topDefeitos,
+          activeFilters,
+          onProgress: handleProgress
+        });
+      } else {
+        await printGeneralReport({
+          currentData,
+          currentMission,
+          rasPresentes,
+          currentUser,
+          isMultiCity,
+          cityOperabilityStats,
+          topDefeitosComCidades,
+          total,
+          operantes,
+          operantesPercent,
+          inoperantes,
+          inoperantesPercent,
+          topDefeitos,
+          yearStats,
+          activeFilters,
+          onProgress: handleProgress
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao gerar relatório PDF:', err);
+    } finally {
+      setIsGeneratingPdf(false);
+      setPdfProgressStatus('');
     }
   };
 
@@ -982,11 +1001,21 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
               {/* Botão 1: PDF */}
               <button 
                 onClick={() => { handlePrint(); setIsExportMenuOpen(false); }}
-                className="flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left hover:bg-slate-700 text-white font-semibold transition-colors"
+                disabled={isGeneratingPdf}
+                className={`flex items-center gap-2.5 sm:gap-3 w-full px-3.5 sm:px-4 py-2.5 text-left font-semibold transition-colors ${isGeneratingPdf ? 'bg-slate-700/60 text-slate-400 cursor-not-allowed' : 'hover:bg-slate-700 text-white cursor-pointer'}`}
                 title={reportType === 'caesb' ? 'Baixar PDF CAESB diretamente' : 'Baixar PDF oficial diretamente'}
               >
-                <Download size={16} className="text-cyan-400 shrink-0" />
-                <span>{reportType === 'caesb' ? 'Baixar PDF CAESB' : 'Baixar PDF'}</span>
+                {isGeneratingPdf ? (
+                  <Loader2 size={16} className="text-cyan-400 shrink-0 animate-spin" />
+                ) : (
+                  <Download size={16} className="text-cyan-400 shrink-0" />
+                )}
+                <div className="flex flex-col">
+                  <span>{isGeneratingPdf ? 'Otimizando fotos...' : (reportType === 'caesb' ? 'Baixar PDF CAESB' : 'Baixar PDF')}</span>
+                  {isGeneratingPdf && pdfProgressStatus && (
+                    <span className="text-[10px] text-cyan-300 font-mono font-normal">{pdfProgressStatus}</span>
+                  )}
+                </div>
               </button>
 
               {/* Botão 2: Copiar Minuta SEI (CAESB) ou Copiar Dados (Interno) */}
@@ -1072,6 +1101,17 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
           <ArrowDown size={20} />
         </button>
       </div>
+
+      {/* TOAST FLUTUANTE DE STATUS DE GERAÇÃO DO PDF */}
+      {isGeneratingPdf && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[200] bg-slate-900/95 border border-cyan-500/80 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur animate-bounce-subtle pointer-events-none">
+          <Loader2 size={18} className="text-cyan-400 animate-spin shrink-0" />
+          <div className="flex flex-col text-xs">
+            <span className="font-bold text-cyan-200">Gerando Relatório PDF Ultraleve</span>
+            <span className="text-[11px] text-slate-300 font-mono">{pdfProgressStatus || 'Otimizando imagens...'}</span>
+          </div>
+        </div>
+      )}
 
       {/* TOOLBAR SUPERIOR NO PRINT */}
       <div className={`flex justify-between items-center mb-4 pb-2 border-b border-slate-700 no-print px-2 lg:px-0 gap-3 ${isMaximized ? 'sticky top-0 z-[110] bg-slate-900/95 backdrop-blur-sm pt-3 pb-3 shadow-md' : 'flex-col lg:flex-row items-start lg:items-center'}`}>
