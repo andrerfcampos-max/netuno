@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-198",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -1997,9 +1997,19 @@
       "seq": 198,
       "conversationId": "dd39cf91-18a3-480b-b440-26749cc16da2",
       "description": "Nome da cidade no arquivo CSV de exportacao",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-14T16:24:44.155Z",
       "startedAt": "2026-10-14T16:37:56.644Z",
+      "completedAt": "2026-10-14T16:43:25.435Z"
+    },
+    {
+      "id": "TASK-199",
+      "seq": 199,
+      "conversationId": "288b3f93-bd27-4b9c-84e7-0a1c6e2ebfea",
+      "description": "Vistoria Honorato 07/10/2026",
+      "status": "queued",
+      "createdAt": "2026-10-14T16:41:23.408Z",
+      "startedAt": null,
       "completedAt": null
     }
   ]
