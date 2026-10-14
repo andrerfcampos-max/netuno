@@ -429,7 +429,9 @@ const RouteNearbyAutoFitter = ({
   userLocation, 
   centerPosition, 
   selectedHydrant,
-  activeView
+  activeView,
+  activeMission = null,
+  onDeselectHydrant = null
 }) => {
   const map = useMap();
   const lastTriggerRef = useRef(null);
@@ -474,7 +476,7 @@ const RouteNearbyAutoFitter = ({
       let isUserNearby = false;
       if (hasUserLoc) {
         const minDistance = Math.min(...targets.map(h => 
-          Math.hypot(h.numLatitude - userLoc.lat, h.numLongitude - userLoc.lng)
+          Math.hypot(parseFloat(h.numLatitude) - userLoc.lat, parseFloat(h.numLongitude) - userLoc.lng)
         ));
         isUserNearby = minDistance < 0.08;
       }
@@ -483,10 +485,14 @@ const RouteNearbyAutoFitter = ({
       if (hasUserLoc && isUserNearby) {
         // Ordena os hidrantes da rota pela proximidade euclidiana com a posição do usuário
         const sortedByDistance = [...targets].sort((a, b) => {
-          const dLatA = a.numLatitude - userLoc.lat;
-          const dLngA = a.numLongitude - userLoc.lng;
-          const dLatB = b.numLatitude - userLoc.lat;
-          const dLngB = b.numLongitude - userLoc.lng;
+          const latA = parseFloat(a.numLatitude);
+          const lngA = parseFloat(a.numLongitude);
+          const latB = parseFloat(b.numLatitude);
+          const lngB = parseFloat(b.numLongitude);
+          const dLatA = latA - userLoc.lat;
+          const dLngA = lngA - userLoc.lng;
+          const dLatB = latB - userLoc.lat;
+          const dLngB = lngB - userLoc.lng;
           return (dLatA * dLatA + dLngA * dLngA) - (dLatB * dLatB + dLngB * dLngB);
         });
 
@@ -496,12 +502,12 @@ const RouteNearbyAutoFitter = ({
         // Enquadra a posição do usuário + os 4 ou 5 hidrantes mais próximos
         points = [
           [userLoc.lat, userLoc.lng],
-          ...nearest5.map(h => [h.numLatitude, h.numLongitude])
+          ...nearest5.map(h => [parseFloat(h.numLatitude), parseFloat(h.numLongitude)])
         ];
       } else {
         // Militar longe (> 8km) ou sem GPS: enquadra diretamente os pinos da rota
         const targetCount = targets.length <= 8 ? targets.length : 6;
-        points = targets.slice(0, targetCount).map(h => [h.numLatitude, h.numLongitude]);
+        points = targets.slice(0, targetCount).map(h => [parseFloat(h.numLatitude), parseFloat(h.numLongitude)]);
       }
 
       if (points.length === 0) return;
@@ -540,11 +546,13 @@ const RouteNearbyAutoFitter = ({
 
   // Dispara quando routeFitTrigger for acionado OU quando activeView virar 'map' OU hidrantes da missão carregarem
   useEffect(() => {
-    if (centerPosition || selectedHydrant) return;
-
     const hasNewTrigger = Boolean(routeFitTrigger && routeFitTrigger !== lastTriggerRef.current);
     if (hasNewTrigger) {
+      lastTriggerRef.current = routeFitTrigger;
       pendingFitRef.current = true;
+      if (onDeselectHydrant) {
+        onDeselectHydrant();
+      }
     }
 
     if (!pendingFitRef.current) return;
@@ -555,18 +563,17 @@ const RouteNearbyAutoFitter = ({
     // Se ainda não tiver hidrantes da missão carregados, aguarda
     if (!activeMissionHydrants || activeMissionHydrants.length === 0) return;
 
-    if (userLocation && typeof userLocation.lat === 'number') {
+    // Se não for um gatilho explícito de foco, não força ajuste caso haja hidrante selecionado ou centerPosition
+    if (!hasNewTrigger && (centerPosition || selectedHydrant)) return;
+
+    if (userLocation && typeof userLocation.lat === 'number' && !isNaN(userLocation.lat)) {
       const cleanup = executeFit(userLocation);
       return cleanup;
     } else {
-      const timer = setTimeout(() => {
-        if (pendingFitRef.current && activeView === 'map') {
-          executeFit(null);
-        }
-      }, 1500);
-      return () => clearTimeout(timer);
+      const cleanup = executeFit(null);
+      return cleanup;
     }
-  }, [routeFitTrigger, activeView, centerPosition, selectedHydrant, activeMissionHydrants, completedMissionIds, userLocation]);
+  }, [routeFitTrigger, activeView, centerPosition, selectedHydrant, activeMissionHydrants, completedMissionIds, userLocation, activeMission]);
 
   return null;
 };
@@ -639,7 +646,16 @@ const UserLocationTracker = ({ userLocation, centerPosition, selectedHydrant, ha
   return null;
 };
 
-const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocusRoute, showPinCodes, onTogglePinCodes, validHidrantes = [] }) => {
+const TacticalMapControls = ({ 
+  userLocation, 
+  isSheetOpen, 
+  hasActiveRoute, 
+  onFocusRoute, 
+  showPinCodes, 
+  onTogglePinCodes, 
+  validHidrantes = [],
+  onDeselectHydrant = null
+}) => {
   const map = useMap();
   const [isLocating, setIsLocating] = useState(false);
 
@@ -678,11 +694,19 @@ const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocu
   const handleFitAllHydrants = (e) => {
     e.stopPropagation();
     try {
+      if (onDeselectHydrant) onDeselectHydrant();
       if (!validHidrantes || validHidrantes.length === 0) {
         alert('Nenhum hidrante plotado para enquadrar.');
         return;
       }
-      const coords = validHidrantes.map(h => [h.numLatitude, h.numLongitude]);
+      const coords = validHidrantes
+        .map(h => [parseFloat(h.numLatitude), parseFloat(h.numLongitude)])
+        .filter(c => !isNaN(c[0]) && !isNaN(c[1]));
+
+      if (coords.length === 0) {
+        alert('Nenhum hidrante com coordenadas válidas para enquadrar.');
+        return;
+      }
       if (coords.length === 1) {
         map.setView(coords[0], 16, { animate: true });
       } else {
@@ -705,6 +729,8 @@ const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocu
   const handleFitUserAndHydrants = (e) => {
     e.stopPropagation();
     try {
+      if (onDeselectHydrant) onDeselectHydrant();
+
       if (hasActiveRoute && onFocusRoute) {
         onFocusRoute();
         return;
@@ -728,17 +754,24 @@ const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocu
       }
 
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      const parsedHidrantes = validHidrantes
+        .map(h => ({
+          lat: parseFloat(h.numLatitude),
+          lng: parseFloat(h.numLongitude)
+        }))
+        .filter(h => !isNaN(h.lat) && !isNaN(h.lng));
+
       let targetCoords = [];
 
-      if (validHidrantes.length <= 10) {
-        targetCoords = validHidrantes.map(h => [h.numLatitude, h.numLongitude]);
+      if (parsedHidrantes.length <= 10) {
+        targetCoords = parsedHidrantes.map(h => [h.lat, h.lng]);
       } else {
-        const sorted = [...validHidrantes].sort((a, b) => {
-          const dA = Math.hypot(a.numLatitude - userLocation.lat, a.numLongitude - userLocation.lng);
-          const dB = Math.hypot(b.numLatitude - userLocation.lat, b.numLongitude - userLocation.lng);
+        const sorted = [...parsedHidrantes].sort((a, b) => {
+          const dA = Math.hypot(a.lat - userLocation.lat, a.lng - userLocation.lng);
+          const dB = Math.hypot(b.lat - userLocation.lat, b.lng - userLocation.lng);
           return dA - dB;
         });
-        targetCoords = sorted.slice(0, 6).map(h => [h.numLatitude, h.numLongitude]);
+        targetCoords = sorted.slice(0, 6).map(h => [h.lat, h.lng]);
       }
 
       const points = [
@@ -770,19 +803,19 @@ const TacticalMapControls = ({ userLocation, isSheetOpen, hasActiveRoute, onFocu
         <button
           type="button"
           onClick={handleFitUserAndHydrants}
-          title={hasActiveRoute ? "Focar na sua posição e na rota da missão" : "Enquadrar sua localização e os hidrantes mais próximos"}
+          title={hasActiveRoute ? "Focar na rota da missão e hidrantes mais próximos" : "Focar na sua posição e nos hidrantes mais próximos"}
           className="p-2.5 sm:p-3 bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 border border-cyan-400/80 hover:border-cyan-300 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer backdrop-blur-md group"
         >
           <Navigation size={20} className="text-cyan-300 group-hover:text-cyan-200 transition-transform group-hover:rotate-12" />
         </button>
       )}
 
-      {/* Botão Tático: Ver Todos os Hidrantes Plotados (Enquadrar Cidade) */}
+      {/* Botão Tático: Ver Todos os Hidrantes Plotados (Enquadrar Cidade / Rota) */}
       {hasHydrants && (
         <button
           type="button"
           onClick={handleFitAllHydrants}
-          title="Ver todos os hidrantes plotados (Enquadrar cidade)"
+          title={hasActiveRoute ? "Focar em todos os hidrantes da missão" : "Focar em todos os hidrantes plotados (Enquadrar cidade)"}
           className="p-2.5 sm:p-3 bg-slate-900/90 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 border border-emerald-500/60 hover:border-emerald-400 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer backdrop-blur-md group"
         >
           <Focus size={20} className="text-emerald-400 group-hover:text-emerald-300 transition-transform group-hover:scale-110" />
@@ -1331,7 +1364,11 @@ const MapComponent = ({
             {onTriggerRouteFit && (
               <button
                 type="button"
-                onClick={onTriggerRouteFit}
+                onClick={() => {
+                  setSelectedHydrant(null);
+                  if (onDeselectHydrant) onDeselectHydrant();
+                  onTriggerRouteFit();
+                }}
                 className="hidden xs:flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer active:scale-95"
                 title="Centralizar em você e nos hidrantes mais próximos da rota"
               >
@@ -1400,6 +1437,11 @@ const MapComponent = ({
           centerPosition={centerPosition} 
           selectedHydrant={selectedHydrant} 
           activeView={activeView}
+          activeMission={activeMission}
+          onDeselectHydrant={() => {
+            setSelectedHydrant(null);
+            if (onDeselectHydrant) onDeselectHydrant();
+          }}
         />
         <MapMemory currentUser={currentUser} />
         <MapClickHandler selectedHydrant={selectedHydrant} onSelectHydrant={handleCloseHydrant} />
@@ -1508,6 +1550,10 @@ const MapComponent = ({
           isSheetOpen={Boolean(selectedHydrant)} 
           hasActiveRoute={hasActiveRoute}
           onFocusRoute={() => {
+            setSelectedHydrant(null);
+            if (onDeselectHydrant) {
+              onDeselectHydrant();
+            }
             if (onTriggerRouteFit) {
               onTriggerRouteFit();
             }
@@ -1515,6 +1561,12 @@ const MapComponent = ({
           showPinCodes={showPinCodes}
           onTogglePinCodes={handleTogglePinCodes}
           validHidrantes={validHidrantes}
+          onDeselectHydrant={() => {
+            setSelectedHydrant(null);
+            if (onDeselectHydrant) {
+              onDeselectHydrant();
+            }
+          }}
         />
       </MapContainer>
 

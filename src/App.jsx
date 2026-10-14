@@ -2669,7 +2669,10 @@ syncPreferences({ filters: filters });
 
                 <button
                   type="button"
-                  onClick={() => setRouteFitTrigger(Date.now())}
+                  onClick={() => {
+                    setMapCenterPosition(null);
+                    setRouteFitTrigger(Date.now());
+                  }}
                   className="h-7.5 px-2 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all active:scale-95 shrink-0"
                   title="Centralizar no seu GPS e nos hidrantes mais próximos da rota"
                 >
@@ -2736,7 +2739,10 @@ syncPreferences({ filters: filters });
 
                   <button
                     type="button"
-                    onClick={() => setRouteFitTrigger(Date.now())}
+                    onClick={() => {
+                      setMapCenterPosition(null);
+                      setRouteFitTrigger(Date.now());
+                    }}
                     className="flex items-center gap-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
                     title="Centralizar no seu GPS e nos hidrantes mais próximos da rota"
                   >
@@ -2781,6 +2787,7 @@ syncPreferences({ filters: filters });
                   <button
                     type="button"
                     onClick={() => {
+                      setMapCenterPosition(null);
                       setIsRouteActiveOnMap(true);
                       setRouteFitTrigger(Date.now());
                     }}
