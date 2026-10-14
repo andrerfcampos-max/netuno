@@ -29,51 +29,17 @@ import {
 import { isCloudConfigured } from '../services/supabase';
 import { fetchHydrantMutationsFromCloud, fetchAuditLogsFromCloud } from '../services/syncService';
 import { getHydrantAllIds } from '../utils/idMapping';
+import { parseDate, formatDateTimeDisplay } from '../utils/dateUtils';
 
-// Parser resiliente de qualquer formato de data (ISO UTC, ISO local, DD/MM/YYYY, etc.)
-const parseAnyDate = (timestamp) => {
-  if (!timestamp) return null;
-  if (timestamp instanceof Date) return isNaN(timestamp.getTime()) ? null : timestamp;
-  const str = String(timestamp).trim();
-  
-  // DD/MM/YYYY ou DD/MM/YYYY, HH:mm:ss
-  const brMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ ,]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
-  if (brMatch) {
-    const day = parseInt(brMatch[1], 10);
-    const month = parseInt(brMatch[2], 10) - 1;
-    const year = parseInt(brMatch[3], 10);
-    const hour = brMatch[4] ? parseInt(brMatch[4], 10) : 0;
-    const min = brMatch[5] ? parseInt(brMatch[5], 10) : 0;
-    const sec = brMatch[6] ? parseInt(brMatch[6], 10) : 0;
-    const d = new Date(year, month, day, hour, min, sec);
-    if (!isNaN(d.getTime())) return d;
-  }
-
-  const d = new Date(str);
-  return isNaN(d.getTime()) ? null : d;
-};
-
-// Formatação amigável de tempo relativo
-const formatRelativeTime = (isoString) => {
-  if (!isoString) return '';
+// Formatação padronizada e canônica de data e horário das ações (DD/MM/AAAA às HH:mm)
+const formatActionDateTime = (timestamp) => {
+  if (!timestamp) return 'Sem registro';
   try {
-    const date = parseAnyDate(isoString);
-    if (!date) return isoString;
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHours = Math.floor(diffMin / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffSec < 45) return 'Agora mesmo';
-    if (diffMin < 60) return `Há ${diffMin} min`;
-    if (diffHours < 24) return `Há ${diffHours}h`;
-    if (diffDays === 1) return 'Ontem às ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    if (diffDays < 7) return `Há ${diffDays} dias`;
-    return date.toLocaleDateString('pt-BR') + ' às ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const d = parseDate(timestamp);
+    if (!d) return String(timestamp);
+    return formatDateTimeDisplay(d, { shortTime: true });
   } catch (e) {
-    return isoString;
+    return String(timestamp);
   }
 };
 
@@ -94,7 +60,7 @@ export default function SystemHistoryModal({
 
   // Helper para verificar se uma data é hoje (suporta ISO e DD/MM/YYYY)
   const isToday = (timestamp) => {
-    const d = parseAnyDate(timestamp);
+    const d = parseDate(timestamp);
     if (!d) return false;
     const now = new Date();
     return d.getDate() === now.getDate() &&
@@ -104,7 +70,7 @@ export default function SystemHistoryModal({
 
   // Helper para verificar se está dentro de N dias
   const isWithinDays = (timestamp, days) => {
-    const d = parseAnyDate(timestamp);
+    const d = parseDate(timestamp);
     if (!d) return false;
     const diffMs = Date.now() - d.getTime();
     return diffMs >= 0 && diffMs <= days * 24 * 60 * 60 * 1000;
@@ -537,9 +503,12 @@ export default function SystemHistoryModal({
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1" title={new Date(item.timestamp).toLocaleString('pt-BR')}>
-                        <Clock size={11} className="text-slate-500" />
-                        {formatRelativeTime(item.timestamp)}
+                      <span 
+                        className="text-[10px] text-slate-400 flex items-center gap-1 font-medium whitespace-nowrap" 
+                        title={formatDateTimeDisplay(item.timestamp, { fallback: '' })}
+                      >
+                        <Clock size={11} className="text-slate-500 shrink-0" />
+                        {formatActionDateTime(item.timestamp)}
                       </span>
 
                       {item.coords && (
