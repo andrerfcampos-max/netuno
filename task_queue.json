@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-203",
+  "activeTaskId": "TASK-205",
   "queue": [
     {
       "id": "TASK-1",
@@ -2047,29 +2047,29 @@
       "seq": 203,
       "conversationId": "546e1a57-9635-43e4-98fe-b0b67145cfeb",
       "description": "Padronizar data e horario no historico",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-14T17:30:25.670Z",
       "startedAt": "2026-10-14T17:54:03.884Z",
-      "completedAt": null
+      "completedAt": "2026-10-14T17:57:05.074Z"
     },
     {
       "id": "TASK-204",
       "seq": 204,
       "conversationId": "e270c301-78bd-471a-9870-8b664d8bb661",
       "description": "Corrigir nome dos arquivos PDF baixados dos relatorios (palavra ano repetida)",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-10-14T17:33:46.626Z",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-10-14T17:57:06.731Z",
+      "completedAt": "2026-10-14T18:03:08.420Z"
     },
     {
       "id": "TASK-205",
       "seq": 205,
       "conversationId": "96e808de-be2d-42b0-8dd7-7ed3be856b26",
       "description": "Limpeza de processo SEI e localizacao correta em enderecos de hidrantes",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-10-14T17:34:51.936Z",
-      "startedAt": null,
+      "startedAt": "2026-10-14T18:03:11.174Z",
       "completedAt": null
     },
     {
