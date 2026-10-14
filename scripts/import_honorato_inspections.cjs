@@ -242,8 +242,9 @@ async function run() {
 
     current.flgAtivo = isOperante;
     current.status = isOperante ? 'Operante' : 'Inoperante';
-    current.problemasHidrante = problemaFinal;
+    current.problemasHidrante = problemaFinal || item.problemasHidrante || '';
     current.dscObservacao = item.q7 || item.dscObservacao || '';
+    current.datHoraVistoria = dataVistoria;
     current.datHoraUltimaVistoria = dataVistoria;
     current.vistoriadorNome = vistoriadorNome;
     current.vistoriador = vistoriadorNome;
@@ -292,17 +293,56 @@ async function run() {
   fs.writeFileSync(jsonPath, JSON.stringify(hidrantesList, null, 2), 'utf8');
 
   console.log('💾 [2/4] Gravando CSV oficial (public/hidrantes_df_oficial.csv)...');
-  const outWs = XLSX.utils.json_to_sheet(hidrantesList.map(h => {
-    const copy = { ...h };
-    if (typeof copy.HISTORICO_VISTORIAS === 'object') {
-      delete copy.HISTORICO_VISTORIAS;
-    }
-    return copy;
-  }));
-  const csvContent = '\uFEFF' + XLSX.utils.sheet_to_csv(outWs, { FS: ';' });
-  fs.writeFileSync(csvPath, csvContent, 'utf8');
+  const csvHeaders = [
+    '_internalId',
+    'codHidrante',
+    'nomHidrante',
+    'codLegado',
+    'dscLocalidade',
+    'dscEndereco',
+    'pontoReferencia',
+    'dscPontoReferencia',
+    'numLatitude',
+    'numLongitude',
+    'flgAtivo',
+    'status',
+    'problemasHidrante',
+    'dscObservacao',
+    'datHoraVistoria',
+    'datHoraUltimaVistoria',
+    'vistoriadorNome',
+    'diametro',
+    'fotoPerfil'
+  ];
+
+  const csvRows = [csvHeaders.join(',')];
+  hidrantesList.forEach(r => {
+    const rowValues = csvHeaders.map(h => {
+      const val = r[h] !== undefined && r[h] !== null ? r[h] : '';
+      if (typeof val === 'string') {
+        const escaped = val.replace(/"/g, '""');
+        return `"${escaped}"`;
+      }
+      return val;
+    });
+    csvRows.push(rowValues.join(','));
+  });
+  fs.writeFileSync(csvPath, csvRows.join('\n'), 'utf8');
 
   console.log('💾 [3/4] Gravando planilhas XLSX (public/base-de-dados.xlsx e base-de-dados.xlsx)...');
+  const sanitizedForSheet = hidrantesList.map(h => {
+    const copy = { ...h };
+    delete copy.HISTORICO_VISTORIAS;
+    delete copy.fotoVistoria;
+    delete copy.fotosVistoria;
+    for (const key of Object.keys(copy)) {
+      if (typeof copy[key] === 'string' && copy[key].length > 32000) {
+        copy[key] = copy[key].startsWith('data:image') ? '[FOTO_BASE64]' : copy[key].substring(0, 32000);
+      }
+    }
+    return copy;
+  });
+  const outWs = XLSX.utils.json_to_sheet(sanitizedForSheet);
   const outWb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(outWb, outWs, 'data');
   XLSX.writeFile(outWb, publicXlsxPath);
