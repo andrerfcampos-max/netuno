@@ -2007,10 +2007,10 @@
       "seq": 199,
       "conversationId": "288b3f93-bd27-4b9c-84e7-0a1c6e2ebfea",
       "description": "Vistoria Honorato 07/10/2026",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-10-14T16:41:23.408Z",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-10-14T16:43:39.905Z",
+      "completedAt": "2026-10-14T16:52:42.822Z"
     }
   ]
 }
