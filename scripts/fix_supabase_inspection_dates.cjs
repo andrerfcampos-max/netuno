@@ -48,7 +48,24 @@ async function fixDates() {
       }
     }
 
-    // Caso 2: Se data_hora_vistoria foi enviada como string DD/MM/AAAA (ex: "06/10/2026, ...")
+    // Caso 2: Se data_hora_vistoria for no futuro (ex: mês 11 ou 12 quando ainda estamos em outubro)
+    if (!correctedDate && mDt) {
+      const y = parseInt(mDt[1], 10);
+      const mo = parseInt(mDt[2], 10);
+      const day = parseInt(mDt[3], 10);
+      const now = new Date();
+      if (y === now.getFullYear() && mo - 1 > now.getMonth() && day <= 12) {
+        const swappedMo = day;
+        const swappedDay = mo;
+        if (swappedMo - 1 <= now.getMonth()) {
+          const newMoStr = String(swappedMo).padStart(2, '0');
+          const newDayStr = String(swappedDay).padStart(2, '0');
+          correctedDate = `${y}-${newMoStr}-${newDayStr}${mDt[4]}`;
+        }
+      }
+    }
+
+    // Caso 3: Se data_hora_vistoria foi enviada como string DD/MM/AAAA (ex: "06/10/2026, ...")
     if (!correctedDate && dt.includes('/')) {
       const brM = dt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,;\s]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
       if (brM) {

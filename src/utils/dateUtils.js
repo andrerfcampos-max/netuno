@@ -53,6 +53,20 @@ export const parseDate = (input) => {
     if (p2 > 12 && p1 <= 12) {
       day = p2;
       month = p1;
+    } else if (p1 <= 12 && p2 <= 12) {
+      // Blindagem contra inversão dia/mês que projete vistoria no futuro:
+      // Ex: 06/11/2026 ou 05/12/2026 quando o mês corrente é outubro/2026.
+      // Se a data calculada for no futuro e a troca (11/06 ou 12/05) for no passado/presente,
+      // prevalece a data real já ocorrida.
+      const now = new Date();
+      if (year === now.getFullYear() && (month - 1) > now.getMonth()) {
+        const swappedMonth = p1;
+        const swappedDay = p2;
+        if ((swappedMonth - 1) <= now.getMonth()) {
+          day = swappedDay;
+          month = swappedMonth;
+        }
+      }
     }
 
     if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
@@ -71,8 +85,23 @@ export const parseDate = (input) => {
     const min = parseInt(isoMatch[5] || '0', 10);
     const sec = parseInt(isoMatch[6] || '0', 10);
 
-    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      const d = new Date(year, month - 1, day, hour, min, sec);
+    let finalYear = year;
+    let finalMonth = month;
+    let finalDay = day;
+
+    // Blindagem contra data ISO gerada por inversão dia/mês prévia (ex: 2026-11-06 ou 2026-12-05)
+    const now = new Date();
+    if (finalYear === now.getFullYear() && (finalMonth - 1) > now.getMonth() && finalDay <= 12) {
+      const swappedMonth = finalDay;
+      const swappedDay = finalMonth;
+      if ((swappedMonth - 1) <= now.getMonth()) {
+        finalDay = swappedDay;
+        finalMonth = swappedMonth;
+      }
+    }
+
+    if (finalMonth >= 1 && finalMonth <= 12 && finalDay >= 1 && finalDay <= 31) {
+      const d = new Date(finalYear, finalMonth - 1, finalDay, hour, min, sec);
       if (!isNaN(d.getTime())) return d;
     }
   }

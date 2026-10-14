@@ -914,3 +914,24 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   3. **Correção de Dados Existentes:**
      - Corrigidas 55 vistorias com datas invertidas diretamente na tabela `netuno_inspections` do Supabase via `scripts/fix_supabase_inspection_dates.cjs`.
      - Sanitizadas e normalizadas todas as datas em `public/hidrantes_df_oficial.json`, `public/hidrantes_df_oficial.csv`, `public/base-de-dados.xlsx` e raiz `base-de-dados.xlsx`.
+
+### [14/10/2026] Eliminação Definitiva de Datas Futuras em Samambaia e Blindagem Universal Anti-Inversão (TASK-197)
+- **Problema Diagnosticado:** Ao exportar dados ou inspecionar vistorias em Samambaia (Sgt Rrm Honorato), 16 hidrantes constavam com datas no futuro ("06/11/2026" e "05/12/2026"), mesmo com o sistema estando em outubro de 2026.
+- **Causa Raiz Identificada:**
+  1. **Inversão Histórica na Ingestão:** As vistorias reais realizadas em 11 de junho de 2026 (`11/06/2026`) e 12 de maio de 2026 (`12/05/2026`) foram interpretadas pela engine JavaScript/PostgreSQL legada como `MM/DD/AAAA`, gravando no Supabase (`netuno_inspections`) `2026-11-06` (6 de novembro) e `2026-12-05` (5 de dezembro).
+  2. **Por que as correções anteriores (TASK-185 e TASK-187) não resolveram:**
+     - O script `fix_supabase_inspection_dates.cjs` checava apenas se o dia/mês da vistoria correspondia ao `created_at` (criado em 06/10 para vistorias de 06/10 do Lago Sul). Como o lote de Samambaia foi criado no banco em 05/10/2026 com vistorias de maio/junho, a condição de igualdade não batia e o script ignorou as 16 linhas.
+     - O script `sanitize_database_dates.cjs` tinha uma regra restrita `if (loc.includes('LAGO SUL'))`, ignorando Samambaia.
+     - A cada inicialização do app, `App.jsx` chamava `fetchInspectionsFromCloud(500)` do Supabase e sobrescrevia os dados locais corretos com os registros corrompidos da nuvem.
+- **Soluções Implementadas:**
+  1. **Correção Direta no Supabase (`scripts/fix_samambaia_future_dates.cjs`):**
+     - Atualizados os 16 registros de Samambaia em `netuno_inspections`: `2026-11-06` -> `2026-06-11T00:00:00+00:00` (11/06/2026) e `2026-12-05` -> `2026-05-12T00:00:00+00:00` (12/05/2026).
+     - Zeradas as vistorias futuras em toda a base em nuvem (0 restantes).
+  2. **Higienização das Bases Locais:**
+     - Limpos os registros espúrios em `HISTORICO_VISTORIAS` de `public/hidrantes_df_oficial.json`, `.csv`, `base-de-dados.xlsx` e raiz `base-de-dados.xlsx` (16 hidrantes de Samambaia + duplicata em `GAM00146`).
+  3. **Blindagem Heurística no `dateUtils.js` (`parseDate`):**
+     - Adicionada detecção inteligente em formatos BR e ISO: se qualquer data projetar uma vistoria para meses futuros do ano corrente e a inversão dia/mês resultar em uma data já ocorrida válida, o sistema assume automaticamente a data passada real.
+  4. **Proteção no `App.jsx` (`syncWithCloud`):**
+     - Ignora sobrescritas vindas da nuvem caso a data recebida seja no futuro, e formata sem `00:00:00` desnecessário quando não houver hora específica.
+  5. **Atualização dos Scripts Preventivos:**
+     - `fix_supabase_inspection_dates.cjs` e `sanitize_database_dates.cjs` agora incluem detecção universal de datas futuras por inversão.

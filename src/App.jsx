@@ -912,11 +912,13 @@ syncPreferences({ filters: newFilters });
                   let dtStr = insp.data_hora_vistoria;
                   const d = parseDate(insp.data_hora_vistoria);
                   if (d) {
-                    dtStr = formatDateTimeDisplay(d);
+                    const hasTime = (d.getHours() !== 0 || d.getMinutes() !== 0 || d.getSeconds() !== 0);
+                    dtStr = hasTime ? formatDateTimeDisplay(d) : formatDateOnly(d);
                   }
 
                   const currentDt = h.datHoraUltimaVistoria || h.datHoraVistoria || '';
-                  if (!currentDt || currentDt === '18/06/2025 12:00:00' || currentDt !== dtStr) {
+                  const isFutureDate = d && d.getTime() > (Date.now() + 86400000); // Mais de 24h no futuro
+                  if (!isFutureDate && (!currentDt || currentDt === '18/06/2025 12:00:00' || currentDt !== dtStr)) {
                     hasChanges = true;
                     return {
                       ...h,

@@ -18,13 +18,30 @@ function normalizeDateStr(str, loc = '') {
 
   const dsc = String(loc).toUpperCase();
   if (dsc.includes('LAGO SUL')) {
-  // Caso específico das vistorias de Lago Sul que foram invertidas no histórico:
-  // 10/06/2026 -> 06/10/2026 (outubro)
-  s = s.replace(/\b10\/06\/2026\b/g, '06/10/2026');
-  // 10/01/2026 -> 01/10/2026 (outubro)
-  s = s.replace(/\b10\/01\/2026\b/g, '01/10/2026');
-
+    // Caso específico das vistorias de Lago Sul que foram invertidas no histórico:
+    // 10/06/2026 -> 06/10/2026 (outubro)
+    s = s.replace(/\b10\/06\/2026\b/g, '06/10/2026');
+    // 10/01/2026 -> 01/10/2026 (outubro)
+    s = s.replace(/\b10\/01\/2026\b/g, '01/10/2026');
   }
+
+  // Blindagem universal contra datas no futuro causadas por inversão dia/mês (ex: 06/11/2026 -> 11/06/2026 ou 05/12/2026 -> 12/05/2026)
+  const brMatch = s.match(/^(\d{2})\/(\d{2})\/(\d{4})(.*)$/);
+  if (brMatch) {
+    const d = parseInt(brMatch[1], 10);
+    const m = parseInt(brMatch[2], 10);
+    const y = parseInt(brMatch[3], 10);
+    const rest = brMatch[4] || '';
+    const now = new Date();
+    if (y === now.getFullYear() && m - 1 > now.getMonth() && d <= 12) {
+      const swappedM = d;
+      const swappedD = m;
+      if (swappedM - 1 <= now.getMonth()) {
+        s = `${String(swappedD).padStart(2, '0')}/${String(swappedM).padStart(2, '0')}/${y}${rest}`;
+      }
+    }
+  }
+
   // Normalizar separador de vírgula espúria: "06/10/2026, 09:58:48" -> "06/10/2026 09:58:48"
   s = s.replace(/(\d{2}\/\d{2}\/\d{4}),\s*(\d{2}:\d{2}(?::\d{2})?)/, '$1 $2');
 
