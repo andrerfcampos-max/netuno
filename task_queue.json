@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-196",
+  "activeTaskId": "TASK-198",
   "queue": [
     {
       "id": "TASK-1",
@@ -1977,9 +1977,29 @@
       "seq": 196,
       "conversationId": "cea82f0d-54dc-44c6-85fe-30057993a81e",
       "description": "Fix PDF page break issue",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-07T17:47:12.202Z",
       "startedAt": "2026-10-07T17:48:20.048Z",
+      "completedAt": "2026-10-07T17:54:50.275Z"
+    },
+    {
+      "id": "TASK-197",
+      "seq": 197,
+      "conversationId": "1e88112a-131d-4fdf-8ce5-399e5a079923",
+      "description": "Diagnostico e correcao de inversao de datas nas vistorias de Samambaia",
+      "status": "completed",
+      "createdAt": "2026-10-14T16:24:04.979Z",
+      "startedAt": "2026-10-14T16:24:08.086Z",
+      "completedAt": "2026-10-14T16:37:55.672Z"
+    },
+    {
+      "id": "TASK-198",
+      "seq": 198,
+      "conversationId": "dd39cf91-18a3-480b-b440-26749cc16da2",
+      "description": "Nome da cidade no arquivo CSV de exportacao",
+      "status": "running",
+      "createdAt": "2026-10-14T16:24:44.155Z",
+      "startedAt": "2026-10-14T16:37:56.644Z",
       "completedAt": null
     }
   ]
