@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-205",
+  "activeTaskId": "TASK-207",
   "queue": [
     {
       "id": "TASK-1",
@@ -2067,29 +2067,29 @@
       "seq": 205,
       "conversationId": "96e808de-be2d-42b0-8dd7-7ed3be856b26",
       "description": "Limpeza de processo SEI e localizacao correta em enderecos de hidrantes",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-14T17:34:51.936Z",
       "startedAt": "2026-10-14T18:03:11.174Z",
-      "completedAt": null
+      "completedAt": "2026-10-14T18:06:48.684Z"
     },
     {
       "id": "TASK-206",
       "seq": 206,
       "conversationId": "28fdaa44-b4a4-42a3-8958-2909d6d9ab96",
       "description": "Implementar penalidade de 40s para manobra de retorno 180 graus na otimizacao de rota",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-10-14T17:44:41.964Z",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-10-14T18:06:48.796Z",
+      "completedAt": "2026-10-14T18:13:18.499Z"
     },
     {
       "id": "TASK-207",
       "seq": 207,
       "conversationId": "86a614dc-8411-429b-809c-8807aeccfe35",
       "description": "Otimizar compressao e peso das fotos em relatorios PDF mantendo todas as fotos anexadas (Pilares 1, 3 e 4)",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-10-14T17:47:40.462Z",
-      "startedAt": null,
+      "startedAt": "2026-10-14T18:13:22.314Z",
       "completedAt": null
     }
   ]

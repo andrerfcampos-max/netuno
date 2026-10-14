@@ -21,7 +21,55 @@ export const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
   return Math.round(R * c);
 };
 
-// Fallback Instantâneo Euclidiano (0ms - Nearest Neighbor)
+// Penalidade tática para manobra de retorno / 180° (em segundos)
+// Permite que o algoritmo priorize a continuidade da via no mesmo sentido e evite manobras desnecessárias de viatura
+export const U_TURN_PENALTY_SECONDS = 40;
+
+// Azimute de navegação entre dois pontos em graus (0 a 359)
+export const calculateBearing = (lat1, lon1, lat2, lon2) => {
+  if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return null;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const lat1Rad = lat1 * Math.PI / 180;
+  const lat2Rad = lat2 * Math.PI / 180;
+  const y = Math.sin(dLon) * Math.cos(lat2Rad);
+  const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+            Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+  const brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  return brng;
+};
+
+// Diferença angular de manobra (0 a 180 graus) entre o vetor de aproximação e o vetor de saída
+export const calculateTurnAngle = (bearingIn, bearingOut) => {
+  if (bearingIn === null || bearingOut === null || isNaN(bearingIn) || isNaN(bearingOut)) return 0;
+  let diff = Math.abs(bearingOut - bearingIn) % 360;
+  if (diff > 180) diff = 360 - diff;
+  return diff;
+};
+
+// Retorna a penalidade em segundos para a manobra entre o vetor de entrada e o vetor de saída
+// Ângulos >= 115° indicam retorno agudo / inversão de sentido (U-turn)
+export const getManeuverPenaltySeconds = (fromNode, viaNode, toNode, coords, penalty = U_TURN_PENALTY_SECONDS) => {
+  if (!coords || !coords[fromNode] || !coords[viaNode] || !coords[toNode]) return 0;
+  const p1 = coords[fromNode];
+  const p2 = coords[viaNode];
+  const p3 = coords[toNode];
+
+  // Se a distância for muito curta (< 5 metros, coordenadas sobrepostas/ruído GPS), não penaliza
+  const dist1 = calculateDistanceMeters(p1.lat, p1.lng, p2.lat, p2.lng);
+  const dist2 = calculateDistanceMeters(p2.lat, p2.lng, p3.lat, p3.lng);
+  if (dist1 < 5 || dist2 < 5) return 0;
+
+  const bIn = calculateBearing(p1.lat, p1.lng, p2.lat, p2.lng);
+  const bOut = calculateBearing(p2.lat, p2.lng, p3.lat, p3.lng);
+  const angle = calculateTurnAngle(bIn, bOut);
+
+  // Ângulo de manobra de 180 graus: a partir de 115° inicia transição, atingindo o teto de 40s a partir de 140°
+  if (angle < 115) return 0;
+  if (angle >= 140) return penalty;
+  return Math.round(penalty * ((angle - 115) / (140 - 115)));
+};
+
+// Fallback Instantâneo Euclidiano (0ms - Nearest Neighbor com Penalidade Direcional de 40s para Retorno 180°)
 export const optimizeRouteEuclidean = (hidrantes, startLat, startLng) => {
   if (!hidrantes || hidrantes.length === 0) return [];
   
@@ -29,22 +77,43 @@ export const optimizeRouteEuclidean = (hidrantes, startLat, startLng) => {
   let route = [];
   let currentLat = startLat;
   let currentLng = startLng;
+  let prevLat = null;
+  let prevLng = null;
 
   while (unvisited.length > 0) {
     let nearestIdx = 0;
-    let minDistance = Infinity;
+    let minCost = Infinity;
 
     for (let i = 0; i < unvisited.length; i++) {
       const h = unvisited[i];
       const dist = calculateDistanceMeters(currentLat, currentLng, h.numLatitude, h.numLongitude);
-      if (dist < minDistance) {
-        minDistance = dist;
+      
+      let penaltyMeters = 0;
+      if (prevLat !== null && prevLng !== null && dist > 5) {
+        const dPrev = calculateDistanceMeters(prevLat, prevLng, currentLat, currentLng);
+        if (dPrev > 5) {
+          const bIn = calculateBearing(prevLat, prevLng, currentLat, currentLng);
+          const bOut = calculateBearing(currentLat, currentLng, h.numLatitude, h.numLongitude);
+          const angle = calculateTurnAngle(bIn, bOut);
+          if (angle >= 115) {
+            // Converte a penalidade de 40s para metros equivalentes no meio urbano (~30 km/h = 8.33 m/s => 40s ~ 333m)
+            const penaltyRatio = angle >= 140 ? 1 : (angle - 115) / (140 - 115);
+            penaltyMeters = Math.round(U_TURN_PENALTY_SECONDS * 8.33 * penaltyRatio);
+          }
+        }
+      }
+
+      const totalCost = dist + penaltyMeters;
+      if (totalCost < minCost) {
+        minCost = totalCost;
         nearestIdx = i;
       }
     }
 
     const nextHydrant = unvisited.splice(nearestIdx, 1)[0];
     route.push(nextHydrant);
+    prevLat = currentLat;
+    prevLng = currentLng;
     currentLat = nextHydrant.numLatitude;
     currentLng = nextHydrant.numLongitude;
   }
@@ -65,17 +134,23 @@ const getDirectedCost = (fromIdx, toIdx, durations, distances) => {
   return dur + (dist !== null && !isNaN(dist) ? dist * 0.03 : 0);
 };
 
-// Custo total direcionado de um caminho
-const calculatePathCost = (path, durations, distances) => {
+// Custo total direcionado de um caminho, incluindo penalidade de 40s para manobras de retorno 180°
+const calculatePathCost = (path, durations, distances, coords = null) => {
   let total = 0;
   for (let i = 0; i < path.length - 1; i++) {
     total += getDirectedCost(path[i], path[i + 1], durations, distances);
+  }
+  // Penalidade de manobra física 180° (U-turn) nos nós intermediários
+  if (coords && coords.length > 0) {
+    for (let i = 1; i < path.length - 1; i++) {
+      total += getManeuverPenaltySeconds(path[i - 1], path[i], path[i + 1], coords);
+    }
   }
   return total;
 };
 
 /**
- * Resolvedor ATSP (Asymmetric TSP)
+ * Resolvedor ATSP (Asymmetric TSP) com Penalidade Tática de Retorno 180° (40s)
  * @param {Array} hydrants - Lista de hidrantes a ordenar
  * @param {number} startLat - Latitude inicial (GPS ou hidrante vistoriado)
  * @param {number} startLng - Longitude inicial
@@ -91,6 +166,11 @@ export const solveATSPRoute = (hydrants, startLat, startLng, durations, distance
   // O índice 0 na matriz OSRM corresponde ao ponto de partida [startLng, startLat]
   // Os índices 1 .. N correspondem aos hidrantes em ordem original de chunk
   const N = hydrants.length;
+  const coords = [
+    { lat: startLat, lng: startLng },
+    ...hydrants.map(h => ({ lat: h.numLatitude, lng: h.numLongitude }))
+  ];
+
   const unvisitedIndices = new Set();
   for (let i = 1; i <= N; i++) {
     unvisitedIndices.add(i);
@@ -116,16 +196,17 @@ export const solveATSPRoute = (hydrants, startLat, startLng, durations, distance
     unvisitedIndices.delete(firstBest);
   }
 
-  // Insere iterativamente os demais hidrantes na posição de menor aumento de custo direcionado
+  // Insere iterativamente os demais hidrantes na posição de menor aumento de custo direcionado (incluindo manobras 180°)
   while (unvisitedIndices.size > 0) {
     let bestNode = -1;
     let bestPos = -1;
     let minDelta = Infinity;
+    const baseCost = calculatePathCost(currentPath, durations, distances, coords);
 
     for (const node of unvisitedIndices) {
       // Testa inserir no final
-      const lastNode = currentPath[currentPath.length - 1];
-      const appendCost = getDirectedCost(lastNode, node, durations, distances);
+      const candEnd = [...currentPath, node];
+      const appendCost = calculatePathCost(candEnd, durations, distances, coords) - baseCost;
       if (appendCost < minDelta) {
         minDelta = appendCost;
         bestNode = node;
@@ -134,12 +215,8 @@ export const solveATSPRoute = (hydrants, startLat, startLng, durations, distance
 
       // Testa inserir no meio
       for (let p = 1; p < currentPath.length; p++) {
-        const prev = currentPath[p - 1];
-        const next = currentPath[p];
-        const oldCost = getDirectedCost(prev, next, durations, distances);
-        const newCost = getDirectedCost(prev, node, durations, distances) + 
-                        getDirectedCost(node, next, durations, distances);
-        const delta = newCost - oldCost;
+        const candMid = [...currentPath.slice(0, p), node, ...currentPath.slice(p)];
+        const delta = calculatePathCost(candMid, durations, distances, coords) - baseCost;
 
         if (delta < minDelta) {
           minDelta = delta;
@@ -160,7 +237,7 @@ export const solveATSPRoute = (hydrants, startLat, startLng, durations, distance
     }
   }
 
-  // 2. REFINAMENTO LOCAL 1: Or-Opt / Node Relocation (1-Shift e 2-Shift)
+  // 2. REFINAMENTO LOCAL 1: Or-Opt / Node Relocation (1-Shift e 2-Shift com Penalidade 180°)
   // Muito eficiente para ATSP pois reposiciona nós sem inverter a mão das vias internas!
   let improved = true;
   let iterations = 0;
@@ -180,8 +257,8 @@ export const solveATSPRoute = (hydrants, startLat, startLng, durations, distance
         const insertIdx = j > i ? j - 1 : j;
         candidate.splice(insertIdx, 0, movedNode);
 
-        const currentCost = calculatePathCost(currentPath, durations, distances);
-        const candidateCost = calculatePathCost(candidate, durations, distances);
+        const currentCost = calculatePathCost(currentPath, durations, distances, coords);
+        const candidateCost = calculatePathCost(candidate, durations, distances, coords);
 
         if (candidateCost + 1.0 < currentCost) {
           currentPath = candidate;
@@ -203,8 +280,8 @@ export const solveATSPRoute = (hydrants, startLat, startLng, durations, distance
           const insertIdx = j > i ? j - 2 : j;
           candidate.splice(insertIdx, 0, ...movedBlock);
 
-          const currentCost = calculatePathCost(currentPath, durations, distances);
-          const candidateCost = calculatePathCost(candidate, durations, distances);
+          const currentCost = calculatePathCost(currentPath, durations, distances, coords);
+          const candidateCost = calculatePathCost(candidate, durations, distances, coords);
 
           if (candidateCost + 1.0 < currentCost) {
             currentPath = candidate;
@@ -217,9 +294,9 @@ export const solveATSPRoute = (hydrants, startLat, startLng, durations, distance
     }
   }
 
-  // 3. REFINAMENTO LOCAL 2: 2-Opt Direcionado
+  // 3. REFINAMENTO LOCAL 2: 2-Opt Direcionado com Penalidade 180°
   // Testa inverter um trecho; se for mão dupla e encurtar, aceita;
-  // se for mão única, a penalidade do contrafluxo rejeita automaticamente a inversão.
+  // se for mão única ou gerar manobra brusca de 180°, a penalidade rejeita automaticamente a inversão.
   let twoOptImproved = true;
   let twoOptIter = 0;
   const MAX_2OPT_ITERATIONS = 30;
@@ -236,8 +313,8 @@ export const solveATSPRoute = (hydrants, startLat, startLng, durations, distance
           ...currentPath.slice(k + 1)
         ];
 
-        const curCost = calculatePathCost(currentPath, durations, distances);
-        const candCost = calculatePathCost(candidate, durations, distances);
+        const curCost = calculatePathCost(currentPath, durations, distances, coords);
+        const candCost = calculatePathCost(candidate, durations, distances, coords);
 
         if (candCost + 1.0 < curCost) {
           currentPath = candidate;
@@ -261,7 +338,16 @@ export const solveATSPRoute = (hydrants, startLat, startLng, durations, distance
     if (!targetHydrant) continue;
 
     const distMeters = (distances && distances[prevIdx]) ? distances[prevIdx][curIdx] : null;
-    const durSec = (durations && durations[prevIdx]) ? durations[prevIdx][curIdx] : null;
+    let durSec = (durations && durations[prevIdx]) ? durations[prevIdx][curIdx] : null;
+
+    // Se houve manobra de 180° neste passo (a partir do 2º passo na rota), adiciona a penalidade real na estimativa de tempo
+    if (durSec !== null && step >= 2) {
+      const beforeIdx = currentPath[step - 2];
+      const maneuverPen = getManeuverPenaltySeconds(beforeIdx, prevIdx, curIdx, coords);
+      if (maneuverPen > 0) {
+        durSec += maneuverPen;
+      }
+    }
 
     const keys = [
       targetHydrant.codHidrante,
@@ -328,21 +414,38 @@ export const fetchOSRMSingleChunk = async (hydrants, startLat, startLng, timeout
     console.warn('[RouteOptimizer] OSRM indisponível para o lote. Usando fallback instantâneo euclidiano.', err.message);
     const fallbackRoute = optimizeRouteEuclidean(hydrants, startLat, startLng);
     
-    // Métricas estimadas em linha reta
+    // Métricas estimadas em linha reta com penalidade de 40s para manobras de 180°
     const estimatedMetrics = {};
     let prevLat = startLat;
     let prevLng = startLng;
+    let beforeLat = null;
+    let beforeLng = null;
     fallbackRoute.forEach((h, idx) => {
       const distM = calculateDistanceMeters(prevLat, prevLng, h.numLatitude, h.numLongitude);
+      let durSec = Math.round((distM / 1000 / 35) * 3600); // ~35 km/h média
+      if (beforeLat !== null && beforeLng !== null && distM > 5) {
+        const dBefore = calculateDistanceMeters(beforeLat, beforeLng, prevLat, prevLng);
+        if (dBefore > 5) {
+          const bIn = calculateBearing(beforeLat, beforeLng, prevLat, prevLng);
+          const bOut = calculateBearing(prevLat, prevLng, h.numLatitude, h.numLongitude);
+          const angle = calculateTurnAngle(bIn, bOut);
+          if (angle >= 115) {
+            const ratio = angle >= 140 ? 1 : (angle - 115) / (140 - 115);
+            durSec += Math.round(U_TURN_PENALTY_SECONDS * ratio);
+          }
+        }
+      }
       const metric = {
         distanceMeters: distM,
-        durationSeconds: Math.round((distM / 1000 / 35) * 3600), // ~35 km/h média
+        durationSeconds: durSec,
         legFromPrevious: idx !== 0,
         isEstimated: true,
         isTrafficMode: false
       };
       const keys = [h.codHidrante, h.nomHidrante, h._internalId].filter(Boolean);
       keys.forEach(k => { estimatedMetrics[String(k)] = metric; });
+      beforeLat = prevLat;
+      beforeLng = prevLng;
       prevLat = h.numLatitude;
       prevLng = h.numLongitude;
     });

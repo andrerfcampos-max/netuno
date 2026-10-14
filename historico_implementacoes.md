@@ -935,3 +935,16 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
      - Ignora sobrescritas vindas da nuvem caso a data recebida seja no futuro, e formata sem `00:00:00` desnecessário quando não houver hora específica.
   5. **Atualização dos Scripts Preventivos:**
      - `fix_supabase_inspection_dates.cjs` e `sanitize_database_dates.cjs` agora incluem detecção universal de datas futuras por inversão.
+
+### [14/10/2026] Penalidade Tática de 40s para Manobra de Retorno 180° e Eliminação de Ping-Pong nas Rotas (TASK-206)
+- **Problema Diagnosticado:** Ao planejar ou otimizar a rota de uma missão com múltiplos hidrantes na mesma via ou bairro, o algoritmo anterior gerava o efeito "ping-pong / zigue-zague": sugeria visitar um hidrante na calçada direita, depois mandava cruzar para a calçada esquerda (ou voltar atrás), exigindo que a viatura de vistoria fizesse meia-volta (manobra de 180°) no meio da via. Em viaturas operacionais do CBMDF, manobras de 180° em vias urbanas acarretam alto tempo de manobra (marcha à ré, esterçamento em 3 tempos, trânsito), risco desnecessário de abalroamento e perda de produtividade.
+- **Causa Raiz Identificada:**
+  1. No modo euclidiano (`optimizeRouteEuclidean`), o algoritmo do vizinho mais próximo avaliava apenas a distância em linha reta (Haversine), ignorando o vetor de aproximação e se o hidrante seguinte exigia inverter o sentido de marcha.
+  2. No modo viário OSRM ATSP (`solveATSPRoute`), a matriz de tempos de condução modela vias de mão dupla sem penalidade para manobra física de esterçamento/retorno de 180° de um veículo estacionado.
+- **Soluções Implementadas (`src/utils/routeOptimization.js`):**
+  1. **Constante Oficial de Penalidade:** Definida `U_TURN_PENALTY_SECONDS = 40` (40 segundos de custo adicional para retorno de 180° solicitado pelo comando).
+  2. **Cálculo Angular e Vetorial:** Implementadas as funções `calculateBearing(lat1, lon1, lat2, lon2)` (cálculo de azimute geodésico) e `calculateTurnAngle(bIn, bOut)` (diferença angular de 0° a 180°).
+  3. **Penalidade Tática Proporcional (`getManeuverPenaltySeconds`):** Curva suave de penalização para desvios agudos (inicia em 115° e atinge os 40s completos para retornos >= 140°).
+  4. **Modo ATSP (OSRM):** A função de custo total (`calculatePathCost`) e as etapas de construção (Cheapest Directed Insertion), refinamento local (Or-Opt 1-Shift/2-Shift) e 2-Opt Direcionado agora incorporam os 40s de penalidade a cada manobra de retorno. O algoritmo prefere manter o avanço linear contínuo no mesmo sentido da via e reservar os hidrantes do sentido oposto para a perna de volta.
+  5. **Modo Fallback Euclidiano:** Converte a penalidade temporal em distância virtual equivalente (~333 metros a 30 km/h), eliminando manobras em zigue-zague mesmo sem rede.
+  6. **Métricas de Condução:** As estimativas de tempo (`durSec`) exibidas no painel de rota agora contabilizam com precisão os 40s adicionais caso uma manobra de 180° seja inevitável.
