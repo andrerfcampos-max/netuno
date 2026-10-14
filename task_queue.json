@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-200",
   "queue": [
     {
       "id": "TASK-1",
@@ -2011,6 +2011,66 @@
       "createdAt": "2026-10-14T16:41:23.408Z",
       "startedAt": "2026-10-14T16:43:39.905Z",
       "completedAt": "2026-10-14T16:52:42.822Z"
+    },
+    {
+      "id": "TASK-200",
+      "seq": 200,
+      "conversationId": "245f2363-f837-48f1-8a67-6ea3b4a8dd07",
+      "description": "Criar planejamento de vistorias por cidade (sequencia cronologica por data media)",
+      "status": "running",
+      "createdAt": "2026-10-14T17:29:28.698Z",
+      "startedAt": "2026-10-14T17:29:31.842Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-201",
+      "seq": 201,
+      "conversationId": "bcc7b95d-9f9b-40a6-b120-e86583edb348",
+      "description": "Corrigir botao focar no mapa",
+      "status": "queued",
+      "createdAt": "2026-10-14T17:29:50.828Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-202",
+      "seq": 202,
+      "conversationId": "62233aeb-6a1f-4cb1-8c3e-d4ada0c97318",
+      "description": "Corrigir discrepancia no contador de hidrantes concluidos e totais entre central de missao e rota de missao",
+      "status": "queued",
+      "createdAt": "2026-10-14T17:30:07.104Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-203",
+      "seq": 203,
+      "conversationId": "546e1a57-9635-43e4-98fe-b0b67145cfeb",
+      "description": "Padronizar data e horario no historico",
+      "status": "queued",
+      "createdAt": "2026-10-14T17:30:25.670Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-204",
+      "seq": 204,
+      "conversationId": "e270c301-78bd-471a-9870-8b664d8bb661",
+      "description": "Corrigir nome dos arquivos PDF baixados dos relatorios (palavra ano repetida)",
+      "status": "queued",
+      "createdAt": "2026-10-14T17:33:46.626Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-205",
+      "seq": 205,
+      "conversationId": "96e808de-be2d-42b0-8dd7-7ed3be856b26",
+      "description": "Limpeza de processo SEI e localizacao correta em enderecos de hidrantes",
+      "status": "queued",
+      "createdAt": "2026-10-14T17:34:51.936Z",
+      "startedAt": null,
+      "completedAt": null
     }
   ]
 }

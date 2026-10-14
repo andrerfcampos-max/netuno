@@ -177,10 +177,13 @@ const RA_NORMALIZATION_MAP = {
   'vicente pires': 'Vicente Pires',
   'fercal': 'Fercal',
   'pâr do sol e sol nascente': 'Sol Nascente/Pôr do Sol',
+  'pôr do sol e sol nascente': 'Sol Nascente/Pôr do Sol',
+  'por do sol e sol nascente': 'Sol Nascente/Pôr do Sol',
   'sol nascente e por do sol': 'Sol Nascente/Pôr do Sol',
   'sol nascente/pôr do sol': 'Sol Nascente/Pôr do Sol',
   'sol nascente': 'Sol Nascente/Pôr do Sol',
   'pôr do sol': 'Sol Nascente/Pôr do Sol',
+  'por do sol': 'Sol Nascente/Pôr do Sol',
   'arniqueira': 'Arniqueira'
 };
 

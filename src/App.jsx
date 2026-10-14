@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, Suspense, lazy } from 'react';
-import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw, Bell, History, Route as RouteIcon, X, FileSpreadsheet } from 'lucide-react';
+import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw, Bell, History, Route as RouteIcon, X, FileSpreadsheet, CalendarRange } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MapComponent from './components/MapComponent';
@@ -21,6 +21,7 @@ const CloudConfigModal = lazy(() => import('./components/CloudConfigModal'));
 const SystemHistoryModal = lazy(() => import('./components/SystemHistoryModal'));
 const InspectionHistoryModal = lazy(() => import('./components/InspectionHistoryModal'));
 const DownloadDatabaseModal = lazy(() => import('./components/DownloadDatabaseModal'));
+const CityInspectionPlanningModal = lazy(() => import('./components/CityInspectionPlanningModal'));
 import { logAuditEvent, getUnreadAuditCount, mergeAuditLogs } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers, mergeRbacUsers } from './utils/storage';
@@ -466,6 +467,7 @@ syncPreferences({ activeView: view });
   const [isInconsistentModalOpen, setIsInconsistentModalOpen] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
   const [isSystemHistoryOpen, setIsSystemHistoryOpen] = useState(false);
+  const [isCityPlanningOpen, setIsCityPlanningOpen] = useState(false);
   const [unreadAuditCount, setUnreadAuditCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDownloadDbModalOpen, setIsDownloadDbModalOpen] = useState(false);
@@ -608,6 +610,8 @@ syncPreferences({ filters: newFilters });
       setIsSystemHistoryOpen(true);
     } else if (modal === 'central-missoes' || modal === 'missoes' || modal === 'missions') {
       setIsMissionManagerOpen(true);
+    } else if ((modal === 'planejamento' || modal === 'planejamento-cidades' || modal === 'city-planning') && (currentUser?.role === 'gestor' || currentUser?.role === 'admin')) {
+      setIsCityPlanningOpen(true);
     }
 
     const hidParam = params.get('hid') || params.get('hidrante') || params.get('id');
@@ -623,6 +627,13 @@ syncPreferences({ filters: newFilters });
       }
     }
   }, [currentUser, hidrantes]);
+
+  const handleCloseCityPlanning = () => {
+    setIsCityPlanningOpen(false);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('modal');
+    window.history.replaceState({}, '', url.pathname + url.search);
+  };
 
   const handleCloseTechnicalStudy = () => {
     setIsTechnicalStudyOpen(false);
@@ -2481,6 +2492,32 @@ syncPreferences({ filters: filters });
                         </a>
                       )}
 
+                      {(currentUser.role === 'admin' || currentUser.role === 'gestor') && (
+                        <a 
+                          href="?modal=planejamento-cidades"
+                          onClick={(e) => {
+                            if (!e.ctrlKey && !e.metaKey && e.button === 0) {
+                              e.preventDefault();
+                              setIsCityPlanningOpen(true);
+                              setIsMenuOpen(false);
+                            }
+                          }}
+                          className="flex items-start gap-3 w-full px-3 py-2.5 text-left bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 rounded-xl transition-all group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-teal-950/40 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0 mt-0.5 group-hover:border-teal-500/60 transition-colors">
+                            <CalendarRange size={17} />
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                              Planejamento de Vistoria de Cidades
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5 group-hover:text-slate-300 transition-colors">
+                              Sequência anual por Data Média (da mais antiga para a mais recente)
+                            </span>
+                          </div>
+                        </a>
+                      )}
+
                       <a 
                         href="?modal=central-missoes"
                         onClick={(e) => {
@@ -3276,6 +3313,22 @@ syncPreferences({ filters: filters });
             onClose={() => setIsDownloadDbModalOpen(false)}
             hidrantes={hidrantes}
             selectedCity={activeFilters.ra || ''}
+          />
+        </Suspense>
+      )}
+
+      {isCityPlanningOpen && (
+        <Suspense fallback={null}>
+          <CityInspectionPlanningModal
+            isOpen={isCityPlanningOpen}
+            onClose={handleCloseCityPlanning}
+            hidrantes={hidrantes}
+            currentUser={currentUser}
+            onSelectRA={(raName) => {
+              setActiveFilters(prev => ({ ...prev, ra: raName }));
+              setActiveView('map');
+            }}
+            onOpenMissions={() => setIsMissionManagerOpen(true)}
           />
         </Suspense>
       )}
