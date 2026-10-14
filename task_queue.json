@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-200",
+  "activeTaskId": "TASK-202",
   "queue": [
     {
       "id": "TASK-1",
@@ -2017,29 +2017,29 @@
       "seq": 200,
       "conversationId": "245f2363-f837-48f1-8a67-6ea3b4a8dd07",
       "description": "Criar planejamento de vistorias por cidade (sequencia cronologica por data media)",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-14T17:29:28.698Z",
       "startedAt": "2026-10-14T17:29:31.842Z",
-      "completedAt": null
+      "completedAt": "2026-10-14T17:39:48.988Z"
     },
     {
       "id": "TASK-201",
       "seq": 201,
       "conversationId": "bcc7b95d-9f9b-40a6-b120-e86583edb348",
       "description": "Corrigir botao focar no mapa",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-10-14T17:29:50.828Z",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-10-14T17:39:52.917Z",
+      "completedAt": "2026-10-14T17:45:31.083Z"
     },
     {
       "id": "TASK-202",
       "seq": 202,
       "conversationId": "62233aeb-6a1f-4cb1-8c3e-d4ada0c97318",
       "description": "Corrigir discrepancia no contador de hidrantes concluidos e totais entre central de missao e rota de missao",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-10-14T17:30:07.104Z",
-      "startedAt": null,
+      "startedAt": "2026-10-14T17:45:32.753Z",
       "completedAt": null
     },
     {
@@ -2069,6 +2069,16 @@
       "description": "Limpeza de processo SEI e localizacao correta em enderecos de hidrantes",
       "status": "queued",
       "createdAt": "2026-10-14T17:34:51.936Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-206",
+      "seq": 206,
+      "conversationId": "28fdaa44-b4a4-42a3-8958-2909d6d9ab96",
+      "description": "Implementar penalidade de 40s para manobra de retorno 180 graus na otimizacao de rota",
+      "status": "queued",
+      "createdAt": "2026-10-14T17:44:41.964Z",
       "startedAt": null,
       "completedAt": null
     }
