@@ -101,8 +101,8 @@ export const extractPhotos = (h) => {
   if (Array.isArray(h.fotosVistoria)) h.fotosVistoria.forEach(add);
   if (h.fotoVistoria) add(h.fotoVistoria);
 
-  // 2. Fotos de vistorias com problemas no histórico
-  if (Array.isArray(h.HISTORICO_VISTORIAS)) {
+  // 2. Fotos de vistorias com problemas no histórico (apenas se a vistoria atual não tiver fotos)
+  if (photos.length === 0 && Array.isArray(h.HISTORICO_VISTORIAS)) {
     h.HISTORICO_VISTORIAS.forEach(v => {
       if (hasVistoriaProblem(v)) {
         if (Array.isArray(v.fotosVistoria)) v.fotosVistoria.forEach(add);
@@ -111,7 +111,7 @@ export const extractPhotos = (h) => {
     });
   }
 
-  return photos;
+  return Array.from(new Set(photos));
 };
 
 /**
@@ -377,8 +377,16 @@ export const printGeneralReport = async ({
   activeFilters = null,
   onProgress = null
 }) => {
+  // Pré-extrai e deduplica rigorosamente as fotos antes da compressão para evitar duplicação do histórico
+  const preparedData = rawData.map(h => ({
+    ...h,
+    extractedPhotos: (Array.isArray(h.extractedPhotos) && h.extractedPhotos.length > 0)
+      ? Array.from(new Set(h.extractedPhotos))
+      : extractPhotos(h)
+  }));
+
   // Otimização prévia de fotos para garantir PDF ultraleve mantendo todas as fotos anexadas
-  const currentData = await optimizeAllReportPhotos(rawData, onProgress);
+  const currentData = await optimizeAllReportPhotos(preparedData, onProgress);
 
   const nowStr = formatDateTime(new Date());
   const emissorNome = currentUser?.nome || 'Militar Responsável';
@@ -531,7 +539,9 @@ export const printGeneralReport = async ({
 
   const hidrantesComFotos = currentData.map(h => ({
     ...h,
-    extractedPhotos: extractPhotos(h)
+    extractedPhotos: (Array.isArray(h.extractedPhotos) && h.extractedPhotos.length > 0)
+      ? Array.from(new Set(h.extractedPhotos))
+      : extractPhotos(h)
   })).filter(item => item.extractedPhotos.length > 0);
 
   const totalFotosCount = hidrantesComFotos.reduce((acc, h) => acc + h.extractedPhotos.length, 0);
@@ -1394,7 +1404,9 @@ export const generateCaesbReportHtml = ({
 
   const hidrantesComFotos = caesbData.map(h => ({
     ...h,
-    extractedPhotos: extractPhotos(h)
+    extractedPhotos: (Array.isArray(h.extractedPhotos) && h.extractedPhotos.length > 0)
+      ? Array.from(new Set(h.extractedPhotos))
+      : extractPhotos(h)
   })).filter(item => item.extractedPhotos.length > 0);
 
   const totalFotosCount = hidrantesComFotos.reduce((acc, h) => acc + h.extractedPhotos.length, 0);
@@ -2035,10 +2047,16 @@ export const generateCaesbReportHtml = ({
 };
 
 export const printCaesbReport = async (params) => {
-  let optimizedData = params.currentData;
+  let preparedData = params.currentData;
   if (Array.isArray(params.currentData)) {
-    optimizedData = await optimizeAllReportPhotos(params.currentData, params.onProgress);
+    preparedData = params.currentData.map(h => ({
+      ...h,
+      extractedPhotos: (Array.isArray(h.extractedPhotos) && h.extractedPhotos.length > 0)
+        ? Array.from(new Set(h.extractedPhotos))
+        : extractPhotos(h)
+    }));
   }
+  const optimizedData = await optimizeAllReportPhotos(preparedData, params.onProgress);
   const { html, docTitle } = generateCaesbReportHtml({
     ...params,
     currentData: optimizedData

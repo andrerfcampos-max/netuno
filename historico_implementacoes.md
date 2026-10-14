@@ -8,6 +8,14 @@ A finalidade deste registro é manter um rastro claro e auditável da evolução
 
 ## 🛠️ Modificações Recentes
 
+### [14/10/2026] Correção de Duplicação de Fotos no Anexo de PDF (TASK-208)
+- **Problema Inicial:** Fotos de hidrantes com defeito apareciam duplicadas lado a lado (ex: 2 fotos onde havia apenas 1 na tela) no relatório gerado em PDF.
+- **Causa Raiz Identificada:** A rotina de compressão atualizava `fotoVistoria` na raiz do objeto, mas `HISTORICO_VISTORIAS` continha a string original. Ao rodar `extractPhotos`, o comparador `photos.includes` não encontrava a correspondência por igualdade de string e adicionava a mesma foto novamente a partir do histórico arquivado.
+- **Implementação Realizada:**
+  1. Ajustado `extractPhotos` em `officialPrintUtils.js` para somente recorrer ao `HISTORICO_VISTORIAS` se a vistoria atual não possuir nenhuma foto anexada.
+  2. Reutilização de `h.extractedPhotos` pré-calculado e deduplicação estrita via `Array.from(new Set(...))` em `printGeneralReport` e `generateCaesbReportHtml`.
+  3. Sincronização e compressão abrangente também em `HISTORICO_VISTORIAS` dentro de `imageCompressor.js`.
+
 ### [14/10/2026] Otimização e Compressão de Fotos em Relatórios PDF (TASK-207)
 - **Problema Inicial:** Relatórios em PDF gerados com anexos fotográficos atingiam tamanhos excessivos devido a fotos em resolução original da câmera.
 - **Implementação Realizada:**

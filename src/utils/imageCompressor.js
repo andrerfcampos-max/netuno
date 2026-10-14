@@ -138,6 +138,18 @@ export const optimizeAllReportPhotos = async (hydrantsList = [], onProgress = nu
         if (p && typeof p === 'string' && p.trim()) uniqueUrls.add(p.trim());
       });
     }
+    if (Array.isArray(h.HISTORICO_VISTORIAS)) {
+      h.HISTORICO_VISTORIAS.forEach(v => {
+        if (v.fotoVistoria && typeof v.fotoVistoria === 'string' && v.fotoVistoria.trim()) {
+          uniqueUrls.add(v.fotoVistoria.trim());
+        }
+        if (Array.isArray(v.fotosVistoria)) {
+          v.fotosVistoria.forEach(p => {
+            if (p && typeof p === 'string' && p.trim()) uniqueUrls.add(p.trim());
+          });
+        }
+      });
+    }
   });
 
   const urlArray = Array.from(uniqueUrls);
@@ -173,11 +185,11 @@ export const optimizeAllReportPhotos = async (hydrantsList = [], onProgress = nu
     await new Promise(r => setTimeout(r, 16));
   }
 
-  // 3. Devolve a lista de hidrantes mapeada com as fotos comprimidas
+  // 3. Devolve a lista de hidrantes mapeada com as fotos comprimidas e estritamente deduplicadas
   return hydrantsList.map(h => {
     let newExtracted = h.extractedPhotos;
     if (Array.isArray(h.extractedPhotos)) {
-      newExtracted = h.extractedPhotos.map(p => optimizedUrlMap.get(p.trim()) || p);
+      newExtracted = Array.from(new Set(h.extractedPhotos.map(p => optimizedUrlMap.get(typeof p === 'string' ? p.trim() : p) || p)));
     }
 
     let newFotoVistoria = h.fotoVistoria;
@@ -187,14 +199,34 @@ export const optimizeAllReportPhotos = async (hydrantsList = [], onProgress = nu
 
     let newFotosVistoria = h.fotosVistoria;
     if (Array.isArray(h.fotosVistoria)) {
-      newFotosVistoria = h.fotosVistoria.map(p => optimizedUrlMap.get(p.trim()) || p);
+      newFotosVistoria = Array.from(new Set(h.fotosVistoria.map(p => optimizedUrlMap.get(typeof p === 'string' ? p.trim() : p) || p)));
+    }
+
+    let newHistorico = h.HISTORICO_VISTORIAS;
+    if (Array.isArray(h.HISTORICO_VISTORIAS)) {
+      newHistorico = h.HISTORICO_VISTORIAS.map(v => {
+        let vFoto = v.fotoVistoria;
+        if (vFoto && typeof vFoto === 'string') {
+          vFoto = optimizedUrlMap.get(vFoto.trim()) || vFoto;
+        }
+        let vFotos = v.fotosVistoria;
+        if (Array.isArray(vFotos)) {
+          vFotos = Array.from(new Set(vFotos.map(p => optimizedUrlMap.get(typeof p === 'string' ? p.trim() : p) || p)));
+        }
+        return {
+          ...v,
+          fotoVistoria: vFoto,
+          fotosVistoria: vFotos
+        };
+      });
     }
 
     return {
       ...h,
       extractedPhotos: newExtracted,
       fotoVistoria: newFotoVistoria,
-      fotosVistoria: newFotosVistoria
+      fotosVistoria: newFotosVistoria,
+      HISTORICO_VISTORIAS: newHistorico
     };
   });
 };
