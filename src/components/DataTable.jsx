@@ -6,7 +6,7 @@ import { isHydrantSelected } from '../utils/geoUtils';
 import { openStreetView } from '../utils/streetViewUtils';
 import { parseDateToTimestamp, getHydrantVistoriaDate, formatDateOnly } from '../utils/dateUtils';
 
-const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser, onOpenInspectionHistory }) => {
+const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, selectedMissionIds = [], onToggleMission, onSelectAllMission, currentUser, onOpenInspectionHistory, selectedCity = '' }) => {
   const [sortConfig, setSortConfig] = useState({ key: 'datHoraUltimaVistoria', direction: 'descending' });
   const [displayCount, setDisplayCount] = useState(50);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
@@ -129,10 +129,37 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'hidrantes_filtrados.csv');
+
+    // Identificar a cidade / Região Administrativa para nomear o arquivo CSV
+    let cityName = (selectedCity || '').trim();
+    if (!cityName && data && data.length > 0) {
+      const uniqueCities = Array.from(
+        new Set(data.map(h => h.dscLocalidade || h.nomLocalidade || h.ra).filter(Boolean))
+      );
+      if (uniqueCities.length === 1) {
+        cityName = uniqueCities[0];
+      } else if (uniqueCities.length > 1 && uniqueCities.length <= 2) {
+        cityName = uniqueCities.join('_');
+      }
+    }
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    let fileName = `hidrantes_filtrados_${dateStr}.csv`;
+    if (cityName) {
+      const safeCity = cityName
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9_-]/g, '_')
+        .replace(/_+/g, '_')
+        .toLowerCase();
+      fileName = `hidrantes_${safeCity}_${dateStr}.csv`;
+    }
+
+    link.setAttribute('download', fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleSortCode = () => {

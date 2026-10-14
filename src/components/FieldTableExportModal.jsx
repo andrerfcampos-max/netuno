@@ -96,13 +96,27 @@ const FieldTableExportModal = ({ isOpen, onClose, hidrantes = [], activeFilters 
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `tabela_campo_gama_${new Date().getTime()}.csv`);
+    let cityName = (activeFilters?.ra || '').trim();
+    if (!cityName && orderedList && orderedList.length > 0) {
+      const uniqueCities = Array.from(
+        new Set(orderedList.map(h => normalizeRAName(h.dscLocalidade)).filter(Boolean))
+      );
+      if (uniqueCities.length === 1) {
+        cityName = uniqueCities[0];
+      }
+    }
+    const safeCity = cityName
+      ? cityName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_').toLowerCase()
+      : 'campo';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("download", `tabela_${safeCity}_${dateStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleCopy = async () => {

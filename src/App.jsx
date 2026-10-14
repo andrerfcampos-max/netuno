@@ -2892,6 +2892,7 @@ syncPreferences({ filters: filters });
           <div className="w-full h-full flex-1 min-h-0 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 flex flex-col">
             <DataTable 
               data={filteredList} 
+              selectedCity={activeFilters.ra || ''}
               onInspect={handleInspect}
               onEdit={(h) => setEditingHydrante({ ...h, _mode: 'edit' })}
               onEditInspection={handleEditInspection}
@@ -3274,6 +3275,7 @@ syncPreferences({ filters: filters });
             isOpen={isDownloadDbModalOpen}
             onClose={() => setIsDownloadDbModalOpen(false)}
             hidrantes={hidrantes}
+            selectedCity={activeFilters.ra || ''}
           />
         </Suspense>
       )}

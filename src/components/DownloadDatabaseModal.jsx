@@ -3,7 +3,7 @@ import { X, FileSpreadsheet, FileText, Download, Loader2, Database } from 'lucid
 import { exportHidrantesCSV, exportGlobalDatabaseXLSX } from '../utils/exportGlobalCsv';
 import { toast } from 'react-toastify';
 
-const DownloadDatabaseModal = ({ isOpen, onClose, hidrantes = [] }) => {
+const DownloadDatabaseModal = ({ isOpen, onClose, hidrantes = [], selectedCity = '' }) => {
   const [loadingType, setLoadingType] = useState(null); // 'csv' | 'xlsx' | null
 
   if (!isOpen) return null;
@@ -11,7 +11,7 @@ const DownloadDatabaseModal = ({ isOpen, onClose, hidrantes = [] }) => {
   const handleExportCSV = async () => {
     try {
       setLoadingType('csv');
-      await exportHidrantesCSV(hidrantes);
+      await exportHidrantesCSV(hidrantes, selectedCity);
       toast.success('Download do arquivo CSV dos hidrantes concluído!');
       onClose();
     } catch (err) {
@@ -25,7 +25,7 @@ const DownloadDatabaseModal = ({ isOpen, onClose, hidrantes = [] }) => {
   const handleExportXLSX = async () => {
     try {
       setLoadingType('xlsx');
-      await exportGlobalDatabaseXLSX(hidrantes);
+      await exportGlobalDatabaseXLSX(hidrantes, selectedCity);
       toast.success('Download da base completa XLSX concluído!');
       onClose();
     } catch (err) {

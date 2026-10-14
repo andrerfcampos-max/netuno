@@ -774,10 +774,25 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `relatorio_${reportType}_${new Date().getTime()}.csv`);
+    let cityName = (activeFilters?.ra || currentMission?.name || '').trim();
+    if (!cityName && sortedHidrantesGeral && sortedHidrantesGeral.length > 0) {
+      const uniqueCities = Array.from(
+        new Set(sortedHidrantesGeral.map(h => h.dscLocalidade || h.nomLocalidade).filter(Boolean))
+      );
+      if (uniqueCities.length === 1) {
+        cityName = uniqueCities[0];
+      }
+    }
+    const safeCity = cityName
+      ? cityName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_').toLowerCase()
+      : '';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const fileName = safeCity ? `relatorio_${reportType}_${safeCity}_${dateStr}.csv` : `relatorio_${reportType}_${dateStr}.csv`;
+    link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const scrollToTop = () => {
