@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-218",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -2198,10 +2198,10 @@
       "seq": 218,
       "conversationId": "575fec57-88e4-4457-ab59-07212af39d87",
       "description": "Finalizar unificacao nomHidrante e remocao de codLegado no frontend",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-16T19:53:39.070Z",
       "startedAt": "2026-10-16T19:53:43.989Z",
-      "completedAt": null
+      "completedAt": "2026-10-16T19:54:05.583Z"
     }
   ]
 }
