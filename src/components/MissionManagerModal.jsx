@@ -7,7 +7,6 @@ import { executePrintHtml } from '../utils/officialPrintUtils';
 import { areIdsEquivalent, getMissionProgressMetrics } from '../utils/idMapping';
 
 const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], activeMissionId = null, hidrantes = [], onClose, onOpenMission, onCloseMission, onNewMission, onDeleteMission, onFoldersChange, onMissionsChange, currentUser, isEmbedded = false }) => {
-  const getMissionMetrics = (m) => getMissionProgressMetrics(m, hidrantes);
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const [activeTab, setActiveTab] = useState('todas'); // todas, nao_iniciadas, em_andamento, finalizadas, dashboard_comando
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +25,24 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
   const [missionToDelete, setMissionToDelete] = useState(null);
   const [dashboardSearch, setDashboardSearch] = useState('');
   const [dashboardOnlyWithMissions, setDashboardOnlyWithMissions] = useState(false);
+
+  const availableMissions = useMemo(() => {
+    return isGestor ? (missions || []) : (missions || []).filter(m => !m.isDraft);
+  }, [missions, isGestor]);
+
+  // Mapa de métricas pré-calculadas em O(1) para evitar gargalos na interface
+  const missionMetricsMap = useMemo(() => {
+    const map = new Map();
+    availableMissions.forEach(m => {
+      map.set(m.id, getMissionProgressMetrics(m, hidrantes));
+    });
+    return map;
+  }, [availableMissions, hidrantes]);
+
+  const getMissionMetrics = (m) => {
+    if (!m) return { total: 0, completed: 0, pending: 0, percent: 0, isCompleted: false };
+    return missionMetricsMap.get(m.id) || getMissionProgressMetrics(m, hidrantes);
+  };
 
   // Restaura da nuvem se o cache local tiver sido limpo e sincroniza eventos
   useEffect(() => {
@@ -115,8 +132,6 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
     }
   };
 
-  const availableMissions = isGestor ? missions : missions.filter(m => !m.isDraft);
-
   // Estatísticas Consolidadas do Dashboard de Comando (Multiquartéis)
   const dashboardStats = useMemo(() => {
     let totalHidrantes = 0;
@@ -192,7 +207,7 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
       globalProgGeral,
       quartelStats
     };
-  }, [availableMissions, folders]);
+  }, [availableMissions, folders, missionMetricsMap]);
 
   // Utilitário de ordenação alfabética com pasta favorita no topo
   const sortFoldersWithFavorite = (folderList, favId) => {
@@ -228,17 +243,19 @@ const MissionManagerModal = ({ missions, folders = [], openMissionIds = [], acti
   // Ordena as pastas em ordem alfabética com a pasta favorita no topo
   displayFolders = sortFoldersWithFavorite(displayFolders, defaultFolderId);
 
-  const filteredMissions = displayMissions.filter(m => {
-    const { total, completed, isCompleted } = getMissionMetrics(m);
-    const isNotStarted = completed === 0;
-    const isPartial = !isNotStarted && !isCompleted;
+  const filteredMissions = useMemo(() => {
+    return displayMissions.filter(m => {
+      const { total, completed, isCompleted } = getMissionMetrics(m);
+      const isNotStarted = completed === 0;
+      const isPartial = !isNotStarted && !isCompleted;
 
-    if (activeTab === 'todas') return true;
-    if (activeTab === 'nao_iniciadas' && isNotStarted) return true;
-    if (activeTab === 'em_andamento' && isPartial) return true;
-    if (activeTab === 'finalizadas' && isCompleted) return true;
-    return true;
-  }).sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      if (activeTab === 'todas') return true;
+      if (activeTab === 'nao_iniciadas' && isNotStarted) return true;
+      if (activeTab === 'em_andamento' && isPartial) return true;
+      if (activeTab === 'finalizadas' && isCompleted) return true;
+      return true;
+    }).sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }, [displayMissions, missionMetricsMap, activeTab]);
 
   const confirmDelete = () => {
     if (missionToDelete) {

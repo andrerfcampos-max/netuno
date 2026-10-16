@@ -263,8 +263,13 @@ const MissionRoutePanel = ({
     }
 
     // 2. Refinamento OSRM ATSP com sentidos de vias e trânsito real (lotes sequenciais de 30 em 30)
+    const targetMissionId = currentMission?.id;
     try {
       const osrmResult = await fetchOSRMAndOptimizeRoute(fastOrdered, anchorLat, anchorLng, 4500, ROUTE_CHUNK_SIZE);
+      // Se a rota foi fechada ou a missão foi trocada durante a requisição OSRM, descarta o resultado
+      if (!targetMissionId || currentMission?.id !== targetMissionId) {
+        return;
+      }
       if (osrmResult.route && osrmResult.route.length > 0) {
         setPendingRoute(osrmResult.route);
         setDrivingMetrics(osrmResult.drivingMetrics);

@@ -50,6 +50,7 @@ export const normalizeCode = (str) => {
  */
 export const getHydrantAllIds = (h) => {
   if (!h || typeof h !== 'object') return [];
+  if (h._allIdsCache) return h._allIdsCache;
   const ids = new Set();
 
   const addVal = (v) => {
@@ -66,7 +67,7 @@ export const getHydrantAllIds = (h) => {
           ids.add(noSpaces.toUpperCase());
         }
 
-        // Variações canônicas de prefixo + número (ex: SAM 0082 <-> SAM00082 <-> SAM82 <-> 82)
+        // Variações canônicas de prefixo + número (ex: SAM 0082 <-> SAM00082 <-> SAM82)
         const match = s.trim().toUpperCase().match(/^([A-Z]{3})\s*0*(\d+)$/);
         if (match) {
           const prefix = match[1];
@@ -81,7 +82,8 @@ export const getHydrantAllIds = (h) => {
             ids.add(`${prefix} ${pad4}`);
             ids.add(`${prefix}${numStr}`);
             ids.add(`${prefix} ${numStr}`);
-            ids.add(numStr);
+            // NUNCA adicione 'numStr' puro sem prefixo: ele remove o prefixo da RA
+            // e causa colisão massiva com códigos legados numéricos de outras RAs (ex: Ceilândia vs BSB vs Samambaia)
           }
         }
 
@@ -113,7 +115,131 @@ export const getHydrantAllIds = (h) => {
   addVal(h._internalId);
   addVal(h.id);
 
-  return Array.from(ids);
+  const arr = Array.from(ids);
+  try {
+    h._allIdsCache = arr;
+    h._allIdsSetCache = ids;
+  } catch (e) {}
+  return arr;
+};
+
+// Cache WeakMap para reutilização instantânea O(1) de conjuntos expandidos sem re-parsing
+const expandedSetCache = new WeakMap();
+
+/**
+ * Constrói e normaliza um conjunto expandido de IDs para testes O(1) ultra-rápidos
+ */
+export const buildExpandedIdSet = (idSetOrArray) => {
+  if (!idSetOrArray) return new Set();
+  if (idSetOrArray instanceof Set && idSetOrArray._isExpanded) {
+    return idSetOrArray;
+  }
+  if (typeof idSetOrArray === 'object' && idSetOrArray !== null && expandedSetCache.has(idSetOrArray)) {
+    return expandedSetCache.get(idSetOrArray);
+  }
+
+  const rawList = idSetOrArray instanceof Set 
+    ? Array.from(idSetOrArray) 
+    : (Array.isArray(idSetOrArray) ? idSetOrArray : [idSetOrArray]);
+
+  const expanded = new Set();
+  expanded._isExpanded = true;
+
+  rawList.forEach(x => {
+    if (x !== undefined && x !== null) {
+      const s = String(x).trim();
+      if (s) {
+        expanded.add(s);
+        expanded.add(s.toUpperCase());
+        const norm = normalizeCode(s);
+        if (norm) {
+          expanded.add(norm);
+          expanded.add(norm.toUpperCase());
+        }
+        const counterpart = translateId(s);
+        if (counterpart) {
+          expanded.add(counterpart);
+          expanded.add(counterpart.toUpperCase());
+        }
+      }
+    }
+  });
+
+  if (typeof idSetOrArray === 'object' && idSetOrArray !== null) {
+    expandedSetCache.set(idSetOrArray, expanded);
+  }
+
+  return expanded;
+};
+
+/**
+ * Cria ou recupera o índice inverso em memória (ID -> Hidrante) para lookup O(1)
+ */
+const hydrantIndexWeakMap = new WeakMap();
+
+export const getHydrantIndex = (hidrantes) => {
+  if (!Array.isArray(hidrantes) || hidrantes.length === 0) return new Map();
+  if (hidrantIndexWeakMap.has(hidrantes)) {
+    return hydrantIndexWeakMap.get(hidrantes);
+  }
+  if (hidrantes._indexMap) return hidrantes._indexMap;
+
+  const indexMap = new Map();
+  hidrantes.forEach(h => {
+    const allIds = getHydrantAllIds(h);
+    allIds.forEach(id => {
+      if (!indexMap.has(id)) {
+        indexMap.set(id, h);
+      }
+    });
+  });
+
+  try {
+    hidrantIndexWeakMap.set(hidrantes, indexMap);
+    hidrantes._indexMap = indexMap;
+  } catch (e) {}
+
+  return indexMap;
+};
+
+/**
+ * Localiza com extrema rapidez (O(K)) a lista de hidrantes físicos correspondentes a uma lista de IDs
+ */
+export const getHydrantsForIds = (idList, hidrantes) => {
+  if (!Array.isArray(idList) || idList.length === 0 || !Array.isArray(hidrantes) || hidrantes.length === 0) {
+    return [];
+  }
+
+  const indexMap = getHydrantIndex(hidrantes);
+  const foundSet = new Set();
+
+  idList.forEach(rawId => {
+    if (rawId === undefined || rawId === null) return;
+    const s = String(rawId).trim();
+    if (!s) return;
+
+    let h = indexMap.get(s) || indexMap.get(s.toUpperCase());
+    if (!h) {
+      const norm = normalizeCode(s);
+      if (norm) h = indexMap.get(norm) || indexMap.get(norm.toUpperCase());
+    }
+    if (!h) {
+      const trans = translateId(s);
+      if (trans) h = indexMap.get(trans) || indexMap.get(trans.toUpperCase());
+    }
+
+    if (h) {
+      foundSet.add(h);
+    }
+  });
+
+  if (foundSet.size > 0) {
+    return Array.from(foundSet);
+  }
+
+  // Fallback seguro de compatibilidade
+  const expanded = buildExpandedIdSet(idList);
+  return hidrantes.filter(h => isHydrantInSet(h, expanded));
 };
 
 /**
@@ -151,38 +277,21 @@ export const areIdsEquivalent = (idA, idB) => {
 export const isHydrantInSet = (hydrant, idSetOrArray) => {
   if (!hydrant || !idSetOrArray) return false;
 
-  const rawList = idSetOrArray instanceof Set 
-    ? Array.from(idSetOrArray) 
-    : (Array.isArray(idSetOrArray) ? idSetOrArray : [idSetOrArray]);
-
-  if (rawList.length === 0) return false;
-
-  const idSet = new Set();
-  rawList.forEach(x => {
-    if (x !== undefined && x !== null) {
-      const s = String(x).trim();
-      if (s) {
-        idSet.add(s);
-        idSet.add(s.toUpperCase());
-        const norm = normalizeCode(s);
-        if (norm) {
-          idSet.add(norm);
-          idSet.add(norm.toUpperCase());
-        }
-        const counterpart = translateId(s);
-        if (counterpart) {
-          idSet.add(counterpart);
-          idSet.add(counterpart.toUpperCase());
-        }
-      }
-    }
-  });
+  const idSet = (idSetOrArray instanceof Set && idSetOrArray._isExpanded)
+    ? idSetOrArray
+    : buildExpandedIdSet(idSetOrArray);
 
   if (idSet.size === 0) return false;
 
+  if (hydrant._allIdsSetCache) {
+    for (const id of hydrant._allIdsSetCache) {
+      if (idSet.has(id)) return true;
+    }
+  }
+
   const allIds = getHydrantAllIds(hydrant);
-  for (const id of allIds) {
-    if (idSet.has(id)) return true;
+  for (let i = 0; i < allIds.length; i++) {
+    if (idSet.has(allIds[i])) return true;
   }
 
   return false;
@@ -238,20 +347,19 @@ export const isSameCalendarDay = (d1, d2) => {
  * @param {Object} localChanges Objeto opcional vindo de loadHydrantChanges()
  * @returns {boolean}
  */
-export const isHydrantCompletedInMission = (hydrant, mission, localChanges = null) => {
+export const isHydrantCompletedInMission = (hydrant, mission, localChanges = null, options = {}) => {
   if (!hydrant) return false;
 
   // 1. Verifica se já consta na lista de completedIds da missão
-  if (mission?.completedIds && isHydrantInSet(hydrant, mission.completedIds)) {
+  if (!options?.skipCompletedIdsCheck && mission?.completedIds && isHydrantInSet(hydrant, mission.completedIds)) {
     return true;
   }
 
   // 2. Verifica se foi vistoriado/alterado offline localmente no dispositivo (loadHydrantChanges)
   if (localChanges?.updated) {
     const allIds = getHydrantAllIds(hydrant);
-    const updatedKeys = Object.keys(localChanges.updated);
-    const foundInLocalChanges = allIds.some(id => updatedKeys.includes(id) || localChanges.updated[id]);
-    if (foundInLocalChanges) {
+    const hasLocal = allIds.some(id => Boolean(localChanges.updated[id]));
+    if (hasLocal) {
       const localObj = allIds.map(id => localChanges.updated[id]).find(Boolean);
       if (localObj && (
         (localObj.datHoraUltimaVistoria && localObj.datHoraUltimaVistoria !== '-') ||
@@ -295,6 +403,10 @@ export const isHydrantCompletedInMission = (hydrant, mission, localChanges = nul
   return false;
 };
 
+// Cache LRU em memória para métricas de missões
+const missionMetricsCache = new Map();
+const MAX_METRICS_CACHE = 200;
+
 /**
  * Calcula com precisão unificada o progresso de uma missão
  * (total de hidrantes, concluídos, pendentes, percentual e status de conclusão).
@@ -317,19 +429,27 @@ export const getMissionProgressMetrics = (mission, hidrantes = [], localChanges 
   }
 
   const completedIds = Array.isArray(mission.completedIds) ? mission.completedIds : [];
-  const completedIdsSet = new Set(completedIds.map(id => String(id).trim()));
+
+  // Chave de cache baseada nos dados essenciais para velocidade extrema (0ms)
+  const cacheKey = `${mission.id || 'm'}_${mission.updatedAt || mission.createdAt || ''}_${selectedIds.length}_${completedIds.length}_${Array.isArray(hidrantes) ? hidrantes.length : 0}_${localChanges ? 'l' : ''}`;
+  if (missionMetricsCache.has(cacheKey)) {
+    return missionMetricsCache.get(cacheKey);
+  }
+
+  let result = null;
 
   // 1. Quando hidrantes está disponível, calcula baseado nos hidrantes físicos reais da missão
   if (Array.isArray(hidrantes) && hidrantes.length > 0) {
-    const selectedIdsSet = new Set(selectedIds.map(id => String(id).trim()));
-    const missionHydrants = hidrantes.filter(h => isHydrantInSet(h, selectedIdsSet));
+    const missionHydrants = getHydrantsForIds(selectedIds, hidrantes);
 
     if (missionHydrants.length > 0) {
+      const completedIdsSet = buildExpandedIdSet(completedIds);
       let completedCount = 0;
+
       missionHydrants.forEach(h => {
         if (
           isHydrantInSet(h, completedIdsSet) || 
-          isHydrantCompletedInMission(h, mission, localChanges)
+          isHydrantCompletedInMission(h, mission, localChanges, { skipCompletedIdsCheck: true })
         ) {
           completedCount++;
         }
@@ -341,7 +461,7 @@ export const getMissionProgressMetrics = (mission, hidrantes = [], localChanges 
       const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
       const isCompleted = total > 0 && completed >= total;
 
-      return {
+      result = {
         total,
         completed,
         pending,
@@ -352,32 +472,45 @@ export const getMissionProgressMetrics = (mission, hidrantes = [], localChanges 
   }
 
   // 2. Fallback caso a lista de hidrantes ainda não tenha sido carregada (apenas IDs)
-  let fallbackCompleted = 0;
-  selectedIds.forEach(sId => {
-    if (completedIds.some(cId => areIdsEquivalent(cId, sId))) {
-      fallbackCompleted++;
-    }
-  });
+  if (!result) {
+    let fallbackCompleted = 0;
+    selectedIds.forEach(sId => {
+      if (completedIds.some(cId => areIdsEquivalent(cId, sId))) {
+        fallbackCompleted++;
+      }
+    });
 
-  const total = selectedIds.length;
-  const completed = Math.min(fallbackCompleted, total);
-  const pending = Math.max(0, total - completed);
-  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-  const isCompleted = total > 0 && completed >= total;
+    const total = selectedIds.length;
+    const completed = Math.min(fallbackCompleted, total);
+    const pending = Math.max(0, total - completed);
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const isCompleted = total > 0 && completed >= total;
 
-  return {
-    total,
-    completed,
-    pending,
-    percent,
-    isCompleted
-  };
+    result = {
+      total,
+      completed,
+      pending,
+      percent,
+      isCompleted
+    };
+  }
+
+  if (missionMetricsCache.size >= MAX_METRICS_CACHE) {
+    const firstKey = missionMetricsCache.keys().next().value;
+    missionMetricsCache.delete(firstKey);
+  }
+  missionMetricsCache.set(cacheKey, result);
+
+  return result;
 };
 
 export default {
   translateId,
   normalizeCode,
   getHydrantAllIds,
+  buildExpandedIdSet,
+  getHydrantIndex,
+  getHydrantsForIds,
   areIdsEquivalent,
   isHydrantInSet,
   parseInspectionDate,

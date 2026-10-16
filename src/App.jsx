@@ -33,7 +33,7 @@ import { extractProblemsList, isHidranteRemovido } from './utils/problemUtils';
 import { fixEncoding } from './utils/textUtils';
 import { getLastKnownLocation, startGlobalGeoTracking, subscribeLocation } from './utils/geoTracker';
 import { optimizeRouteEuclidean } from './utils/routeOptimization';
-import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent, translateId, isHydrantCompletedInMission, getMissionProgressMetrics } from './utils/idMapping';
+import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent, translateId, isHydrantCompletedInMission, getMissionProgressMetrics, getHydrantsForIds } from './utils/idMapping';
 import { getHydrantPhoto, preloadHydrantPhoto, preloadHydrantsList } from './utils/hydrantPhotoUtils';
 import { parseDate, formatDateOnly, formatDateTimeDisplay, getHydrantVistoriaDate } from './utils/dateUtils';
 
@@ -322,7 +322,7 @@ syncPreferences({ activeView: view });
   // Extrai TODOS os hidrantes da rota da missão ativa (concluídos e faltantes)
   const allMissionRouteHydrants = useMemo(() => {
     if (!currentMission || !currentMission.selectedIds || currentMission.selectedIds.length === 0) return [];
-    return hidrantes.filter(h => isHydrantInSet(h, currentMission.selectedIds));
+    return getHydrantsForIds(currentMission.selectedIds, hidrantes);
   }, [currentMission, hidrantes]);
 
   const selectedMissionIds = useMemo(() => currentMission?.selectedIds || [], [currentMission?.selectedIds]);
@@ -1854,6 +1854,9 @@ syncPreferences({ filters: filters });
     setIsRouteActiveOnMap(false);
     saveActiveMissionState({ openMissionIds: [], activeMissionId: null });
     toast.info('Rota de missão fechada com sucesso.');
+    if (activeView === 'route') {
+      setActiveView(currentUser?.role === 'vistoriador' ? 'missions' : 'map');
+    }
   };
 
   const handleCloseTab = (id) => {
@@ -2957,26 +2960,33 @@ syncPreferences({ filters: filters });
         {/* MÓDULO CENTRAL DE MISSÕES (BLOCO DE TELA) */}
         {activeView === 'missions' && (
           <div className="w-full h-full max-w-5xl mx-auto flex-1 min-h-0 border border-slate-700 rounded-xl overflow-hidden flex flex-col">
-            <MissionManagerModal 
-              missions={missions}
-              folders={folders}
-              openMissionIds={openMissionIds}
-              activeMissionId={activeMissionId}
-              hidrantes={hidrantes}
-              onClose={() => setActiveView('map')}
-              onOpenMission={(id) => {
-                handleOpenMission(id);
-              }}
-              onCloseMission={(id) => {
-                handleCloseActiveMission();
-              }}
-              onNewMission={handleNewMission}
-              onDeleteMission={handleDeleteMission}
-              onFoldersChange={handleFoldersChange}
-              onMissionsChange={setMissions}
-              currentUser={currentUser}
-              isEmbedded={true}
-            />
+            <Suspense fallback={
+              <div className="flex flex-col items-center justify-center h-full bg-slate-900 text-slate-400 gap-3">
+                <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm font-semibold">Carregando Central de Missões...</span>
+              </div>
+            }>
+              <MissionManagerModal 
+                missions={missions}
+                folders={folders}
+                openMissionIds={openMissionIds}
+                activeMissionId={activeMissionId}
+                hidrantes={hidrantes}
+                onClose={() => setActiveView('map')}
+                onOpenMission={(id) => {
+                  handleOpenMission(id);
+                }}
+                onCloseMission={(id) => {
+                  handleCloseActiveMission();
+                }}
+                onNewMission={handleNewMission}
+                onDeleteMission={handleDeleteMission}
+                onFoldersChange={handleFoldersChange}
+                onMissionsChange={setMissions}
+                currentUser={currentUser}
+                isEmbedded={true}
+              />
+            </Suspense>
           </div>
         )}
 
@@ -2999,7 +3009,14 @@ syncPreferences({ filters: filters });
               onClose={() => {
                 handleCloseActiveMission();
               }}
-              onBackToManager={() => currentUser?.role === 'vistoriador' ? setActiveView('missions') : setIsMissionManagerOpen(true)}
+              onBackToManager={() => {
+                if (currentUser?.role === 'vistoriador') {
+                  setActiveView('missions');
+                } else {
+                  setActiveView('map');
+                  setIsMissionManagerOpen(true);
+                }
+              }}
               onClearMission={() => updateCurrentMission({ selectedIds: [], completedIds: [] })}
               onRemoveFromMission={removeHydrantFromMission}
               lastInspectedCoords={lastInspectedCoords} 
