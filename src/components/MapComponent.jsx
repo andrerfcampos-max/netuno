@@ -1229,9 +1229,36 @@ const MapComponent = ({
     return map;
   }, [activeMission, completedIdsSet, activeMissionHydrants, userLocation]);
 
-  const activeMissionIdsSet = useMemo(() => {
-    return new Set((activeMission?.selectedIds || []).map(String));
-  }, [activeMission?.selectedIds]);
+  // Conjuntos pré-calculados em O(1) para renderização ultra-fluida dos marcadores sem travamento
+  const activeMissionHydrantKeysSet = useMemo(() => {
+    if (!hasActiveRoute || !activeMissionHydrants || activeMissionHydrants.length === 0) {
+      return new Set();
+    }
+    const set = new Set();
+    activeMissionHydrants.forEach(h => {
+      getHydrantAllIds(h).forEach(k => {
+        set.add(k);
+        set.add(String(k).toUpperCase());
+      });
+    });
+    return set;
+  }, [hasActiveRoute, activeMissionHydrants]);
+
+  const completedMissionHydrantKeysSet = useMemo(() => {
+    if (!hasActiveRoute || !activeMissionHydrants || activeMissionHydrants.length === 0) {
+      return new Set();
+    }
+    const set = new Set();
+    activeMissionHydrants.forEach(h => {
+      if (isHydrantInSet(h, completedIdsSet) || (activeMission && isHydrantCompletedInMission(h, activeMission))) {
+        getHydrantAllIds(h).forEach(k => {
+          set.add(k);
+          set.add(String(k).toUpperCase());
+        });
+      }
+    });
+    return set;
+  }, [hasActiveRoute, activeMissionHydrants, completedIdsSet, activeMission]);
 
   const { missionCompletedCount, missionPendingCount } = useMemo(() => {
     if (!hasActiveRoute || !activeMissionHydrants) return { missionCompletedCount: 0, missionPendingCount: 0 };
@@ -1249,13 +1276,13 @@ const MapComponent = ({
 
   const selectedHydrantMissionStatus = useMemo(() => {
     if (!hasActiveRoute || !selectedHydrant) return null;
-    const isMission = isHydrantInSet(selectedHydrant, activeMissionIdsSet) || activeMissionHydrants.some(mh => isHydrantInSet(selectedHydrant, getHydrantAllIds(mh)));
-    if (!isMission) return null;
-    const isCompleted = isHydrantInSet(selectedHydrant, completedIdsSet) || (activeMission && isHydrantCompletedInMission(selectedHydrant, activeMission));
     const allIds = getHydrantAllIds(selectedHydrant);
+    const isMission = allIds.some(k => activeMissionHydrantKeysSet.has(k));
+    if (!isMission) return null;
+    const isCompleted = allIds.some(k => completedMissionHydrantKeysSet.has(k));
     const order = !isCompleted ? (allIds.map(k => missionOrderMap[k]).find(v => v !== undefined) || null) : null;
     return { isCompleted, order };
-  }, [hasActiveRoute, selectedHydrant, completedIdsSet, activeMissionIdsSet, activeMissionHydrants, missionOrderMap, activeMission]);
+  }, [hasActiveRoute, selectedHydrant, activeMissionHydrantKeysSet, completedMissionHydrantKeysSet, missionOrderMap]);
 
   const renderMarkers = () => {
     return validHidrantes.map((h, i) => {
@@ -1270,14 +1297,12 @@ const MapComponent = ({
       );
 
       const allHydrantIds = getHydrantAllIds(h);
-      const isMissionCompleted = isHydrantInSet(h, completedIdsSet) || (activeMission && isHydrantCompletedInMission(h, activeMission));
-
-      // Hidrante pertence à missão ativa se a rota estiver ativa no mapa
+      // Avaliação instantânea O(1) de pertencimento e status da missão ativa
       const isMissionItem = Boolean(
-        hasActiveRoute && (
-          isHydrantInSet(h, activeMissionIdsSet) ||
-          activeMissionHydrants.some(mh => isHydrantInSet(h, getHydrantAllIds(mh)))
-        )
+        hasActiveRoute && allHydrantIds.some(k => activeMissionHydrantKeysSet.has(k))
+      );
+      const isMissionCompleted = Boolean(
+        isMissionItem && allHydrantIds.some(k => completedMissionHydrantKeysSet.has(k))
       );
 
       const missionOrder = (isMissionItem && !isMissionCompleted)

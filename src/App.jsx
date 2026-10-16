@@ -1121,12 +1121,13 @@ syncPreferences({ filters: newFilters });
     }
   }, [hidrantes.length, missions.length, currentUser?.matricula, currentUser?.nome]);
 
-  const updateCurrentMission = (updates) => {
-    if (!activeMissionId) return;
+  const updateCurrentMission = (updates, targetId = null) => {
+    const idToUpdate = targetId || activeMissionId;
+    if (!idToUpdate) return;
     let target = null;
     setMissions(prev => {
       const updated = prev.map(m => {
-        if (m.id === activeMissionId) {
+        if (m.id === idToUpdate) {
           const mergedOrdered = (updates.orderedIds && Array.isArray(updates.orderedIds) && updates.orderedIds.length > 0)
             ? updates.orderedIds
             : (m.orderedIds || []);
@@ -1148,13 +1149,12 @@ syncPreferences({ filters: newFilters });
     }
   };
 
-
   const toggleCartSelection = (id) => {
     setCartSelectionIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   const selectAllCart = (isChecked, currentFilteredData) => {
-    const filteredIds = currentFilteredData.map(h => h.codHidrante || h.nomHidrante || h._internalId);
+    const filteredIds = currentFilteredData.map(h => h.nomHidrante || h.codHidrante || h._internalId);
     if (isChecked) {
       setCartSelectionIds(prev => [...new Set([...prev, ...filteredIds])]);
     } else {
@@ -1166,7 +1166,7 @@ syncPreferences({ filters: newFilters });
     if (cartSelectionIds.length === 0) return;
     const year = new Date().getFullYear();
     const firstHydrant = hidrantes.find(h => 
-      cartSelectionIds.includes(h.codHidrante) || cartSelectionIds.includes(h.nomHidrante) || cartSelectionIds.includes(h._internalId)
+      cartSelectionIds.includes(h.nomHidrante) || cartSelectionIds.includes(h.codHidrante) || cartSelectionIds.includes(h._internalId)
     );
     const loc = firstHydrant?.dscLocalidade ? (normalizeRAName(firstHydrant.dscLocalidade) || fixEncoding(firstHydrant.dscLocalidade)) : (activeFilters?.ra ? normalizeRAName(activeFilters.ra) : 'Brasília');
     const defaultName = `${loc} ${year}`;
@@ -1187,14 +1187,14 @@ syncPreferences({ filters: newFilters });
     const currentLoc = userLocation || getLastKnownLocation();
     if (currentLoc && typeof currentLoc.lat === 'number' && typeof currentLoc.lng === 'number') {
       const missionHydrants = hidrantes.filter(h => {
-        const k1 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
-        const k2 = h.nomHidrante ? String(h.nomHidrante) : null;
+        const k1 = h.nomHidrante ? String(h.nomHidrante) : null;
+        const k2 = h.codHidrante !== undefined && h.codHidrante !== null ? String(h.codHidrante) : null;
         const k3 = h._internalId ? String(h._internalId) : null;
         return cartSelectionIds.some(id => String(id) === k1 || String(id) === k2 || String(id) === k3);
       });
       const initialOrdered = optimizeRouteEuclidean(missionHydrants, currentLoc.lat, currentLoc.lng);
       if (initialOrdered.length > 0) {
-        newMission.orderedIds = initialOrdered.map(h => h.codHidrante || h._internalId || h.nomHidrante);
+        newMission.orderedIds = initialOrdered.map(h => h.nomHidrante || h.codHidrante || h._internalId);
       }
     }
     
@@ -2999,7 +2999,7 @@ syncPreferences({ filters: filters });
               selectedMissionIds={selectedMissionIds}
               completedMissionIds={completedMissionIds}
               currentMission={currentMission}
-              onUpdateMission={(updates) => updateCurrentMission(updates)}
+              onUpdateMission={(updates, targetId) => updateCurrentMission(updates, targetId)}
               onViewOnMap={() => {
                 setMapCenterPosition(null);
                 setIsRouteActiveOnMap(true);

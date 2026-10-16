@@ -174,6 +174,11 @@ const MissionRoutePanel = ({
   const lastOptimizedIdsRef = useRef('');
   const lastAnchorLocationRef = useRef(null);
   const isInitialMountRef = useRef(true);
+  const currentMissionIdRef = useRef(currentMission?.id);
+
+  useEffect(() => {
+    currentMissionIdRef.current = currentMission?.id;
+  }, [currentMission?.id]);
 
   // Sincronização GPS com prop e rastreador global
   useEffect(() => {
@@ -202,7 +207,8 @@ const MissionRoutePanel = ({
 
   // Motor Central de Otimização Tática (0ms Instantâneo Euclidiano + Refinamento OSRM ATSP)
   const runRouteOptimization = async (overrideLat = null, overrideLng = null, isSilent = true) => {
-    if (pendingHydrants.length === 0) {
+    const targetMissionId = currentMission?.id;
+    if (!targetMissionId || pendingHydrants.length === 0) {
       setPendingRoute([]);
       setIsOptimizing(false);
       return;
@@ -225,6 +231,7 @@ const MissionRoutePanel = ({
     // 2. Se ainda não possui GPS confiável, busca fix rápido com timeout curto
     if (anchorLat === null || anchorLng === null) {
       const fresh = await getFreshLocation(2500);
+      if (currentMissionIdRef.current !== targetMissionId) return;
       if (fresh && typeof fresh.lat === 'number' && typeof fresh.lng === 'number') {
         anchorLat = fresh.lat;
         anchorLng = fresh.lng;
@@ -239,7 +246,7 @@ const MissionRoutePanel = ({
       anchorLng = lastInspectedCoords?.lng || pendingHydrants[0]?.numLongitude;
     }
 
-    if (anchorLat === null || anchorLng === null) {
+    if (anchorLat === null || anchorLng === null || currentMissionIdRef.current !== targetMissionId) {
       setIsOptimizing(false);
       return;
     }
@@ -248,26 +255,25 @@ const MissionRoutePanel = ({
 
     // 1. Ordenação Instantânea Euclidiana (0ms) a partir da localização REAL do vistoriador
     const fastOrdered = optimizeRouteEuclidean(pendingHydrants, anchorLat, anchorLng);
+    if (currentMissionIdRef.current !== targetMissionId) return;
+
     setPendingRoute(fastOrdered);
     const sig = pendingHydrants.map(h => h.codHidrante || h._internalId || h.nomHidrante).join(',');
     lastOptimizedIdsRef.current = sig;
 
     const fastOrderedIds = fastOrdered.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
     if (onUpdateMission) {
-      onUpdateMission({ orderedIds: fastOrderedIds });
+      onUpdateMission({ orderedIds: fastOrderedIds }, targetMissionId);
     }
-    if (currentMission?.id) {
-      try {
-        localStorage.setItem(`netuno_mission_ordered_${currentMission.id}`, JSON.stringify(fastOrderedIds));
-      } catch (e) {}
-    }
+    try {
+      localStorage.setItem(`netuno_mission_ordered_${targetMissionId}`, JSON.stringify(fastOrderedIds));
+    } catch (e) {}
 
     // 2. Refinamento OSRM ATSP com sentidos de vias e trânsito real (lotes sequenciais de 30 em 30)
-    const targetMissionId = currentMission?.id;
     try {
       const osrmResult = await fetchOSRMAndOptimizeRoute(fastOrdered, anchorLat, anchorLng, 4500, ROUTE_CHUNK_SIZE);
       // Se a rota foi fechada ou a missão foi trocada durante a requisição OSRM, descarta o resultado
-      if (!targetMissionId || currentMission?.id !== targetMissionId) {
+      if (!targetMissionId || currentMissionIdRef.current !== targetMissionId) {
         return;
       }
       if (osrmResult.route && osrmResult.route.length > 0) {
@@ -276,22 +282,35 @@ const MissionRoutePanel = ({
         setIsTrafficOptimized(osrmResult.isTrafficMode);
         const updatedIds = osrmResult.route.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
         if (onUpdateMission) {
-          onUpdateMission({ orderedIds: updatedIds });
+          onUpdateMission({ orderedIds: updatedIds }, targetMissionId);
         }
-        if (currentMission?.id) {
-          try {
-            localStorage.setItem(`netuno_mission_ordered_${currentMission.id}`, JSON.stringify(updatedIds));
-          } catch (e) {}
-        }
+        try {
+          localStorage.setItem(`netuno_mission_ordered_${targetMissionId}`, JSON.stringify(updatedIds));
+        } catch (e) {}
       }
     } catch (err) {
       console.warn('Erro ao otimizar rota com OSRM:', err);
     } finally {
-      setIsOptimizing(false);
+      if (currentMissionIdRef.current === targetMissionId) {
+        setIsOptimizing(false);
+      }
     }
   };
 
   const currentMissionId = currentMission?.id;
+  const prevMissionIdRef = useRef(currentMissionId);
+
+  // Limpa imediatamente o estado em memória ao alternar de missão para prevenir vazamentos de dados
+  useEffect(() => {
+    if (prevMissionIdRef.current !== currentMissionId) {
+      prevMissionIdRef.current = currentMissionId;
+      setPendingRoute([]);
+      setDrivingMetrics({});
+      setIsTrafficOptimized(false);
+      lastOptimizedIdsRef.current = '';
+      isInitialMountRef.current = true;
+    }
+  }, [currentMissionId]);
 
   // Auto-otimização instantânea na abertura da rota ou troca de missão
   useEffect(() => {

@@ -220,7 +220,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
               </div>
             )}
             {sortedData.slice(0, displayCount).map((h, i) => {
-              const id = h.codHidrante || h._internalId || h.nomHidrante;
+              const id = h.nomHidrante || h.codHidrante || h._internalId;
               const isSelected = isHydrantSelected(h, selectedMissionIds);
               const vDate = getHydrantVistoriaDate(h);
               const dataFormatada = vDate !== 'Sem vistoria' ? vDate : 'Não vistoriado';
@@ -389,15 +389,15 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
                       {/* Rota (se gestor) */}
                       {isGestor && onToggleMission && (
                         <button
-                          onClick={() => onToggleMission(h.codHidrante || h._internalId || h.nomHidrante)}
+                          onClick={() => onToggleMission(h.nomHidrante || h.codHidrante || h._internalId)}
                           className={`h-8 px-2 rounded-lg font-bold flex items-center justify-center gap-0.5 shadow-sm transition-all active:scale-95 text-[10px] ${
-                            (selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h._internalId))
+                            (selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h._internalId))
                               ? 'bg-rose-600 text-white ring-1 ring-rose-400'
                               : 'bg-cyan-600 hover:bg-cyan-500 text-white ring-1 ring-cyan-400/40'
                           }`}
                           title="Alternar na Rota da Missão"
                         >
-                          <span>{(selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h._internalId)) ? '✕' : '+'}</span>
+                          <span>{(selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h._internalId)) ? '✕' : '+'}</span>
                           <span>Rota</span>
                         </button>
                       )}
@@ -463,7 +463,7 @@ const DataTable = ({ data, onCenterMap, onInspect, onEdit, onEditInspection, sel
               </thead>
               <tbody>
                 {sortedData.slice(0, displayCount).map((h, i) => {
-                  const id = h.codHidrante || h._internalId || h.nomHidrante;
+                  const id = h.nomHidrante || h.codHidrante || h._internalId;
                   const isSelected = isHydrantSelected(h, selectedMissionIds);
                   return (
                   <tr key={id || i} className={`border-b border-slate-700/50 hover:bg-slate-700/50 transition-colors ${isSelected ? 'bg-cyan-900/20' : ''}`}>
