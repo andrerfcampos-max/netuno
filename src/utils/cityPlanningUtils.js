@@ -1,20 +1,47 @@
-import { parseDate, formatDateOnly } from './dateUtils';
-import { RA_LIST, normalizeRAName } from './raList';
+import { parseDate, formatDateOnly } from './dateUtils.js';
+import { RA_LIST, normalizeRAName } from './raList.js';
 
 /**
- * Utilitário de Planejamento de Vistoria de Cidades (Netuno CBMDF)
- * Calcula a sequência cronológica de vistorias cidade a cidade (RA a RA)
- * com base na Data Média ponderada das vistorias realizadas no ciclo base.
- * Permite projetar o próximo ciclo ordenando da cidade mais antiga para a mais recente.
+ * Utilitário de Planejamento e Fila Prioritária de Vistorias de Cidades (Netuno CBMDF)
+ * 
+ * Regra Tática Fundamental do CBMDF:
+ * A ordem de vistoria é estritamente baseada no tempo decorrido desde a última visita:
+ * cidades que foram visitadas há mais tempo (maior número de dias sem vistoria) têm
+ * prioridade máxima e ficam no topo da fila.
  */
 
+const formatTimeAgo = (days) => {
+  if (days === null || days === undefined || !isFinite(days)) {
+    return 'Sem registro';
+  }
+  if (days === 0) return 'Hoje';
+  if (days === 1) return 'Ontem (há 1 dia)';
+  if (days < 30) return `Há ${days} dias`;
+  
+  const months = Math.floor(days / 30);
+  const remainingDays = days % 30;
+  
+  if (days < 365) {
+    return remainingDays > 5 
+      ? `Há ${months}m e ${remainingDays}d (${days} dias)` 
+      : `Há ${months} meses (${days} dias)`;
+  }
+
+  const years = Math.floor(days / 365);
+  const remMonths = Math.floor((days % 365) / 30);
+  return remMonths > 0 
+    ? `Há ${years}a e ${remMonths}m (${days} dias)` 
+    : `Há ${years} ano(s) (${days} dias)`;
+};
+
 export const calculateCityPlanningData = ({ 
-  hidrantes = [], 
-  baseYear = 2025, 
-  targetYear = 2026,
-  activeYear = 2026
-}) => {
-  const detectedYearsSet = new Set();
+  hidrantes = [],
+  baseYear = null,
+  targetYear = null,
+  activeYear = null
+} = {}) => {
+  const now = new Date();
+  const nowTimestamp = now.getTime();
 
   // Inicializa mapa com todas as 33 Regiões Administrativas oficiais do DF
   const cityMap = {};
@@ -26,11 +53,11 @@ export const calculateCityPlanningData = ({
       lng: ra.lng,
       totalHydrants: 0,
       hydrantIds: [],
-      byYear: {},
-      lastOverallTimestamp: -Infinity,
-      lastOverallDate: null,
-      oldestOverallTimestamp: Infinity,
-      oldestOverallDate: null
+      allVisits: [],
+      lastVisitTimestamp: -Infinity,
+      lastVisitDate: null,
+      oldestVisitTimestamp: Infinity,
+      oldestVisitDate: null
     };
   });
 
@@ -40,9 +67,10 @@ export const calculateCityPlanningData = ({
     const raName = normalizeRAName(rawRA);
     if (!raName || !cityMap[raName]) return;
 
-    cityMap[raName].totalHydrants++;
+    const city = cityMap[raName];
+    city.totalHydrants++;
     const hidId = h._internalId || h.codHidrante || h.nomHidrante;
-    if (hidId) cityMap[raName].hydrantIds.push(hidId);
+    if (hidId) city.hydrantIds.push(hidId);
 
     // Coleta todas as vistorias válidas do hidrante
     const visits = [];
@@ -66,108 +94,105 @@ export const calculateCityPlanningData = ({
       });
     }
 
-    // Deduplica vistorias do mesmo hidrante no mesmo ano (prevalece a mais recente daquele ano)
-    const byYearHydrant = {};
-    const allHydrantVisits = [];
-
     visits.forEach(v => {
-      allHydrantVisits.push(v);
-      const y = v.date.getFullYear();
-      if (y >= 2018 && y <= 2035) {
-        detectedYearsSet.add(y);
-        if (!byYearHydrant[y] || v.date > byYearHydrant[y].date) {
-          byYearHydrant[y] = v;
-        }
-      }
-    });
-
-    // Registra todas as vistorias individuais na RA para cálculo fino de distribuição e campanhas
-    if (!cityMap[raName].allVisits) {
-      cityMap[raName].allVisits = [];
-    }
-    visits.forEach(v => {
-      cityMap[raName].allVisits.push({
-        timestamp: v.date.getTime(),
+      const t = v.date.getTime();
+      city.allVisits.push({
+        timestamp: t,
         date: v.date,
         isOperante: v.isOperante,
         hydrantId: hidId
       });
-    });
 
-    Object.entries(byYearHydrant).forEach(([yStr, visit]) => {
-      const y = parseInt(yStr, 10);
-      if (!cityMap[raName].byYear[y]) {
-        cityMap[raName].byYear[y] = {
-          timestamps: [],
-          operantes: 0,
-          inoperantes: 0,
-          monthlyCount: Array(12).fill(0)
-        };
+      if (t > city.lastVisitTimestamp) {
+        city.lastVisitTimestamp = t;
+        city.lastVisitDate = v.date;
       }
-      const t = visit.date.getTime();
-      cityMap[raName].byYear[y].timestamps.push(t);
-      const m = visit.date.getMonth(); // 0 a 11
-      cityMap[raName].byYear[y].monthlyCount[m]++;
-
-      if (visit.isOperante) {
-        cityMap[raName].byYear[y].operantes++;
-      } else {
-        cityMap[raName].byYear[y].inoperantes++;
-      }
-
-      if (t > cityMap[raName].lastOverallTimestamp) {
-        cityMap[raName].lastOverallTimestamp = t;
-        cityMap[raName].lastOverallDate = visit.date;
-      }
-      if (t < cityMap[raName].oldestOverallTimestamp) {
-        cityMap[raName].oldestOverallTimestamp = t;
-        cityMap[raName].oldestOverallDate = visit.date;
+      if (t < city.oldestVisitTimestamp) {
+        city.oldestVisitTimestamp = t;
+        city.oldestVisitDate = v.date;
       }
     });
   });
 
-  const availableYears = Array.from(detectedYearsSet).sort((a, b) => b - a);
-  if (!availableYears.includes(2026)) availableYears.unshift(2026);
-  if (!availableYears.includes(2025)) availableYears.push(2025);
-
   const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-  // Função auxiliar para calcular métricas de um ano para uma RA
-  const computeStats = (city, year) => {
-    const yearData = city.byYear[year];
-    if (!yearData || yearData.timestamps.length === 0) {
-      return {
-        year,
-        inspectedCount: 0,
-        coveragePct: 0,
-        avgDate: null,
-        avgTimestamp: -Infinity,
-        minDate: null,
-        maxDate: null,
-        durationDays: 0,
-        operantes: 0,
-        inoperantes: 0,
-        hasVisits: false,
-        monthlyDistribution: Array(12).fill(0),
-        peakMonth: null,
-        summaryPeriod: 'Sem vistorias em ' + year
-      };
+  // Processa estatísticas operacionais de cada RA
+  const allCities = Object.values(cityMap).map(city => {
+    const visits = city.allVisits || [];
+    visits.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Identifica última campanha contígua (gap máximo de 90 dias entre vistorias sucessivas)
+    const campaigns = [];
+    let currentCamp = [];
+
+    visits.forEach(v => {
+      if (currentCamp.length === 0) {
+        currentCamp.push(v);
+      } else {
+        const lastV = currentCamp[currentCamp.length - 1];
+        const gapDays = (v.timestamp - lastV.timestamp) / (1000 * 60 * 60 * 24);
+        if (gapDays <= 120) {
+          currentCamp.push(v);
+        } else {
+          campaigns.push(currentCamp);
+          currentCamp = [v];
+        }
+      }
+    });
+    if (currentCamp.length > 0) campaigns.push(currentCamp);
+
+    const latestCamp = campaigns[campaigns.length - 1] || [];
+    const uniqueHydrantIdsInCampaign = new Set(latestCamp.map(v => v.hydrantId));
+    const recentInspectedCount = uniqueHydrantIdsInCampaign.size;
+    const recentCoveragePct = city.totalHydrants > 0 
+      ? Math.round((recentInspectedCount / city.totalHydrants) * 100) 
+      : 0;
+
+    const campStartDate = latestCamp.length > 0 ? latestCamp[0].date : null;
+    const campEndDate = latestCamp.length > 0 ? latestCamp[latestCamp.length - 1].date : null;
+    const campDurationDays = (campStartDate && campEndDate) 
+      ? Math.max(1, Math.round((campEndDate.getTime() - campStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1)
+      : 0;
+
+    const campAvgTimestamp = latestCamp.length > 0
+      ? Math.round(latestCamp.reduce((sum, v) => sum + v.timestamp, 0) / latestCamp.length)
+      : -Infinity;
+    const campAvgDate = isFinite(campAvgTimestamp) && campAvgTimestamp > 0 ? new Date(campAvgTimestamp) : null;
+
+    // Cálculo de tempo decorrido desde a última vistoria
+    const hasVisits = city.lastVisitDate !== null && isFinite(city.lastVisitTimestamp);
+    const daysSinceLastVisit = hasVisits 
+      ? Math.max(0, Math.round((nowTimestamp - city.lastVisitTimestamp) / (1000 * 60 * 60 * 24)))
+      : Infinity;
+
+    const timeAgoLabel = formatTimeAgo(daysSinceLastVisit);
+
+    // Definição de Situação Operacional Clara e sem contradições:
+    // 1. "completed": Campanha RECENTE (últimos 180 dias) cobriu >= 90% dos hidrantes
+    // 2. "in_progress": Teve vistoria recente (últimos 180 dias), mas ainda não completou 90%
+    // 3. "pending": Não recebe vistorias há mais de 180 dias (ou nunca foi vistoriada) -> Fila de Espera Ativa
+    let planningStatus = 'pending';
+    let statusLabel = 'Aguardando Fila';
+
+    if (daysSinceLastVisit <= 180 && (recentCoveragePct >= 90 || (recentInspectedCount >= city.totalHydrants && city.totalHydrants > 0))) {
+      planningStatus = 'completed';
+      statusLabel = `Vistoriada Recente (${recentCoveragePct}%)`;
+    } else if (daysSinceLastVisit <= 180 && recentInspectedCount > 0) {
+      planningStatus = 'in_progress';
+      statusLabel = `Em Andamento (${recentCoveragePct}%)`;
+    } else {
+      planningStatus = 'pending';
+      statusLabel = daysSinceLastVisit === Infinity 
+        ? 'Nunca Vistoriada' 
+        : 'Aguardando Fila';
     }
 
-    const ts = yearData.timestamps;
-    const sum = ts.reduce((a, b) => a + b, 0);
-    const avgTimestamp = Math.round(sum / ts.length);
-    const avgDate = new Date(avgTimestamp);
-    const minTimestamp = Math.min(...ts);
-    const maxTimestamp = Math.max(...ts);
-    const minDate = new Date(minTimestamp);
-    const maxDate = new Date(maxTimestamp);
-    const durationDays = Math.max(1, Math.round((maxTimestamp - minTimestamp) / (1000 * 60 * 60 * 24)) + 1);
-    const inspectedCount = ts.length;
-    const coveragePct = city.totalHydrants > 0 ? Math.round((inspectedCount / city.totalHydrants) * 100) : 0;
-    const monthlyDistribution = [...yearData.monthlyCount];
+    // Histograma mensal de vistorias da última campanha
+    const monthlyDistribution = Array(12).fill(0);
+    latestCamp.forEach(v => {
+      monthlyDistribution[v.date.getMonth()]++;
+    });
 
-    // Identifica o mês com maior concentração de vistorias
     let maxMonthCount = 0;
     let peakMonthIndex = 0;
     monthlyDistribution.forEach((cnt, idx) => {
@@ -181,219 +206,108 @@ export const calculateCityPlanningData = ({
       name: MONTH_NAMES[peakMonthIndex],
       index: peakMonthIndex,
       count: maxMonthCount,
-      pct: Math.round((maxMonthCount / inspectedCount) * 100)
+      pct: recentInspectedCount > 0 ? Math.round((maxMonthCount / recentInspectedCount) * 100) : 0
     } : null;
 
-    // Resumo legível do período (ex: "Mai - Jun/2025" ou "Concentrado em Dez")
-    let summaryPeriod = `${formatDateOnly(minDate)} a ${formatDateOnly(maxDate)}`;
-    if (minDate.getMonth() === maxDate.getMonth() && minDate.getFullYear() === maxDate.getFullYear()) {
-      summaryPeriod = `${MONTH_NAMES[minDate.getMonth()]}/${minDate.getFullYear()} (${durationDays}d)`;
-    } else {
-      summaryPeriod = `${MONTH_NAMES[minDate.getMonth()]} a ${MONTH_NAMES[maxDate.getMonth()]}/${maxDate.getFullYear()} (${durationDays}d)`;
+    let summaryPeriod = '-';
+    if (campStartDate && campEndDate) {
+      if (campStartDate.getTime() === campEndDate.getTime()) {
+        summaryPeriod = `${formatDateOnly(campStartDate)} (1d)`;
+      } else {
+        summaryPeriod = `${formatDateOnly(campStartDate)} a ${formatDateOnly(campEndDate)} (${campDurationDays}d)`;
+      }
     }
 
-    return {
-      year,
-      inspectedCount,
-      coveragePct,
-      avgDate,
-      avgTimestamp,
-      minDate,
-      maxDate,
-      durationDays,
-      operantes: yearData.operantes,
-      inoperantes: yearData.inoperantes,
-      hasVisits: true,
+    // Objeto retrocompatível para evitar quebras em telas legadas
+    const baseStats = {
+      inspectedCount: recentInspectedCount,
+      coveragePct: recentCoveragePct,
+      avgDate: campAvgDate,
+      avgTimestamp: campAvgTimestamp,
+      minDate: campStartDate,
+      maxDate: campEndDate,
+      durationDays: campDurationDays,
+      hasVisits,
       monthlyDistribution,
       peakMonth,
       summaryPeriod
     };
-  };
 
-  // Função para computar a ÚLTIMA CAMPANHA CONTÍNUA da RA (independente de transição de ano 2025 -> 2026)
-  const computeLatestContinuousCampaign = (city) => {
-    const visits = city.allVisits || [];
-    if (visits.length === 0) {
-      return {
-        hasCampaign: false,
-        uniqueHydrantsCovered: 0,
-        coveragePct: 0,
-        isCompleted: false,
-        isInProgress: false,
-        startDate: null,
-        endDate: null,
-        durationDays: 0,
-        spansTwoYears: false,
-        cycleName: 'Sem vistorias'
-      };
-    }
-
-    // Ordena vistorias cronologicamente da mais antiga para a mais recente
-    visits.sort((a, b) => a.timestamp - b.timestamp);
-
-    // Agrupa vistorias contíguas (gap máximo de 90 dias entre vistorias sucessivas da mesma RA)
-    const campaigns = [];
-    let currentCamp = [];
-
-    visits.forEach(v => {
-      if (currentCamp.length === 0) {
-        currentCamp.push(v);
-      } else {
-        const lastV = currentCamp[currentCamp.length - 1];
-        const gapDays = (v.timestamp - lastV.timestamp) / (1000 * 60 * 60 * 24);
-        if (gapDays <= 120) { // Campanha contígua dentro de ~4 meses de janela
-          currentCamp.push(v);
-        } else {
-          campaigns.push(currentCamp);
-          currentCamp = [v];
-        }
-      }
-    });
-    if (currentCamp.length > 0) campaigns.push(currentCamp);
-
-    // Pega a campanha mais recente
-    const latest = campaigns[campaigns.length - 1] || [];
-    const uniqueHydrantIds = new Set(latest.map(v => v.hydrantId));
-    const uniqueHydrantsCovered = uniqueHydrantIds.size;
-    const coveragePct = city.totalHydrants > 0 ? Math.round((uniqueHydrantsCovered / city.totalHydrants) * 100) : 0;
-
-    const startDate = latest.length > 0 ? latest[0].date : null;
-    const endDate = latest.length > 0 ? latest[latest.length - 1].date : null;
-    const durationDays = (startDate && endDate) 
-      ? Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1)
-      : 0;
-
-    const spansTwoYears = startDate && endDate && (startDate.getFullYear() !== endDate.getFullYear());
-    let cycleName = 'Desconhecido';
-    if (startDate && endDate) {
-      if (spansTwoYears) {
-        cycleName = `Ciclo ${startDate.getFullYear()}/${endDate.getFullYear()}`;
-      } else {
-        cycleName = `Ciclo ${endDate.getFullYear()}`;
-      }
-    }
-
-    const isCompleted = coveragePct >= 90 || (uniqueHydrantsCovered >= city.totalHydrants && city.totalHydrants > 0);
-    const isInProgress = !isCompleted && uniqueHydrantsCovered > 0;
-
-    return {
-      hasCampaign: latest.length > 0,
-      uniqueHydrantsCovered,
-      coveragePct,
-      isCompleted,
-      isInProgress,
-      startDate,
-      endDate,
-      durationDays,
-      spansTwoYears,
-      cycleName,
-      totalVisitsInCampaign: latest.length
+    const targetStats = {
+      inspectedCount: recentInspectedCount,
+      coveragePct: recentCoveragePct
     };
-  };
-
-  // Monta lista de dados enriquecida para cada cidade
-  const allCities = Object.values(cityMap).map(city => {
-    const baseStats = computeStats(city, baseYear);
-    const targetStats = computeStats(city, targetYear);
-    const activeStats = computeStats(city, activeYear);
-    const continuousCampaign = computeLatestContinuousCampaign(city);
-
-    // Status no ciclo alvo (targetYear) com reconhecimento de transição de ciclo contínuo
-    let planningStatus = 'pending'; // 'pending' | 'in_progress' | 'completed'
-
-    // Se a cidade já teve campanha contínua recente concluída (mesmo que iniciada em 2025 e finalizada em 2026)
-    if (continuousCampaign.isCompleted && continuousCampaign.endDate && continuousCampaign.endDate.getFullYear() >= targetYear - 1) {
-      // Se a última vistoria foi recente (dentro dos últimos 18 meses ou já no ano alvo)
-      planningStatus = 'completed';
-    } else if (targetStats.coveragePct >= 90 || (targetStats.inspectedCount >= city.totalHydrants && city.totalHydrants > 0)) {
-      planningStatus = 'completed';
-    } else if (targetStats.inspectedCount > 0 || (continuousCampaign.isInProgress && continuousCampaign.endDate && continuousCampaign.endDate.getFullYear() >= targetYear)) {
-      planningStatus = 'in_progress';
-    }
-
-    // Status no ano de visualização isolada (activeStats)
-    let activeStatus = 'pending';
-    if (activeStats.coveragePct >= 90 || (activeStats.inspectedCount >= city.totalHydrants && city.totalHydrants > 0)) {
-      activeStatus = 'completed';
-    } else if (activeStats.inspectedCount > 0) {
-      activeStatus = 'in_progress';
-    }
 
     return {
       ...city,
+      hasVisits,
+      daysSinceLastVisit,
+      timeAgoLabel,
+      lastVisitDateStr: city.lastVisitDate ? formatDateOnly(city.lastVisitDate) : 'Sem registro',
+      recentInspectedCount,
+      recentCoveragePct,
+      campStartDate,
+      campEndDate,
+      campDurationDays,
+      campAvgDate,
+      planningStatus,
+      statusLabel,
       baseStats,
       targetStats,
-      activeStats,
-      continuousCampaign,
-      planningStatus,
-      activeStatus
+      activeStats: targetStats
     };
   });
 
-  // 1. MODO PROJEÇÃO DE PLANEJAMENTO (BaseYear -> TargetYear):
-  // Ordenação da mais antiga para a mais recente (ASC)
-  // Quem não foi vistoriado no ano base (ou foi vistoriado antes) tem PRIORIDADE MÁXIMA (fica no início)
+  // =========================================================================
+  // ORDENAÇÃO DA FILA OPERACIONAL:
+  // Critério Tático Estrito: DA CIDADE VISITADA HÁ MAIS TEMPO PARA A MAIS RECENTE
+  // Quem está há mais tempo sem vistoria fica no 1º lugar da fila!
+  // =========================================================================
   const planningList = [...allCities].sort((a, b) => {
-    // Caso 1: Uma tem vistorias no ano base e a outra não
-    if (a.baseStats.hasVisits && !b.baseStats.hasVisits) return 1; // 'a' vai depois
-    if (!a.baseStats.hasVisits && b.baseStats.hasVisits) return -1; // 'b' vai depois
+    // 1. Quem nunca foi vistoriado tem prioridade absoluta
+    if (!a.hasVisits && b.hasVisits) return -1;
+    if (a.hasVisits && !b.hasVisits) return 1;
 
-    // Caso 2: Nenhuma tem vistorias no ano base -> prioriza quem tem vistoria geral mais antiga
-    if (!a.baseStats.hasVisits && !b.baseStats.hasVisits) {
-      if (a.lastOverallTimestamp !== b.lastOverallTimestamp) {
-        return a.lastOverallTimestamp - b.lastOverallTimestamp; // Mais antiga primeiro
-      }
-      return a.name.localeCompare(b.name, 'pt-BR');
+    // 2. Compara pelo timestamp da última vistoria (ASC = mais antiga primeiro = maior tempo sem visita)
+    if (a.lastVisitTimestamp !== b.lastVisitTimestamp) {
+      return a.lastVisitTimestamp - b.lastVisitTimestamp;
     }
 
-    // Caso 3: Ambas têm vistorias no ano base -> compara a Data Média (ASC - mais antiga primeiro)
-    return a.baseStats.avgTimestamp - b.baseStats.avgTimestamp;
+    return a.name.localeCompare(b.name, 'pt-BR');
   });
 
-  // Atribui posições de sequência no planejamento
+  // Atribui classificação na fila (1º, 2º, ... 33º)
   planningList.forEach((c, idx) => {
     c.planningRank = idx + 1;
   });
 
-  // Identifica a cidade atual em andamento e a próxima recomendada
-  const inProgressCity = planningList.find(c => c.planningStatus === 'in_progress') || null;
-  const nextPendingCity = planningList.find(c => c.planningStatus === 'pending') || null;
+  // Identificação clara da Próxima Cidade a Vistoriar:
+  // 1. Cidades que já estão em andamento ativo
+  const inProgressCities = planningList.filter(c => c.planningStatus === 'in_progress');
+  const inProgressCity = inProgressCities.length > 0 ? inProgressCities[0] : null;
 
-  // 2. MODO SEQUÊNCIA REALIZADA POR ANO (activeYear):
-  // Mostra as cidades que tiveram vistorias no ano selecionado ordenadas pela data média daquele ano
-  const activeYearWithVisits = allCities
-    .filter(c => c.activeStats.hasVisits)
-    .sort((a, b) => a.activeStats.avgTimestamp - b.activeStats.avgTimestamp);
+  // 2. Próxima cidade prioritária da fila para iniciar (primeira que ainda está pendente)
+  const nextPendingCity = planningList.find(c => c.planningStatus === 'pending') || planningList[0] || null;
 
-  activeYearWithVisits.forEach((c, idx) => {
-    c.activeYearRank = idx + 1;
-  });
-
-  const activeYearWithoutVisits = allCities
-    .filter(c => !c.activeStats.hasVisits)
-    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-
-  // Métricas agregadas do planejamento
+  // Métricas gerais
   const totalCities = allCities.length;
   const completedCities = planningList.filter(c => c.planningStatus === 'completed').length;
-  const inProgressCities = planningList.filter(c => c.planningStatus === 'in_progress').length;
+  const inProgressCount = inProgressCities.length;
   const pendingCities = planningList.filter(c => c.planningStatus === 'pending').length;
 
   return {
     allCities,
     planningList,
-    activeYearWithVisits,
-    activeYearWithoutVisits,
-    availableYears,
-    baseYear,
-    targetYear,
-    activeYear,
+    activeYearWithVisits: planningList,
+    activeYearWithoutVisits: [],
+    availableYears: [2026, 2025],
     inProgressCity,
+    inProgressCities,
     nextPendingCity,
     metrics: {
       totalCities,
       completedCities,
-      inProgressCities,
+      inProgressCities: inProgressCount,
       pendingCities,
       overallProgressPct: totalCities > 0 ? Math.round((completedCities / totalCities) * 100) : 0
     }
@@ -401,75 +315,110 @@ export const calculateCityPlanningData = ({
 };
 
 /**
- * Formata o texto do planejamento para envio via WhatsApp ou mensagens de comando.
+ * Formata texto simples e direto para WhatsApp com indicação cristalina da próxima cidade
  */
 export const formatCityPlanningWhatsAppText = ({
   planningList = [],
-  baseYear = 2025,
-  targetYear = 2026,
+  nextPendingCity = null,
+  inProgressCity = null,
   metrics = {}
-}) => {
-  let text = `🚒 *CBMDF - PLANEJAMENTO DE VISTORIAS POR CIDADE*\n`;
-  text += `📅 *Ciclo de Execução:* ${targetYear} (Baseado no ciclo de ${baseYear})\n`;
-  text += `🎯 *Regra Tática:* Sequência da cidade mais antiga para a mais recente por Data Média\n`;
-  text += `📊 *Progresso Geral:* ${metrics.completedCities || 0}/${metrics.totalCities || 33} cidades concluídas (${metrics.overallProgressPct || 0}%)\n\n`;
+} = {}) => {
+  const nextCity = nextPendingCity || planningList.find(c => c.planningStatus === 'pending') || planningList[0];
 
-  text += `📋 *ORDEM PRIORITÁRIA DE VISTORIAS (CIDADE A CIDADE):*\n`;
+  let text = `🚒 *CBMDF - FILA PRIORITÁRIA DE VISTORIAS POR CIDADE*\n`;
+  text += `🎯 *Critério Operacional:* Cidade visitada há mais tempo (Maior tempo sem vistoria → Mais recente)\n\n`;
+
+  if (nextCity) {
+    text += `📍 *PRÓXIMA CIDADE DA FILA A VISTORIAR:*\n`;
+    text += `👉 *${nextCity.planningRank}º. ${nextCity.name} [${nextCity.prefix}]*\n`;
+    text += `   • Última vistoria: *${nextCity.lastVisitDateStr}* (${nextCity.timeAgoLabel})\n`;
+    text += `   • Carga operacional: *${nextCity.totalHydrants} hidrantes*\n\n`;
+  }
+
+  if (inProgressCity && inProgressCity.name !== nextCity?.name) {
+    text += `🔄 *CIDADE EM ANDAMENTO ATUALMENTE:*\n`;
+    text += `   • *${inProgressCity.name} [${inProgressCity.prefix}]:* ${inProgressCity.recentInspectedCount}/${inProgressCity.totalHydrants} hidrantes vistoriados (${inProgressCity.recentCoveragePct}%)\n`;
+    text += `   • Recomendação: Concluir antes de abrir nova frente.\n\n`;
+  }
+
+  text += `📊 *Resumo Geral:* ${metrics.completedCities || 0} Concluídas | ${metrics.inProgressCities || 0} Em Andamento | ${metrics.pendingCities || 0} Pendentes\n\n`;
+  text += `📋 *ORDEM COMPLETA DA FILA PRIORITÁRIA (1º ao 33º):*\n`;
 
   planningList.forEach(c => {
-    const statusIcon = c.planningStatus === 'completed' 
-      ? '✅ [CONCLUÍDA]' 
-      : c.planningStatus === 'in_progress' 
-      ? '⏳ [EM ANDAMENTO]' 
-      : '🚨 [PENDENTE]';
+    const icon = c.planningStatus === 'completed'
+      ? '✅'
+      : c.planningStatus === 'in_progress'
+      ? '🔄'
+      : c.planningRank === 1
+      ? '🎯'
+      : '⏳';
 
-    const avgStr = c.baseStats.avgDate ? formatDateOnly(c.baseStats.avgDate) : 'Sem vistoria no ciclo base';
-    const progressStr = `${c.targetStats.inspectedCount}/${c.totalHydrants} (${c.targetStats.coveragePct}%)`;
-
-    text += `${c.planningRank}º. *${c.name}* [${c.prefix}]\n`;
-    text += `   • Data Média Ref. (${baseYear}): ${avgStr}\n`;
-    text += `   • Status em ${targetYear}: ${statusIcon} - ${progressStr}\n\n`;
+    text += `${c.planningRank}º. ${icon} *${c.name}* [${c.prefix}]\n`;
+    text += `   • Última: ${c.lastVisitDateStr} (${c.timeAgoLabel}) | Total: ${c.totalHydrants} hidr. | ${c.statusLabel}\n`;
   });
 
-  text += `_Gerado automaticamente pelo Sistema Netuno - CBMDF em ${new Date().toLocaleDateString('pt-BR')}_`;
+  text += `\n_Gerado pelo Sistema Netuno - CBMDF em ${new Date().toLocaleDateString('pt-BR')}_`;
   return text;
 };
 
 /**
- * Gera documento HTML para impressão e exportação em PDF da sequência de planejamento.
+ * Gera documento HTML para impressão e exportação em PDF da Fila Prioritária de Cidades.
+ * Nome padrão do arquivo: Fila_Prioritaria_Vistorias_Cidades_CBMDF.pdf
  */
 export const generateCityPlanningPrintHtml = ({
   planningList = [],
-  baseYear = 2025,
-  targetYear = 2026,
+  nextPendingCity = null,
+  inProgressCity = null,
   metrics = {},
   currentUser = null
-}) => {
+} = {}) => {
   const now = new Date();
   const dateFormatted = formatDateOnly(now);
   const timeFormatted = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-  const rowsHtml = planningList.map(c => {
-    const statusLabel = c.planningStatus === 'completed'
-      ? '<span style="color: #059669; font-weight: bold;">Concluída (100%)</span>'
-      : c.planningStatus === 'in_progress'
-      ? `<span style="color: #d97706; font-weight: bold;">Em Andamento (${c.targetStats.coveragePct}%)</span>`
-      : '<span style="color: #dc2626; font-weight: bold;">Pendente (0%)</span>';
+  const nextCity = nextPendingCity || planningList.find(c => c.planningStatus === 'pending') || planningList[0];
 
-    const avgDateStr = c.baseStats.avgDate ? formatDateOnly(c.baseStats.avgDate) : '<em style="color:#64748b;">Anterior a ' + baseYear + '</em>';
-    const minMaxStr = c.baseStats.minDate && c.baseStats.maxDate
-      ? `${formatDateOnly(c.baseStats.minDate)} a ${formatDateOnly(c.baseStats.maxDate)} (${c.baseStats.durationDays}d)`
-      : '-';
+  const rowsHtml = planningList.map(c => {
+    const isNext = nextCity && c.name === nextCity.name;
+    const isCompleted = c.planningStatus === 'completed';
+    const isInProgress = c.planningStatus === 'in_progress';
+
+    let badgeHtml = '';
+    if (isNext) {
+      badgeHtml = '<span style="color: #0369a1; font-weight: bold; background: #e0f2fe; padding: 2px 6px; border-radius: 4px; border: 1px solid #7dd3fc;">🎯 Próxima da Fila</span>';
+    } else if (isCompleted) {
+      badgeHtml = `<span style="color: #059669; font-weight: bold; background: #d1fae5; padding: 2px 6px; border-radius: 4px;">Concluída (${c.recentCoveragePct}%)</span>`;
+    } else if (isInProgress) {
+      badgeHtml = `<span style="color: #d97706; font-weight: bold; background: #fef3c7; padding: 2px 6px; border-radius: 4px;">Em Andamento (${c.recentCoveragePct}%)</span>`;
+    } else {
+      badgeHtml = '<span style="color: #dc2626; font-weight: 600; background: #fee2e2; padding: 2px 6px; border-radius: 4px;">Aguardando Fila</span>';
+    }
+
+    const rowBg = isNext ? 'background-color: #f0fdf4;' : '';
 
     return `
-      <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
-        <td style="padding: 6px 8px; text-align: center; font-weight: bold; color: #1e293b;">${c.planningRank}º</td>
-        <td style="padding: 6px 8px; font-weight: 600; color: #0f172a;">${c.name} <span style="font-size: 9px; color: #64748b;">(${c.prefix})</span></td>
-        <td style="padding: 6px 8px; text-align: center; font-weight: 600; color: #0284c7;">${avgDateStr}</td>
-        <td style="padding: 6px 8px; text-align: center; color: #475569;">${minMaxStr}</td>
-        <td style="padding: 6px 8px; text-align: center;">${c.totalHydrants}</td>
-        <td style="padding: 6px 8px; text-align: center; font-weight: 600;">${c.targetStats.inspectedCount} / ${c.totalHydrants}</td>
-        <td style="padding: 6px 8px; text-align: center;">${statusLabel}</td>
+      <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px; ${rowBg}">
+        <td style="padding: 6px 8px; text-align: center; font-weight: bold; color: ${isNext ? '#047857' : '#1e293b'}; font-size: 12px;">
+          ${c.planningRank}º
+        </td>
+        <td style="padding: 6px 8px; font-weight: 700; color: #0f172a;">
+          ${c.name} <span style="font-size: 9px; color: #64748b; font-weight: normal;">(${c.prefix})</span>
+        </td>
+        <td style="padding: 6px 8px; text-align: center; font-weight: 600; color: #0369a1;">
+          ${c.lastVisitDateStr}
+        </td>
+        <td style="padding: 6px 8px; text-align: center; font-weight: 600; color: ${c.daysSinceLastVisit > 300 ? '#b91c1c' : '#475569'};">
+          ${c.timeAgoLabel}
+        </td>
+        <td style="padding: 6px 8px; text-align: center; font-weight: bold;">
+          ${c.totalHydrants}
+        </td>
+        <td style="padding: 6px 8px; text-align: center; font-weight: 600;">
+          ${c.recentInspectedCount} / ${c.totalHydrants}
+        </td>
+        <td style="padding: 6px 8px; text-align: center;">
+          ${badgeHtml}
+        </td>
       </tr>
     `;
   }).join('');
@@ -479,29 +428,78 @@ export const generateCityPlanningPrintHtml = ({
     <html lang="pt-BR">
     <head>
       <meta charset="UTF-8">
-      <title>Planejamento_Vistorias_Cidades_${targetYear}_CBMDF</title>
+      <title>Fila_Prioritaria_Vistorias_Cidades_CBMDF</title>
       <style>
-        @page { size: A4 portrait; margin: 12mm 10mm; }
+        @page { size: A4 portrait; margin: 10mm 10mm; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; padding: 0; }
-        .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 12px; }
-        .header h1 { font-size: 15px; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
-        .header h2 { font-size: 13px; margin: 3px 0; color: #1e293b; }
-        .header p { font-size: 10px; margin: 0; color: #64748b; }
-        .kpi-container { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
-        .kpi-card { flex: 1; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; text-align: center; background: #f8fafc; }
-        .kpi-card .val { font-size: 14px; font-weight: bold; color: #0f172a; }
-        .kpi-card .lbl { font-size: 9px; color: #64748b; text-transform: uppercase; }
-        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        th { background: #f1f5f9; color: #334155; font-size: 10px; text-transform: uppercase; padding: 6px 8px; border-bottom: 2px solid #cbd5e1; }
-        .footer { margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 6px; font-size: 9px; color: #64748b; display: flex; justify-content: space-between; }
+        .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 10px; }
+        .header h1 { font-size: 14px; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .header h2 { font-size: 13px; margin: 2px 0; color: #1e293b; }
+        .header p { font-size: 9.5px; margin: 0; color: #64748b; }
+        
+        /* Banner de Próxima Cidade */
+        .priority-banner {
+          background: #f0fdf4;
+          border: 2px solid #059669;
+          border-radius: 8px;
+          padding: 8px 12px;
+          margin-bottom: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+        .priority-banner .target-info {
+          font-size: 11px;
+          color: #065f46;
+        }
+        .priority-banner .target-name {
+          font-size: 15px;
+          font-weight: 800;
+          color: #047857;
+          text-transform: uppercase;
+        }
+        .priority-banner .details {
+          font-size: 10.5px;
+          color: #1e293b;
+          text-align: right;
+        }
+
+        .kpi-container { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+        .kpi-card { flex: 1; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px; text-align: center; background: #f8fafc; }
+        .kpi-card .val { font-size: 13px; font-weight: bold; color: #0f172a; }
+        .kpi-card .lbl { font-size: 8.5px; color: #64748b; text-transform: uppercase; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+        th { background: #f1f5f9; color: #334155; font-size: 9.5px; text-transform: uppercase; padding: 6px 6px; border-bottom: 2px solid #cbd5e1; }
+        .footer { margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 6px; font-size: 8.5px; color: #64748b; display: flex; justify-content: space-between; }
       </style>
     </head>
     <body>
       <div class="header">
         <h1>Corpo de Bombeiros Militar do Distrito Federal</h1>
-        <h2>Planejamento de Vistoria de Cidades (Sequência Anual)</h2>
-        <p>Ciclo Alvo: <strong>${targetYear}</strong> | Base de Referência: <strong>${baseYear}</strong> | Critério: Data Média Ponderada (Mais Antiga → Mais Recente)</p>
+        <h2>Fila Prioritária de Vistoria de Cidades (Sequência Operacional)</h2>
+        <p>Critério Tático: <strong>Cidade visitada há mais tempo</strong> (Maior tempo decorrido sem vistoria → Mais recente)</p>
       </div>
+
+      ${nextCity ? `
+        <div class="priority-banner">
+          <div>
+            <div class="target-info">🎯 PRÓXIMA CIDADE DA FILA A VISTORIAR:</div>
+            <div class="target-name">${nextCity.planningRank}º. ${nextCity.name} (${nextCity.prefix})</div>
+          </div>
+          <div class="details">
+            <div>Última Vistoria: <strong>${nextCity.lastVisitDateStr}</strong> (${nextCity.timeAgoLabel})</div>
+            <div>Carga Operacional: <strong>${nextCity.totalHydrants} hidrantes</strong> a vistoriar</div>
+          </div>
+        </div>
+      ` : ''}
+
+      ${inProgressCity && inProgressCity.name !== nextCity?.name ? `
+        <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 6px; padding: 5px 10px; margin-bottom: 10px; font-size: 10px; color: #92400e; display: flex; justify-content: space-between;">
+          <span>🔄 <strong>EM ANDAMENTO ATUALMENTE:</strong> ${inProgressCity.name} (${inProgressCity.prefix})</span>
+          <span><strong>${inProgressCity.recentInspectedCount} de ${inProgressCity.totalHydrants} hidrantes vistoriados (${inProgressCity.recentCoveragePct}%)</strong> - Recomendação: Concluir antes de abrir nova cidade</span>
+        </div>
+      ` : ''}
 
       <div class="kpi-container">
         <div class="kpi-card">
@@ -509,16 +507,16 @@ export const generateCityPlanningPrintHtml = ({
           <div class="lbl">Total de Regiões</div>
         </div>
         <div class="kpi-card">
-          <div class="val" style="color: #059669;">${metrics.completedCities || 0}</div>
-          <div class="lbl">Concluídas (${metrics.overallProgressPct || 0}%)</div>
+          <div class="val" style="color: #dc2626;">${metrics.pendingCities || 0}</div>
+          <div class="lbl">Aguardando na Fila</div>
         </div>
         <div class="kpi-card">
           <div class="val" style="color: #d97706;">${metrics.inProgressCities || 0}</div>
           <div class="lbl">Em Andamento</div>
         </div>
         <div class="kpi-card">
-          <div class="val" style="color: #dc2626;">${metrics.pendingCities || 0}</div>
-          <div class="lbl">Pendentes na Fila</div>
+          <div class="val" style="color: #059669;">${metrics.completedCities || 0}</div>
+          <div class="lbl">Vistoriadas Recentemente (${metrics.overallProgressPct || 0}%)</div>
         </div>
       </div>
 
@@ -527,11 +525,11 @@ export const generateCityPlanningPrintHtml = ({
           <tr>
             <th style="width: 35px; text-align: center;">Seq.</th>
             <th style="text-align: left;">Região Administrativa</th>
-            <th style="width: 90px; text-align: center;">Data Média (${baseYear})</th>
-            <th style="width: 140px; text-align: center;">Período (${baseYear})</th>
+            <th style="width: 85px; text-align: center;">Última Vistoria</th>
+            <th style="width: 140px; text-align: center;">Tempo sem Vistoria</th>
             <th style="width: 50px; text-align: center;">Total Hidr.</th>
-            <th style="width: 80px; text-align: center;">Progresso (${targetYear})</th>
-            <th style="width: 110px; text-align: center;">Situação (${targetYear})</th>
+            <th style="width: 75px; text-align: center;">Progresso</th>
+            <th style="width: 120px; text-align: center;">Situação Operacional</th>
           </tr>
         </thead>
         <tbody>

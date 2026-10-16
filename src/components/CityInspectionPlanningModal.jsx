@@ -2,10 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { 
   X, 
   CalendarRange, 
-  Calendar, 
   Clock, 
   CheckCircle2, 
-  AlertCircle, 
   Search, 
   ArrowUpDown, 
   Printer, 
@@ -14,16 +12,13 @@ import {
   MapPin, 
   Play, 
   ListOrdered, 
-  Milestone,
-  ArrowRight,
-  TrendingUp,
   FolderOpen,
   LayoutGrid,
   ListFilter,
   BarChart3,
-  Layers,
-  ChevronRight,
-  Sparkles
+  Target,
+  AlertTriangle,
+  ArrowRight
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { 
@@ -31,10 +26,8 @@ import {
   formatCityPlanningWhatsAppText, 
   generateCityPlanningPrintHtml 
 } from '../utils/cityPlanningUtils';
-import { formatDateOnly } from '../utils/dateUtils';
 import { executePrintHtml } from '../utils/officialPrintUtils';
 
-const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 const MONTH_FULL = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 const CityInspectionPlanningModal = ({
@@ -45,42 +38,27 @@ const CityInspectionPlanningModal = ({
   onSelectRA = null,
   onOpenMissions = null
 }) => {
-  // Modo de visão principal:
-  // 'planning' = Fila Operacional & Próximas Cidades
-  // 'realized' = Histórico e Linha do Tempo Realizada
-  const [activeTab, setActiveTab] = useState('planning');
-
   // Modo de exibição na tela:
   // 'matrix' = Gráfico Sintético / Matriz Geral (visão de bater o olho em todas as 33 RAs)
   // 'compact' = Lista Compacta de Alta Densidade
-  // 'cards' = Detalhado com Sparklines Mensais
+  // 'cards' = Detalhado
   const [viewMode, setViewMode] = useState('matrix');
-
-  // Anos selecionados
-  const [baseYear, setBaseYear] = useState(2025);
-  const [targetYear, setTargetYear] = useState(2026);
-  const [realizedYear, setRealizedYear] = useState(2026);
 
   // Filtros locais
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'pending' | 'in_progress' | 'completed'
-  const [sortBy, setSortBy] = useState('oldest_first'); // 'oldest_first' | 'newest_first' | 'name' | 'progress'
+  const [sortBy, setSortBy] = useState('oldest_first'); // 'oldest_first' | 'newest_first' | 'name' | 'hydrants'
 
   const [copied, setCopied] = useState(false);
 
-  // Executa os cálculos estatísticos
+  // Executa os cálculos estatísticos com critério estrito de tempo sem vistoria
   const data = useMemo(() => {
-    return calculateCityPlanningData({
-      hidrantes,
-      baseYear,
-      targetYear,
-      activeYear: realizedYear
-    });
-  }, [hidrantes, baseYear, targetYear, realizedYear]);
+    return calculateCityPlanningData({ hidrantes });
+  }, [hidrantes]);
 
-  // Lista a ser exibida conforme a aba ativa
+  // Lista a ser exibida conforme busca, filtro e ordenação
   const currentList = useMemo(() => {
-    let list = activeTab === 'planning' ? [...data.planningList] : [...data.activeYearWithVisits, ...data.activeYearWithoutVisits];
+    let list = [...data.planningList];
 
     // 1. Filtro por Busca de Texto
     if (searchTerm.trim() !== '') {
@@ -93,58 +71,43 @@ const CityInspectionPlanningModal = ({
 
     // 2. Filtro por Status
     if (statusFilter !== 'all') {
-      if (activeTab === 'planning') {
-        list = list.filter(c => c.planningStatus === statusFilter);
-      } else {
-        list = list.filter(c => c.activeStatus === statusFilter);
-      }
+      list = list.filter(c => c.planningStatus === statusFilter);
     }
 
     // 3. Ordenação
     list.sort((a, b) => {
       if (sortBy === 'oldest_first') {
-        if (activeTab === 'planning') {
-          return a.planningRank - b.planningRank;
-        } else {
-          const tA = a.activeStats.hasVisits ? a.activeStats.avgTimestamp : Infinity;
-          const tB = b.activeStats.hasVisits ? b.activeStats.avgTimestamp : Infinity;
-          return tA - tB;
-        }
+        return a.planningRank - b.planningRank;
       } else if (sortBy === 'newest_first') {
-        if (activeTab === 'planning') {
-          return b.planningRank - a.planningRank;
-        } else {
-          const tA = a.activeStats.hasVisits ? a.activeStats.avgTimestamp : -Infinity;
-          const tB = b.activeStats.hasVisits ? b.activeStats.avgTimestamp : -Infinity;
-          return tB - tA;
-        }
+        return b.planningRank - a.planningRank;
       } else if (sortBy === 'name') {
         return a.name.localeCompare(b.name, 'pt-BR');
-      } else if (sortBy === 'progress') {
-        const pA = activeTab === 'planning' ? a.targetStats.coveragePct : a.activeStats.coveragePct;
-        const pB = activeTab === 'planning' ? b.targetStats.coveragePct : b.activeStats.coveragePct;
-        return pB - pA;
+      } else if (sortBy === 'hydrants') {
+        return b.totalHydrants - a.totalHydrants;
       }
       return 0;
     });
 
     return list;
-  }, [activeTab, data, searchTerm, statusFilter, sortBy]);
+  }, [data, searchTerm, statusFilter, sortBy]);
 
   if (!isOpen) return null;
+
+  const nextCity = data.nextPendingCity || data.planningList[0];
+  const inProgressCity = data.inProgressCity;
 
   // Ação de copiar texto para WhatsApp
   const handleCopyWhatsApp = () => {
     const text = formatCityPlanningWhatsAppText({
       planningList: data.planningList,
-      baseYear,
-      targetYear,
+      nextPendingCity: nextCity,
+      inProgressCity,
       metrics: data.metrics
     });
 
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
-      toast.success('Sequência copiada para a área de transferência!');
+      toast.success('Fila prioritária copiada para a área de transferência!');
       setTimeout(() => setCopied(false), 2500);
     }).catch(() => {
       toast.error('Erro ao copiar texto.');
@@ -155,12 +118,12 @@ const CityInspectionPlanningModal = ({
   const handlePrint = () => {
     const html = generateCityPlanningPrintHtml({
       planningList: data.planningList,
-      baseYear,
-      targetYear,
+      nextPendingCity: nextCity,
+      inProgressCity,
       metrics: data.metrics,
       currentUser
     });
-    executePrintHtml(html, `Planejamento_Vistorias_${targetYear}_CBMDF`);
+    executePrintHtml(html, `Fila_Prioritaria_Vistorias_Cidades_CBMDF`);
   };
 
   // Ação ao clicar em "Ver no Mapa"
@@ -171,11 +134,18 @@ const CityInspectionPlanningModal = ({
     onClose();
   };
 
+  // Ação para criar missão
+  const handleStartMission = (raName) => {
+    if (typeof onSelectRA === 'function') onSelectRA(raName);
+    if (typeof onOpenMissions === 'function') onOpenMissions();
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-1 sm:p-4 animate-fadeIn">
       <div className="bg-slate-900 w-full max-w-6xl rounded-xl sm:rounded-2xl shadow-2xl flex flex-col h-[96vh] sm:h-[92vh] max-h-[96vh] overflow-hidden border border-slate-700/80 text-slate-100">
         
-        {/* CABEÇALHO PADRONIZADO CBMDF / NETUNO (COMPACTO MOBILE) */}
+        {/* CABEÇALHO PADRONIZADO CBMDF / NETUNO */}
         <div className="px-3 py-2 sm:px-6 sm:py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button 
@@ -186,19 +156,17 @@ const CityInspectionPlanningModal = ({
               ← Voltar
             </button>
             <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/50 shrink-0">
-              <CalendarRange size={17} className="sm:w-5 sm:h-5" />
+              <Target size={17} className="sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
               <h2 className="text-sm sm:text-base font-bold text-white tracking-tight truncate flex items-center gap-1.5">
-                <span>Planejamento de Vistorias</span>
+                <span>Fila Prioritária de Vistorias de Cidades</span>
                 <span className="bg-emerald-500/20 text-emerald-300 text-[10px] sm:text-xs px-2 py-0.2 rounded-full border border-emerald-500/40 font-semibold hidden md:inline-flex">
                   33 Regiões DF
                 </span>
               </h2>
               <p className="text-[10px] sm:text-xs text-slate-400 truncate">
-                {activeTab === 'planning' 
-                  ? 'Sequência da cidade mais antiga para a mais recente (Data Média Ponderada)' 
-                  : 'Cronograma e histórico das campanhas realizadas por ano'}
+                Critério Tático: Cidades visitadas há mais tempo têm prioridade máxima na fila
               </p>
             </div>
           </div>
@@ -209,7 +177,7 @@ const CityInspectionPlanningModal = ({
               type="button"
               onClick={handleCopyWhatsApp}
               className="p-1.5 sm:px-3 sm:py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
-              title="Copiar texto estruturado para WhatsApp"
+              title="Copiar fila prioritária estruturada para WhatsApp"
             >
               {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} className="text-slate-300" />}
               <span className="hidden sm:inline">{copied ? 'Copiado!' : 'Copiar'}</span>
@@ -219,10 +187,10 @@ const CityInspectionPlanningModal = ({
               type="button"
               onClick={handlePrint}
               className="p-1.5 sm:px-3 sm:py-1 rounded-lg bg-emerald-700/80 hover:bg-emerald-600 border border-emerald-600 text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
-              title="Imprimir ou Salvar PDF com folha de planejamento"
+              title="Imprimir ou Salvar PDF da Fila Prioritária"
             >
               <Printer size={14} />
-              <span className="hidden sm:inline">PDF</span>
+              <span className="hidden sm:inline">Gerar PDF</span>
             </button>
 
             <button 
@@ -236,163 +204,97 @@ const CityInspectionPlanningModal = ({
           </div>
         </div>
 
-        {/* BARRA SUPERIOR: ABAS + SELETORES DE ANO + MODO DE VISUALIZAÇÃO */}
-        <div className="px-3 py-2 sm:px-6 sm:py-2.5 bg-slate-900/95 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2 shrink-0">
-          {/* Alternador de Abas */}
-          <div className="inline-flex p-0.5 bg-slate-950/80 border border-slate-800 rounded-lg">
-            <button
-              type="button"
-              onClick={() => setActiveTab('planning')}
-              className={`px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === 'planning'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <ListOrdered size={14} />
-              <span>Fila do Ciclo</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('realized')}
-              className={`px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === 'realized'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Calendar size={14} />
-              <span>Linha do Tempo / Histórico</span>
-            </button>
-          </div>
-
-          {/* Seletores de Ano e Modos de Exibição */}
-          <div className="flex items-center gap-2 flex-wrap text-xs ml-auto">
-            {activeTab === 'planning' ? (
-              <div className="flex items-center gap-1.5 bg-slate-800/90 px-2 py-0.5 rounded-lg border border-slate-700/80">
-                <span className="text-slate-400 text-[10px] sm:text-xs font-medium">Base:</span>
-                <select
-                  value={baseYear}
-                  onChange={(e) => setBaseYear(parseInt(e.target.value, 10))}
-                  className="bg-slate-900 text-emerald-400 font-bold border-none text-xs rounded px-1.5 py-0.5 outline-none cursor-pointer"
-                >
-                  {data.availableYears.map(y => (
-                    <option key={`base-${y}`} value={y}>{y}</option>
-                  ))}
-                </select>
-                <ArrowRight size={11} className="text-slate-500" />
-                <span className="text-slate-400 text-[10px] sm:text-xs font-medium">Alvo:</span>
-                <select
-                  value={targetYear}
-                  onChange={(e) => setTargetYear(parseInt(e.target.value, 10))}
-                  className="bg-slate-900 text-emerald-400 font-bold border-none text-xs rounded px-1.5 py-0.5 outline-none cursor-pointer"
-                >
-                  {data.availableYears.map(y => (
-                    <option key={`target-${y}`} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 bg-slate-800/90 px-2 py-0.5 rounded-lg border border-slate-700/80">
-                <span className="text-slate-400 text-xs font-medium mr-1">Ano:</span>
-                {data.availableYears.slice(0, 4).map(y => (
-                  <button
-                    key={`realized-btn-${y}`}
-                    type="button"
-                    onClick={() => setRealizedYear(y)}
-                    className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer ${
-                      realizedYear === y
-                        ? 'bg-emerald-600 text-white shadow-sm'
-                        : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {y}
-                  </button>
-                ))}
+        {/* ========================================================================= */}
+        {/* SUPER DESTAQUE TÁTICO: A PRÓXIMA CIDADE A VISTORIAR (CLAREZA MÁXIMA)       */}
+        {/* ========================================================================= */}
+        <div className="px-3 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-emerald-950/80 via-slate-900 to-teal-950/60 border-b border-emerald-600/40 shrink-0">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+            {nextCity && (
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 shrink-0 shadow-lg shadow-emerald-950">
+                  <Target size={22} className="animate-pulse" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-600/50">
+                      🎯 Próxima Cidade da Fila
+                    </span>
+                    <span className="text-xs text-slate-400 hidden sm:inline">•</span>
+                    <span className="text-xs text-slate-300 hidden sm:inline">
+                      Visitada há mais tempo
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-0.5">
+                    <h3 className="text-base sm:text-lg font-black text-white tracking-tight">
+                      {nextCity.planningRank}º. {nextCity.name}
+                    </h3>
+                    <span className="text-xs font-mono font-bold text-emerald-400">
+                      [{nextCity.prefix}]
+                    </span>
+                    <span className="text-xs text-slate-300 font-semibold">
+                      — {nextCity.totalHydrants} hidrantes
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Última vistoria: <strong className="text-amber-300">{nextCity.lastVisitDateStr}</strong> ({nextCity.timeAgoLabel})
+                  </p>
+                </div>
               </div>
             )}
 
-            {/* Alternador de Modo de Visualização (Bater o Olho / Sintético / Compacto / Detalhado) */}
-            <div className="inline-flex p-0.5 bg-slate-950/80 border border-slate-800 rounded-lg">
+            {/* Ações Rápidas para a Próxima Cidade */}
+            {nextCity && (
+              <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
+                <button
+                  type="button"
+                  onClick={() => handleGoToMap(nextCity.name)}
+                  className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                >
+                  <MapPin size={13} className="text-emerald-400" />
+                  <span>Ver no Mapa</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleStartMission(nextCity.name)}
+                  className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 transition-all shadow-md shadow-emerald-950 cursor-pointer active:scale-95"
+                >
+                  <FolderOpen size={13} />
+                  <span>Criar Missão para {nextCity.name}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Alerta de continuidade se houver cidades em andamento no momento */}
+          {inProgressCity && inProgressCity.name !== nextCity?.name && (
+            <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-amber-300 bg-amber-950/30 px-2.5 py-1.5 rounded-lg border border-amber-600/30">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={14} className="text-amber-400 shrink-0" />
+                <span>
+                  <strong>Em andamento atualmente:</strong> {inProgressCity.name} [{inProgressCity.prefix}] com {inProgressCity.recentInspectedCount} de {inProgressCity.totalHydrants} hidrantes ({inProgressCity.recentCoveragePct}%).
+                </span>
+              </div>
               <button
                 type="button"
-                onClick={() => setViewMode('matrix')}
-                className={`p-1 sm:px-2 sm:py-1 rounded text-[11px] font-medium flex items-center gap-1 transition-all cursor-pointer ${
-                  viewMode === 'matrix' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Visão Sintética Geral (Todas as 33 cidades de relance)"
+                onClick={() => handleGoToMap(inProgressCity.name)}
+                className="text-[11px] underline font-bold hover:text-white shrink-0 ml-2"
               >
-                <BarChart3 size={13} />
-                <span className="hidden md:inline">Sintético</span>
+                Continuar vistoria →
               </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('compact')}
-                className={`p-1 sm:px-2 sm:py-1 rounded text-[11px] font-medium flex items-center gap-1 transition-all cursor-pointer ${
-                  viewMode === 'compact' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Tabela Compacta de Alta Densidade"
-              >
-                <ListFilter size={13} />
-                <span className="hidden md:inline">Compacto</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('cards')}
-                className={`p-1 sm:px-2 sm:py-1 rounded text-[11px] font-medium flex items-center gap-1 transition-all cursor-pointer ${
-                  viewMode === 'cards' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Cards Detalhados com Histograma Mensal"
-              >
-                <LayoutGrid size={13} />
-                <span className="hidden md:inline">Cards</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* RESUMO EXECUTIVO (KPIS) EM 1 LINHA COMPACTA E ROLÁVEL (NÃO ENGROSSA A TELA) */}
-        <div className="px-3 py-1.5 sm:px-6 sm:py-2 bg-slate-950/40 border-b border-slate-800/80 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0 text-xs">
-          <div className="bg-slate-800/60 border border-slate-700/60 rounded-lg px-2.5 py-1 flex items-center gap-2 shrink-0">
-            <span className="text-slate-400 text-[10px] uppercase font-semibold">Total RAs:</span>
-            <span className="font-bold text-white text-xs">{data.metrics.totalCities}</span>
-          </div>
-
-          <div className="bg-emerald-950/30 border border-emerald-700/50 rounded-lg px-2.5 py-1 flex items-center gap-2 shrink-0">
-            <CheckCircle2 size={13} className="text-emerald-400" />
-            <span className="text-emerald-300 text-[10px] uppercase font-semibold">Concluídas:</span>
-            <span className="font-bold text-emerald-300 text-xs">{data.metrics.completedCities} ({data.metrics.overallProgressPct}%)</span>
-          </div>
-
-          <div className="bg-amber-950/30 border border-amber-700/50 rounded-lg px-2.5 py-1 flex items-center gap-2 shrink-0">
-            <Clock size={13} className="text-amber-400" />
-            <span className="text-amber-300 text-[10px] uppercase font-semibold">Em Andamento:</span>
-            <span className="font-bold text-amber-300 text-xs">
-              {data.metrics.inProgressCities} {data.inProgressCity ? `(${data.inProgressCity.name})` : ''}
-            </span>
-          </div>
-
-          {data.nextPendingCity && (
-            <div className="bg-blue-950/30 border border-blue-700/50 rounded-lg px-2.5 py-1 flex items-center gap-2 shrink-0 ml-auto">
-              <Play size={12} className="text-blue-400" />
-              <span className="text-blue-300 text-[10px] uppercase font-semibold">Próxima Prioritária:</span>
-              <span className="font-bold text-blue-200 text-xs">
-                {data.nextPendingCity.name} ({data.nextPendingCity.planningRank}º)
-              </span>
             </div>
           )}
         </div>
 
-        {/* BARRA DE FILTROS E PESQUISA COMPACTA */}
-        <div className="px-3 py-1.5 sm:px-6 sm:py-2 bg-slate-900 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        {/* BARRA DE CONTROLE: RESUMO RÁPIDO + FILTROS + VISUALIZAÇÃO */}
+        <div className="px-3 py-2 sm:px-6 sm:py-2 bg-slate-900 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2 shrink-0">
+          {/* Busca por Nome ou Prefixo */}
           <div className="relative flex-1 min-w-[150px] max-w-xs">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar RA..."
+              placeholder="Buscar cidade ou prefixo..."
               className="w-full pl-7 pr-3 py-1 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500 transition-colors"
             />
             {searchTerm && (
@@ -406,7 +308,7 @@ const CityInspectionPlanningModal = ({
             )}
           </div>
 
-          {/* Filtros de Status em botões compactos */}
+          {/* Filtros de Status */}
           <div className="flex items-center gap-1 text-[11px] overflow-x-auto no-scrollbar">
             <button
               type="button"
@@ -415,7 +317,7 @@ const CityInspectionPlanningModal = ({
                 statusFilter === 'all' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Todas ({currentList.length})
+              Todas (33)
             </button>
             <button
               type="button"
@@ -424,7 +326,7 @@ const CityInspectionPlanningModal = ({
                 statusFilter === 'pending' ? 'bg-red-900/60 text-red-200 border border-red-700/60' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Pendentes
+              Aguardando Fila ({data.metrics.pendingCities})
             </button>
             <button
               type="button"
@@ -433,7 +335,7 @@ const CityInspectionPlanningModal = ({
                 statusFilter === 'in_progress' ? 'bg-amber-900/60 text-amber-200 border border-amber-700/60' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Em Andamento
+              Em Andamento ({data.metrics.inProgressCities})
             </button>
             <button
               type="button"
@@ -442,27 +344,65 @@ const CityInspectionPlanningModal = ({
                 statusFilter === 'completed' ? 'bg-emerald-900/60 text-emerald-200 border border-emerald-700/60' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Concluídas
+              Concluídas Recente ({data.metrics.completedCities})
             </button>
           </div>
 
-          {/* Ordenação */}
-          <div className="flex items-center gap-1 text-xs">
-            <ArrowUpDown size={12} className="text-slate-400" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-slate-950 border border-slate-700 text-slate-300 rounded px-1.5 py-0.5 text-[11px] outline-none cursor-pointer"
-            >
-              <option value="oldest_first">Mais Antiga → Mais Recente</option>
-              <option value="newest_first">Mais Recente → Mais Antiga</option>
-              <option value="progress">Maior Progresso (%)</option>
-              <option value="name">Nome (A → Z)</option>
-            </select>
+          {/* Ordenação + Alternador de Visualização */}
+          <div className="flex items-center gap-2 ml-auto text-xs">
+            <div className="flex items-center gap-1 bg-slate-950/80 border border-slate-800 rounded-lg px-2 py-0.5">
+              <ArrowUpDown size={12} className="text-slate-400" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-transparent border-none text-slate-300 text-[11px] outline-none cursor-pointer"
+              >
+                <option value="oldest_first">Mais antiga sem visita primeiro</option>
+                <option value="newest_first">Mais recente primeiro</option>
+                <option value="hydrants">Mais hidrantes primeiro</option>
+                <option value="name">Nome (A → Z)</option>
+              </select>
+            </div>
+
+            <div className="inline-flex p-0.5 bg-slate-950/80 border border-slate-800 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setViewMode('matrix')}
+                className={`p-1 sm:px-2 sm:py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-all cursor-pointer ${
+                  viewMode === 'matrix' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Visão Sintética Geral"
+              >
+                <BarChart3 size={13} />
+                <span className="hidden md:inline">Sintético</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('compact')}
+                className={`p-1 sm:px-2 sm:py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-all cursor-pointer ${
+                  viewMode === 'compact' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Tabela Compacta"
+              >
+                <ListFilter size={13} />
+                <span className="hidden md:inline">Compacto</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                className={`p-1 sm:px-2 sm:py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-all cursor-pointer ${
+                  viewMode === 'cards' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Cards Detalhados"
+              >
+                <LayoutGrid size={13} />
+                <span className="hidden md:inline">Cards</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* ÁREA DE CONTEÚDO PRINCIPAL (OCUPA 80% DA TELA ÚTIL COM SCROLL PERFEITO NO MOBILE) */}
+        {/* ÁREA DE CONTEÚDO PRINCIPAL (COM SCROLL FLUIDO) */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 sm:p-4 bg-slate-950/20">
           
           {currentList.length === 0 ? (
@@ -479,44 +419,46 @@ const CityInspectionPlanningModal = ({
             </div>
           ) : viewMode === 'matrix' ? (
             /* ============================================================== */
-            /* 1. VISÃO SINTÉTICA GERAL (TODAS AS 33 CIDADES DE RELANCE)     */
+            /* 1. VISÃO SINTÉTICA (CARDS ORDENADOS PELA FILA DE PRIORIDADE)   */
             /* ============================================================== */
             <div className="space-y-3">
               <div className="text-[11px] text-slate-400 flex items-center justify-between pb-1 border-b border-slate-800">
                 <span className="font-semibold text-slate-300">
-                  Matriz Operacional das 33 RAs do DF (Sequência Cronológica e Período de Atuação)
+                  Sequência Operacional das 33 Cidades (Ordem Estrita: Da mais antiga para a mais recente)
                 </span>
                 <span className="text-[10px] text-slate-400">
-                  Clique na cidade para ver ações e detalhes
+                  Total: {currentList.length} cidades exibidas
                 </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 {currentList.map((city) => {
-                  const rank = activeTab === 'planning' ? city.planningRank : city.activeYearRank || '-';
-                  const currentStatus = activeTab === 'planning' ? city.planningStatus : city.activeStatus;
-                  const progressStats = activeTab === 'planning' ? city.targetStats : city.activeStats;
-                  const baseAvg = city.baseStats.avgDate ? formatDateOnly(city.baseStats.avgDate) : 'Antiga';
-                  const hasContinuous = city.continuousCampaign && city.continuousCampaign.hasCampaign;
+                  const isNext = nextCity && city.name === nextCity.name;
+                  const isCompleted = city.planningStatus === 'completed';
+                  const isInProgress = city.planningStatus === 'in_progress';
 
                   return (
                     <div
                       key={`matrix-${city.name}`}
-                      className={`p-2 rounded-lg border transition-all flex flex-col justify-between gap-1.5 ${
-                        currentStatus === 'completed'
-                          ? 'bg-slate-900/90 border-emerald-700/40 hover:border-emerald-500'
-                          : currentStatus === 'in_progress'
+                      className={`p-2.5 rounded-lg border transition-all flex flex-col justify-between gap-2 ${
+                        isNext
+                          ? 'bg-gradient-to-br from-emerald-950/80 to-slate-900 border-emerald-500 shadow-md shadow-emerald-950 ring-1 ring-emerald-500/50'
+                          : isCompleted
+                          ? 'bg-slate-900/90 border-emerald-800/40 hover:border-emerald-600'
+                          : isInProgress
                           ? 'bg-amber-950/20 border-amber-600/50 hover:border-amber-400'
-                          : 'bg-slate-900/90 border-slate-800 hover:border-slate-600'
+                          : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
                       }`}
                     >
                       {/* Topo do Mini-Card: Rank + Nome + Status Badge */}
                       <div className="flex items-center justify-between gap-1.5">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold shrink-0 border ${
-                            rank === 1 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-slate-800 text-slate-300 border-slate-700'
+                            isNext
+                              ? 'bg-emerald-500 text-slate-950 font-black border-emerald-400'
+                              : 'bg-slate-800 text-slate-300 border-slate-700'
                           }`}>
-                            {rank}
+                            {city.planningRank}
                           </span>
                           <span className="font-bold text-xs text-white truncate" title={city.name}>
                             {city.name}
@@ -526,76 +468,61 @@ const CityInspectionPlanningModal = ({
                           </span>
                         </div>
 
-                        {currentStatus === 'completed' ? (
-                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-1.5 py-0.2 rounded border border-emerald-700/50 shrink-0">
-                            100% Concluída
+                        {isNext ? (
+                          <span className="text-[10px] font-black text-emerald-300 bg-emerald-950 px-1.5 py-0.2 rounded border border-emerald-500 shrink-0">
+                            🎯 1º da Fila
                           </span>
-                        ) : currentStatus === 'in_progress' ? (
+                        ) : isCompleted ? (
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-1.5 py-0.2 rounded border border-emerald-700/50 shrink-0">
+                            Concluída ({city.recentCoveragePct}%)
+                          </span>
+                        ) : isInProgress ? (
                           <span className="text-[10px] font-bold text-amber-400 bg-amber-950/60 px-1.5 py-0.2 rounded border border-amber-700/50 shrink-0">
-                            {progressStats.coveragePct}% Andamento
+                            Andamento ({city.recentCoveragePct}%)
                           </span>
                         ) : (
                           <span className="text-[10px] font-semibold text-slate-400 bg-slate-800/80 px-1.5 py-0.2 rounded shrink-0">
-                            Pendente
+                            Aguardando Fila
                           </span>
                         )}
                       </div>
 
+                      {/* Informações Centrais: Tempo sem Vistoria + Total de Hidrantes */}
+                      <div className="text-[11px] bg-slate-950/60 p-1.5 rounded border border-slate-800/80 flex items-center justify-between">
+                        <div>
+                          <div className="text-[10px] text-slate-400">Última Vistoria:</div>
+                          <div className="font-semibold text-white">
+                            {city.lastVisitDateStr}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[10px] text-slate-400">Tempo sem visita:</div>
+                          <div className={`font-bold ${city.daysSinceLastVisit > 300 ? 'text-amber-400' : 'text-slate-300'}`}>
+                            {city.timeAgoLabel}
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Barra de Progresso Compacta */}
-                      <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-                        <div 
-                          className={`h-full transition-all duration-300 rounded-full ${
-                            currentStatus === 'completed'
-                              ? 'bg-emerald-500' 
-                              : progressStats.coveragePct > 0 
-                              ? 'bg-amber-500' 
-                              : 'bg-transparent'
-                          }`}
-                          style={{ width: `${Math.min(100, Math.max(progressStats.coveragePct, currentStatus === 'completed' ? 100 : 0))}%` }}
-                        />
-                      </div>
-
-                      {/* Informações de Período e Mini-Histograma Mensal (Jan a Dez) */}
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
-                        <div className="truncate mr-1">
-                          {hasContinuous && city.continuousCampaign.spansTwoYears ? (
-                            <span className="text-emerald-300 font-medium" title="Campanha realizada entre anos contíguos">
-                              {city.continuousCampaign.cycleName} ({city.continuousCampaign.durationDays}d)
-                            </span>
-                          ) : city.baseStats.hasVisits ? (
-                            <span>{city.baseStats.summaryPeriod}</span>
-                          ) : (
-                            <span>{city.totalHydrants} hidrantes</span>
-                          )}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[10px] text-slate-400">
+                          <span>{city.recentInspectedCount} de {city.totalHydrants} hidrantes</span>
+                          <span>{city.recentCoveragePct}%</span>
                         </div>
-
-                        {/* Sparkline de 12 meses (mostra onde se concentrou) */}
-                        <div className="flex items-end gap-0.5 h-3 shrink-0" title={`Distribuição mensal de vistorias (${baseYear}/${targetYear})`}>
-                          {(city.baseStats.monthlyDistribution || Array(12).fill(0)).map((cnt, mIdx) => {
-                            const isPeak = city.baseStats.peakMonth && city.baseStats.peakMonth.index === mIdx;
-                            const hPct = cnt > 0 ? Math.max(25, Math.min(100, Math.round((cnt / (city.baseStats.peakMonth?.count || 1)) * 100))) : 0;
-                            return (
-                              <div
-                                key={`m-${city.name}-${mIdx}`}
-                                className={`w-1 rounded-xs transition-all ${
-                                  cnt === 0 
-                                    ? 'bg-slate-800 h-0.5' 
-                                    : isPeak 
-                                    ? 'bg-emerald-400' 
-                                    : 'bg-teal-700/80'
-                                }`}
-                                style={{ height: cnt === 0 ? '2px' : `${hPct}%` }}
-                                title={`${MONTH_FULL[mIdx]}: ${cnt} vistorias`}
-                              />
-                            );
-                          })}
+                        <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                          <div 
+                            className={`h-full transition-all duration-300 rounded-full ${
+                              isCompleted ? 'bg-emerald-500' : isInProgress ? 'bg-amber-500' : 'bg-slate-700'
+                            }`}
+                            style={{ width: `${Math.min(100, city.recentCoveragePct)}%` }}
+                          />
                         </div>
                       </div>
 
-                      {/* Rodapé do Mini-Card: Botão de ação rápida para o mapa */}
+                      {/* Rodapé do Mini-Card: Botão de ação rápida */}
                       <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[10px]">
                         <span className="text-slate-500">
-                          {progressStats.inspectedCount}/{city.totalHydrants} vistoriados
+                          {city.totalHydrants} hidrantes no DF
                         </span>
                         <div className="flex items-center gap-1">
                           <button
@@ -609,11 +536,7 @@ const CityInspectionPlanningModal = ({
                           {typeof onOpenMissions === 'function' && (
                             <button
                               type="button"
-                              onClick={() => {
-                                if (typeof onSelectRA === 'function') onSelectRA(city.name);
-                                onOpenMissions();
-                                onClose();
-                              }}
+                              onClick={() => handleStartMission(city.name)}
                               className="px-1.5 py-0.5 bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 rounded text-[9px] font-semibold flex items-center gap-1 cursor-pointer"
                             >
                               <FolderOpen size={9} className="text-emerald-400" />
@@ -629,7 +552,7 @@ const CityInspectionPlanningModal = ({
             </div>
           ) : viewMode === 'compact' ? (
             /* ============================================================== */
-            /* 2. VISÃO TABELA COMPACTA (ALTA DENSIDADE / SEM ROLAGEM CHATA)  */
+            /* 2. VISÃO TABELA COMPACTA (ALTA DENSIDADE OPERACIONAL)          */
             /* ============================================================== */
             <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden text-xs">
               <div className="overflow-x-auto">
@@ -638,64 +561,60 @@ const CityInspectionPlanningModal = ({
                     <tr className="bg-slate-950/90 text-slate-400 border-b border-slate-800 text-[10px] uppercase font-bold tracking-wider">
                       <th className="py-2 px-2.5 text-center w-10">Seq.</th>
                       <th className="py-2 px-3">Região Administrativa</th>
-                      <th className="py-2 px-2.5 text-center">Data Média</th>
-                      <th className="py-2 px-3">Período / Campanha</th>
-                      <th className="py-2 px-2.5 text-center">Pico Mensal</th>
+                      <th className="py-2 px-2.5 text-center">Última Vistoria</th>
+                      <th className="py-2 px-3 text-center">Tempo sem Vistoria</th>
+                      <th className="py-2 px-2.5 text-center">Total Hidr.</th>
                       <th className="py-2 px-2.5 text-center">Progresso</th>
-                      <th className="py-2 px-2.5 text-center">Situação</th>
+                      <th className="py-2 px-2.5 text-center">Situação Operacional</th>
                       <th className="py-2 px-3 text-right">Ação</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/80">
                     {currentList.map((city) => {
-                      const rank = activeTab === 'planning' ? city.planningRank : city.activeYearRank || '-';
-                      const currentStatus = activeTab === 'planning' ? city.planningStatus : city.activeStatus;
-                      const progressStats = activeTab === 'planning' ? city.targetStats : city.activeStats;
-                      const baseAvgStr = city.baseStats.avgDate ? formatDateOnly(city.baseStats.avgDate) : '-';
-                      const peakStr = city.baseStats.peakMonth ? `${city.baseStats.peakMonth.name} (${city.baseStats.peakMonth.pct}%)` : '-';
+                      const isNext = nextCity && city.name === nextCity.name;
+                      const isCompleted = city.planningStatus === 'completed';
+                      const isInProgress = city.planningStatus === 'in_progress';
 
                       return (
                         <tr 
                           key={`compact-${city.name}`} 
-                          className="hover:bg-slate-800/50 transition-colors"
+                          className={`transition-colors ${isNext ? 'bg-emerald-950/30' : 'hover:bg-slate-800/50'}`}
                         >
                           <td className="py-1.5 px-2.5 text-center font-bold text-slate-300">
-                            {rank}º
+                            {city.planningRank}º
                           </td>
                           <td className="py-1.5 px-3">
                             <span className="font-bold text-white mr-1.5">{city.name}</span>
                             <span className="text-[10px] font-mono text-slate-400">({city.prefix})</span>
                           </td>
                           <td className="py-1.5 px-2.5 text-center font-semibold text-emerald-400">
-                            {baseAvgStr}
+                            {city.lastVisitDateStr}
                           </td>
-                          <td className="py-1.5 px-3 text-slate-300 text-[11px]">
-                            {city.continuousCampaign && city.continuousCampaign.spansTwoYears ? (
-                              <span className="text-emerald-300 font-semibold">
-                                {city.continuousCampaign.cycleName} ({city.continuousCampaign.durationDays}d)
-                              </span>
-                            ) : (
-                              city.baseStats.summaryPeriod
-                            )}
+                          <td className={`py-1.5 px-3 text-center text-[11px] font-medium ${city.daysSinceLastVisit > 300 ? 'text-amber-400' : 'text-slate-300'}`}>
+                            {city.timeAgoLabel}
                           </td>
-                          <td className="py-1.5 px-2.5 text-center text-[11px] text-slate-300">
-                            {peakStr}
+                          <td className="py-1.5 px-2.5 text-center font-bold text-slate-200">
+                            {city.totalHydrants}
                           </td>
                           <td className="py-1.5 px-2.5 text-center font-semibold text-white">
-                            {progressStats.inspectedCount}/{city.totalHydrants} ({progressStats.coveragePct}%)
+                            {city.recentInspectedCount}/{city.totalHydrants} ({city.recentCoveragePct}%)
                           </td>
                           <td className="py-1.5 px-2.5 text-center">
-                            {currentStatus === 'completed' ? (
-                              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-700/50">
-                                Concluída
+                            {isNext ? (
+                              <span className="text-[10px] font-black text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500">
+                                🎯 1º da Fila
                               </span>
-                            ) : currentStatus === 'in_progress' ? (
+                            ) : isCompleted ? (
+                              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-700/50">
+                                Concluída ({city.recentCoveragePct}%)
+                              </span>
+                            ) : isInProgress ? (
                               <span className="text-[10px] font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-700/50">
-                                Andamento
+                                Em Andamento ({city.recentCoveragePct}%)
                               </span>
                             ) : (
                               <span className="text-[10px] font-semibold text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
-                                Pendente
+                                Aguardando Fila
                               </span>
                             )}
                           </td>
@@ -718,24 +637,29 @@ const CityInspectionPlanningModal = ({
             </div>
           ) : (
             /* ============================================================== */
-            /* 3. VISÃO CARDS DETALHADOS COM HISTOGRAMA E DISTRIBUIÇÃO MENSAL */
+            /* 3. VISÃO CARDS DETALHADOS                                      */
             /* ============================================================== */
             <div className="space-y-2.5">
               {currentList.map((city) => {
-                const rank = activeTab === 'planning' ? city.planningRank : city.activeYearRank || '-';
-                const baseAvgStr = city.baseStats.avgDate ? formatDateOnly(city.baseStats.avgDate) : 'Sem vistoria em ' + baseYear;
-                const currentStatus = activeTab === 'planning' ? city.planningStatus : city.activeStatus;
-                const progressStats = activeTab === 'planning' ? city.targetStats : city.activeStats;
+                const isNext = nextCity && city.name === nextCity.name;
+                const isCompleted = city.planningStatus === 'completed';
+                const isInProgress = city.planningStatus === 'in_progress';
 
                 return (
                   <div 
                     key={`card-${city.name}`}
-                    className="p-3 rounded-xl border border-slate-800 bg-slate-900/90 hover:border-slate-700 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3"
+                    className={`p-3 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+                      isNext
+                        ? 'bg-emerald-950/40 border-emerald-500 shadow-md ring-1 ring-emerald-500/50'
+                        : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+                    }`}
                   >
                     {/* Bloco 1: Ranking + Nome */}
-                    <div className="flex items-center gap-2.5 min-w-0 md:w-1/4">
-                      <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
-                        {rank}º
+                    <div className="flex items-center gap-2.5 min-w-0 md:w-1/3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border ${
+                        isNext ? 'bg-emerald-500 text-slate-950 font-black border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'
+                      }`}>
+                        {city.planningRank}º
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
@@ -748,83 +672,60 @@ const CityInspectionPlanningModal = ({
                       </div>
                     </div>
 
-                    {/* Bloco 2: Período e Concentração Mensal */}
-                    <div className="flex flex-col text-xs md:w-1/3">
-                      <div className="flex items-center gap-1.5 text-slate-300 font-medium">
-                        <Calendar size={13} className="text-emerald-400 shrink-0" />
-                        <span>Média: <strong className="text-emerald-300">{baseAvgStr}</strong></span>
+                    {/* Bloco 2: Dados de Última Vistoria */}
+                    <div className="flex items-center gap-4 text-xs">
+                      <div>
+                        <div className="text-[10px] text-slate-400">Última Vistoria</div>
+                        <div className="font-bold text-white">{city.lastVisitDateStr}</div>
                       </div>
-                      <span className="text-[11px] text-slate-400 mt-0.5">
-                        {city.continuousCampaign?.spansTwoYears 
-                          ? `Campanha contínua: ${city.continuousCampaign.cycleName} (${city.continuousCampaign.durationDays} dias)`
-                          : city.baseStats.summaryPeriod}
-                      </span>
-
-                      {/* Gráfico Mensal de Jan a Dez em Linha */}
-                      <div className="mt-2 flex items-center gap-1">
-                        <span className="text-[9px] text-slate-500 uppercase font-semibold mr-1">Meses:</span>
-                        <div className="flex items-center gap-0.5 flex-1 bg-slate-950/70 p-1 rounded border border-slate-800">
-                          {MONTH_LABELS.map((lbl, mIdx) => {
-                            const count = city.baseStats.monthlyDistribution ? city.baseStats.monthlyDistribution[mIdx] : 0;
-                            const isPeak = city.baseStats.peakMonth?.index === mIdx;
-                            return (
-                              <div 
-                                key={`badge-${city.name}-${mIdx}`}
-                                className={`flex-1 text-center py-0.5 rounded text-[8px] font-bold ${
-                                  count > 0 
-                                    ? isPeak 
-                                      ? 'bg-emerald-500 text-white' 
-                                      : 'bg-emerald-950 text-emerald-300 border border-emerald-700/50' 
-                                    : 'text-slate-600'
-                                }`}
-                                title={`${MONTH_FULL[mIdx]}: ${count} vistorias`}
-                              >
-                                {lbl}
-                              </div>
-                            );
-                          })}
+                      <div>
+                        <div className="text-[10px] text-slate-400">Tempo sem visita</div>
+                        <div className={`font-bold ${city.daysSinceLastVisit > 300 ? 'text-amber-400' : 'text-slate-300'}`}>
+                          {city.timeAgoLabel}
                         </div>
                       </div>
                     </div>
 
-                    {/* Bloco 3: Progresso e Status */}
-                    <div className="flex flex-col md:w-1/4">
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="font-semibold text-slate-300">Progresso Ciclo:</span>
-                        <span className="font-bold text-white">
-                          {progressStats.inspectedCount} / {city.totalHydrants} ({progressStats.coveragePct}%)
+                    {/* Bloco 3: Situação e Ações */}
+                    <div className="flex items-center gap-2 ml-auto">
+                      {isNext ? (
+                        <span className="text-xs font-black text-emerald-300 bg-emerald-950 px-2 py-1 rounded border border-emerald-500">
+                          🎯 1º da Fila
                         </span>
-                      </div>
-                      <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            currentStatus === 'completed' ? 'bg-emerald-500' : progressStats.coveragePct > 0 ? 'bg-amber-500' : 'bg-transparent'
-                          }`}
-                          style={{ width: `${Math.min(100, Math.max(progressStats.coveragePct, currentStatus === 'completed' ? 100 : 0))}%` }}
-                        />
-                      </div>
-                      <div className="mt-1 flex items-center justify-between text-[10px]">
-                        <span className={currentStatus === 'completed' ? 'text-emerald-400 font-bold' : currentStatus === 'in_progress' ? 'text-amber-400 font-bold' : 'text-slate-400'}>
-                          {currentStatus === 'completed' ? 'Concluída' : currentStatus === 'in_progress' ? 'Em Andamento' : 'Pendente na Fila'}
+                      ) : isCompleted ? (
+                        <span className="text-xs font-bold text-emerald-400 bg-emerald-950/60 px-2 py-1 rounded border border-emerald-700/50">
+                          Concluída ({city.recentCoveragePct}%)
                         </span>
-                        <span className="text-slate-500">
-                          {progressStats.operantes} Op / {progressStats.inoperantes} Inop
+                      ) : isInProgress ? (
+                        <span className="text-xs font-bold text-amber-400 bg-amber-950/60 px-2 py-1 rounded border border-amber-700/50">
+                          Andamento ({city.recentCoveragePct}%)
                         </span>
-                      </div>
-                    </div>
+                      ) : (
+                        <span className="text-xs font-semibold text-slate-400 bg-slate-800 px-2 py-1 rounded">
+                          Aguardando Fila
+                        </span>
+                      )}
 
-                    {/* Bloco 4: Ações */}
-                    <div className="flex items-center gap-1.5 justify-end shrink-0 pt-1 md:pt-0 border-t md:border-t-0 border-slate-800">
                       <button
                         type="button"
                         onClick={() => handleGoToMap(city.name)}
-                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
                       >
-                        <MapPin size={12} className="text-emerald-400" />
-                        <span>Ver no Mapa</span>
+                        <MapPin size={11} className="text-emerald-400" />
+                        <span>Mapa</span>
                       </button>
-                    </div>
 
+                      {typeof onOpenMissions === 'function' && (
+                        <button
+                          type="button"
+                          onClick={() => handleStartMission(city.name)}
+                          className="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-600/50 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                        >
+                          <FolderOpen size={11} />
+                          <span>Missão</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -833,16 +734,13 @@ const CityInspectionPlanningModal = ({
 
         </div>
 
-        {/* RODAPÉ DO MODAL (COMPACTO COM INDICADOR DOUTRINÁRIO) */}
-        <div className="px-3 py-1.5 sm:px-6 sm:py-2 bg-slate-900 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 shrink-0">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>
-              <strong>Doutrina Operacional CBMDF:</strong> Vistoria ordenada cidade a cidade priorizando maior defasagem temporal.
-            </span>
+        {/* RODAPÉ DO MODAL (INDICADOR TÁTICO) */}
+        <div className="px-3 py-2 sm:px-6 sm:py-2.5 bg-slate-900 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+          <div>
+            Total: <strong>33 Regiões do DF</strong> | Prioridade: <strong>Cidades visitadas há mais tempo no topo</strong>
           </div>
-          <div className="flex items-center gap-2 text-slate-400">
-            <span>Ciclo: <strong className="text-emerald-400">{baseYear} → {targetYear}</strong></span>
+          <div className="hidden sm:block text-slate-500">
+            Sistema Netuno • Gestão Operacional CBMDF
           </div>
         </div>
 
