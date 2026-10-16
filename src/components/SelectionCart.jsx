@@ -250,9 +250,10 @@ const SelectionCart = ({
   // Hidrantes Selecionados Formatados
   const selectedHydrantsList = selectedIds.map(id => {
     const found = hidrantes.find(h => 
-      h.codHidrante === id || 
       h.nomHidrante === id || 
+      h.codHidrante === id || 
       h._internalId === id ||
+      String(h.nomHidrante) === String(id) ||
       String(h.codHidrante) === String(id) ||
       String(h._internalId) === String(id)
     );
@@ -262,7 +263,7 @@ const SelectionCart = ({
   // Submeter Criação de Nova Missão
   const handleConfirmCreateMission = () => {
     const firstHydrant = hidrantes.find(h => 
-      h.codHidrante === selectedIds[0] || h.nomHidrante === selectedIds[0] || h._internalId === selectedIds[0]
+      h.nomHidrante === selectedIds[0] || h.codHidrante === selectedIds[0] || h._internalId === selectedIds[0]
     );
     const loc = firstHydrant?.dscLocalidade ? (normalizeRAName(firstHydrant.dscLocalidade) || fixEncoding(firstHydrant.dscLocalidade)) : 'Brasília';
     const year = new Date().getFullYear();
@@ -444,7 +445,7 @@ const SelectionCart = ({
                 {/* Lista Scrollável de Hidrantes Selecionados */}
                 <div className="p-3 overflow-y-auto flex-1 flex flex-col gap-2 min-h-[140px] max-h-[300px] md:max-h-[320px] custom-scrollbar">
                   {selectedHydrantsList.map((h, index) => {
-                    const id = h.codHidrante || h.nomHidrante || h._internalId;
+                    const id = h.nomHidrante || h.codHidrante || h._internalId;
                     const isOperante = h.flgAtivo !== false && h.flgAtivo !== 0;
 
                     return (

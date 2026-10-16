@@ -1,7 +1,24 @@
+import { translateId } from './idMapping';
+
 const MISSIONS_STORAGE_KEY = 'netuno_missions';
 const LEGACY_MISSIONS_STORAGE_KEY = 'argos_missions';
 const FOLDERS_STORAGE_KEY = 'netuno_folders';
 const LEGACY_FOLDERS_STORAGE_KEY = 'argos_folders';
+
+export const sanitizeMissionId = (id) => {
+  if (!id) return '';
+  const s = String(id).trim();
+  if (/^\d+$/.test(s)) {
+    const canonical = translateId(s);
+    if (canonical) return canonical;
+  }
+  return s;
+};
+
+export const sanitizeMissionList = (list) => {
+  if (!Array.isArray(list)) return [];
+  return Array.from(new Set(list.map(sanitizeMissionId).filter(Boolean)));
+};
 
 export const loadMissions = () => {
   try {
@@ -19,18 +36,24 @@ export const loadMissions = () => {
           return true;
         }).map(m => {
           // Garante recuperação de orderedIds caso tenham sido omitidos ou limpos por sync externo
-          if ((!m.orderedIds || !Array.isArray(m.orderedIds) || m.orderedIds.length === 0) && m.id) {
+          let orderedIds = Array.isArray(m.orderedIds) ? m.orderedIds : [];
+          if (orderedIds.length === 0 && m.id) {
             try {
               const cached = localStorage.getItem(`netuno_mission_ordered_${m.id}`);
               if (cached) {
                 const parsedOrdered = JSON.parse(cached);
                 if (Array.isArray(parsedOrdered) && parsedOrdered.length > 0) {
-                  return { ...m, orderedIds: parsedOrdered };
+                  orderedIds = parsedOrdered;
                 }
               }
             } catch (e) {}
           }
-          return m;
+          return {
+            ...m,
+            selectedIds: sanitizeMissionList(m.selectedIds),
+            completedIds: sanitizeMissionList(m.completedIds),
+            orderedIds: sanitizeMissionList(orderedIds),
+          };
         });
       }
     }
@@ -303,9 +326,9 @@ export const mergeMissions = (localMissions = [], cloudMissions = []) => {
       }
       map.set(String(m.id), {
         ...m,
-        orderedIds,
-        selectedIds: Array.isArray(m.selectedIds) ? m.selectedIds : [],
-        completedIds: Array.isArray(m.completedIds) ? m.completedIds : [],
+        orderedIds: sanitizeMissionList(orderedIds),
+        selectedIds: sanitizeMissionList(m.selectedIds),
+        completedIds: sanitizeMissionList(m.completedIds),
       });
     }
   });
@@ -329,9 +352,9 @@ export const mergeMissions = (localMissions = [], cloudMissions = []) => {
 
     const safeCloudM = {
       ...cloudM,
-      orderedIds: cloudOrdered,
-      selectedIds: Array.isArray(cloudM.selectedIds) ? cloudM.selectedIds : [],
-      completedIds: Array.isArray(cloudM.completedIds) ? cloudM.completedIds : [],
+      orderedIds: sanitizeMissionList(cloudOrdered),
+      selectedIds: sanitizeMissionList(cloudM.selectedIds),
+      completedIds: sanitizeMissionList(cloudM.completedIds),
     };
 
     if (!localM) {

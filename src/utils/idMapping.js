@@ -1,33 +1,15 @@
 import argosCodToNom from './argosIdMap.json';
 import { parseDate } from './dateUtils';
 
-// Inversão lazy em memória para resolver nomHidrante -> codHidrante numérico
-let nomToArgosCodCache = null;
-
-const getNomToArgosCod = () => {
-  if (!nomToArgosCodCache) {
-    nomToArgosCodCache = {};
-    for (const [cod, nom] of Object.entries(argosCodToNom)) {
-      if (nom && cod) {
-        nomToArgosCodCache[nom.toUpperCase()] = cod;
-      }
-    }
-  }
-  return nomToArgosCodCache;
-};
-
 /**
- * Traduz um identificador (seja numérico do Argos legado ou com prefixo oficial do CBMDF)
- * para sua contraparte.
- * Ex: '3722' -> 'LAS00001' | 'LAS00001' -> '3722'
+ * Traduz um identificador antigo legado numérico do Argos para o código sanitizado oficial do CBMDF.
+ * Ex: '3722' -> 'LAS00001'
+ * NUNCA converte de volta um código sanitizado para código legado.
  */
 export const translateId = (id) => {
   if (!id) return null;
   const str = String(id).trim();
   if (argosCodToNom[str]) return argosCodToNom[str];
-  const nomMap = getNomToArgosCod();
-  const upper = str.toUpperCase();
-  if (nomMap[upper]) return nomMap[upper];
   return null;
 };
 
@@ -87,14 +69,8 @@ export const getHydrantAllIds = (h) => {
           }
         }
 
-        // Se for puramente numérico (código legado Argos)
-        if (/^\d+$/.test(s)) {
-          const numInt = parseInt(s, 10);
-          if (!isNaN(numInt)) {
-            ids.add(String(numInt));
-          }
-        }
-
+        // Se for puramente numérico (código legado Argos informado em consulta/filtro antigo),
+        // converte exclusivamente para o código oficial sanitizado do CBMDF (ex: '233' -> 'CEI00001')
         const counterpart = translateId(s);
         if (counterpart) {
           ids.add(counterpart);
@@ -111,7 +87,6 @@ export const getHydrantAllIds = (h) => {
 
   addVal(h.nomHidrante);
   addVal(h.codHidrante);
-  addVal(h.codLegado);
   addVal(h._internalId);
   addVal(h.id);
 
@@ -179,7 +154,7 @@ const hydrantIndexWeakMap = new WeakMap();
 
 export const getHydrantIndex = (hidrantes) => {
   if (!Array.isArray(hidrantes) || hidrantes.length === 0) return new Map();
-  if (hidrantIndexWeakMap.has(hidrantes)) {
+  if (hydrantIndexWeakMap.has(hidrantes)) {
     return hydrantIndexWeakMap.get(hidrantes);
   }
   if (hidrantes._indexMap) return hidrantes._indexMap;
@@ -195,7 +170,7 @@ export const getHydrantIndex = (hidrantes) => {
   });
 
   try {
-    hidrantIndexWeakMap.set(hidrantes, indexMap);
+    hydrantIndexWeakMap.set(hidrantes, indexMap);
     hidrantes._indexMap = indexMap;
   } catch (e) {}
 

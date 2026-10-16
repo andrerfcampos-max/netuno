@@ -399,11 +399,15 @@ async function runPipeline() {
       return res;
     };
 
+    const cleanCanonicalNom = fixEncoding(rawNom || code);
+    const rowClean = { ...row };
+    delete rowClean.codLegado;
+
     processedData.push({
       _internalId: `hid_${i}`,
-      ...row,
-      nomHidrante: fixEncoding(rawNom || code),
-      codHidrante: fixEncoding(rawCod || code),
+      ...rowClean,
+      nomHidrante: cleanCanonicalNom,
+      codHidrante: cleanCanonicalNom,
       dscLocalidade: fixEncoding(ra),
       dscEndereco: fixEncoding(rowAddress),
       dscPontoReferencia: fixEncoding(String(row.dscPontoReferencia || row['Ponto de referência'] || row['PONTO DE REFERÊNCIA'] || '').trim()),

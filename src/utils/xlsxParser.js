@@ -124,19 +124,19 @@ export const loadPreloadedDatabase = async (onComplete) => {
 
       // Resolução do código alfa-numérico oficial com prefixo da RA
       const officialNom = String(row.nomHidrante || row['Código'] || `HID${i + 1}`).trim();
-      const legacyCod = String(row.codHidrante || '').trim();
       const cleanNom = fixEncoding(officialNom);
-      const cleanCod = fixEncoding(legacyCod || officialNom);
       const cleanEnd = fixEncoding(row.dscEndereco || row['Endereço'] || '');
       const cleanRef = fixEncoding(row.dscPontoReferencia || row['Ponto de referência'] || row.pontoReferencia || '');
       const cleanProb = sanitizeProblem(fixEncoding(row.problemasHidrante || row['Problemas do Hidrante'] || row.Problema || ''));
 
+      const cleanRow = { ...row };
+      delete cleanRow.codLegado;
+
       parsedData.push({
-        ...row,
+        ...cleanRow,
         _internalId: row._internalId || `hid_${i}`,
         nomHidrante: cleanNom,
-        codHidrante: cleanCod,
-        codLegado: legacyCod || cleanCod,
+        codHidrante: cleanNom,
         dscLocalidade: cleanRA,
         dscEndereco: cleanEnd,
         dscPontoReferencia: cleanRef,

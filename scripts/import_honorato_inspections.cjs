@@ -113,7 +113,6 @@ function getAllPossibleIdsForHydrant(h) {
   };
   add(h.nomHidrante);
   add(h.codHidrante);
-  add(h.codLegado);
   add(h._internalId);
   add(h.id);
   return ids;
@@ -297,7 +296,6 @@ async function run() {
     '_internalId',
     'codHidrante',
     'nomHidrante',
-    'codLegado',
     'dscLocalidade',
     'dscEndereco',
     'pontoReferencia',

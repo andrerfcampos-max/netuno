@@ -27,7 +27,7 @@ const saveOfflineQueue = (queue) => {
 const sanitizeKey = (v) => String(v || '').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
 
 export const getInspectionCanonicalId = (hidrante) => {
-  const hidKey = sanitizeKey(hidrante?.codHidrante || hidrante?.nomHidrante || hidrante?._internalId || 'HID');
+  const hidKey = sanitizeKey(hidrante?.nomHidrante || hidrante?.codHidrante || hidrante?._internalId || 'HID');
   const dtKey = sanitizeKey(hidrante?.datHoraUltimaVistoria || (hidrante?.HISTORICO_VISTORIAS?.[0]?.datHoraVistoria) || 'RECENT');
   return `insp_${hidKey}_${dtKey}`;
 };
@@ -41,8 +41,8 @@ const enqueueOfflineAction = (action, args) => {
     if (action === 'syncInspection' || action === 'syncHydrantMutation') {
       const existingH = task.args?.[action === 'syncInspection' ? 0 : 1];
       const newH = args?.[action === 'syncInspection' ? 0 : 1];
-      const existingKey = existingH?.codHidrante || existingH?.nomHidrante || existingH?._internalId;
-      const newKey = newH?.codHidrante || newH?.nomHidrante || newH?._internalId;
+      const existingKey = existingH?.nomHidrante || existingH?.codHidrante || existingH?._internalId;
+      const newKey = newH?.nomHidrante || newH?.codHidrante || newH?._internalId;
       return existingKey && newKey && String(existingKey) === String(newKey);
     }
     if (action === 'syncMission') {
@@ -477,7 +477,7 @@ const _doSyncInspectionToCloud = async (hidrante) => {
 
     const payload = {
       id: inspId,
-      cod_hidrante: String(hidrante.codHidrante || ''),
+      cod_hidrante: String(hidrante.nomHidrante || hidrante.codHidrante || ''),
       nom_hidrante: String(hidrante.nomHidrante || ''),
       flg_ativo: Boolean(hidrante.flgAtivo),
       problemas_hidrante: hidrante.problemasHidrante || '',
