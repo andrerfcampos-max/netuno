@@ -459,12 +459,74 @@ export const fetchOSRMSingleChunk = async (hydrants, startLat, startLng, timeout
 };
 
 /**
+ * Particiona uma lista de hidrantes em lotes geograficamente contíguos (clusters espaciais)
+ * partindo do ponto inicial fornecido.
+ * Em vez de um slice(i, i + chunkSize) arbitrário pela ordem de cadastro ou array,
+ * cada lote é formado agregando os vizinhos mais próximos espaciais em cadeia contínua.
+ */
+export const partitionHydrantsGeographically = (hydrants, startLat, startLng, chunkSize = ROUTE_CHUNK_SIZE) => {
+  if (!hydrants || hydrants.length === 0) return [];
+  if (hydrants.length <= chunkSize) return [hydrants];
+
+  const pool = [...hydrants];
+  const chunks = [];
+  let curLat = startLat;
+  let curLng = startLng;
+
+  while (pool.length > 0) {
+    const currentChunk = [];
+    
+    // O primeiro hidrante do novo chunk é o mais próximo da posição atual
+    let firstIdx = 0;
+    let minFirstDist = Infinity;
+    for (let i = 0; i < pool.length; i++) {
+      const d = calculateDistanceMeters(curLat, curLng, pool[i].numLatitude, pool[i].numLongitude);
+      if (d < minFirstDist) {
+        minFirstDist = d;
+        firstIdx = i;
+      }
+    }
+
+    let [seed] = pool.splice(firstIdx, 1);
+    currentChunk.push(seed);
+    let chunkLat = seed.numLatitude;
+    let chunkLng = seed.numLongitude;
+
+    // Preenche o chunk até o limite agregando sempre o vizinho geográfico mais contíguo ao núcleo do lote
+    while (currentChunk.length < chunkSize && pool.length > 0) {
+      let nextIdx = 0;
+      let minDist = Infinity;
+      for (let i = 0; i < pool.length; i++) {
+        const d = calculateDistanceMeters(chunkLat, chunkLng, pool[i].numLatitude, pool[i].numLongitude);
+        if (d < minDist) {
+          minDist = d;
+          nextIdx = i;
+        }
+      }
+      const [nextH] = pool.splice(nextIdx, 1);
+      currentChunk.push(nextH);
+      chunkLat = nextH.numLatitude;
+      chunkLng = nextH.numLongitude;
+    }
+
+    chunks.push(currentChunk);
+
+    // O próximo lote espacial continuará a partir do último hidrante deste bloco
+    curLat = chunkLat;
+    curLng = chunkLng;
+  }
+
+  return chunks;
+};
+
+/**
  * Consulta a API de Roteamento OSRM com Matriz Direcionada de Tempos e Distâncias
- * e aplica o otimizador ATSP 2-Opt em lotes sequenciais de 30 em 30 hidrantes.
+ * e aplica o otimizador ATSP 2-Opt em lotes geograficamente contíguos (clusters espaciais).
  * 
  * Regra Tática CBMDF:
  * Lotes de 30 em 30 hidrantes garantem estabilidade de requisição HTTP sem estourar limites
- * de URL do OSRM, permitindo roteamento de missões de qualquer porte (30, 60, 90, 100+ hidrantes).
+ * de URL do OSRM. O particionamento geográfico contíguo elimina totalmente os laços e
+ * idas-e-voltas (zig-zag) decorrentes de fatiamento arbitrário por ordem de código/array.
  */
 export const fetchOSRMAndOptimizeRoute = async (hydrants, startLat, startLng, timeoutMs = 4000, chunkSize = ROUTE_CHUNK_SIZE) => {
   if (!hydrants || hydrants.length === 0) {
@@ -476,15 +538,16 @@ export const fetchOSRMAndOptimizeRoute = async (hydrants, startLat, startLng, ti
     return await fetchOSRMSingleChunk(hydrants, startLat, startLng, timeoutMs);
   }
 
-  // Para listas maiores que 30: particiona e calcula sequencialmente de 30 em 30
+  // Particiona a missão em lotes geograficamente contíguos (clusters espaciais)
+  const geoChunks = partitionHydrantsGeographically(hydrants, startLat, startLng, chunkSize);
+
   const allOrderedRoute = [];
   const allDrivingMetrics = {};
   let isAnyTrafficMode = false;
   let currentStartLat = startLat;
   let currentStartLng = startLng;
 
-  for (let i = 0; i < hydrants.length; i += chunkSize) {
-    const chunk = hydrants.slice(i, i + chunkSize);
+  for (const chunk of geoChunks) {
     const chunkResult = await fetchOSRMSingleChunk(chunk, currentStartLat, currentStartLng, timeoutMs);
     
     if (chunkResult.isTrafficMode) {
@@ -498,7 +561,7 @@ export const fetchOSRMAndOptimizeRoute = async (hydrants, startLat, startLng, ti
     allOrderedRoute.push(...chunkRoute);
     Object.assign(allDrivingMetrics, chunkResult.drivingMetrics || {});
 
-    // Próximo lote de 30 parte do último hidrante alcançado neste lote
+    // Próximo lote espacial de 30 parte do último hidrante alcançado neste lote
     if (chunkRoute.length > 0) {
       const lastHydrant = chunkRoute[chunkRoute.length - 1];
       if (typeof lastHydrant.numLatitude === 'number' && typeof lastHydrant.numLongitude === 'number') {
