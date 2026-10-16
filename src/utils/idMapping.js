@@ -28,7 +28,7 @@ export const normalizeCode = (str) => {
 
 /**
  * Retorna todos os identificadores conhecidos e válidos para um determinado objeto hidrante,
- * incluindo codHidrante, nomHidrante, _internalId, codLegado, equivalentes cruzados e variações de espaçamento/zeros.
+ * incluindo codHidrante, nomHidrante, _internalId, equivalentes canônicos e variações de espaçamento/zeros.
  */
 export const getHydrantAllIds = (h) => {
   if (!h || typeof h !== 'object') return [];

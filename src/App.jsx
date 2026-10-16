@@ -1666,9 +1666,8 @@ syncPreferences({ filters: filters });
         updatedHidrante._originalCode,
         updatedHidrante._originalNom,
         sanitized._internalId,
-        sanitized.codHidrante,
         sanitized.nomHidrante,
-        sanitized.codLegado
+        sanitized.codHidrante
       ].filter(Boolean).map(x => String(x).trim().toUpperCase())
     );
 
@@ -1705,9 +1704,8 @@ syncPreferences({ filters: filters });
         ...sanitized,
         // Garante a preservação incondicional dos identificadores e dados estruturais/históricos
         _internalId: original._internalId || sanitized._internalId || `hid_${matchedIndex}`,
-        codHidrante: sanitized.codHidrante || original.codHidrante,
-        nomHidrante: sanitized.nomHidrante || original.nomHidrante,
-        codLegado: original.codLegado || sanitized.codLegado,
+        codHidrante: sanitized.nomHidrante || sanitized.codHidrante || original.nomHidrante || original.codHidrante,
+        nomHidrante: sanitized.nomHidrante || original.nomHidrante || sanitized.codHidrante || original.codHidrante,
         HISTORICO_VISTORIAS: original.HISTORICO_VISTORIAS || sanitized.HISTORICO_VISTORIAS || [],
         datHoraUltimaVistoria: original.datHoraUltimaVistoria || sanitized.datHoraUltimaVistoria || '',
         flgAtivo: sanitized.flgAtivo !== undefined ? sanitized.flgAtivo : original.flgAtivo,
@@ -1715,6 +1713,7 @@ syncPreferences({ filters: filters });
         problemasHidrante: sanitized.problemasHidrante !== undefined ? sanitized.problemasHidrante : (original.problemasHidrante || ''),
         dscObservacao: sanitized.dscObservacao !== undefined ? sanitized.dscObservacao : (original.dscObservacao || '')
       };
+      delete mergedEntity.codLegado;
       delete mergedEntity._mode;
       delete mergedEntity._originalInternalId;
       delete mergedEntity._originalCode;

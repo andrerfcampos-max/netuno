@@ -1186,7 +1186,7 @@ const MapComponent = ({
         const anchorLat = userLocation?.lat || pendingList[0]?.numLatitude;
         const anchorLng = userLocation?.lng || pendingList[0]?.numLongitude;
         const autoFast = optimizeRouteEuclidean(pendingList, anchorLat, anchorLng);
-        ordered = autoFast.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
+        ordered = autoFast.map(h => String(h.nomHidrante || h.codHidrante || h._internalId));
       }
     }
 
@@ -1209,7 +1209,7 @@ const MapComponent = ({
         if (!isHydrantInSet(h, completedIdsSet) && !(activeMission && isHydrantCompletedInMission(h, activeMission))) {
           const inPending = pendingOrdered.some(id => isHydrantInSet(h, [String(id)]));
           if (!inPending) {
-            pendingOrdered.push(String(h.codHidrante || h._internalId || h.nomHidrante));
+            pendingOrdered.push(String(h.nomHidrante || h.codHidrante || h._internalId));
           }
         }
       });
@@ -1286,12 +1286,12 @@ const MapComponent = ({
 
   const renderMarkers = () => {
     return validHidrantes.map((h, i) => {
-      const id = h.codHidrante || h._internalId || h.nomHidrante || `hid-${i}`;
-      const isSelected = selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h._internalId);
+      const id = h.nomHidrante || h.codHidrante || h._internalId || `hid-${i}`;
+      const isSelected = selectedMissionIds.includes(h.nomHidrante) || selectedMissionIds.includes(h.codHidrante) || selectedMissionIds.includes(h._internalId);
       const isCurrentActive = Boolean(
         selectedHydrant && (
-          (selectedHydrant.codHidrante && selectedHydrant.codHidrante === h.codHidrante) ||
           (selectedHydrant.nomHidrante && selectedHydrant.nomHidrante === h.nomHidrante) ||
+          (selectedHydrant.codHidrante && selectedHydrant.codHidrante === h.codHidrante) ||
           (selectedHydrant._internalId && selectedHydrant._internalId === h._internalId)
         )
       );
@@ -1920,15 +1920,15 @@ const MapComponent = ({
                 {/* Rota da Missão (Gestor) */}
                 {isGestor && (
                   <button 
-                    onClick={() => onToggleMission && onToggleMission(selectedHydrant.codHidrante || selectedHydrant._internalId || selectedHydrant.nomHidrante)}
+                    onClick={() => onToggleMission && onToggleMission(selectedHydrant.nomHidrante || selectedHydrant.codHidrante || selectedHydrant._internalId)}
                     className={`flex-1 h-7.5 rounded-lg text-[9.5px] font-bold flex items-center justify-center gap-0.5 shadow-sm transition-all active:scale-95 min-w-0 px-1 ${
-                      (selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId))
+                      (selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant._internalId))
                         ? 'bg-rose-950/90 text-rose-300 border border-rose-500/60' 
                         : 'bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/50'
                     }`}
-                    title={(selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? 'Remover da Missão' : 'Adicionar à Missão'}
+                    title={(selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? 'Remover da Missão' : 'Adicionar à Missão'}
                   >
-                    <span className="text-[10px] leading-none shrink-0">{(selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? '✕' : '+'}</span>
+                    <span className="text-[10px] leading-none shrink-0">{(selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? '✕' : '+'}</span>
                     <span className="truncate">Rota</span>
                   </button>
                 )}
@@ -2188,15 +2188,15 @@ const MapComponent = ({
                 {/* Rota da Missão */}
                 {isGestor && (
                   <button 
-                    onClick={() => onToggleMission && onToggleMission(selectedHydrant.codHidrante || selectedHydrant._internalId || selectedHydrant.nomHidrante)}
+                    onClick={() => onToggleMission && onToggleMission(selectedHydrant.nomHidrante || selectedHydrant.codHidrante || selectedHydrant._internalId)}
                     className={`flex-1 h-11 rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 shadow-sm transition-all active:scale-95 min-w-0 ${
-                      (selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId))
+                      (selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant._internalId))
                         ? 'bg-rose-600 text-white ring-1 ring-rose-400' 
                         : 'bg-cyan-600 hover:bg-cyan-500 text-white ring-1 ring-cyan-400/40'
                     }`}
-                    title={(selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? 'Remover da Missão' : 'Adicionar à Missão'}
+                    title={(selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? 'Remover da Missão' : 'Adicionar à Missão'}
                   >
-                    <span className="text-xs leading-none">{(selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? '✕' : '➕'}</span>
+                    <span className="text-xs leading-none">{(selectedMissionIds.includes(selectedHydrant.nomHidrante) || selectedMissionIds.includes(selectedHydrant.codHidrante) || selectedMissionIds.includes(selectedHydrant._internalId)) ? '✕' : '➕'}</span>
                     <span className="text-[9px] uppercase tracking-wider font-extrabold truncate">Rota</span>
                   </button>
                 )}

@@ -258,10 +258,10 @@ const MissionRoutePanel = ({
     if (currentMissionIdRef.current !== targetMissionId) return;
 
     setPendingRoute(fastOrdered);
-    const sig = pendingHydrants.map(h => h.codHidrante || h._internalId || h.nomHidrante).join(',');
+    const sig = pendingHydrants.map(h => h.nomHidrante || h.codHidrante || h._internalId).join(',');
     lastOptimizedIdsRef.current = sig;
 
-    const fastOrderedIds = fastOrdered.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
+    const fastOrderedIds = fastOrdered.map(h => String(h.nomHidrante || h.codHidrante || h._internalId));
     if (onUpdateMission) {
       onUpdateMission({ orderedIds: fastOrderedIds }, targetMissionId);
     }
@@ -280,7 +280,7 @@ const MissionRoutePanel = ({
         setPendingRoute(osrmResult.route);
         setDrivingMetrics(osrmResult.drivingMetrics);
         setIsTrafficOptimized(osrmResult.isTrafficMode);
-        const updatedIds = osrmResult.route.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
+        const updatedIds = osrmResult.route.map(h => String(h.nomHidrante || h.codHidrante || h._internalId));
         if (onUpdateMission) {
           onUpdateMission({ orderedIds: updatedIds }, targetMissionId);
         }
@@ -325,21 +325,21 @@ const MissionRoutePanel = ({
     }
 
     const currentPendingKeys = new Set(
-      pendingHydrants.map(h => String(h.codHidrante || h._internalId || h.nomHidrante))
+      pendingHydrants.map(h => String(h.nomHidrante || h.codHidrante || h._internalId))
     );
 
     // 1. Preservação de Rota em Andamento:
     // Se o vistoriador estiver realizando vistorias na mesma sessão, mantém rigorosamente a ordem dos restantes
     if (pendingRoute.length > 0) {
       const remainingRoute = pendingRoute.filter(h => {
-        const k = String(h.codHidrante || h._internalId || h.nomHidrante);
+        const k = String(h.nomHidrante || h.codHidrante || h._internalId);
         return currentPendingKeys.has(k);
       });
 
       if (remainingRoute.length === pendingHydrants.length) {
         if (remainingRoute.length !== pendingRoute.length) {
           setPendingRoute(remainingRoute);
-          const remIds = remainingRoute.map(h => String(h.codHidrante || h._internalId || h.nomHidrante));
+          const remIds = remainingRoute.map(h => String(h.nomHidrante || h.codHidrante || h._internalId));
           if (onUpdateMission) {
             onUpdateMission({ orderedIds: remIds });
           }
@@ -355,7 +355,7 @@ const MissionRoutePanel = ({
 
     // 2. Abertura da Rota / Troca de Missão / Novos Hidrantes Adicionados:
     // Se a missão já possui ordenação prévia salva, prioriza ela
-    const sig = pendingHydrants.map(h => String(h.codHidrante || h._internalId || h.nomHidrante)).join(',');
+    const sig = pendingHydrants.map(h => String(h.nomHidrante || h.codHidrante || h._internalId)).join(',');
     const cachedOrderedIds = (() => {
       if (currentMission?.orderedIds && Array.isArray(currentMission.orderedIds) && currentMission.orderedIds.length > 0) {
         return currentMission.orderedIds;
@@ -523,8 +523,8 @@ const MissionRoutePanel = ({
   const displayedPendingRoute = useMemo(() => {
     if (pendingHydrants.length === 0) return [];
     if (pendingRoute.length === pendingHydrants.length) {
-      const pendingKeys = new Set(pendingHydrants.map(h => String(h.codHidrante || h._internalId || h.nomHidrante)));
-      const allMatch = pendingRoute.every(h => pendingKeys.has(String(h.codHidrante || h._internalId || h.nomHidrante)));
+      const pendingKeys = new Set(pendingHydrants.map(h => String(h.nomHidrante || h.codHidrante || h._internalId)));
+      const allMatch = pendingRoute.every(h => pendingKeys.has(String(h.nomHidrante || h.codHidrante || h._internalId)));
       if (allMatch) return pendingRoute;
     }
     return pendingHydrants;
@@ -602,9 +602,9 @@ const MissionRoutePanel = ({
   const handleRemoveItem = (h) => {
     const name = fixEncoding(h.nomHidrante) || h.codHidrante || 'Hidrante';
     if (window.confirm(`Deseja realmente remover "${name}" da rota de missão?`)) {
-      const idKey = h._internalId || h.codHidrante || h.nomHidrante;
+      const idKey = h.nomHidrante || h.codHidrante || h._internalId;
       setPendingRoute(prev => prev.filter(item => 
-        (item._internalId || item.codHidrante || item.nomHidrante) !== idKey
+        (item.nomHidrante || item.codHidrante || item._internalId) !== idKey
       ));
       if (onRemoveFromMission) {
         onRemoveFromMission(h);
@@ -615,11 +615,11 @@ const MissionRoutePanel = ({
   const currentTarget = displayedPendingRoute.length > 0 ? displayedPendingRoute[0] : null;
 
   const renderHydrantItem = (h, index, isCompleted) => {
-    const id = h.codHidrante || h.nomHidrante;
+    const id = h.nomHidrante || h.codHidrante;
     const canEditRoute = !currentMission?.createdBy || currentMission.createdBy === currentUser?.matricula;
     
     let distText = '';
-    const key = String(h.codHidrante || h._internalId || h.nomHidrante || '');
+    const key = String(h.nomHidrante || h.codHidrante || h._internalId || '');
     const metric = drivingMetrics[key];
 
     if (!isCompleted && index === 0) {
