@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-213",
+  "activeTaskId": "TASK-216",
   "queue": [
     {
       "id": "TASK-1",
@@ -2147,29 +2147,39 @@
       "seq": 213,
       "conversationId": "8895b77b-c267-420b-9683-79617c6232cc",
       "description": "Eliminar fatiamento cego de rota e implementar clusterizacao geografica contigua",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-16T19:02:22.309Z",
       "startedAt": "2026-10-16T19:22:46.920Z",
-      "completedAt": null
+      "completedAt": "2026-10-16T19:27:16.996Z"
     },
     {
       "id": "TASK-214",
       "seq": 214,
       "conversationId": "6afc2c32-fcb5-4c69-8ee7-850d09a09a6d",
       "description": "Reformulacao do Planejamento de Vistoria de Cidades (ciclos continuos, visualizacao sintetica e correcao mobile)",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-10-16T19:04:49.844Z",
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": "2026-10-16T19:27:42.753Z",
+      "completedAt": "2026-10-16T19:32:10.858Z"
     },
     {
       "id": "TASK-215",
       "seq": 215,
       "conversationId": "21a3489e-d3a7-4cc8-a8a3-d6777765f2cc",
       "description": "Finalizar commit correcao fuso e contagem vistorias",
-      "status": "queued",
+      "status": "completed",
       "createdAt": "2026-10-16T19:21:04.578Z",
-      "startedAt": null,
+      "startedAt": "2026-10-16T19:32:14.230Z",
+      "completedAt": "2026-10-16T19:34:51.425Z"
+    },
+    {
+      "id": "TASK-216",
+      "seq": 216,
+      "conversationId": "575fec57-88e4-4457-ab59-07212af39d87",
+      "description": "Eliminar codigos legados do Argos e padronizar 100% no nomHidrante sanitizado em todo o sistema",
+      "status": "running",
+      "createdAt": "2026-10-16T19:29:52.958Z",
+      "startedAt": "2026-10-16T19:34:52.101Z",
       "completedAt": null
     }
   ]
