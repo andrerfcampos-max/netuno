@@ -68,7 +68,10 @@ export const calculateCityPlanningData = ({
 
     // Deduplica vistorias do mesmo hidrante no mesmo ano (prevalece a mais recente daquele ano)
     const byYearHydrant = {};
+    const allHydrantVisits = [];
+
     visits.forEach(v => {
+      allHydrantVisits.push(v);
       const y = v.date.getFullYear();
       if (y >= 2018 && y <= 2035) {
         detectedYearsSet.add(y);
@@ -78,17 +81,34 @@ export const calculateCityPlanningData = ({
       }
     });
 
+    // Registra todas as vistorias individuais na RA para cálculo fino de distribuição e campanhas
+    if (!cityMap[raName].allVisits) {
+      cityMap[raName].allVisits = [];
+    }
+    visits.forEach(v => {
+      cityMap[raName].allVisits.push({
+        timestamp: v.date.getTime(),
+        date: v.date,
+        isOperante: v.isOperante,
+        hydrantId: hidId
+      });
+    });
+
     Object.entries(byYearHydrant).forEach(([yStr, visit]) => {
       const y = parseInt(yStr, 10);
       if (!cityMap[raName].byYear[y]) {
         cityMap[raName].byYear[y] = {
           timestamps: [],
           operantes: 0,
-          inoperantes: 0
+          inoperantes: 0,
+          monthlyCount: Array(12).fill(0)
         };
       }
       const t = visit.date.getTime();
       cityMap[raName].byYear[y].timestamps.push(t);
+      const m = visit.date.getMonth(); // 0 a 11
+      cityMap[raName].byYear[y].monthlyCount[m]++;
+
       if (visit.isOperante) {
         cityMap[raName].byYear[y].operantes++;
       } else {
@@ -110,6 +130,8 @@ export const calculateCityPlanningData = ({
   if (!availableYears.includes(2026)) availableYears.unshift(2026);
   if (!availableYears.includes(2025)) availableYears.push(2025);
 
+  const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
   // Função auxiliar para calcular métricas de um ano para uma RA
   const computeStats = (city, year) => {
     const yearData = city.byYear[year];
@@ -125,7 +147,10 @@ export const calculateCityPlanningData = ({
         durationDays: 0,
         operantes: 0,
         inoperantes: 0,
-        hasVisits: false
+        hasVisits: false,
+        monthlyDistribution: Array(12).fill(0),
+        peakMonth: null,
+        summaryPeriod: 'Sem vistorias em ' + year
       };
     }
 
@@ -140,6 +165,32 @@ export const calculateCityPlanningData = ({
     const durationDays = Math.max(1, Math.round((maxTimestamp - minTimestamp) / (1000 * 60 * 60 * 24)) + 1);
     const inspectedCount = ts.length;
     const coveragePct = city.totalHydrants > 0 ? Math.round((inspectedCount / city.totalHydrants) * 100) : 0;
+    const monthlyDistribution = [...yearData.monthlyCount];
+
+    // Identifica o mês com maior concentração de vistorias
+    let maxMonthCount = 0;
+    let peakMonthIndex = 0;
+    monthlyDistribution.forEach((cnt, idx) => {
+      if (cnt > maxMonthCount) {
+        maxMonthCount = cnt;
+        peakMonthIndex = idx;
+      }
+    });
+
+    const peakMonth = maxMonthCount > 0 ? {
+      name: MONTH_NAMES[peakMonthIndex],
+      index: peakMonthIndex,
+      count: maxMonthCount,
+      pct: Math.round((maxMonthCount / inspectedCount) * 100)
+    } : null;
+
+    // Resumo legível do período (ex: "Mai - Jun/2025" ou "Concentrado em Dez")
+    let summaryPeriod = `${formatDateOnly(minDate)} a ${formatDateOnly(maxDate)}`;
+    if (minDate.getMonth() === maxDate.getMonth() && minDate.getFullYear() === maxDate.getFullYear()) {
+      summaryPeriod = `${MONTH_NAMES[minDate.getMonth()]}/${minDate.getFullYear()} (${durationDays}d)`;
+    } else {
+      summaryPeriod = `${MONTH_NAMES[minDate.getMonth()]} a ${MONTH_NAMES[maxDate.getMonth()]}/${maxDate.getFullYear()} (${durationDays}d)`;
+    }
 
     return {
       year,
@@ -152,7 +203,91 @@ export const calculateCityPlanningData = ({
       durationDays,
       operantes: yearData.operantes,
       inoperantes: yearData.inoperantes,
-      hasVisits: true
+      hasVisits: true,
+      monthlyDistribution,
+      peakMonth,
+      summaryPeriod
+    };
+  };
+
+  // Função para computar a ÚLTIMA CAMPANHA CONTÍNUA da RA (independente de transição de ano 2025 -> 2026)
+  const computeLatestContinuousCampaign = (city) => {
+    const visits = city.allVisits || [];
+    if (visits.length === 0) {
+      return {
+        hasCampaign: false,
+        uniqueHydrantsCovered: 0,
+        coveragePct: 0,
+        isCompleted: false,
+        isInProgress: false,
+        startDate: null,
+        endDate: null,
+        durationDays: 0,
+        spansTwoYears: false,
+        cycleName: 'Sem vistorias'
+      };
+    }
+
+    // Ordena vistorias cronologicamente da mais antiga para a mais recente
+    visits.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Agrupa vistorias contíguas (gap máximo de 90 dias entre vistorias sucessivas da mesma RA)
+    const campaigns = [];
+    let currentCamp = [];
+
+    visits.forEach(v => {
+      if (currentCamp.length === 0) {
+        currentCamp.push(v);
+      } else {
+        const lastV = currentCamp[currentCamp.length - 1];
+        const gapDays = (v.timestamp - lastV.timestamp) / (1000 * 60 * 60 * 24);
+        if (gapDays <= 120) { // Campanha contígua dentro de ~4 meses de janela
+          currentCamp.push(v);
+        } else {
+          campaigns.push(currentCamp);
+          currentCamp = [v];
+        }
+      }
+    });
+    if (currentCamp.length > 0) campaigns.push(currentCamp);
+
+    // Pega a campanha mais recente
+    const latest = campaigns[campaigns.length - 1] || [];
+    const uniqueHydrantIds = new Set(latest.map(v => v.hydrantId));
+    const uniqueHydrantsCovered = uniqueHydrantIds.size;
+    const coveragePct = city.totalHydrants > 0 ? Math.round((uniqueHydrantsCovered / city.totalHydrants) * 100) : 0;
+
+    const startDate = latest.length > 0 ? latest[0].date : null;
+    const endDate = latest.length > 0 ? latest[latest.length - 1].date : null;
+    const durationDays = (startDate && endDate) 
+      ? Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1)
+      : 0;
+
+    const spansTwoYears = startDate && endDate && (startDate.getFullYear() !== endDate.getFullYear());
+    let cycleName = 'Desconhecido';
+    if (startDate && endDate) {
+      if (spansTwoYears) {
+        cycleName = `Ciclo ${startDate.getFullYear()}/${endDate.getFullYear()}`;
+      } else {
+        cycleName = `Ciclo ${endDate.getFullYear()}`;
+      }
+    }
+
+    const isCompleted = coveragePct >= 90 || (uniqueHydrantsCovered >= city.totalHydrants && city.totalHydrants > 0);
+    const isInProgress = !isCompleted && uniqueHydrantsCovered > 0;
+
+    return {
+      hasCampaign: latest.length > 0,
+      uniqueHydrantsCovered,
+      coveragePct,
+      isCompleted,
+      isInProgress,
+      startDate,
+      endDate,
+      durationDays,
+      spansTwoYears,
+      cycleName,
+      totalVisitsInCampaign: latest.length
     };
   };
 
@@ -161,18 +296,24 @@ export const calculateCityPlanningData = ({
     const baseStats = computeStats(city, baseYear);
     const targetStats = computeStats(city, targetYear);
     const activeStats = computeStats(city, activeYear);
+    const continuousCampaign = computeLatestContinuousCampaign(city);
 
-    // Status no ciclo alvo (targetYear)
+    // Status no ciclo alvo (targetYear) com reconhecimento de transição de ciclo contínuo
     let planningStatus = 'pending'; // 'pending' | 'in_progress' | 'completed'
-    if (targetStats.coveragePct >= 95 || (targetStats.inspectedCount >= city.totalHydrants && city.totalHydrants > 0)) {
+
+    // Se a cidade já teve campanha contínua recente concluída (mesmo que iniciada em 2025 e finalizada em 2026)
+    if (continuousCampaign.isCompleted && continuousCampaign.endDate && continuousCampaign.endDate.getFullYear() >= targetYear - 1) {
+      // Se a última vistoria foi recente (dentro dos últimos 18 meses ou já no ano alvo)
       planningStatus = 'completed';
-    } else if (targetStats.inspectedCount > 0) {
+    } else if (targetStats.coveragePct >= 90 || (targetStats.inspectedCount >= city.totalHydrants && city.totalHydrants > 0)) {
+      planningStatus = 'completed';
+    } else if (targetStats.inspectedCount > 0 || (continuousCampaign.isInProgress && continuousCampaign.endDate && continuousCampaign.endDate.getFullYear() >= targetYear)) {
       planningStatus = 'in_progress';
     }
 
     // Status no ano de visualização isolada (activeStats)
     let activeStatus = 'pending';
-    if (activeStats.coveragePct >= 95 || (activeStats.inspectedCount >= city.totalHydrants && city.totalHydrants > 0)) {
+    if (activeStats.coveragePct >= 90 || (activeStats.inspectedCount >= city.totalHydrants && city.totalHydrants > 0)) {
       activeStatus = 'completed';
     } else if (activeStats.inspectedCount > 0) {
       activeStatus = 'in_progress';
@@ -183,6 +324,7 @@ export const calculateCityPlanningData = ({
       baseStats,
       targetStats,
       activeStats,
+      continuousCampaign,
       planningStatus,
       activeStatus
     };
