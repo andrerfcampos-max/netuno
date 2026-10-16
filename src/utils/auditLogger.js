@@ -1,11 +1,37 @@
-import { syncHydrantMutationToCloud } from '../services/syncService';
+import { syncHydrantMutationToCloud } from '../services/syncService.js';
+import { formatDateOnly } from './dateUtils.js';
 
 const AUDIT_STORAGE_KEY = 'netuno_audit_logs';
 const MAX_AUDIT_LOGS = 250;
 
 /**
+ * Extrai o identificador canônico de hidrante a partir de um registro de auditoria.
+ * Normaliza códigos no padrão canônico (ex: ARN00004, ACL00010, BSB00012).
+ */
+export const extractHydrantKeyFromLog = (log) => {
+  if (!log) return '';
+  const rawId = String(log.entityId || '').trim().toUpperCase();
+  const rawName = String(log.entityName || '').split('-')[0].trim().toUpperCase();
+  const rawTitle = String(log.title || '').trim().toUpperCase();
+
+  const combined = `${rawId} ${rawName} ${rawTitle}`;
+  const m = combined.match(/([A-Z]{3})\s*0*(\d{1,5})/i);
+  if (m) {
+    return m[1].toUpperCase() + String(parseInt(m[2], 10)).padStart(5, '0');
+  }
+
+  const numMatch = (rawId || rawName).match(/^(\d{1,7})$/);
+  if (numMatch) {
+    return `HID_${numMatch[1]}`;
+  }
+
+  return rawId || rawName || log.id || '';
+};
+
+/**
  * Obtém todos os registros de auditoria ordenados do mais recente para o mais antigo,
- * com higienização automática contra duplicidades ocorridas em curto intervalo.
+ * com higienização automática contra duplicidades ocorridas em curto intervalo e
+ * consolidação de vistorias repetidas no mesmo hidrante no mesmo dia (correções/recadastros do gestor).
  */
 export const getAuditLogs = () => {
   try {
@@ -14,11 +40,29 @@ export const getAuditLogs = () => {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
 
-    // Deduplicação inteligente de registros redundantes gravados com pequeno intervalo (< 6 segundos)
+    // Deduplicação inteligente de registros:
+    // 1. Deduplicação especial de vistorias: no mesmo dia, para o mesmo hidrante,
+    //    múltiplos envios pelo gestor poucos minutos depois (recadastro ou correção de erro)
+    //    mantêm apenas a versão mais recente da vistoria naquele dia.
+    // 2. Deduplicação genérica para outras entidades em curto intervalo (< 6 segundos).
     const deduplicated = [];
+    const seenSameDayVistorias = new Set();
+
     for (let i = 0; i < parsed.length; i++) {
       const current = parsed[i];
       if (!current || !current.id) continue;
+
+      if (current.entityType === 'vistoria' && current.action !== 'delete') {
+        const hKey = extractHydrantKeyFromLog(current);
+        const dayKey = formatDateOnly(current.timestamp);
+        const uniqueDayKey = `${hKey}_${dayKey}`;
+
+        if (seenSameDayVistorias.has(uniqueDayKey)) {
+          // Já temos o registro mais recente deste hidrante neste dia
+          continue;
+        }
+        seenSameDayVistorias.add(uniqueDayKey);
+      }
 
       const isDuplicate = deduplicated.some(existing => {
         if (existing.entityType !== current.entityType) return false;
@@ -139,7 +183,25 @@ export const logAuditEvent = ({
       unread: true
     };
 
-    const updatedLogs = [newEntry, ...currentLogs];
+    let updatedLogs;
+    if (newEntry.entityType === 'vistoria' && newEntry.action !== 'delete') {
+      const newHKey = extractHydrantKeyFromLog(newEntry);
+      const todayKey = formatDateOnly(new Date());
+      const filteredPrevious = currentLogs.filter(l => {
+        if (l.entityType === 'vistoria' && l.action !== 'delete') {
+          const lHKey = extractHydrantKeyFromLog(l);
+          const lDay = formatDateOnly(l.timestamp);
+          if (lHKey === newHKey && lDay === todayKey) {
+            return false; // Substitui registro/tentativa anterior do mesmo hidrante no mesmo dia
+          }
+        }
+        return true;
+      });
+      updatedLogs = [newEntry, ...filteredPrevious];
+    } else {
+      updatedLogs = [newEntry, ...currentLogs];
+    }
+
     saveAuditLogs(updatedLogs);
 
     // Propaga mutação para a nuvem caso o Supabase esteja configurado
@@ -194,7 +256,7 @@ export const clearAuditLogs = () => {
 
 /**
  * Mescla registros de auditoria vindos da nuvem com os locais,
- * preservando a ordem cronológica e o status de leitura local.
+ * preservando a ordem cronológica, status de leitura e consolidando vistorias repetidas no mesmo hidrante no mesmo dia.
  */
 export const mergeAuditLogs = (cloudLogs = []) => {
   if (!Array.isArray(cloudLogs) || cloudLogs.length === 0) {
@@ -228,14 +290,30 @@ export const mergeAuditLogs = (cloudLogs = []) => {
     });
 
     // 3. Ordenação cronológica decrescente (mais recente primeiro)
-    const merged = Array.from(map.values()).sort((a, b) => {
+    const sorted = Array.from(map.values()).sort((a, b) => {
       const tA = new Date(a.timestamp || 0).getTime();
       const tB = new Date(b.timestamp || 0).getTime();
       return tB - tA;
     });
 
-    saveAuditLogs(merged);
-    return merged;
+    // 4. Deduplicação inteligente de vistorias no mesmo dia para o mesmo hidrante
+    const deduplicated = [];
+    const seenSameDayVistorias = new Set();
+    for (const item of sorted) {
+      if (item.entityType === 'vistoria' && item.action !== 'delete') {
+        const hKey = extractHydrantKeyFromLog(item);
+        const dayKey = formatDateOnly(item.timestamp);
+        const uniqueKey = `${hKey}_${dayKey}`;
+        if (seenSameDayVistorias.has(uniqueKey)) {
+          continue;
+        }
+        seenSameDayVistorias.add(uniqueKey);
+      }
+      deduplicated.push(item);
+    }
+
+    saveAuditLogs(deduplicated);
+    return deduplicated;
   } catch (err) {
     console.error('Erro ao mesclar logs de auditoria da nuvem:', err);
     return getAuditLogs();

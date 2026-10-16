@@ -101,8 +101,30 @@ export const parseDate = (input) => {
     }
 
     if (finalMonth >= 1 && finalMonth <= 12 && finalDay >= 1 && finalDay <= 31) {
-      const d = new Date(finalYear, finalMonth - 1, finalDay, hour, min, sec);
-      if (!isNaN(d.getTime())) return d;
+      const isExplicitUtc = /Z$/i.test(str) || /\+00:?00$/.test(str);
+      const hasTzOffset = /[+-]\d{2}:?\d{2}$/.test(str);
+
+      if (isExplicitUtc) {
+        if (finalMonth !== month || finalDay !== day) {
+          const d = new Date(Date.UTC(finalYear, finalMonth - 1, finalDay, hour, min, sec));
+          if (!isNaN(d.getTime())) return d;
+        }
+        const nativeDate = new Date(str);
+        if (!isNaN(nativeDate.getTime())) return nativeDate;
+      } else if (hasTzOffset) {
+        if (finalMonth !== month || finalDay !== day) {
+          const offsetMatch = str.match(/([+-]\d{2}:?\d{2})$/);
+          const offset = offsetMatch ? offsetMatch[1] : '';
+          const rebuilt = `${finalYear}-${String(finalMonth).padStart(2, '0')}-${String(finalDay).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}${offset}`;
+          const d = new Date(rebuilt);
+          if (!isNaN(d.getTime())) return d;
+        }
+        const nativeDate = new Date(str);
+        if (!isNaN(nativeDate.getTime())) return nativeDate;
+      } else {
+        const d = new Date(finalYear, finalMonth - 1, finalDay, hour, min, sec);
+        if (!isNaN(d.getTime())) return d;
+      }
     }
   }
 
@@ -113,6 +135,28 @@ export const parseDate = (input) => {
   } catch {}
 
   return null;
+};
+
+/**
+ * Verifica se uma data corresponde ao dia de hoje no fuso local.
+ */
+export const isToday = (input) => {
+  const d = parseDate(input);
+  if (!d) return false;
+  const now = new Date();
+  return d.getDate() === now.getDate() &&
+         d.getMonth() === now.getMonth() &&
+         d.getFullYear() === now.getFullYear();
+};
+
+/**
+ * Verifica se uma data está dentro dos últimos N dias.
+ */
+export const isWithinDays = (input, days) => {
+  const d = parseDate(input);
+  if (!d) return false;
+  const diffMs = Date.now() - d.getTime();
+  return diffMs >= 0 && diffMs <= days * 24 * 60 * 60 * 1000;
 };
 
 /**

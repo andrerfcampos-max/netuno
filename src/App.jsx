@@ -35,7 +35,7 @@ import { getLastKnownLocation, startGlobalGeoTracking, subscribeLocation } from 
 import { optimizeRouteEuclidean } from './utils/routeOptimization';
 import { isHydrantInSet, getHydrantAllIds, areIdsEquivalent, translateId, isHydrantCompletedInMission, getMissionProgressMetrics, getHydrantsForIds } from './utils/idMapping';
 import { getHydrantPhoto, preloadHydrantPhoto, preloadHydrantsList } from './utils/hydrantPhotoUtils';
-import { parseDate, formatDateOnly, formatDateTimeDisplay, getHydrantVistoriaDate } from './utils/dateUtils';
+import { parseDate, formatDateOnly, formatDateTimeDisplay, getHydrantVistoriaDate, isToday } from './utils/dateUtils';
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Raio da Terra em km
@@ -1498,10 +1498,31 @@ syncPreferences({ filters: filters });
     syncHydrantMutationToCloud('update', sanitized);
 
     // Registra ação no Histórico de Auditoria do Gestor
+    // Se for edição OU se o hidrante já tiver vistoria registrada hoje, classifica como atualização/correção
+    const isAlreadyInspectedToday = () => {
+      if (isEditing) return true;
+      const hNom = String(sanitized.nomHidrante || '').trim().toUpperCase();
+      const hCod = String(sanitized.codHidrante || '').trim();
+      const hInternal = String(sanitized._internalId || '').trim();
+      const currentLogs = getAuditLogs();
+      return currentLogs.some(l => {
+        if (l.entityType !== 'vistoria' || l.action === 'delete') return false;
+        if (!isToday(l.timestamp)) return false;
+        const eId = String(l.entityId || '').trim().toUpperCase();
+        const eName = String(l.entityName || '').trim().toUpperCase();
+        if (hNom && (eId === hNom || eName.includes(hNom))) return true;
+        if (hCod && (eId === hCod || eName.includes(hCod))) return true;
+        if (hInternal && eId === hInternal.toUpperCase()) return true;
+        return false;
+      });
+    };
+
+    const isUpdateAction = isEditing || isAlreadyInspectedToday();
+
     logAuditEvent({
       entityType: 'vistoria',
-      action: isEditing ? 'edit' : 'create',
-      title: isEditing 
+      action: isUpdateAction ? 'edit' : 'create',
+      title: isUpdateAction 
         ? `Vistoria Atualizada: ${sanitized.nomHidrante || sanitized.codHidrante || 'Hidrante'}`
         : `Nova Vistoria Realizada: ${sanitized.nomHidrante || sanitized.codHidrante || 'Hidrante'}`,
       entityId: String(sanitized.codHidrante || sanitized._internalId || sanitized.nomHidrante || ''),

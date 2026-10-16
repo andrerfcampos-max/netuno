@@ -24,12 +24,13 @@ import {
 import { 
   getAuditLogs, 
   markAllAuditLogsAsRead,
-  mergeAuditLogs
+  mergeAuditLogs,
+  extractHydrantKeyFromLog
 } from '../utils/auditLogger';
 import { isCloudConfigured } from '../services/supabase';
 import { fetchHydrantMutationsFromCloud, fetchAuditLogsFromCloud } from '../services/syncService';
 import { getHydrantAllIds } from '../utils/idMapping';
-import { parseDate, formatDateTimeDisplay } from '../utils/dateUtils';
+import { parseDate, formatDateTimeDisplay, isToday, isWithinDays, formatDateOnly } from '../utils/dateUtils';
 
 // Formatação padronizada e canônica de data e horário das ações (DD/MM/AAAA às HH:mm)
 const formatActionDateTime = (timestamp) => {
@@ -58,22 +59,28 @@ export default function SystemHistoryModal({
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedLogId, setExpandedLogId] = useState(null);
 
-  // Helper para verificar se uma data é hoje (suporta ISO e DD/MM/YYYY)
-  const isToday = (timestamp) => {
-    const d = parseDate(timestamp);
-    if (!d) return false;
-    const now = new Date();
-    return d.getDate() === now.getDate() &&
-           d.getMonth() === now.getMonth() &&
-           d.getFullYear() === now.getFullYear();
-  };
+  // Mapeamento dinâmico de aliases para códigos canônicos de hidrantes
+  const hydrantCodeMap = useMemo(() => {
+    const map = new Map();
+    (hidrantes || []).forEach(h => {
+      const canonical = String(h.nomHidrante || h.codHidrante || h._internalId || '').trim().toUpperCase();
+      if (!canonical) return;
+      getHydrantAllIds(h).forEach(id => {
+        const s = String(id).trim().toUpperCase();
+        if (s) map.set(s, canonical);
+      });
+      if (h.nomHidrante) {
+        const clean = String(h.nomHidrante).trim().toUpperCase().replace(/[\s\-_]/g, '');
+        map.set(clean, canonical);
+      }
+    });
+    return map;
+  }, [hidrantes]);
 
-  // Helper para verificar se está dentro de N dias
-  const isWithinDays = (timestamp, days) => {
-    const d = parseDate(timestamp);
-    if (!d) return false;
-    const diffMs = Date.now() - d.getTime();
-    return diffMs >= 0 && diffMs <= days * 24 * 60 * 60 * 1000;
+  const resolveHydrantKey = (log) => {
+    const baseKey = extractHydrantKeyFromLog(log);
+    if (!baseKey) return '';
+    return hydrantCodeMap.get(baseKey) || baseKey;
   };
 
   // Carrega e assina atualizações do histórico
@@ -101,18 +108,44 @@ export default function SystemHistoryModal({
     return () => window.removeEventListener('netuno_audit_updated', handleUpdate);
   }, [isOpen]);
 
-  // Contadores analíticos
+  // Contadores analíticos com Regra Canônica Netuno:
+  // Vistorias Hoje: 1 hidrante = 1 vistoria por dia (elimina erros de recadastro ou correções do gestor poucos minutos depois)
   const metrics = useMemo(() => {
     const unread = logs.filter(l => l.unread).length;
-    const vistorias = logs.filter(l => l.entityType === 'vistoria').length;
-    const hidrantes = logs.filter(l => l.entityType === 'hidrante').length;
+    const hidrantesCount = logs.filter(l => l.entityType === 'hidrante').length;
     const prepop = logs.filter(l => l.entityType === 'prepop').length;
-    const vistoriasHoje = logs.filter(l => l.entityType === 'vistoria' && isToday(l.timestamp)).length;
-    return { total: logs.length, unread, vistorias, hidrantes, prepop, vistoriasHoje };
-  }, [logs]);
+
+    // Vistorias Hoje: hidrantes únicos com vistoria ativa realizada hoje
+    const seenTodayHydrants = new Set();
+    logs.forEach(l => {
+      if (l.entityType === 'vistoria' && l.action !== 'delete' && isToday(l.timestamp)) {
+        const hKey = resolveHydrantKey(l);
+        if (hKey) seenTodayHydrants.add(hKey);
+      }
+    });
+    const vistoriasHoje = seenTodayHydrants.size;
+
+    // Vistorias Total: pares únicos de (hidrante, data)
+    const seenAllVistorias = new Set();
+    logs.forEach(l => {
+      if (l.entityType === 'vistoria' && l.action !== 'delete') {
+        const hKey = resolveHydrantKey(l);
+        const dateKey = formatDateOnly(l.timestamp);
+        if (hKey && dateKey && dateKey !== '-') {
+          seenAllVistorias.add(`${hKey}_${dateKey}`);
+        }
+      }
+    });
+    const vistorias = seenAllVistorias.size;
+
+    return { total: logs.length, unread, vistorias, hidrantes: hidrantesCount, prepop, vistoriasHoje };
+  }, [logs, hydrantCodeMap]);
 
   // Filtro inteligente multi-dimensão (Entidade, Ação, Período Temporal e Busca)
   const filteredLogs = useMemo(() => {
+    // Se estiver filtrando vistorias, aplica deduplicação defensiva no mesmo dia
+    const seenSameDayVistoria = new Set();
+
     return logs.filter(item => {
       if (entityFilter === 'unread') {
         if (!item.unread) return false;
@@ -144,9 +177,21 @@ export default function SystemHistoryModal({
         if (!text.includes(term)) return false;
       }
 
+      // Regra Canônica de Vistorias: se for vistoria e já vimos este hidrante nesta mesma data (mais recente já passou),
+      // ignora a tentativa/recadastro anterior para que a lista reflita exatamente a contagem canônica
+      if (item.entityType === 'vistoria' && item.action !== 'delete') {
+        const hKey = resolveHydrantKey(item);
+        const dayKey = formatDateOnly(item.timestamp);
+        const uniqueKey = `${hKey}_${dayKey}`;
+        if (seenSameDayVistoria.has(uniqueKey)) {
+          return false;
+        }
+        seenSameDayVistoria.add(uniqueKey);
+      }
+
       return true;
     });
-  }, [logs, entityFilter, actionFilter, periodFilter, searchTerm]);
+  }, [logs, entityFilter, actionFilter, periodFilter, searchTerm, hydrantCodeMap]);
 
   if (!isOpen) return null;
 
@@ -319,13 +364,22 @@ export default function SystemHistoryModal({
         {/* CHIPS DE MÉTRICAS & FILTRO POR ENTIDADE (COMPACTO E INTEGRADO) */}
         <div className="flex items-center gap-1.5 px-3 sm:px-6 py-2 bg-slate-950/60 border-b border-slate-800/80 overflow-x-auto shrink-0 scrollbar-none">
           {/* Badge Destacado de Vistorias Hoje */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap border shrink-0 bg-amber-950/70 border-amber-500/50 text-amber-300 shadow-xs">
+          <button
+            type="button"
+            onClick={() => {
+              setEntityFilter('vistoria');
+              setPeriodFilter('today');
+              setActionFilter('all');
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap border shrink-0 bg-amber-950/70 border-amber-500/50 text-amber-300 shadow-xs hover:bg-amber-900/80 transition-all cursor-pointer"
+            title="Filtrar vistorias realizadas hoje"
+          >
             <Calendar size={13} className="text-amber-400 shrink-0" />
             <span>Hoje:</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-amber-500 text-slate-950">
               {metrics.vistoriasHoje} {metrics.vistoriasHoje === 1 ? 'vistoria' : 'vistorias'}
             </span>
-          </div>
+          </button>
 
           {[
             { id: 'all', label: 'Todas', count: metrics.total, icon: <Layers size={13} />, color: 'text-slate-300', activeBg: 'bg-emerald-600 text-white border-emerald-500' },

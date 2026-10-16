@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-211",
+  "activeTaskId": "TASK-212",
   "queue": [
     {
       "id": "TASK-1",
@@ -2107,10 +2107,10 @@
       "seq": 209,
       "conversationId": "575fec57-88e4-4457-ab59-07212af39d87",
       "description": "Diagnosticar e corrigir acumulo e mistura de hidrantes na criacao/abertura de rotas e vazamento de memoria/travamento",
-      "status": "timed_out",
+      "status": "completed",
       "createdAt": "2026-10-16T18:35:28.373Z",
       "startedAt": "2026-10-16T18:35:43.896Z",
-      "completedAt": "2026-10-16T18:50:45.938Z"
+      "completedAt": "2026-10-16T19:13:39.370Z"
     },
     {
       "id": "TASK-210",
@@ -2127,19 +2127,19 @@
       "seq": 211,
       "conversationId": "21a3489e-d3a7-4cc8-a8a3-d6777765f2cc",
       "description": "Correcao fuso horario e deduplicacao de contagem de vistorias no historico",
-      "status": "running",
+      "status": "timed_out",
       "createdAt": "2026-10-16T18:51:34.542Z",
       "startedAt": "2026-10-16T19:04:52.722Z",
-      "completedAt": null
+      "completedAt": "2026-10-16T19:19:54.595Z"
     },
     {
       "id": "TASK-212",
       "seq": 212,
       "conversationId": "e5624751-e6a7-48fd-badc-a57352850066",
       "description": "Cadastrar vistorias Honorato em lote (15/10/2026)",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-10-16T18:55:50.079Z",
-      "startedAt": null,
+      "startedAt": "2026-10-16T19:19:55.921Z",
       "completedAt": null
     },
     {
@@ -2159,6 +2159,16 @@
       "description": "Reformulacao do Planejamento de Vistoria de Cidades (ciclos continuos, visualizacao sintetica e correcao mobile)",
       "status": "queued",
       "createdAt": "2026-10-16T19:04:49.844Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "TASK-215",
+      "seq": 215,
+      "conversationId": "21a3489e-d3a7-4cc8-a8a3-d6777765f2cc",
+      "description": "Finalizar commit correcao fuso e contagem vistorias",
+      "status": "queued",
+      "createdAt": "2026-10-16T19:21:04.578Z",
       "startedAt": null,
       "completedAt": null
     }
