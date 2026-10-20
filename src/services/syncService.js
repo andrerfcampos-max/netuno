@@ -715,26 +715,63 @@ export const fetchHydrantMutationsFromCloud = async (options = {}) => {
 
 /**
  * Busca os eventos mais recentes do histórico de auditoria (netuno_hydrant_mutations type: audit_event)
- * Garante que o modal Histórico e Notificações seja preenchido mesmo se o delta sync não tiver registros novos.
+ * e também sintetiza vistorias técnicas registradas em netuno_inspections.
+ * Garante que o modal Histórico e Notificações seja preenchido mesmo se o delta sync não tiver registros novos
+ * ou se alguma mutação de auditoria tiver sido omitida em campo.
  */
 export const fetchAuditLogsFromCloud = async (limit = 250) => {
   const client = getSupabaseClient();
   if (!client) return [];
 
   try {
-    const { data, error } = await client
-      .from('netuno_hydrant_mutations')
-      .select('payload')
-      .eq('type', 'audit_event')
-      .order('updated_at', { ascending: false })
-      .limit(limit);
+    const [mutationsRes, inspectionsRes] = await Promise.all([
+      client
+        .from('netuno_hydrant_mutations')
+        .select('payload')
+        .eq('type', 'audit_event')
+        .order('updated_at', { ascending: false })
+        .limit(limit),
+      client
+        .from('netuno_inspections')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit)
+    ]);
 
-    if (error) {
-      console.warn('Erro ao buscar audit logs do Supabase:', error.message);
-      return [];
-    }
+    const mutationLogs = (mutationsRes.data || []).map(r => r.payload).filter(Boolean);
+    const cloudInspections = inspectionsRes.data || [];
 
-    return (data || []).map(r => r.payload).filter(Boolean);
+    // Sintetiza audit logs para quaisquer vistorias em netuno_inspections
+    const syntheticLogs = [];
+    cloudInspections.forEach(insp => {
+      const cod = String(insp.nom_hidrante || insp.cod_hidrante || '').trim();
+      if (!cod) return;
+      const timestamp = insp.created_at || insp.data_hora_vistoria || new Date().toISOString();
+      const statusLabel = insp.flg_ativo ? 'Operante' : 'Inoperante';
+      const probLabel = insp.problemas_hidrante ? ` | Problemas: ${insp.problemas_hidrante}` : '';
+      const obsLabel = insp.observacao ? ` | Obs: ${insp.observacao}` : '';
+
+      syntheticLogs.push({
+        id: `audit_cloud_insp_${insp.id || cod}`,
+        timestamp,
+        entityType: 'vistoria',
+        action: 'create',
+        title: `Nova Vistoria Realizada: ${cod}`,
+        entityId: cod,
+        entityName: `${cod}`,
+        location: '',
+        author: {
+          nome: insp.nom_vistoriador || 'Militar Vistoriador',
+          matricula: insp.num_matricula || '-',
+          role: 'vistoriador'
+        },
+        details: `Status: ${statusLabel}${probLabel}${obsLabel}`,
+        coords: (insp.latitude && insp.longitude) ? { lat: Number(insp.latitude), lng: Number(insp.longitude) } : null,
+        unread: false
+      });
+    });
+
+    return [...mutationLogs, ...syntheticLogs];
   } catch (err) {
     console.warn('Falha na requisição de audit logs da nuvem:', err);
     return [];

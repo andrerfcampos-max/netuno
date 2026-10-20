@@ -935,6 +935,20 @@ syncPreferences({ filters: newFilters });
                   const isFutureDate = d && d.getTime() > (Date.now() + 86400000); // Mais de 24h no futuro
                   if (!isFutureDate && (!currentDt || currentDt === '18/06/2025 12:00:00' || currentDt !== dtStr)) {
                     hasChanges = true;
+                    const prevHist = Array.isArray(h.HISTORICO_VISTORIAS) ? [...h.HISTORICO_VISTORIAS] : [];
+                    const alreadyInHist = prevHist.some(item => (item.datHoraVistoria === dtStr || item.idVistoria === insp.id));
+                    if (!alreadyInHist) {
+                      prevHist.unshift({
+                        idVistoria: insp.id || `insp_${Date.now()}`,
+                        datHoraVistoria: dtStr,
+                        problemasHidrante: insp.problemas_hidrante || '',
+                        flgAtivo: Boolean(insp.flg_ativo),
+                        fotoVistoria: insp.foto_url || null,
+                        dscObservacao: insp.observacao || '',
+                        vistoriadorNome: insp.nom_vistoriador || 'Militar Vistoriador',
+                        vistoriadorMatricula: insp.num_matricula || '-'
+                      });
+                    }
                     return {
                       ...h,
                       datHoraUltimaVistoria: dtStr,
@@ -944,7 +958,8 @@ syncPreferences({ filters: newFilters });
                       flgAtivo: Boolean(insp.flg_ativo),
                       status: insp.flg_ativo ? 'Operante' : 'Inoperante',
                       problemasHidrante: insp.problemas_hidrante || h.problemasHidrante,
-                      fotoVistoria: insp.foto_url || h.fotoVistoria
+                      fotoVistoria: insp.foto_url || h.fotoVistoria,
+                      HISTORICO_VISTORIAS: prevHist
                     };
                   }
                 }
@@ -955,15 +970,12 @@ syncPreferences({ filters: newFilters });
           }
         }).catch(e => console.warn('Erro ao reconciliar vistorias da nuvem:', e));
 
-        // Se o histórico de auditoria local estiver vazio, busca da nuvem
-        const currentAudits = getAuditLogs();
-        if (currentAudits.length === 0) {
-          fetchAuditLogsFromCloud(250).then(cloudAudits => {
-            if (Array.isArray(cloudAudits) && cloudAudits.length > 0) {
-              mergeAuditLogs(cloudAudits);
-            }
-          }).catch(e => console.warn('Erro ao carregar audit logs na inicialização:', e));
-        }
+        // Reconcilia histórico de auditoria completo com a nuvem (multiusuário e atualizações em campo)
+        fetchAuditLogsFromCloud(250).then(cloudAudits => {
+          if (Array.isArray(cloudAudits) && cloudAudits.length > 0) {
+            mergeAuditLogs(cloudAudits);
+          }
+        }).catch(e => console.warn('Erro ao carregar audit logs na inicialização:', e));
       } catch (e) {
         console.warn('Erro ao sincronizar com banco em nuvem:', e);
       }
@@ -1464,32 +1476,36 @@ syncPreferences({ filters: filters });
     changes.updated[idKey] = sanitized;
     saveHydrantChanges(changes);
 
-    if (activeMissionId) {
-      const currentM = missions.find(m => m.id === activeMissionId);
-      if (currentM) {
-        const curSel = (currentM.selectedIds || []).map(x => String(x));
-        const curComp = (currentM.completedIds || []).map(x => String(x));
-        
-        const matchedInMission = isHydrantInSet(sanitized, curSel);
-        const allSanitizedIds = getHydrantAllIds(sanitized);
-        const primaryId = String(sanitized.codHidrante || sanitized._internalId || sanitized.nomHidrante);
+    try {
+      if (activeMissionId) {
+        const currentM = missions.find(m => m.id === activeMissionId);
+        if (currentM) {
+          const curSel = (currentM.selectedIds || []).map(x => String(x));
+          const curComp = (currentM.completedIds || []).map(x => String(x));
+          
+          const matchedInMission = isHydrantInSet(sanitized, curSel);
+          const allSanitizedIds = getHydrantAllIds(sanitized);
+          const primaryId = String(sanitized.codHidrante || sanitized._internalId || sanitized.nomHidrante);
 
-        // Se o militar encontrou o hidrante no caminho e vistoriou, inclui na missão e marca como concluído
-        const newSelected = matchedInMission ? curSel : Array.from(new Set([...curSel, primaryId]));
-        const newCompleted = Array.from(new Set([...curComp, primaryId, ...allSanitizedIds]));
-        const updatedMission = {
-          ...currentM,
-          selectedIds: newSelected,
-          completedIds: newCompleted,
-          updatedAt: new Date().toISOString()
-        };
-        setMissions(prev => {
-          const updated = prev.map(m => m.id === updatedMission.id ? updatedMission : m);
-          saveMissions(updated);
-          return updated;
-        });
-        syncMissionToCloud(updatedMission);
+          // Se o militar encontrou o hidrante no caminho e vistoriou, inclui na missão e marca como concluído
+          const newSelected = matchedInMission ? curSel : Array.from(new Set([...curSel, primaryId]));
+          const newCompleted = Array.from(new Set([...curComp, primaryId, ...allSanitizedIds]));
+          const updatedMission = {
+            ...currentM,
+            selectedIds: newSelected,
+            completedIds: newCompleted,
+            updatedAt: new Date().toISOString()
+          };
+          setMissions(prev => {
+            const updated = prev.map(m => m.id === updatedMission.id ? updatedMission : m);
+            saveMissions(updated);
+            return updated;
+          });
+          syncMissionToCloud(updatedMission);
+        }
       }
+    } catch (missionErr) {
+      console.warn('Erro ao atualizar missão vinculada à vistoria:', missionErr);
     }
 
     setLastInspectedCoords({ lat: sanitized.numLatitude, lng: sanitized.numLongitude });

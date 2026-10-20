@@ -108,16 +108,69 @@ export default function SystemHistoryModal({
     return () => window.removeEventListener('netuno_audit_updated', handleUpdate);
   }, [isOpen]);
 
+  // Consolidação de redundância total:
+  // Garante que todas as vistorias presentes nos hidrantes ativos (mesmo que vindas diretamente da nuvem
+  // ou sem mutação audit_event prévia) sejam refletidas no histórico e contadores
+  const effectiveLogs = useMemo(() => {
+    if (!Array.isArray(hidrantes) || hidrantes.length === 0) return logs;
+    const knownKeys = new Set();
+    (logs || []).forEach(l => {
+      const hKey = resolveHydrantKey(l);
+      const dayKey = formatDateOnly(l.timestamp);
+      if (hKey && dayKey && dayKey !== '-') {
+        knownKeys.add(`${hKey}_${dayKey}`);
+      }
+    });
+
+    const extraLogs = [];
+    hidrantes.forEach(h => {
+      const rawDate = h.datHoraUltimaVistoria || h.datHoraVistoria;
+      if (!rawDate) return;
+      const dayKey = formatDateOnly(rawDate);
+      if (!dayKey || dayKey === '-' || dayKey.startsWith('18/06/2025')) return;
+      
+      const canonicalKey = String(h.nomHidrante || h.codHidrante || h._internalId || '').trim().toUpperCase();
+      if (!canonicalKey) return;
+      const compoundKey = `${canonicalKey}_${dayKey}`;
+
+      if (!knownKeys.has(compoundKey)) {
+        knownKeys.add(compoundKey);
+        const parsedD = parseDate(rawDate);
+        extraLogs.push({
+          id: `audit_synced_h_${canonicalKey}_${dayKey.replace(/\//g, '_')}`,
+          timestamp: parsedD ? parsedD.toISOString() : new Date().toISOString(),
+          entityType: 'vistoria',
+          action: 'create',
+          title: `Nova Vistoria Realizada: ${canonicalKey}`,
+          entityId: canonicalKey,
+          entityName: `${canonicalKey} - ${h.dscEndereco || ''}`.trim(),
+          location: h.dscLocalidade || '',
+          author: {
+            nome: h.vistoriadorNome || 'Militar Vistoriador',
+            matricula: h.vistoriadorMatricula || '-',
+            role: 'vistoriador'
+          },
+          details: `Status: ${h.flgAtivo ? 'Operante' : 'Inoperante'}${h.problemasHidrante ? ' | Problemas: ' + h.problemasHidrante : ''}`,
+          coords: (h.numLatitude && h.numLongitude) ? { lat: Number(h.numLatitude), lng: Number(h.numLongitude) } : null,
+          unread: false
+        });
+      }
+    });
+
+    if (extraLogs.length === 0) return logs;
+    return [...logs, ...extraLogs].sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  }, [logs, hidrantes, hydrantCodeMap]);
+
   // Contadores analíticos com Regra Canônica Netuno:
   // Vistorias Hoje: 1 hidrante = 1 vistoria por dia (elimina erros de recadastro ou correções do gestor poucos minutos depois)
   const metrics = useMemo(() => {
-    const unread = logs.filter(l => l.unread).length;
-    const hidrantesCount = logs.filter(l => l.entityType === 'hidrante').length;
-    const prepop = logs.filter(l => l.entityType === 'prepop').length;
+    const unread = effectiveLogs.filter(l => l.unread).length;
+    const hidrantesCount = effectiveLogs.filter(l => l.entityType === 'hidrante').length;
+    const prepop = effectiveLogs.filter(l => l.entityType === 'prepop').length;
 
     // Vistorias Hoje: hidrantes únicos com vistoria ativa realizada hoje
     const seenTodayHydrants = new Set();
-    logs.forEach(l => {
+    effectiveLogs.forEach(l => {
       if (l.entityType === 'vistoria' && l.action !== 'delete' && isToday(l.timestamp)) {
         const hKey = resolveHydrantKey(l);
         if (hKey) seenTodayHydrants.add(hKey);
@@ -127,7 +180,7 @@ export default function SystemHistoryModal({
 
     // Vistorias Total: pares únicos de (hidrante, data)
     const seenAllVistorias = new Set();
-    logs.forEach(l => {
+    effectiveLogs.forEach(l => {
       if (l.entityType === 'vistoria' && l.action !== 'delete') {
         const hKey = resolveHydrantKey(l);
         const dateKey = formatDateOnly(l.timestamp);
@@ -138,15 +191,15 @@ export default function SystemHistoryModal({
     });
     const vistorias = seenAllVistorias.size;
 
-    return { total: logs.length, unread, vistorias, hidrantes: hidrantesCount, prepop, vistoriasHoje };
-  }, [logs, hydrantCodeMap]);
+    return { total: effectiveLogs.length, unread, vistorias, hidrantes: hidrantesCount, prepop, vistoriasHoje };
+  }, [effectiveLogs, hydrantCodeMap]);
 
   // Filtro inteligente multi-dimensão (Entidade, Ação, Período Temporal e Busca)
   const filteredLogs = useMemo(() => {
     // Se estiver filtrando vistorias, aplica deduplicação defensiva no mesmo dia
     const seenSameDayVistoria = new Set();
 
-    return logs.filter(item => {
+    return effectiveLogs.filter(item => {
       if (entityFilter === 'unread') {
         if (!item.unread) return false;
       } else if (entityFilter !== 'all' && item.entityType !== entityFilter) {
