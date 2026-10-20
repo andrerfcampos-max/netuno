@@ -26,13 +26,21 @@ export const normalizeCode = (str) => {
   return clean.replace(/[\s\-_]/g, '');
 };
 
+// Caches em memória fraca (WeakMap) para IDs de hidrantes (evita poluição de propriedades enumeráveis nos objetos e quebra por serialização JSON)
+const hydrantAllIdsArrWeakMap = new WeakMap();
+const hydrantAllIdsSetWeakMap = new WeakMap();
+
 /**
  * Retorna todos os identificadores conhecidos e válidos para um determinado objeto hidrante,
  * incluindo codHidrante, nomHidrante, _internalId, equivalentes canônicos e variações de espaçamento/zeros.
  */
 export const getHydrantAllIds = (h) => {
   if (!h || typeof h !== 'object') return [];
-  if (h._allIdsCache) return h._allIdsCache;
+  if (hydrantAllIdsArrWeakMap.has(h)) return hydrantAllIdsArrWeakMap.get(h);
+  if (Array.isArray(h._allIdsCache)) {
+    try { hydrantAllIdsArrWeakMap.set(h, h._allIdsCache); } catch (_) {}
+    return h._allIdsCache;
+  }
   const ids = new Set();
 
   const addVal = (v) => {
@@ -92,9 +100,26 @@ export const getHydrantAllIds = (h) => {
 
   const arr = Array.from(ids);
   try {
-    h._allIdsCache = arr;
-    h._allIdsSetCache = ids;
-  } catch (e) {}
+    hydrantAllIdsArrWeakMap.set(h, arr);
+    hydrantAllIdsSetWeakMap.set(h, ids);
+    Object.defineProperty(h, '_allIdsCache', {
+      value: arr,
+      writable: true,
+      configurable: true,
+      enumerable: false
+    });
+    Object.defineProperty(h, '_allIdsSetCache', {
+      value: ids,
+      writable: true,
+      configurable: true,
+      enumerable: false
+    });
+  } catch (e) {
+    try {
+      h._allIdsCache = arr;
+      h._allIdsSetCache = ids;
+    } catch (_) {}
+  }
   return arr;
 };
 
@@ -118,7 +143,16 @@ export const buildExpandedIdSet = (idSetOrArray) => {
     : (Array.isArray(idSetOrArray) ? idSetOrArray : [idSetOrArray]);
 
   const expanded = new Set();
-  expanded._isExpanded = true;
+  try {
+    Object.defineProperty(expanded, '_isExpanded', {
+      value: true,
+      writable: true,
+      configurable: true,
+      enumerable: false
+    });
+  } catch (e) {
+    expanded._isExpanded = true;
+  }
 
   rawList.forEach(x => {
     if (x !== undefined && x !== null) {
@@ -157,7 +191,7 @@ export const getHydrantIndex = (hidrantes) => {
   if (hydrantIndexWeakMap.has(hidrantes)) {
     return hydrantIndexWeakMap.get(hidrantes);
   }
-  if (hidrantes._indexMap) return hidrantes._indexMap;
+  if (hidrantes._indexMap instanceof Map) return hidrantes._indexMap;
 
   const indexMap = new Map();
   hidrantes.forEach(h => {
@@ -171,8 +205,17 @@ export const getHydrantIndex = (hidrantes) => {
 
   try {
     hydrantIndexWeakMap.set(hidrantes, indexMap);
-    hidrantes._indexMap = indexMap;
-  } catch (e) {}
+    Object.defineProperty(hidrantes, '_indexMap', {
+      value: indexMap,
+      writable: true,
+      configurable: true,
+      enumerable: false
+    });
+  } catch (e) {
+    try {
+      hidrantes._indexMap = indexMap;
+    } catch (_) {}
+  }
 
   return indexMap;
 };
@@ -258,15 +301,30 @@ export const isHydrantInSet = (hydrant, idSetOrArray) => {
 
   if (idSet.size === 0) return false;
 
-  if (hydrant._allIdsSetCache) {
-    for (const id of hydrant._allIdsSetCache) {
-      if (idSet.has(id)) return true;
-    }
+  // 1. Tenta recuperar o Set em cache de forma 100% segura (WeakMap ou Set válido/iterável)
+  let setCache = null;
+  if (typeof hydrant === 'object' && hydrant !== null) {
+    setCache = hydrantAllIdsSetWeakMap.get(hydrant);
+  }
+  if (!setCache && hydrant._allIdsSetCache instanceof Set) {
+    setCache = hydrant._allIdsSetCache;
+  } else if (!setCache && hydrant._allIdsSetCache && typeof hydrant._allIdsSetCache[Symbol.iterator] === 'function') {
+    setCache = hydrant._allIdsSetCache;
   }
 
+  if (setCache) {
+    for (const id of setCache) {
+      if (idSet.has(id)) return true;
+    }
+    return false;
+  }
+
+  // 2. Se não havia Set válido em cache, calcula via getHydrantAllIds
   const allIds = getHydrantAllIds(hydrant);
-  for (let i = 0; i < allIds.length; i++) {
-    if (idSet.has(allIds[i])) return true;
+  if (Array.isArray(allIds)) {
+    for (let i = 0; i < allIds.length; i++) {
+      if (idSet.has(allIds[i])) return true;
+    }
   }
 
   return false;
