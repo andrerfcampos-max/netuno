@@ -4,6 +4,7 @@ import { fixEncoding } from '../utils/textUtils';
 import { calculateDistanceMeters } from '../utils/geoUtils';
 import SearchableSelect from './SearchableSelect';
 import { formatDateTimeDisplay } from '../utils/dateUtils';
+import { getPhotosFromIndexedDB } from '../utils/photoStorage';
 
 // Lista configurável e modular de problemas que tornam o hidrante automaticamente inativo
 export const PROBLEMAS_INATIVADORES = [
@@ -47,7 +48,7 @@ const DEFEITOS_OFICIAIS = [
   "Vazamento no flange (operante)"
 ];
 
-const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, currentUser, onDeleteHydrant, onDeleteInspection }) => {
+const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, currentUser, _onDeleteHydrant, onDeleteInspection }) => {
   // Pré-processamento dos dados existentes caso seja modo edição
   const initialData = useMemo(() => {
     // Se for cadastro de nova vistoria, SEMPRE inicia em branco
@@ -192,6 +193,20 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
     }
   }, [hidrante?.codHidrante, hidrante?._internalId, isEditing, initialData]);
 
+  // Recupera fotos locais do IndexedDB na edição caso não estejam no cache do localStorage
+  React.useEffect(() => {
+    if (isEditing && (!fotos || fotos.length === 0)) {
+      const idKey = hidrante?._internalId || hidrante?.codHidrante || hidrante?.nomHidrante;
+      if (idKey) {
+        getPhotosFromIndexedDB(idKey).then(saved => {
+          if (saved && Array.isArray(saved) && saved.length > 0) {
+            setFotos(saved);
+          }
+        });
+      }
+    }
+  }, [isEditing, hidrante?._internalId, hidrante?.codHidrante, hidrante?.nomHidrante, fotos]);
+
   const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
   const canDeleteInspection = isGestor || currentUser?.role === 'vistoriador';
 
@@ -224,7 +239,7 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
     setQ5(val);
   };
 
-  // Utilitário de compressão de foto para otimizar desempenho e sincronização
+  // Utilitário de compressão de foto otimizado para não estourar a cota local do navegador (640px, JPEG 0.45)
   const compressImageFile = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -232,28 +247,32 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800;
-          const MAX_HEIGHT = 800;
+          const MAX_WIDTH = 640;
+          const MAX_HEIGHT = 640;
           let width = img.width;
           let height = img.height;
 
           if (width > height) {
             if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
+              height = Math.round(height * (MAX_WIDTH / width));
               width = MAX_WIDTH;
             }
           } else {
             if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
+              width = Math.round(width * (MAX_HEIGHT / height));
               height = MAX_HEIGHT;
             }
           }
-          canvas.width = width;
-          canvas.height = height;
+          canvas.width = Math.max(1, Math.round(width));
+          canvas.height = Math.max(1, Math.round(height));
           const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
           
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+          // Fundo branco caso haja transparência
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.45);
           resolve(compressedBase64);
         };
         img.onerror = () => resolve(null);
@@ -264,25 +283,37 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
     });
   };
 
-  // Tirar foto via câmera (adiciona à lista)
+  // Tirar foto via câmera (adiciona à lista, limite operacional de 3 fotos)
   const handleCameraCapture = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (fotos.length >= 3) {
+      alert("Limite de 3 fotos atingido para este hidrante. Para adicionar outra, remova uma das fotos anexadas.");
+      e.target.value = '';
+      return;
+    }
     const base64 = await compressImageFile(file);
     if (base64) {
-      setFotos(prev => [...prev, base64]);
+      setFotos(prev => [...prev, base64].slice(0, 3));
     }
     e.target.value = '';
   };
 
-  // Selecionar uma ou múltiplas fotos da galeria
+  // Selecionar uma ou múltiplas fotos da galeria (limite operacional de 3 fotos)
   const handleGalleryCapture = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    const compressedList = await Promise.all(files.map(compressImageFile));
+    const remainingSlots = Math.max(0, 3 - fotos.length);
+    if (remainingSlots === 0) {
+      alert("Limite de 3 fotos atingido para este hidrante. Para adicionar outra, remova uma das fotos anexadas.");
+      e.target.value = '';
+      return;
+    }
+    const filesToProcess = files.slice(0, remainingSlots);
+    const compressedList = await Promise.all(filesToProcess.map(compressImageFile));
     const validPhotos = compressedList.filter(Boolean);
     if (validPhotos.length > 0) {
-      setFotos(prev => [...prev, ...validPhotos]);
+      setFotos(prev => [...prev, ...validPhotos].slice(0, 3));
     }
     e.target.value = '';
   };
@@ -302,8 +333,6 @@ const InspectionModal = ({ hidrante, isEditing = false, onClose, onSave, current
       alert(`⚠️ ERRO DE VALIDAÇÃO: O hidrante não pode ser salvo como OPERANTE com o seguinte defeito inativador ativo: ${motivoInoperante}.`);
       return;
     }
-
-    const isGestor = currentUser?.role === 'gestor' || currentUser?.role === 'admin';
 
     // Regra: Perfil vistoriador deve cadastrar foto da vistoria obrigatoriamente no momento de cadastrar a vistoria. Gestor não.
     if (!isGestor && !isEditing && (!fotos || fotos.filter(Boolean).length === 0)) {

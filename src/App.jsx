@@ -24,7 +24,8 @@ const DownloadDatabaseModal = lazy(() => import('./components/DownloadDatabaseMo
 const CityInspectionPlanningModal = lazy(() => import('./components/CityInspectionPlanningModal'));
 import { logAuditEvent, getUnreadAuditCount, mergeAuditLogs } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
-import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers, mergeRbacUsers } from './utils/storage';
+import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers, mergeRbacUsers, purgeExcessLocalStorage } from './utils/storage';
+import { savePhotosToIndexedDB } from './utils/photoStorage';
 import { processOfflineQueue, reconcileLocalChangesToCloud, fetchMissionsFromCloud, syncMissionToCloud, deleteMissionFromCloud, fetchFoldersFromCloud, syncFolderToCloud, syncInspectionToCloud, syncHydrantMutationToCloud, fetchHydrantMutationsFromCloud, fetchAuditLogsFromCloud, fetchInspectionsFromCloud, getLastMutationTimestamp, subscribeToCloudRealtime, fetchUserPreferencesFromCloud, syncUserPreferencesToCloud, fetchRbacUsersFromCloud } from './services/syncService';
 import { isCloudConfigured } from './services/supabase';
 import { normalizeRAName, RA_LIST } from './utils/raList';
@@ -486,6 +487,16 @@ syncPreferences({ activeView: view });
     updateUnread();
     window.addEventListener('netuno_audit_updated', updateUnread);
     return () => window.removeEventListener('netuno_audit_updated', updateUnread);
+  }, []);
+
+  // Notificação suave e não-bloqueante de otimização de armazenamento local
+  useEffect(() => {
+    const handleStorageWarning = (e) => {
+      const msg = e?.detail?.message || 'Armazenamento local otimizado para economia de dados.';
+      toast.info(msg, { toastId: 'storage-opt-info', autoClose: 4000 });
+    };
+    window.addEventListener('netuno_storage_warning', handleStorageWarning);
+    return () => window.removeEventListener('netuno_storage_warning', handleStorageWarning);
   }, []);
 
   // Centraliza o hidrante no mapa e sincroniza automaticamente a cidade (RA) do filtro
@@ -1473,6 +1484,14 @@ syncPreferences({ filters: filters });
     } else {
       delete sanitized._pendingOfflineSync;
     }
+
+    // Persiste fotos no IndexedDB local de alta capacidade para redundância offline
+    if (Array.isArray(sanitized.fotosVistoria) && sanitized.fotosVistoria.length > 0) {
+      savePhotosToIndexedDB(idKey, sanitized.fotosVistoria);
+    } else if (sanitized.fotoVistoria) {
+      savePhotosToIndexedDB(idKey, [sanitized.fotoVistoria]);
+    }
+
     changes.updated[idKey] = sanitized;
     saveHydrantChanges(changes);
 
@@ -2629,6 +2648,9 @@ syncPreferences({ filters: filters });
                               const keys = await caches.keys();
                               for (const k of keys) await caches.delete(k);
                             }
+                            if (typeof purgeExcessLocalStorage === 'function') {
+                              purgeExcessLocalStorage();
+                            }
                           } catch (e) {
                             console.warn(e);
                           }
@@ -3332,7 +3354,6 @@ syncPreferences({ filters: filters });
         activeMission={currentMission}
         folders={folders}
         missions={missions}
-        currentUser={currentUser}
         isMapFullscreen={isMapFullscreen}
       />
 

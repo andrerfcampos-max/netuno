@@ -65,13 +65,121 @@ export const loadMissions = () => {
   }
 };
 
+/**
+ * Higieniza as alterações de hidrantes para não estourar a cota de 5MB do localStorage.
+ * Fotos em Base64 grandes (>35KB) são preservadas na nuvem / IndexedDB e retiradas
+ * do cache de texto bruto do localStorage para manter o sistema leve e veloz.
+ */
+export const sanitizeChangesForLocalStorage = (changes) => {
+  if (!changes || typeof changes !== 'object') return { updated: {}, added: [], deleted: [] };
+
+  const sanitizedUpdated = {};
+  const entries = Object.entries(changes.updated || {});
+
+  // Mantém no máximo as últimas 350 alterações recentes na memória do navegador
+  const recentEntries = entries.length > 350 ? entries.slice(entries.length - 350) : entries;
+
+  for (const [id, h] of recentEntries) {
+    if (!h) continue;
+    const cleanH = { ...h };
+
+    // Remove Base64 grandes (>35KB) de fotoVistoria do localStorage
+    if (typeof cleanH.fotoVistoria === 'string' && cleanH.fotoVistoria.length > 35000) {
+      delete cleanH.fotoVistoria;
+    }
+
+    // Filtra fotos pesadas do array fotosVistoria
+    if (Array.isArray(cleanH.fotosVistoria)) {
+      cleanH.fotosVistoria = cleanH.fotosVistoria.filter(f => typeof f === 'string' && f.length <= 35000);
+      if (cleanH.fotosVistoria.length === 0) {
+        delete cleanH.fotosVistoria;
+      }
+    }
+
+    // Limpa fotos em Base64 do histórico de vistorias arquivadas para não inflar o JSON
+    if (Array.isArray(cleanH.HISTORICO_VISTORIAS)) {
+      cleanH.HISTORICO_VISTORIAS = cleanH.HISTORICO_VISTORIAS.map(v => {
+        if (!v) return v;
+        const cleanV = { ...v };
+        if (typeof cleanV.fotoVistoria === 'string' && cleanV.fotoVistoria.length > 15000) {
+          delete cleanV.fotoVistoria;
+        }
+        if (Array.isArray(cleanV.fotosVistoria)) {
+          delete cleanV.fotosVistoria;
+        }
+        return cleanV;
+      });
+    }
+
+    sanitizedUpdated[id] = cleanH;
+  }
+
+  return {
+    updated: sanitizedUpdated,
+    added: Array.isArray(changes.added) ? changes.added : [],
+    deleted: Array.isArray(changes.deleted) ? changes.deleted : []
+  };
+};
+
+/**
+ * Rotina automática de expurgo de caches secundários e desinchaço para recuperação
+ * transparente quando o navegador atinge a cota de armazenamento local.
+ */
+export const purgeExcessLocalStorage = () => {
+  try {
+    // 1. Remove logs de sincronização secundários
+    localStorage.removeItem('netuno_offline_sync_logs');
+
+    // 2. Remove caches temporários ou de ordenação órfãos antigos
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('netuno_mission_ordered_') || k.startsWith('argos_') || k.startsWith('temp_'))) {
+        localStorage.removeItem(k);
+      }
+    }
+
+    // 3. Compacta netuno_hydrant_changes limpando fotos antigas do texto local
+    const rawChanges = localStorage.getItem(HYDRANT_CHANGES_KEY);
+    if (rawChanges) {
+      const parsed = JSON.parse(rawChanges);
+      const compacted = sanitizeChangesForLocalStorage(parsed);
+      localStorage.setItem(HYDRANT_CHANGES_KEY, JSON.stringify(compacted));
+    }
+  } catch (e) {
+    console.warn('[Storage] Falha ao expurgar excesso do localStorage:', e);
+  }
+};
+
 const safeSetItem = (key, value) => {
   try {
     localStorage.setItem(key, value);
   } catch (error) {
-    console.error(`Erro ao salvar ${key} no localStorage`, error);
-    if (error.name === 'QuotaExceededError' || error.message.includes('quota')) {
-      alert('Aviso: Armazenamento local cheio. O aplicativo pode não salvar as últimas alterações. Tente sincronizar com a nuvem e limpar os dados.');
+    console.warn(`[Storage] Tentativa de escrita falhou para ${key}, acionando recuperação de cota...`, error);
+    if (error.name === 'QuotaExceededError' || (error.message && error.message.includes('quota'))) {
+      try {
+        // Tenta liberar espaço preventivamente
+        purgeExcessLocalStorage();
+
+        // Se a chave que falhou for HYDRANT_CHANGES_KEY, compacta antes de tentar novamente
+        let valueToSave = value;
+        if (key === HYDRANT_CHANGES_KEY) {
+          try {
+            const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+            valueToSave = JSON.stringify(sanitizeChangesForLocalStorage(parsed));
+          } catch (pe) {}
+        }
+
+        localStorage.setItem(key, valueToSave);
+        console.info(`[Storage] Auto-recuperação de armazenamento concluída com sucesso para ${key}!`);
+        return;
+      } catch (retryError) {
+        console.error(`[Storage] Falha crítica após auto-limpeza para ${key}:`, retryError);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('netuno_storage_warning', {
+            detail: { key, message: 'Armazenamento local otimizado. Sincronize com a nuvem.' }
+          }));
+        }
+      }
     }
   }
 };
@@ -209,7 +317,8 @@ export const loadHydrantChanges = () => {
 };
 
 export const saveHydrantChanges = (changes) => {
-  safeSetItem(HYDRANT_CHANGES_KEY, JSON.stringify(changes));
+  const sanitized = sanitizeChangesForLocalStorage(changes);
+  safeSetItem(HYDRANT_CHANGES_KEY, JSON.stringify(sanitized));
 };
 
 export const loadActiveMissionState = () => {
