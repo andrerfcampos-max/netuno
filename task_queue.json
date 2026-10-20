@@ -2202,6 +2202,36 @@
       "createdAt": "2026-10-16T19:53:39.070Z",
       "startedAt": "2026-10-16T19:53:43.989Z",
       "completedAt": "2026-10-16T19:54:05.583Z"
+    },
+    {
+      "id": "TASK-219",
+      "seq": 219,
+      "conversationId": "e59f6c2e-80b4-4898-b367-6f46b14d407e",
+      "description": "Correcao do Planejamento de Cidades: nomeacao dinamica do PDF, indicacao clara da proxima cidade e sincronizacao de status 2026",
+      "status": "completed",
+      "createdAt": "2026-10-16T22:02:34.513Z",
+      "startedAt": "2026-10-16T22:03:22.896Z",
+      "completedAt": "2026-10-16T22:11:29.945Z"
+    },
+    {
+      "id": "TASK-220",
+      "seq": 220,
+      "conversationId": "13dc31be-781b-4254-bc6f-a9636129ad8b",
+      "description": "Fix _allIdsSetCache is not iterable",
+      "status": "completed",
+      "createdAt": "2026-10-20T17:58:56.606Z",
+      "startedAt": "2026-10-20T17:58:59.542Z",
+      "completedAt": "2026-10-20T18:04:16.741Z"
+    },
+    {
+      "id": "TASK-221",
+      "seq": 221,
+      "conversationId": "b05047f8-abea-4923-a6d0-aaac44780e26",
+      "description": "Investigar vistorias de hoje nao aparecem no historico",
+      "status": "completed",
+      "createdAt": "2026-10-20T17:59:14.428Z",
+      "startedAt": "2026-10-20T18:04:16.774Z",
+      "completedAt": "2026-10-20T18:12:21.303Z"
     }
   ]
 }
