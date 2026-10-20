@@ -9,6 +9,8 @@ import {
   calculateDistanceMeters, 
   optimizeRouteEuclidean, 
   fetchOSRMAndOptimizeRoute,
+  selectNearbyCluster,
+  MAX_ROUTE_CALC_ITEMS,
   ROUTE_CHUNK_SIZE 
 } from '../utils/routeOptimization';
 import { 
@@ -253,15 +255,26 @@ const MissionRoutePanel = ({
 
     lastAnchorLocationRef.current = { lat: anchorLat, lng: anchorLng };
 
-    // 1. Ordenação Instantânea Euclidiana (0ms) a partir da localização REAL do vistoriador
-    const fastOrdered = optimizeRouteEuclidean(pendingHydrants, anchorLat, anchorLng);
+    // 1. Clusterização Espacial Contígua: se houver mais de 30 hidrantes pendentes,
+    // isola prioritariamente os 30 mais próximos e contíguos ao redor do GPS atual do vistoriador.
+    // Os excedentes são preservados no final da lista para recálculos futuros.
+    const clusterTarget = (pendingHydrants.length > MAX_ROUTE_CALC_ITEMS)
+      ? selectNearbyCluster(pendingHydrants, anchorLat, anchorLng, MAX_ROUTE_CALC_ITEMS)
+      : pendingHydrants;
+
+    const clusterKeys = new Set(clusterTarget.map(h => String(h.nomHidrante || h.codHidrante || h._internalId)));
+    const outsideHydrants = pendingHydrants.filter(h => !clusterKeys.has(String(h.nomHidrante || h.codHidrante || h._internalId)));
+
+    // 2. Ordenação Instantânea Euclidiana com 2-Opt Global (0ms) a partir da localização REAL
+    const fastOrderedChunk = optimizeRouteEuclidean(clusterTarget, anchorLat, anchorLng);
     if (currentMissionIdRef.current !== targetMissionId) return;
 
-    setPendingRoute(fastOrdered);
+    const fastFullOrdered = [...fastOrderedChunk, ...outsideHydrants];
+    setPendingRoute(fastFullOrdered);
     const sig = pendingHydrants.map(h => h.nomHidrante || h.codHidrante || h._internalId).join(',');
     lastOptimizedIdsRef.current = sig;
 
-    const fastOrderedIds = fastOrdered.map(h => String(h.nomHidrante || h.codHidrante || h._internalId));
+    const fastOrderedIds = fastFullOrdered.map(h => String(h.nomHidrante || h.codHidrante || h._internalId));
     if (onUpdateMission) {
       onUpdateMission({ orderedIds: fastOrderedIds }, targetMissionId);
     }
@@ -269,18 +282,19 @@ const MissionRoutePanel = ({
       localStorage.setItem(`netuno_mission_ordered_${targetMissionId}`, JSON.stringify(fastOrderedIds));
     } catch (e) {}
 
-    // 2. Refinamento OSRM ATSP com sentidos de vias e trânsito real (lotes sequenciais de 30 em 30)
+    // 3. Refinamento OSRM ATSP com 2-Opt direcionado apenas no cluster ativo (até 30 hidrantes)
     try {
-      const osrmResult = await fetchOSRMAndOptimizeRoute(fastOrdered, anchorLat, anchorLng, 4500, ROUTE_CHUNK_SIZE);
+      const osrmResult = await fetchOSRMAndOptimizeRoute(fastOrderedChunk, anchorLat, anchorLng, 4500, MAX_ROUTE_CALC_ITEMS);
       // Se a rota foi fechada ou a missão foi trocada durante a requisição OSRM, descarta o resultado
       if (!targetMissionId || currentMissionIdRef.current !== targetMissionId) {
         return;
       }
       if (osrmResult.route && osrmResult.route.length > 0) {
-        setPendingRoute(osrmResult.route);
+        const fullFinalRoute = [...osrmResult.route, ...outsideHydrants];
+        setPendingRoute(fullFinalRoute);
         setDrivingMetrics(osrmResult.drivingMetrics);
         setIsTrafficOptimized(osrmResult.isTrafficMode);
-        const updatedIds = osrmResult.route.map(h => String(h.nomHidrante || h.codHidrante || h._internalId));
+        const updatedIds = fullFinalRoute.map(h => String(h.nomHidrante || h.codHidrante || h._internalId));
         if (onUpdateMission) {
           onUpdateMission({ orderedIds: updatedIds }, targetMissionId);
         }

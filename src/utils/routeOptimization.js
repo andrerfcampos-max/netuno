@@ -69,7 +69,7 @@ export const getManeuverPenaltySeconds = (fromNode, viaNode, toNode, coords, pen
   return Math.round(penalty * ((angle - 115) / (140 - 115)));
 };
 
-// Fallback Instantâneo Euclidiano (0ms - Nearest Neighbor com Penalidade Direcional de 40s para Retorno 180°)
+// Fallback Instantâneo Euclidiano (0ms - Nearest Neighbor com 2-Opt Global e Penalidade de Manobra 180°)
 export const optimizeRouteEuclidean = (hidrantes, startLat, startLng) => {
   if (!hidrantes || hidrantes.length === 0) return [];
   
@@ -80,6 +80,7 @@ export const optimizeRouteEuclidean = (hidrantes, startLat, startLng) => {
   let prevLat = null;
   let prevLng = null;
 
+  // Fase 1: Construção inicial gulosa com penalidade direcional
   while (unvisited.length > 0) {
     let nearestIdx = 0;
     let minCost = Infinity;
@@ -96,7 +97,6 @@ export const optimizeRouteEuclidean = (hidrantes, startLat, startLng) => {
           const bOut = calculateBearing(currentLat, currentLng, h.numLatitude, h.numLongitude);
           const angle = calculateTurnAngle(bIn, bOut);
           if (angle >= 115) {
-            // Converte a penalidade de 40s para metros equivalentes no meio urbano (~30 km/h = 8.33 m/s => 40s ~ 333m)
             const penaltyRatio = angle >= 140 ? 1 : (angle - 115) / (140 - 115);
             penaltyMeters = Math.round(U_TURN_PENALTY_SECONDS * 8.33 * penaltyRatio);
           }
@@ -116,6 +116,48 @@ export const optimizeRouteEuclidean = (hidrantes, startLat, startLng) => {
     prevLng = currentLng;
     currentLat = nextHydrant.numLatitude;
     currentLng = nextHydrant.numLongitude;
+  }
+
+  // Fase 2: 2-Opt Global para desarmar laços cruzados e idas-e-voltas (zig-zag)
+  // Roda sobre a rota euclidiana completa sem restrições
+  if (route.length > 3) {
+    let improved = true;
+    let iter = 0;
+    const MAX_2OPT_EUCLIDEAN_ITER = 50;
+
+    const calcEuclideanTotalDist = (list) => {
+      let d = calculateDistanceMeters(startLat, startLng, list[0].numLatitude, list[0].numLongitude);
+      for (let i = 0; i < list.length - 1; i++) {
+        d += calculateDistanceMeters(list[i].numLatitude, list[i].numLongitude, list[i + 1].numLatitude, list[i + 1].numLongitude);
+      }
+      return d;
+    };
+
+    let bestDist = calcEuclideanTotalDist(route);
+
+    while (improved && iter < MAX_2OPT_EUCLIDEAN_ITER) {
+      improved = false;
+      iter++;
+
+      for (let i = 0; i < route.length - 1; i++) {
+        for (let k = i + 1; k < route.length; k++) {
+          // Inverte o subsegmento entre i e k
+          const candidate = [
+            ...route.slice(0, i),
+            ...route.slice(i, k + 1).reverse(),
+            ...route.slice(k + 1)
+          ];
+          const newDist = calcEuclideanTotalDist(candidate);
+          if (newDist + 2 < bestDist) { // Ganho mínimo de 2 metros
+            route = candidate;
+            bestDist = newDist;
+            improved = true;
+            break;
+          }
+        }
+        if (improved) break;
+      }
+    }
   }
 
   return route;
@@ -374,6 +416,66 @@ export const solveATSPRoute = (hydrants, startLat, startLng, durations, distance
 };
 
 export const ROUTE_CHUNK_SIZE = 30;
+export const MAX_ROUTE_CALC_ITEMS = 30; // Limite máximo diário de hidrantes na fila calculada (evita gerar rotas absurdas de centenas de pinos)
+
+/**
+ * Seleciona os N hidrantes mais densamente agrupados (cluster espacial contíguo)
+ * partindo do ponto inicial fornecido (GPS do vistoriador ou âncora).
+ * 
+ * Isso garante que:
+ * 1. Apenas os hidrantes da região imediata sejam roteados (máximo 30).
+ * 2. Hidrantes distantes fiquem guardados para o próximo recálculo quando a viatura avançar.
+ * 3. Nunca haja 'salto' para o outro lado da cidade.
+ */
+export const selectNearbyCluster = (hidrantes, startLat, startLng, limit = MAX_ROUTE_CALC_ITEMS) => {
+  if (!hidrantes || hidrantes.length === 0) return [];
+  if (hidrantes.length <= limit) return [...hidrantes];
+
+  const pool = [...hidrantes];
+  const cluster = [];
+
+  // Encontra o hidrante semente mais próximo do ponto de partida
+  let seedIdx = 0;
+  let minSeedDist = Infinity;
+  for (let i = 0; i < pool.length; i++) {
+    const d = calculateDistanceMeters(startLat, startLng, pool[i].numLatitude, pool[i].numLongitude);
+    if (d < minSeedDist) {
+      minSeedDist = d;
+      seedIdx = i;
+    }
+  }
+
+  const [seed] = pool.splice(seedIdx, 1);
+  cluster.push(seed);
+
+  // Expande o cluster pegando sucessivamente o vizinho mais próximo de QUALQUER ponto já dentro do cluster
+  // (Prim's / Minimum Spanning Tree density growth) para garantir contiguidade geográfica perfeita sem buracos.
+  while (cluster.length < limit && pool.length > 0) {
+    let bestPoolIdx = -1;
+    let minCandidateDist = Infinity;
+
+    for (let p = 0; p < pool.length; p++) {
+      const candidate = pool[p];
+      // Distância mínima do candidato para qualquer nó do cluster já selecionado
+      for (let c = 0; c < cluster.length; c++) {
+        const d = calculateDistanceMeters(cluster[c].numLatitude, cluster[c].numLongitude, candidate.numLatitude, candidate.numLongitude);
+        if (d < minCandidateDist) {
+          minCandidateDist = d;
+          bestPoolIdx = p;
+        }
+      }
+    }
+
+    if (bestPoolIdx !== -1) {
+      const [nextH] = pool.splice(bestPoolIdx, 1);
+      cluster.push(nextH);
+    } else {
+      break;
+    }
+  }
+
+  return cluster;
+};
 
 /**
  * Consulta a API de Roteamento OSRM para um único lote (até 30 hidrantes)
@@ -528,52 +630,30 @@ export const partitionHydrantsGeographically = (hydrants, startLat, startLng, ch
  * de URL do OSRM. O particionamento geográfico contíguo elimina totalmente os laços e
  * idas-e-voltas (zig-zag) decorrentes de fatiamento arbitrário por ordem de código/array.
  */
-export const fetchOSRMAndOptimizeRoute = async (hydrants, startLat, startLng, timeoutMs = 4000, chunkSize = ROUTE_CHUNK_SIZE) => {
+export const fetchOSRMAndOptimizeRoute = async (hydrants, startLat, startLng, timeoutMs = 4000, maxLimit = MAX_ROUTE_CALC_ITEMS) => {
   if (!hydrants || hydrants.length === 0) {
     return { route: [], drivingMetrics: {}, isTrafficMode: false };
   }
 
-  // Se a lista couber em um único lote (<= 30), executa diretamente
-  if (hydrants.length <= chunkSize) {
-    return await fetchOSRMSingleChunk(hydrants, startLat, startLng, timeoutMs);
-  }
+  // Regra Operacional Tática:
+  // Se houver mais de 30 hidrantes pendentes, isola via cluster espacial contíguo
+  // apenas os 30 mais próximos ao redor do ponto de partida (GPS do vistoriador).
+  // Os demais hidrantes da missão permanecem intactos na lista para recálculos futuros.
+  const targetPool = (hydrants.length > maxLimit)
+    ? selectNearbyCluster(hydrants, startLat, startLng, maxLimit)
+    : hydrants;
 
-  // Particiona a missão em lotes geograficamente contíguos (clusters espaciais)
-  const geoChunks = partitionHydrantsGeographically(hydrants, startLat, startLng, chunkSize);
+  // Executa OSRM ATSP com 2-Opt diretamente no lote selecionado (<= 30)
+  const result = await fetchOSRMSingleChunk(targetPool, startLat, startLng, timeoutMs);
 
-  const allOrderedRoute = [];
-  const allDrivingMetrics = {};
-  let isAnyTrafficMode = false;
-  let currentStartLat = startLat;
-  let currentStartLng = startLng;
-
-  for (const chunk of geoChunks) {
-    const chunkResult = await fetchOSRMSingleChunk(chunk, currentStartLat, currentStartLng, timeoutMs);
-    
-    if (chunkResult.isTrafficMode) {
-      isAnyTrafficMode = true;
-    }
-
-    const chunkRoute = (chunkResult.route && chunkResult.route.length > 0)
-      ? chunkResult.route
-      : optimizeRouteEuclidean(chunk, currentStartLat, currentStartLng);
-
-    allOrderedRoute.push(...chunkRoute);
-    Object.assign(allDrivingMetrics, chunkResult.drivingMetrics || {});
-
-    // Próximo lote espacial de 30 parte do último hidrante alcançado neste lote
-    if (chunkRoute.length > 0) {
-      const lastHydrant = chunkRoute[chunkRoute.length - 1];
-      if (typeof lastHydrant.numLatitude === 'number' && typeof lastHydrant.numLongitude === 'number') {
-        currentStartLat = lastHydrant.numLatitude;
-        currentStartLng = lastHydrant.numLongitude;
-      }
-    }
-  }
+  // Se por alguma razão o OSRM falhou e o fallback veio vazio, assegura o fallback euclidiano com 2-opt global
+  const finalRoute = (result.route && result.route.length > 0)
+    ? result.route
+    : optimizeRouteEuclidean(targetPool, startLat, startLng);
 
   return {
-    route: allOrderedRoute,
-    drivingMetrics: allDrivingMetrics,
-    isTrafficMode: isAnyTrafficMode
+    route: finalRoute,
+    drivingMetrics: result.drivingMetrics || {},
+    isTrafficMode: result.isTrafficMode || false
   };
 };
