@@ -100,6 +100,9 @@ const CityInspectionPlanningModal = ({
   const handleCopyWhatsApp = () => {
     const text = formatCityPlanningWhatsAppText({
       planningList: data.planningList,
+      inProgressGroup: data.inProgressGroup,
+      pendingGroup: data.pendingGroup,
+      completedGroup: data.completedGroup,
       nextPendingCity: nextCity,
       inProgressCity,
       metrics: data.metrics
@@ -118,6 +121,9 @@ const CityInspectionPlanningModal = ({
   const handlePrint = () => {
     const html = generateCityPlanningPrintHtml({
       planningList: data.planningList,
+      inProgressGroup: data.inProgressGroup,
+      pendingGroup: data.pendingGroup,
+      completedGroup: data.completedGroup,
       nextPendingCity: nextCity,
       inProgressCity,
       metrics: data.metrics,
@@ -419,21 +425,13 @@ const CityInspectionPlanningModal = ({
             </div>
           ) : viewMode === 'matrix' ? (
             /* ============================================================== */
-            /* 1. VISÃO SINTÉTICA (CARDS ORDENADOS PELA FILA DE PRIORIDADE)   */
+            /* 1. VISÃO SINTÉTICA COM SEPARAÇÃO EXPLÍCITA DOS 3 ESTÁGIOS     */
             /* ============================================================== */
-            <div className="space-y-3">
-              <div className="text-[11px] text-slate-400 flex items-center justify-between pb-1 border-b border-slate-800">
-                <span className="font-semibold text-slate-300">
-                  Sequência Operacional das 33 Cidades (Ordem Estrita: Da mais antiga para a mais recente)
-                </span>
-                <span className="text-[10px] text-slate-400">
-                  Total: {currentList.length} cidades exibidas
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                {currentList.map((city) => {
-                  const isNext = nextCity && city.name === nextCity.name;
+            <div className="space-y-4">
+              {/* Função auxiliar inline para renderizar um card da matriz */}
+              {(() => {
+                const renderCard = (city) => {
+                  const isNext = city.planningStatus === 'pending' && nextCity && city.name === nextCity.name;
                   const isCompleted = city.planningStatus === 'completed';
                   const isInProgress = city.planningStatus === 'in_progress';
 
@@ -547,8 +545,101 @@ const CityInspectionPlanningModal = ({
                       </div>
                     </div>
                   );
-                })}
-              </div>
+                };
+
+                // Se o usuário selecionou uma aba específica (pending/in_progress/completed), mostra lista simples correspondente
+                if (statusFilter !== 'all') {
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {currentList.map(renderCard)}
+                    </div>
+                  );
+                }
+
+                // Na visão 'all' (Todas as cidades), separa explicitamente nos 3 estágios operacionais
+                const inProgList = currentList.filter(c => c.planningStatus === 'in_progress');
+                const pendingList = currentList.filter(c => c.planningStatus === 'pending');
+                const compList = currentList.filter(c => c.planningStatus === 'completed');
+
+                return (
+                  <div className="space-y-5">
+                    {/* 1º ESTÁGIO: EM ANDAMENTO */}
+                    {inProgList.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-amber-950/40 border border-amber-600/40 text-amber-300">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">🔄</span>
+                            <div>
+                              <span className="font-extrabold text-xs uppercase tracking-wide">
+                                1º Estágio: Cidades em Andamento ({inProgList.length})
+                              </span>
+                              <span className="text-[11px] text-amber-200/80 ml-2 hidden sm:inline">
+                                • Frentes já abertas — Concluir prioritariamente antes de iniciar outras
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-900/60 border border-amber-600/40 text-amber-200">
+                            Frentes Ativas
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                          {inProgList.map(renderCard)}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2º ESTÁGIO: AGUARDANDO NA FILA */}
+                    {pendingList.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-red-950/40 border border-red-700/40 text-red-200">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">⏳</span>
+                            <div>
+                              <span className="font-extrabold text-xs uppercase tracking-wide">
+                                2º Estágio: Aguardando na Fila ({pendingList.length})
+                              </span>
+                              <span className="text-[11px] text-red-200/80 ml-2 hidden sm:inline">
+                                • Prioridade por maior tempo decorrido sem vistoria (Mais antiga → Mais recente)
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-900/60 border border-red-700/40 text-red-200">
+                            Aguardando Liberação
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                          {pendingList.map(renderCard)}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3º ESTÁGIO: CONCLUÍDAS */}
+                    {compList.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-700/40 text-emerald-300">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">✅</span>
+                            <div>
+                              <span className="font-extrabold text-xs uppercase tracking-wide">
+                                3º Estágio: Vistoriadas Recentemente ({compList.length})
+                              </span>
+                              <span className="text-[11px] text-emerald-200/80 ml-2 hidden sm:inline">
+                                • Meta operacional atingida (≥ 90% dos hidrantes vistoriados nos últimos 180 dias)
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-900/60 border border-emerald-700/40 text-emerald-200">
+                            Campanha Concluída
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                          {compList.map(renderCard)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ) : viewMode === 'compact' ? (
             /* ============================================================== */
@@ -556,179 +647,294 @@ const CityInspectionPlanningModal = ({
             /* ============================================================== */
             <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden text-xs">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-950/90 text-slate-400 border-b border-slate-800 text-[10px] uppercase font-bold tracking-wider">
-                      <th className="py-2 px-2.5 text-center w-10">Seq.</th>
-                      <th className="py-2 px-3">Região Administrativa</th>
-                      <th className="py-2 px-2.5 text-center">Última Vistoria</th>
-                      <th className="py-2 px-3 text-center">Tempo sem Vistoria</th>
-                      <th className="py-2 px-2.5 text-center">Total Hidr.</th>
-                      <th className="py-2 px-2.5 text-center">Progresso</th>
-                      <th className="py-2 px-2.5 text-center">Situação Operacional</th>
-                      <th className="py-2 px-3 text-right">Ação</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/80">
-                    {currentList.map((city) => {
-                      const isNext = nextCity && city.name === nextCity.name;
-                      const isCompleted = city.planningStatus === 'completed';
-                      const isInProgress = city.planningStatus === 'in_progress';
+                {(() => {
+                  const renderRow = (city) => {
+                    const isNext = city.planningStatus === 'pending' && nextCity && city.name === nextCity.name;
+                    const isCompleted = city.planningStatus === 'completed';
+                    const isInProgress = city.planningStatus === 'in_progress';
 
-                      return (
-                        <tr 
-                          key={`compact-${city.name}`} 
-                          className={`transition-colors ${isNext ? 'bg-emerald-950/30' : 'hover:bg-slate-800/50'}`}
-                        >
-                          <td className="py-1.5 px-2.5 text-center font-bold text-slate-300">
-                            {city.planningRank}º
-                          </td>
-                          <td className="py-1.5 px-3">
-                            <span className="font-bold text-white mr-1.5">{city.name}</span>
-                            <span className="text-[10px] font-mono text-slate-400">({city.prefix})</span>
-                          </td>
-                          <td className="py-1.5 px-2.5 text-center font-semibold text-emerald-400">
-                            {city.lastVisitDateStr}
-                          </td>
-                          <td className={`py-1.5 px-3 text-center text-[11px] font-medium ${city.daysSinceLastVisit > 300 ? 'text-amber-400' : 'text-slate-300'}`}>
-                            {city.timeAgoLabel}
-                          </td>
-                          <td className="py-1.5 px-2.5 text-center font-bold text-slate-200">
-                            {city.totalHydrants}
-                          </td>
-                          <td className="py-1.5 px-2.5 text-center font-semibold text-white">
-                            {city.recentInspectedCount}/{city.totalHydrants} ({city.recentCoveragePct}%)
-                          </td>
-                          <td className="py-1.5 px-2.5 text-center">
-                            {isNext ? (
-                              <span className="text-[10px] font-black text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500">
-                                🎯 1º da Fila
-                              </span>
-                            ) : isCompleted ? (
-                              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-700/50">
-                                Concluída ({city.recentCoveragePct}%)
-                              </span>
-                            ) : isInProgress ? (
-                              <span className="text-[10px] font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-700/50">
-                                Em Andamento ({city.recentCoveragePct}%)
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-semibold text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
-                                Aguardando Fila
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-1.5 px-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleGoToMap(city.name)}
-                              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded text-[10px] font-semibold transition-all cursor-pointer inline-flex items-center gap-1"
-                            >
-                              <MapPin size={10} className="text-emerald-400" />
-                              <span>Mapa</span>
-                            </button>
+                    return (
+                      <tr 
+                        key={`compact-${city.name}`} 
+                        className={`transition-colors ${isNext ? 'bg-emerald-950/30' : isInProgress ? 'bg-amber-950/15' : 'hover:bg-slate-800/50'}`}
+                      >
+                        <td className="py-1.5 px-2.5 text-center font-bold text-slate-300">
+                          {city.planningRank}º
+                        </td>
+                        <td className="py-1.5 px-3">
+                          <span className="font-bold text-white mr-1.5">{city.name}</span>
+                          <span className="text-[10px] font-mono text-slate-400">({city.prefix})</span>
+                        </td>
+                        <td className="py-1.5 px-2.5 text-center font-semibold text-emerald-400">
+                          {city.lastVisitDateStr}
+                        </td>
+                        <td className={`py-1.5 px-3 text-center text-[11px] font-medium ${city.daysSinceLastVisit > 300 ? 'text-amber-400' : 'text-slate-300'}`}>
+                          {city.timeAgoLabel}
+                        </td>
+                        <td className="py-1.5 px-2.5 text-center font-bold text-slate-200">
+                          {city.totalHydrants}
+                        </td>
+                        <td className="py-1.5 px-2.5 text-center font-semibold text-white">
+                          {city.recentInspectedCount}/{city.totalHydrants} ({city.recentCoveragePct}%)
+                        </td>
+                        <td className="py-1.5 px-2.5 text-center">
+                          {isNext ? (
+                            <span className="text-[10px] font-black text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500">
+                              🎯 1º da Fila
+                            </span>
+                          ) : isCompleted ? (
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-700/50">
+                              Concluída ({city.recentCoveragePct}%)
+                            </span>
+                          ) : isInProgress ? (
+                            <span className="text-[10px] font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-700/50">
+                              Em Andamento ({city.recentCoveragePct}%)
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                              Aguardando Fila
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-1.5 px-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleGoToMap(city.name)}
+                            className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded text-[10px] font-semibold transition-all cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <MapPin size={10} className="text-emerald-400" />
+                            <span>Mapa</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  };
+
+                  const renderTableSection = (title, badgeText, list, headerClass) => {
+                    if (!list || list.length === 0) return null;
+                    return (
+                      <>
+                        <tr className={headerClass}>
+                          <td colSpan="8" className="py-1.5 px-3 font-extrabold text-[11px] uppercase tracking-wider">
+                            <div className="flex items-center justify-between">
+                              <span>{title} ({list.length})</span>
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded border bg-black/20">{badgeText}</span>
+                            </div>
                           </td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                        {list.map(renderRow)}
+                      </>
+                    );
+                  };
+
+                  const inProgList = currentList.filter(c => c.planningStatus === 'in_progress');
+                  const pendingList = currentList.filter(c => c.planningStatus === 'pending');
+                  const compList = currentList.filter(c => c.planningStatus === 'completed');
+
+                  return (
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-950/90 text-slate-400 border-b border-slate-800 text-[10px] uppercase font-bold tracking-wider">
+                          <th className="py-2 px-2.5 text-center w-10">Seq.</th>
+                          <th className="py-2 px-3">Região Administrativa</th>
+                          <th className="py-2 px-2.5 text-center">Última Vistoria</th>
+                          <th className="py-2 px-3 text-center">Tempo sem Vistoria</th>
+                          <th className="py-2 px-2.5 text-center">Total Hidr.</th>
+                          <th className="py-2 px-2.5 text-center">Progresso</th>
+                          <th className="py-2 px-2.5 text-center">Situação Operacional</th>
+                          <th className="py-2 px-3 text-right">Ação</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/80">
+                        {statusFilter !== 'all' ? (
+                          currentList.map(renderRow)
+                        ) : (
+                          <>
+                            {renderTableSection(
+                              '🔄 1º Estágio: Cidades em Andamento',
+                              'Conclusão Prioritária',
+                              inProgList,
+                              'bg-amber-950/60 text-amber-300 border-y border-amber-600/40'
+                            )}
+                            {renderTableSection(
+                              '⏳ 2º Estágio: Aguardando na Fila',
+                              'Por tempo sem vistoria',
+                              pendingList,
+                              'bg-red-950/60 text-red-200 border-y border-red-700/40'
+                            )}
+                            {renderTableSection(
+                              '✅ 3º Estágio: Vistoriadas Recentemente',
+                              'Meta >= 90% Atingida',
+                              compList,
+                              'bg-emerald-950/60 text-emerald-300 border-y border-emerald-700/40'
+                            )}
+                          </>
+                        )}
+                      </tbody>
+                    </table>
+                  );
+                })()}
               </div>
             </div>
           ) : (
             /* ============================================================== */
-            /* 3. VISÃO CARDS DETALHADOS                                      */
+            /* 3. VISÃO CARDS DETALHADOS COM SEPARAÇÃO DOS 3 ESTÁGIOS         */
             /* ============================================================== */
-            <div className="space-y-2.5">
-              {currentList.map((city) => {
-                const isNext = nextCity && city.name === nextCity.name;
-                const isCompleted = city.planningStatus === 'completed';
-                const isInProgress = city.planningStatus === 'in_progress';
+            <div className="space-y-4">
+              {(() => {
+                const renderDetailCard = (city) => {
+                  const isNext = city.planningStatus === 'pending' && nextCity && city.name === nextCity.name;
+                  const isCompleted = city.planningStatus === 'completed';
+                  const isInProgress = city.planningStatus === 'in_progress';
 
-                return (
-                  <div 
-                    key={`card-${city.name}`}
-                    className={`p-3 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${
-                      isNext
-                        ? 'bg-emerald-950/40 border-emerald-500 shadow-md ring-1 ring-emerald-500/50'
-                        : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    {/* Bloco 1: Ranking + Nome */}
-                    <div className="flex items-center gap-2.5 min-w-0 md:w-1/3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border ${
-                        isNext ? 'bg-emerald-500 text-slate-950 font-black border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'
-                      }`}>
-                        {city.planningRank}º
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-sm text-white tracking-tight">{city.name}</span>
-                          <span className="text-[10px] font-mono px-1 bg-slate-800 text-slate-400 rounded">{city.prefix}</span>
+                  return (
+                    <div 
+                      key={`card-${city.name}`}
+                      className={`p-3 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+                        isNext
+                          ? 'bg-emerald-950/40 border-emerald-500 shadow-md ring-1 ring-emerald-500/50'
+                          : isInProgress
+                          ? 'bg-amber-950/20 border-amber-600/40 hover:border-amber-500'
+                          : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      {/* Bloco 1: Ranking + Nome */}
+                      <div className="flex items-center gap-2.5 min-w-0 md:w-1/3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border ${
+                          isNext ? 'bg-emerald-500 text-slate-950 font-black border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'
+                        }`}>
+                          {city.planningRank}º
                         </div>
-                        <div className="text-[11px] text-slate-400">
-                          {city.totalHydrants} hidrantes cadastrados
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bloco 2: Dados de Última Vistoria */}
-                    <div className="flex items-center gap-4 text-xs">
-                      <div>
-                        <div className="text-[10px] text-slate-400">Última Vistoria</div>
-                        <div className="font-bold text-white">{city.lastVisitDateStr}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-slate-400">Tempo sem visita</div>
-                        <div className={`font-bold ${city.daysSinceLastVisit > 300 ? 'text-amber-400' : 'text-slate-300'}`}>
-                          {city.timeAgoLabel}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-sm text-white tracking-tight">{city.name}</span>
+                            <span className="text-[10px] font-mono px-1 bg-slate-800 text-slate-400 rounded">{city.prefix}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            {city.totalHydrants} hidrantes cadastrados
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Bloco 3: Situação e Ações */}
-                    <div className="flex items-center gap-2 ml-auto">
-                      {isNext ? (
-                        <span className="text-xs font-black text-emerald-300 bg-emerald-950 px-2 py-1 rounded border border-emerald-500">
-                          🎯 1º da Fila
-                        </span>
-                      ) : isCompleted ? (
-                        <span className="text-xs font-bold text-emerald-400 bg-emerald-950/60 px-2 py-1 rounded border border-emerald-700/50">
-                          Concluída ({city.recentCoveragePct}%)
-                        </span>
-                      ) : isInProgress ? (
-                        <span className="text-xs font-bold text-amber-400 bg-amber-950/60 px-2 py-1 rounded border border-amber-700/50">
-                          Andamento ({city.recentCoveragePct}%)
-                        </span>
-                      ) : (
-                        <span className="text-xs font-semibold text-slate-400 bg-slate-800 px-2 py-1 rounded">
-                          Aguardando Fila
-                        </span>
-                      )}
+                      {/* Bloco 2: Dados de Última Vistoria */}
+                      <div className="flex items-center gap-4 text-xs">
+                        <div>
+                          <div className="text-[10px] text-slate-400">Última Vistoria</div>
+                          <div className="font-bold text-white">{city.lastVisitDateStr}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-slate-400">Tempo sem visita</div>
+                          <div className={`font-bold ${city.daysSinceLastVisit > 300 ? 'text-amber-400' : 'text-slate-300'}`}>
+                            {city.timeAgoLabel}
+                          </div>
+                        </div>
+                      </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleGoToMap(city.name)}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                      >
-                        <MapPin size={11} className="text-emerald-400" />
-                        <span>Mapa</span>
-                      </button>
+                      {/* Bloco 3: Situação e Ações */}
+                      <div className="flex items-center gap-2 ml-auto">
+                        {isNext ? (
+                          <span className="text-xs font-black text-emerald-300 bg-emerald-950 px-2 py-1 rounded border border-emerald-500">
+                            🎯 1º da Fila
+                          </span>
+                        ) : isCompleted ? (
+                          <span className="text-xs font-bold text-emerald-400 bg-emerald-950/60 px-2 py-1 rounded border border-emerald-700/50">
+                            Concluída ({city.recentCoveragePct}%)
+                          </span>
+                        ) : isInProgress ? (
+                          <span className="text-xs font-bold text-amber-400 bg-amber-950/60 px-2 py-1 rounded border border-amber-700/50">
+                            Andamento ({city.recentCoveragePct}%)
+                          </span>
+                        ) : (
+                          <span className="text-xs font-semibold text-slate-400 bg-slate-800 px-2 py-1 rounded">
+                            Aguardando Fila
+                          </span>
+                        )}
 
-                      {typeof onOpenMissions === 'function' && (
                         <button
                           type="button"
-                          onClick={() => handleStartMission(city.name)}
-                          className="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-600/50 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                          onClick={() => handleGoToMap(city.name)}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
                         >
-                          <FolderOpen size={11} />
-                          <span>Missão</span>
+                          <MapPin size={11} className="text-emerald-400" />
+                          <span>Mapa</span>
                         </button>
-                      )}
+
+                        {typeof onOpenMissions === 'function' && (
+                          <button
+                            type="button"
+                            onClick={() => handleStartMission(city.name)}
+                            className="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-600/50 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                          >
+                            <FolderOpen size={11} />
+                            <span>Missão</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
+                  );
+                };
+
+                if (statusFilter !== 'all') {
+                  return (
+                    <div className="space-y-2.5">
+                      {currentList.map(renderDetailCard)}
+                    </div>
+                  );
+                }
+
+                const inProgList = currentList.filter(c => c.planningStatus === 'in_progress');
+                const pendingList = currentList.filter(c => c.planningStatus === 'pending');
+                const compList = currentList.filter(c => c.planningStatus === 'completed');
+
+                return (
+                  <div className="space-y-5">
+                    {/* 1º Estágio */}
+                    {inProgList.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-amber-950/40 border border-amber-600/40 text-amber-300">
+                          <span className="font-extrabold text-xs uppercase tracking-wide">
+                            🔄 1º Estágio: Cidades em Andamento ({inProgList.length}) — Conclusão Prioritária
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-900/60 border border-amber-600/40">
+                            Frentes Ativas
+                          </span>
+                        </div>
+                        {inProgList.map(renderDetailCard)}
+                      </div>
+                    )}
+
+                    {/* 2º Estágio */}
+                    {pendingList.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-red-950/40 border border-red-700/40 text-red-200">
+                          <span className="font-extrabold text-xs uppercase tracking-wide">
+                            ⏳ 2º Estágio: Aguardando na Fila ({pendingList.length}) — Ordem por Tempo sem Visita
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-900/60 border border-red-700/40">
+                            Aguardando Liberação
+                          </span>
+                        </div>
+                        {pendingList.map(renderDetailCard)}
+                      </div>
+                    )}
+
+                    {/* 3º Estágio */}
+                    {compList.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-700/40 text-emerald-300">
+                          <span className="font-extrabold text-xs uppercase tracking-wide">
+                            ✅ 3º Estágio: Vistoriadas Recentemente ({compList.length}) — Meta ≥ 90% Atingida
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-900/60 border border-emerald-700/40">
+                            Campanha Concluída
+                          </span>
+                        </div>
+                        {compList.map(renderDetailCard)}
+                      </div>
+                    )}
                   </div>
                 );
-              })}
+              })()}
             </div>
           )}
 

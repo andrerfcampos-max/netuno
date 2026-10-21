@@ -259,45 +259,67 @@ export const calculateCityPlanningData = ({
   });
 
   // =========================================================================
-  // ORDENAÇÃO DA FILA OPERACIONAL:
-  // Critério Tático Estrito: DA CIDADE VISITADA HÁ MAIS TEMPO PARA A MAIS RECENTE
-  // Quem está há mais tempo sem vistoria fica no 1º lugar da fila!
+  // ORDENAÇÃO E SEPARAÇÃO TÁTICA DOS 3 ESTÁGIOS OPERACIONAIS:
+  // 1º Bloco: CIDADES EM ANDAMENTO (frentes de trabalho já abertas que DEVEM ser finalizadas)
+  // 2º Bloco: AGUARDANDO NA FILA (cidades pendentes ordenadas da mais antiga sem visita para a mais recente)
+  // 3º Bloco: CONCLUÍDAS (cidades que completaram a campanha recente)
   // =========================================================================
-  const planningList = [...allCities].sort((a, b) => {
-    // 1. Quem nunca foi vistoriado tem prioridade absoluta
+
+  const sortByOldestVisit = (a, b) => {
+    // Quem nunca foi vistoriado tem prioridade máxima
     if (!a.hasVisits && b.hasVisits) return -1;
     if (a.hasVisits && !b.hasVisits) return 1;
-
-    // 2. Compara pelo timestamp da última vistoria (ASC = mais antiga primeiro = maior tempo sem visita)
     if (a.lastVisitTimestamp !== b.lastVisitTimestamp) {
       return a.lastVisitTimestamp - b.lastVisitTimestamp;
     }
-
     return a.name.localeCompare(b.name, 'pt-BR');
-  });
+  };
 
-  // Atribui classificação na fila (1º, 2º, ... 33º)
+  const inProgressGroup = allCities
+    .filter(c => c.planningStatus === 'in_progress')
+    .sort(sortByOldestVisit);
+
+  const pendingGroup = allCities
+    .filter(c => c.planningStatus === 'pending')
+    .sort(sortByOldestVisit);
+
+  const completedGroup = allCities
+    .filter(c => c.planningStatus === 'completed')
+    .sort(sortByOldestVisit);
+
+  // Lista mestre unificada respeitando a regra operacional:
+  // 1º Em Andamento -> 2º Aguardando Fila -> 3º Concluídas
+  const planningList = [
+    ...inProgressGroup,
+    ...pendingGroup,
+    ...completedGroup
+  ];
+
+  // Atribui classificação sequencial na fila (1º, 2º, ... 33º)
   planningList.forEach((c, idx) => {
     c.planningRank = idx + 1;
   });
 
   // Identificação clara da Próxima Cidade a Vistoriar:
   // 1. Cidades que já estão em andamento ativo
-  const inProgressCities = planningList.filter(c => c.planningStatus === 'in_progress');
+  const inProgressCities = inProgressGroup;
   const inProgressCity = inProgressCities.length > 0 ? inProgressCities[0] : null;
 
   // 2. Próxima cidade prioritária da fila para iniciar (primeira que ainda está pendente)
-  const nextPendingCity = planningList.find(c => c.planningStatus === 'pending') || planningList[0] || null;
+  const nextPendingCity = pendingGroup.length > 0 ? pendingGroup[0] : (planningList[0] || null);
 
   // Métricas gerais
   const totalCities = allCities.length;
-  const completedCities = planningList.filter(c => c.planningStatus === 'completed').length;
+  const completedCities = completedGroup.length;
   const inProgressCount = inProgressCities.length;
-  const pendingCities = planningList.filter(c => c.planningStatus === 'pending').length;
+  const pendingCities = pendingGroup.length;
 
   return {
     allCities,
     planningList,
+    inProgressGroup,
+    pendingGroup,
+    completedGroup,
     activeYearWithVisits: planningList,
     activeYearWithoutVisits: [],
     availableYears: [2026, 2025],
@@ -319,43 +341,84 @@ export const calculateCityPlanningData = ({
  */
 export const formatCityPlanningWhatsAppText = ({
   planningList = [],
+  inProgressGroup = [],
+  pendingGroup = [],
+  completedGroup = [],
   nextPendingCity = null,
   inProgressCity = null,
   metrics = {}
 } = {}) => {
-  const nextCity = nextPendingCity || planningList.find(c => c.planningStatus === 'pending') || planningList[0];
+  // Caso os grupos não venham prontos, divide a partir da lista
+  const inProg = inProgressGroup.length > 0 ? inProgressGroup : planningList.filter(c => c.planningStatus === 'in_progress');
+  const pending = pendingGroup.length > 0 ? pendingGroup : planningList.filter(c => c.planningStatus === 'pending');
+  const completed = completedGroup.length > 0 ? completedGroup : planningList.filter(c => c.planningStatus === 'completed');
+
+  const nextCity = nextPendingCity || pending[0] || planningList[0];
 
   let text = `🚒 *CBMDF - FILA PRIORITÁRIA DE VISTORIAS POR CIDADE*\n`;
-  text += `🎯 *Critério Operacional:* Cidade visitada há mais tempo (Maior tempo sem vistoria → Mais recente)\n\n`;
+  text += `🎯 *Diretriz Operacional:* 1º Finalizar cidades em andamento → 2º Abrir cidades da fila por tempo de espera → 3º Cidades já concluídas recentemente\n\n`;
+
+  if (inProgressCity) {
+    text += `🔄 *CIDADE PRIORITÁRIA EM ANDAMENTO:*\n`;
+    text += `👉 *${inProgressCity.name} [${inProgressCity.prefix}]*\n`;
+    text += `   • Progresso atual: *${inProgressCity.recentInspectedCount}/${inProgressCity.totalHydrants} hidrantes vistoriados (${inProgressCity.recentCoveragePct}%)*\n`;
+    text += `   • Última vistoria realizada: *${inProgressCity.lastVisitDateStr}* (${inProgressCity.timeAgoLabel})\n`;
+    text += `   • *Recomendação Operacional:* Concluir esta cidade antes de abrir nova frente.\n\n`;
+  }
 
   if (nextCity) {
-    text += `📍 *PRÓXIMA CIDADE DA FILA A VISTORIAR:*\n`;
-    text += `👉 *${nextCity.planningRank}º. ${nextCity.name} [${nextCity.prefix}]*\n`;
+    text += `📍 *PRÓXIMA CIDADE DA FILA A INICIAR (QUANDO LIBERAR):*\n`;
+    text += `🎯 *${nextCity.name} [${nextCity.prefix}]*\n`;
     text += `   • Última vistoria: *${nextCity.lastVisitDateStr}* (${nextCity.timeAgoLabel})\n`;
     text += `   • Carga operacional: *${nextCity.totalHydrants} hidrantes*\n\n`;
   }
 
-  if (inProgressCity && inProgressCity.name !== nextCity?.name) {
-    text += `🔄 *CIDADE EM ANDAMENTO ATUALMENTE:*\n`;
-    text += `   • *${inProgressCity.name} [${inProgressCity.prefix}]:* ${inProgressCity.recentInspectedCount}/${inProgressCity.totalHydrants} hidrantes vistoriados (${inProgressCity.recentCoveragePct}%)\n`;
-    text += `   • Recomendação: Concluir antes de abrir nova frente.\n\n`;
+  text += `📊 *Resumo Geral das 33 Regiões:* ${metrics.inProgressCities || inProg.length} Em Andamento | ${metrics.pendingCities || pending.length} Aguardando Fila | ${metrics.completedCities || completed.length} Concluídas\n\n`;
+
+  // 1º BLOCO: EM ANDAMENTO
+  text += `========================================\n`;
+  text += `🔄 *1º ESTÁGIO: CIDADES EM ANDAMENTO (${inProg.length})*\n`;
+  text += `_(Frentes abertas - Devem ser concluídas prioritariamente)_\n`;
+  text += `========================================\n`;
+  if (inProg.length === 0) {
+    text += `(Nenhuma cidade em andamento no momento)\n`;
+  } else {
+    inProg.forEach((c, idx) => {
+      text += `${idx + 1}º. 🔄 *${c.name}* [${c.prefix}]\n`;
+      text += `    • Progresso: ${c.recentInspectedCount}/${c.totalHydrants} hidr. (${c.recentCoveragePct}%) | Última: ${c.lastVisitDateStr} (${c.timeAgoLabel})\n`;
+    });
   }
+  text += `\n`;
 
-  text += `📊 *Resumo Geral:* ${metrics.completedCities || 0} Concluídas | ${metrics.inProgressCities || 0} Em Andamento | ${metrics.pendingCities || 0} Pendentes\n\n`;
-  text += `📋 *ORDEM COMPLETA DA FILA PRIORITÁRIA (1º ao 33º):*\n`;
+  // 2º BLOCO: AGUARDANDO NA FILA
+  text += `========================================\n`;
+  text += `⏳ *2º ESTÁGIO: AGUARDANDO NA FILA (${pending.length})*\n`;
+  text += `_(Ordem prioritária: Da que está há mais tempo sem vistoria para a mais recente)_\n`;
+  text += `========================================\n`;
+  if (pending.length === 0) {
+    text += `(Nenhuma cidade aguardando na fila)\n`;
+  } else {
+    pending.forEach((c, idx) => {
+      const isTop = idx === 0;
+      text += `${idx + 1}º. ${isTop ? '🎯' : '⏳'} *${c.name}* [${c.prefix}] ${isTop ? '*(PRÓXIMA DA FILA)*' : ''}\n`;
+      text += `    • Última: ${c.lastVisitDateStr} (${c.timeAgoLabel}) | Carga: ${c.totalHydrants} hidrantes\n`;
+    });
+  }
+  text += `\n`;
 
-  planningList.forEach(c => {
-    const icon = c.planningStatus === 'completed'
-      ? '✅'
-      : c.planningStatus === 'in_progress'
-      ? '🔄'
-      : c.planningRank === 1
-      ? '🎯'
-      : '⏳';
-
-    text += `${c.planningRank}º. ${icon} *${c.name}* [${c.prefix}]\n`;
-    text += `   • Última: ${c.lastVisitDateStr} (${c.timeAgoLabel}) | Total: ${c.totalHydrants} hidr. | ${c.statusLabel}\n`;
-  });
+  // 3º BLOCO: CONCLUÍDAS
+  text += `========================================\n`;
+  text += `✅ *3º ESTÁGIO: CIDADES CONCLUÍDAS RECENTEMENTE (${completed.length})*\n`;
+  text += `_(Meta operacional atingida >= 90% dos hidrantes vistoriados)_\n`;
+  text += `========================================\n`;
+  if (completed.length === 0) {
+    text += `(Nenhuma cidade concluída recentemente)\n`;
+  } else {
+    completed.forEach((c, idx) => {
+      text += `${idx + 1}º. ✅ *${c.name}* [${c.prefix}]\n`;
+      text += `    • Cobertura: ${c.recentInspectedCount}/${c.totalHydrants} hidr. (${c.recentCoveragePct}%) | Última: ${c.lastVisitDateStr} (${c.timeAgoLabel})\n`;
+    });
+  }
 
   text += `\n_Gerado pelo Sistema Netuno - CBMDF em ${new Date().toLocaleDateString('pt-BR')}_`;
   return text;
@@ -367,6 +430,9 @@ export const formatCityPlanningWhatsAppText = ({
  */
 export const generateCityPlanningPrintHtml = ({
   planningList = [],
+  inProgressGroup = [],
+  pendingGroup = [],
+  completedGroup = [],
   nextPendingCity = null,
   inProgressCity = null,
   metrics = {},
@@ -376,52 +442,72 @@ export const generateCityPlanningPrintHtml = ({
   const dateFormatted = formatDateOnly(now);
   const timeFormatted = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-  const nextCity = nextPendingCity || planningList.find(c => c.planningStatus === 'pending') || planningList[0];
+  const inProg = inProgressGroup.length > 0 ? inProgressGroup : planningList.filter(c => c.planningStatus === 'in_progress');
+  const pending = pendingGroup.length > 0 ? pendingGroup : planningList.filter(c => c.planningStatus === 'pending');
+  const completed = completedGroup.length > 0 ? completedGroup : planningList.filter(c => c.planningStatus === 'completed');
 
-  const rowsHtml = planningList.map(c => {
-    const isNext = nextCity && c.name === nextCity.name;
-    const isCompleted = c.planningStatus === 'completed';
-    const isInProgress = c.planningStatus === 'in_progress';
+  const nextCity = nextPendingCity || pending[0] || planningList[0];
 
-    let badgeHtml = '';
-    if (isNext) {
-      badgeHtml = '<span style="color: #0369a1; font-weight: bold; background: #e0f2fe; padding: 2px 6px; border-radius: 4px; border: 1px solid #7dd3fc;">🎯 Próxima da Fila</span>';
-    } else if (isCompleted) {
-      badgeHtml = `<span style="color: #059669; font-weight: bold; background: #d1fae5; padding: 2px 6px; border-radius: 4px;">Concluída (${c.recentCoveragePct}%)</span>`;
-    } else if (isInProgress) {
-      badgeHtml = `<span style="color: #d97706; font-weight: bold; background: #fef3c7; padding: 2px 6px; border-radius: 4px;">Em Andamento (${c.recentCoveragePct}%)</span>`;
-    } else {
-      badgeHtml = '<span style="color: #dc2626; font-weight: 600; background: #fee2e2; padding: 2px 6px; border-radius: 4px;">Aguardando Fila</span>';
+  const renderTableRows = (cities, stageType) => {
+    if (!cities || cities.length === 0) {
+      return `
+        <tr>
+          <td colspan="7" style="padding: 10px; text-align: center; color: #64748b; font-style: italic; font-size: 10px;">
+            Nenhuma cidade neste estágio operacional.
+          </td>
+        </tr>
+      `;
     }
 
-    const rowBg = isNext ? 'background-color: #f0fdf4;' : '';
+    return cities.map(c => {
+      const isNext = stageType === 'pending' && nextCity && c.name === nextCity.name;
+      const isCompleted = c.planningStatus === 'completed';
+      const isInProgress = c.planningStatus === 'in_progress';
 
-    return `
-      <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px; ${rowBg}">
-        <td style="padding: 6px 8px; text-align: center; font-weight: bold; color: ${isNext ? '#047857' : '#1e293b'}; font-size: 12px;">
-          ${c.planningRank}º
-        </td>
-        <td style="padding: 6px 8px; font-weight: 700; color: #0f172a;">
-          ${c.name} <span style="font-size: 9px; color: #64748b; font-weight: normal;">(${c.prefix})</span>
-        </td>
-        <td style="padding: 6px 8px; text-align: center; font-weight: 600; color: #0369a1;">
-          ${c.lastVisitDateStr}
-        </td>
-        <td style="padding: 6px 8px; text-align: center; font-weight: 600; color: ${c.daysSinceLastVisit > 300 ? '#b91c1c' : '#475569'};">
-          ${c.timeAgoLabel}
-        </td>
-        <td style="padding: 6px 8px; text-align: center; font-weight: bold;">
-          ${c.totalHydrants}
-        </td>
-        <td style="padding: 6px 8px; text-align: center; font-weight: 600;">
-          ${c.recentInspectedCount} / ${c.totalHydrants}
-        </td>
-        <td style="padding: 6px 8px; text-align: center;">
-          ${badgeHtml}
-        </td>
-      </tr>
-    `;
-  }).join('');
+      let badgeHtml = '';
+      if (isNext) {
+        badgeHtml = '<span style="color: #0369a1; font-weight: bold; background: #e0f2fe; padding: 2px 6px; border-radius: 4px; border: 1px solid #7dd3fc;">🎯 Próxima da Fila</span>';
+      } else if (isCompleted) {
+        badgeHtml = `<span style="color: #059669; font-weight: bold; background: #d1fae5; padding: 2px 6px; border-radius: 4px;">Concluída (${c.recentCoveragePct}%)</span>`;
+      } else if (isInProgress) {
+        badgeHtml = `<span style="color: #d97706; font-weight: bold; background: #fef3c7; padding: 2px 6px; border-radius: 4px;">Em Andamento (${c.recentCoveragePct}%)</span>`;
+      } else {
+        badgeHtml = '<span style="color: #dc2626; font-weight: 600; background: #fee2e2; padding: 2px 6px; border-radius: 4px;">Aguardando Fila</span>';
+      }
+
+      const rowBg = isNext 
+        ? 'background-color: #f0fdf4;' 
+        : isInProgress 
+        ? 'background-color: #fffbeb;' 
+        : '';
+
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 10.5px; ${rowBg}">
+          <td style="padding: 5px 6px; text-align: center; font-weight: bold; color: ${isNext ? '#047857' : '#1e293b'}; font-size: 11px;">
+            ${c.planningRank}º
+          </td>
+          <td style="padding: 5px 6px; font-weight: 700; color: #0f172a;">
+            ${c.name} <span style="font-size: 8.5px; color: #64748b; font-weight: normal;">(${c.prefix})</span>
+          </td>
+          <td style="padding: 5px 6px; text-align: center; font-weight: 600; color: #0369a1;">
+            ${c.lastVisitDateStr}
+          </td>
+          <td style="padding: 5px 6px; text-align: center; font-weight: 600; color: ${c.daysSinceLastVisit > 300 ? '#b91c1c' : '#475569'};">
+            ${c.timeAgoLabel}
+          </td>
+          <td style="padding: 5px 6px; text-align: center; font-weight: bold;">
+            ${c.totalHydrants}
+          </td>
+          <td style="padding: 5px 6px; text-align: center; font-weight: 600;">
+            ${c.recentInspectedCount} / ${c.totalHydrants}
+          </td>
+          <td style="padding: 5px 6px; text-align: center;">
+            ${badgeHtml}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  };
 
   return `
     <!DOCTYPE html>
@@ -430,62 +516,92 @@ export const generateCityPlanningPrintHtml = ({
       <meta charset="UTF-8">
       <title>Fila_Prioritaria_Vistorias_Cidades_CBMDF</title>
       <style>
-        @page { size: A4 portrait; margin: 10mm 10mm; }
+        @page { size: A4 portrait; margin: 8mm 8mm; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; padding: 0; }
-        .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 10px; }
-        .header h1 { font-size: 14px; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
-        .header h2 { font-size: 13px; margin: 2px 0; color: #1e293b; }
-        .header p { font-size: 9.5px; margin: 0; color: #64748b; }
+        .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 5px; margin-bottom: 8px; }
+        .header h1 { font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .header h2 { font-size: 12px; margin: 2px 0; color: #1e293b; }
+        .header p { font-size: 9px; margin: 0; color: #64748b; }
         
         /* Banner de Próxima Cidade */
         .priority-banner {
           background: #f0fdf4;
           border: 2px solid #059669;
-          border-radius: 8px;
-          padding: 8px 12px;
-          margin-bottom: 10px;
+          border-radius: 6px;
+          padding: 6px 10px;
+          margin-bottom: 8px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 12px;
+          gap: 10px;
         }
         .priority-banner .target-info {
-          font-size: 11px;
+          font-size: 10px;
           color: #065f46;
         }
         .priority-banner .target-name {
-          font-size: 15px;
+          font-size: 13.5px;
           font-weight: 800;
           color: #047857;
           text-transform: uppercase;
         }
         .priority-banner .details {
-          font-size: 10.5px;
+          font-size: 10px;
           color: #1e293b;
           text-align: right;
         }
 
-        .kpi-container { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
-        .kpi-card { flex: 1; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px; text-align: center; background: #f8fafc; }
-        .kpi-card .val { font-size: 13px; font-weight: bold; color: #0f172a; }
-        .kpi-card .lbl { font-size: 8.5px; color: #64748b; text-transform: uppercase; font-weight: 600; }
-        table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-        th { background: #f1f5f9; color: #334155; font-size: 9.5px; text-transform: uppercase; padding: 6px 6px; border-bottom: 2px solid #cbd5e1; }
-        .footer { margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 6px; font-size: 8.5px; color: #64748b; display: flex; justify-content: space-between; }
+        .kpi-container { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+        .kpi-card { flex: 1; border: 1px solid #cbd5e1; border-radius: 5px; padding: 4px; text-align: center; background: #f8fafc; }
+        .kpi-card .val { font-size: 12px; font-weight: bold; color: #0f172a; }
+        .kpi-card .lbl { font-size: 8px; color: #64748b; text-transform: uppercase; font-weight: 600; }
+        
+        /* Seções de Estágios */
+        .stage-section { margin-top: 8px; margin-bottom: 8px; page-break-inside: avoid; }
+        .stage-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+        .stage-header-in-progress {
+          background: #fef3c7;
+          color: #92400e;
+          border-left: 4px solid #f59e0b;
+        }
+        .stage-header-pending {
+          background: #fee2e2;
+          color: #991b1b;
+          border-left: 4px solid #ef4444;
+        }
+        .stage-header-completed {
+          background: #d1fae5;
+          color: #065f46;
+          border-left: 4px solid #10b981;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 3px; }
+        th { background: #f1f5f9; color: #334155; font-size: 9px; text-transform: uppercase; padding: 4px 6px; border-bottom: 1.5px solid #cbd5e1; }
+        .footer { margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 5px; font-size: 8px; color: #64748b; display: flex; justify-content: space-between; }
       </style>
     </head>
     <body>
       <div class="header">
         <h1>Corpo de Bombeiros Militar do Distrito Federal</h1>
         <h2>Fila Prioritária de Vistoria de Cidades (Sequência Operacional)</h2>
-        <p>Critério Tático: <strong>Cidade visitada há mais tempo</strong> (Maior tempo decorrido sem vistoria → Mais recente)</p>
+        <p>Diretriz Tática: <strong>1º Finalizar cidades em andamento → 2º Atender fila por tempo sem visita → 3º Cidades já concluídas</strong></p>
       </div>
 
       ${nextCity ? `
         <div class="priority-banner">
           <div>
-            <div class="target-info">🎯 PRÓXIMA CIDADE DA FILA A VISTORIAR:</div>
-            <div class="target-name">${nextCity.planningRank}º. ${nextCity.name} (${nextCity.prefix})</div>
+            <div class="target-info">📍 PRÓXIMA CIDADE DA FILA A INICIAR (QUANDO LIBERAR):</div>
+            <div class="target-name">${nextCity.name} (${nextCity.prefix})</div>
           </div>
           <div class="details">
             <div>Última Vistoria: <strong>${nextCity.lastVisitDateStr}</strong> (${nextCity.timeAgoLabel})</div>
@@ -494,10 +610,10 @@ export const generateCityPlanningPrintHtml = ({
         </div>
       ` : ''}
 
-      ${inProgressCity && inProgressCity.name !== nextCity?.name ? `
-        <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 6px; padding: 5px 10px; margin-bottom: 10px; font-size: 10px; color: #92400e; display: flex; justify-content: space-between;">
-          <span>🔄 <strong>EM ANDAMENTO ATUALMENTE:</strong> ${inProgressCity.name} (${inProgressCity.prefix})</span>
-          <span><strong>${inProgressCity.recentInspectedCount} de ${inProgressCity.totalHydrants} hidrantes vistoriados (${inProgressCity.recentCoveragePct}%)</strong> - Recomendação: Concluir antes de abrir nova cidade</span>
+      ${inProgressCity ? `
+        <div style="background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 5px; padding: 4px 8px; margin-bottom: 8px; font-size: 9.5px; color: #92400e; display: flex; justify-content: space-between; align-items: center;">
+          <span>🔄 <strong>EM ANDAMENTO ATUALMENTE:</strong> ${inProgressCity.name} (${inProgressCity.prefix}) — <strong>${inProgressCity.recentInspectedCount}/${inProgressCity.totalHydrants} hidrantes (${inProgressCity.recentCoveragePct}%)</strong></span>
+          <span style="font-weight: 700; color: #b45309;">Prioridade: Concluir antes de abrir nova frente</span>
         </div>
       ` : ''}
 
@@ -507,35 +623,90 @@ export const generateCityPlanningPrintHtml = ({
           <div class="lbl">Total de Regiões</div>
         </div>
         <div class="kpi-card">
-          <div class="val" style="color: #dc2626;">${metrics.pendingCities || 0}</div>
-          <div class="lbl">Aguardando na Fila</div>
+          <div class="val" style="color: #d97706;">${inProg.length}</div>
+          <div class="lbl">1º Em Andamento</div>
         </div>
         <div class="kpi-card">
-          <div class="val" style="color: #d97706;">${metrics.inProgressCities || 0}</div>
-          <div class="lbl">Em Andamento</div>
+          <div class="val" style="color: #dc2626;">${pending.length}</div>
+          <div class="lbl">2º Aguardando Fila</div>
         </div>
         <div class="kpi-card">
-          <div class="val" style="color: #059669;">${metrics.completedCities || 0}</div>
-          <div class="lbl">Vistoriadas Recentemente (${metrics.overallProgressPct || 0}%)</div>
+          <div class="val" style="color: #059669;">${completed.length}</div>
+          <div class="lbl">3º Concluídas Recente (${metrics.overallProgressPct || 0}%)</div>
         </div>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 35px; text-align: center;">Seq.</th>
-            <th style="text-align: left;">Região Administrativa</th>
-            <th style="width: 85px; text-align: center;">Última Vistoria</th>
-            <th style="width: 140px; text-align: center;">Tempo sem Vistoria</th>
-            <th style="width: 50px; text-align: center;">Total Hidr.</th>
-            <th style="width: 75px; text-align: center;">Progresso</th>
-            <th style="width: 120px; text-align: center;">Situação Operacional</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHtml}
-        </tbody>
-      </table>
+      <!-- 1º ESTÁGIO: EM ANDAMENTO -->
+      <div class="stage-section">
+        <div class="stage-header stage-header-in-progress">
+          <span>🔄 1º Estágio: Cidades em Andamento (${inProg.length}) — Conclusão Prioritária</span>
+          <span>Frentes Ativas</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 35px; text-align: center;">Seq.</th>
+              <th style="text-align: left;">Região Administrativa</th>
+              <th style="width: 80px; text-align: center;">Última Vistoria</th>
+              <th style="width: 130px; text-align: center;">Tempo sem Vistoria</th>
+              <th style="width: 50px; text-align: center;">Total Hidr.</th>
+              <th style="width: 75px; text-align: center;">Progresso</th>
+              <th style="width: 120px; text-align: center;">Situação Operacional</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${renderTableRows(inProg, 'in_progress')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 2º ESTÁGIO: AGUARDANDO NA FILA -->
+      <div class="stage-section">
+        <div class="stage-header stage-header-pending">
+          <span>⏳ 2º Estágio: Aguardando na Fila (${pending.length}) — Ordem: Maior tempo sem vistoria</span>
+          <span>Aguardando Liberação</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 35px; text-align: center;">Seq.</th>
+              <th style="text-align: left;">Região Administrativa</th>
+              <th style="width: 80px; text-align: center;">Última Vistoria</th>
+              <th style="width: 130px; text-align: center;">Tempo sem Vistoria</th>
+              <th style="width: 50px; text-align: center;">Total Hidr.</th>
+              <th style="width: 75px; text-align: center;">Progresso</th>
+              <th style="width: 120px; text-align: center;">Situação Operacional</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${renderTableRows(pending, 'pending')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 3º ESTÁGIO: CONCLUÍDAS -->
+      <div class="stage-section">
+        <div class="stage-header stage-header-completed">
+          <span>✅ 3º Estágio: Vistoriadas Recentemente (${completed.length}) — Meta >= 90% Atingida</span>
+          <span>Campanha Concluída</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 35px; text-align: center;">Seq.</th>
+              <th style="text-align: left;">Região Administrativa</th>
+              <th style="width: 80px; text-align: center;">Última Vistoria</th>
+              <th style="width: 130px; text-align: center;">Tempo sem Vistoria</th>
+              <th style="width: 50px; text-align: center;">Total Hidr.</th>
+              <th style="width: 75px; text-align: center;">Progresso</th>
+              <th style="width: 120px; text-align: center;">Situação Operacional</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${renderTableRows(completed, 'completed')}
+          </tbody>
+        </table>
+      </div>
 
       <div class="footer">
         <div>Emissão: ${dateFormatted} às ${timeFormatted} por ${currentUser?.nomeGuerra || currentUser?.nome || 'Gestor do Sistema'}</div>
