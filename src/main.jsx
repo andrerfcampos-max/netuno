@@ -30,6 +30,28 @@ const updateSW = registerSW({
 // Disponibiliza o atualizador manualmente caso o usuário queira atualizar via interface
 window.__netuno_update_sw = () => updateSW(true);
 
+// Tratamento global de erros de carregamento de chunks / módulos dinâmicos após deploy no Vite
+window.addEventListener('vite:preloadError', (event) => {
+  console.warn('[Vite] Erro de carregamento de módulo dinâmico detectado (novo deploy provável):', event);
+  event.preventDefault();
+
+  const reloadKey = 'netuno_vite_preload_reload';
+  const lastReload = parseInt(sessionStorage.getItem(reloadKey) || '0', 10);
+  const now = Date.now();
+
+  if (now - lastReload > 12000) {
+    sessionStorage.setItem(reloadKey, String(now));
+    if (typeof window.__netuno_update_sw === 'function') {
+      try {
+        window.__netuno_update_sw();
+      } catch (e) {
+        console.warn('[Vite] Erro ao sincronizar novo Service Worker:', e);
+      }
+    }
+    window.location.reload();
+  }
+});
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>

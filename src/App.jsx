@@ -9,19 +9,20 @@ import MissionRoutePanel from './components/MissionRoutePanel';
 import MissionReportPanel from './components/MissionReportPanel';
 import ErrorBoundary from './components/ErrorBoundary';
 import SelectionCart from './components/SelectionCart';
+import { lazyWithRetry } from './utils/lazyWithRetry';
 
-const InspectionModal = lazy(() => import('./components/InspectionModal'));
-const EditHydrantModal = lazy(() => import('./components/EditHydrantModal'));
-const UserManagerModal = lazy(() => import('./components/UserManagerModal'));
-const MissionManagerModal = lazy(() => import('./components/MissionManagerModal'));
-const TechnicalStudyModal = lazy(() => import('./components/TechnicalStudyModal'));
-const BuildingStudiesModal = lazy(() => import('./components/BuildingStudiesModal'));
-const InconsistentHydrantsModal = lazy(() => import('./components/InconsistentHydrantsModal'));
-const CloudConfigModal = lazy(() => import('./components/CloudConfigModal'));
-const SystemHistoryModal = lazy(() => import('./components/SystemHistoryModal'));
-const InspectionHistoryModal = lazy(() => import('./components/InspectionHistoryModal'));
-const DownloadDatabaseModal = lazy(() => import('./components/DownloadDatabaseModal'));
-const CityInspectionPlanningModal = lazy(() => import('./components/CityInspectionPlanningModal'));
+const InspectionModal = lazyWithRetry(() => import('./components/InspectionModal'));
+const EditHydrantModal = lazyWithRetry(() => import('./components/EditHydrantModal'));
+const UserManagerModal = lazyWithRetry(() => import('./components/UserManagerModal'));
+const MissionManagerModal = lazyWithRetry(() => import('./components/MissionManagerModal'));
+const TechnicalStudyModal = lazyWithRetry(() => import('./components/TechnicalStudyModal'));
+const BuildingStudiesModal = lazyWithRetry(() => import('./components/BuildingStudiesModal'));
+const InconsistentHydrantsModal = lazyWithRetry(() => import('./components/InconsistentHydrantsModal'));
+const CloudConfigModal = lazyWithRetry(() => import('./components/CloudConfigModal'));
+const SystemHistoryModal = lazyWithRetry(() => import('./components/SystemHistoryModal'));
+const InspectionHistoryModal = lazyWithRetry(() => import('./components/InspectionHistoryModal'));
+const DownloadDatabaseModal = lazyWithRetry(() => import('./components/DownloadDatabaseModal'));
+const CityInspectionPlanningModal = lazyWithRetry(() => import('./components/CityInspectionPlanningModal'));
 import { logAuditEvent, getUnreadAuditCount, mergeAuditLogs } from './utils/auditLogger';
 import { loadPreloadedDatabase } from './utils/xlsxParser';
 import { loadMissions, saveMissions, createNewMission, loadFolders, saveFolders, loadHydrantChanges, saveHydrantChanges, loadActiveMissionState, saveActiveMissionState, mergeMissions, mergeFolders, loadRbacUsers, mergeRbacUsers, purgeExcessLocalStorage } from './utils/storage';
@@ -291,6 +292,16 @@ syncPreferences({ activeView: view });
 
     window.addEventListener('netuno-pwa-update-available', handleUpdateAvailable);
     return () => window.removeEventListener('netuno-pwa-update-available', handleUpdateAvailable);
+  }, []);
+
+  // Pré-carregamento suave em segundo plano para módulos dinâmicos frequentes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import('./components/CityInspectionPlanningModal').catch(() => {});
+      import('./components/InspectionModal').catch(() => {});
+      import('./components/MissionManagerModal').catch(() => {});
+    }, 2500);
+    return () => clearTimeout(timer);
   }, []);
   
   // Controle de Missões Persistentes
