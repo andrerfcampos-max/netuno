@@ -1492,7 +1492,7 @@ export const generateCaesbReportHtml = ({
   const docHash = generateDocHash(docSeed);
 
   const docTitle = buildReportFileName({
-    prefix: 'Relatorio_Vistoria_Fiscalizacao',
+    prefix: 'Relatorio_alteracoes_CAESB',
     rasPresentes,
     activeFilters,
     currentMission,
