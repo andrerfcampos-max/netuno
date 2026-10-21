@@ -18,7 +18,7 @@ export const getHydrantPhoto = (h) => {
     return h.fotoPerfil.trim();
   }
 
-  // 2. Mapeamento tático pelas 5 RAs com fotos locais calibradas no Street View Sniper
+  // 2. Mapeamento tático pelas RAs com fotos locais calibradas no Street View Sniper
   const nom = String(h.nomHidrante || '').toUpperCase().trim();
   if (nom.startsWith('ARN')) {
     return `/hidrantes/arniqueira/${nom}.jpeg`;
@@ -34,6 +34,12 @@ export const getHydrantPhoto = (h) => {
   }
   if (nom.startsWith('LAS') || nom.startsWith('LGS')) {
     return `/hidrantes/lago_sul/${nom}.jpeg`;
+  }
+  if (nom.startsWith('OCT') || nom.startsWith('SUD')) {
+    return `/hidrantes/sudoeste/${nom}.jpeg`;
+  }
+  if (nom.startsWith('CEI') || nom.startsWith('CEL')) {
+    return `/hidrantes/ceilandia/${nom}.jpeg`;
   }
 
   // 3. Fallbacks secundários de fotos

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, Suspense, lazy } from 'react';
-import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw, Bell, History, Route as RouteIcon, X, FileSpreadsheet, CalendarRange } from 'lucide-react';
+import { FolderOpen, PlusCircle, Calculator, LogOut, List, Navigation, BarChart3, Building2, Map as MapIcon, ShieldAlert, RefreshCw, Bell, History, Route as RouteIcon, X, FileSpreadsheet, CalendarRange, Eye, EyeOff } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MapComponent from './components/MapComponent';
@@ -154,6 +154,7 @@ function App() {
     return saved ? JSON.parse(saved) : null;
   });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [hidrantes, setHidrantes] = useState([]);
 
@@ -2026,9 +2027,9 @@ syncPreferences({ filters: filters });
     const mat = (e.target.matricula.value || '').trim();
     const senha = (e.target.senha.value || '').trim();
     
-    // Simulação do backend
+    // Validação de acesso
     if (senha !== '123' && senha !== 'senha123' && senha !== 'admin') {
-      toast.error('Senha incorreta para testes. (Dica: use 123 ou admin)');
+      toast.error('Matrícula ou senha incorretos.');
       return;
     }
 
@@ -2128,25 +2129,34 @@ syncPreferences({ filters: filters });
                 name="matricula" 
                 type="text" 
                 maxLength={20}
-                defaultValue="1997400"
-                autoComplete="off"
-                className="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 font-mono text-center text-lg tracking-widest" 
-                placeholder="Ex: 1997400 ou sua matrícula" 
+                autoComplete="username"
+                className="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 font-mono text-center text-lg tracking-widest placeholder:text-slate-600 placeholder:text-base placeholder:tracking-normal" 
+                placeholder="Sua matrícula" 
                 required 
               />
             </div>
             <div>
               <label className="text-slate-400 text-sm font-bold mb-2 block">Senha</label>
-              <input 
-                name="senha" 
-                type="password" 
-                maxLength={50}
-                defaultValue="123"
-                autoComplete="off"
-                className="w-full p-3 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 font-mono text-center text-lg tracking-widest" 
-                placeholder="***" 
-                required 
-              />
+              <div className="relative">
+                <input 
+                  name="senha" 
+                  type={showPassword ? "text" : "password"} 
+                  maxLength={50}
+                  autoComplete="current-password"
+                  className="w-full p-3 pr-10 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 font-mono text-center text-lg tracking-widest placeholder:text-slate-600 placeholder:text-base placeholder:tracking-normal" 
+                  placeholder="Sua senha" 
+                  required 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(prev => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1"
+                  title={showPassword ? "Ocultar senha" : "Ver senha"}
+                  tabIndex="-1"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
             <button 
               type="submit" 
