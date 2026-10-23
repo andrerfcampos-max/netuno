@@ -64,6 +64,11 @@ export const SeiIntegrationModal = ({
       localStorage.setItem('netuno_sei_data', JSON.stringify(payload));
       localStorage.setItem('netuno_sei_active_package', JSON.stringify(payload));
 
+      // Notifica a extensão Netuno SEI Bridge via postMessage
+      try {
+        window.postMessage({ type: 'NETUNO_SEI_SEND_PACKAGE', payload }, '*');
+      } catch (_) {}
+
       // Abre o SEI DF oficial em nova aba
       window.open('https://sei.df.gov.br', '_blank', 'noopener,noreferrer');
 

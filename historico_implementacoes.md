@@ -8,7 +8,19 @@ A finalidade deste registro é manter um rastro claro e auditável da evolução
 
 ## 🛠️ Modificações Recentes
 
-### [23/10/2026] Etapa 106 - Envio Direto ao SEI 1 Toque sem Credenciais (Relatório CAESB para COESP/GPCIU/SEHUR)
+### [23/10/2026] Etapa 107 - Extensão Netuno SEI Integrator (Opção A) e Ajuste de Endereçamento para Cel no Memorando
+- **Contexto Operacional:** Para viabilizar a Opção A solicitada pelo usuário e permitir a automação completa na aba oficial do SEI (`sei.df.gov.br`) sem necessidade de expor senhas no Netuno:
+- **Implementação Realizada:**
+  1. **Ajuste de Posto no Memorando:** Atualizado o cabeçalho em `seiMemorandoUtils.js` de Maj. para **Cel. QOBM/Comb. Comandante do Grupamento de Prevenção e Combate a Incêndio Urbano (GPCIU)**.
+  2. **Ponte de Dados (Bridge):** Desenvolvido `netuno-bridge.js` na extensão para capturar mensagens e pacotes do Netuno Web App (`netuno-eight.vercel.app` e localhost) e sincronizar em `chrome.storage.local`.
+  3. **Robô de Automação no SEI (`content.js`):** Implementado motor completo injetado em `sei.df.gov.br`:
+     - Exibe card flutuante moderno do Netuno no SEI assim que o militar faz o login na SUOMA.
+     - Executa com 1 clique a autuação do processo de Fiscalização de Hidrantes (tipo `100000446`).
+     - Realiza upload do Relatório Oficial CAESB (tipo `2056`, documento nato-digital).
+     - Cria o Memorando interno (tipo `165`) com a minuta oficial de ofício endereçada ao Cel. Comandante do GPCIU.
+     - Abre a tela nativa de assinatura eletrônica do SEI para o militar digitar a 2ª senha.
+     - Tramita o processo automaticamente para **`CBMDF/COESP/GPCIU/SEHUR`**, mantendo cópia aberta na SUOMA.
+
 - **Problema Inicial:** A integração ao SEI anterior solicitava usuário e senhas no modal do Netuno, o que violava normas institucionais de segurança e causava vulnerabilidades. Além disso, o botão aparecia erroneamente no Relatório Geral e a tramitação apontava para a SUTEC antiga.
 - **Implementação Realizada:**
   1. **Restrição Exclusiva CAESB:** O botão "Enviar Direto ao SEI (1 Toque)" agora só é exibido quando `reportType === 'caesb'` e perfil gestor/adm em `MissionReportPanel.jsx`.

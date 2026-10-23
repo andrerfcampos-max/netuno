@@ -21,7 +21,7 @@ export const generateSeiMemorandoMinutaText = ({
     ? numeroSeiRelatorio.trim() 
     : '[Nº SEI DO RELATÓRIO EXTERNO]';
 
-  return `Para: Maj. QOBM/Comb. Comandante do Grupamento de Prevenção e Combate a Incêndio Urbano (GPCIU)
+  return `Para: Cel. QOBM/Comb. Comandante do Grupamento de Prevenção e Combate a Incêndio Urbano (GPCIU)
 Assunto: Vistoria de Hidrante em ${nomeCidade} ${raSufixo}
 
 Senhor(a) Comandante,

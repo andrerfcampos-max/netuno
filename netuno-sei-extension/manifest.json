@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Netuno SEI Integrator",
-  "version": "1.0",
-  "description": "Automatiza a criação e tramitação de processos no SEI para relatórios do Netuno.",
+  "version": "1.1",
+  "description": "Automatiza a autuação de processos, anexo do relatório CAESB, geração do memorando e tramitação no SEI DF.",
   "permissions": [
     "storage",
     "scripting",
@@ -10,7 +10,12 @@
   ],
   "host_permissions": [
     "*://sei.df.gov.br/*",
-    "https://sei.df.gov.br/*"
+    "https://sei.df.gov.br/*",
+    "*://sip.df.gov.br/*",
+    "https://sip.df.gov.br/*",
+    "https://netuno-eight.vercel.app/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -18,8 +23,23 @@
   "content_scripts": [
     {
       "matches": [
+        "https://netuno-eight.vercel.app/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*"
+      ],
+      "js": [
+        "netuno-bridge.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
         "*://sei.df.gov.br/*",
-        "https://sei.df.gov.br/*"
+        "https://sei.df.gov.br/*",
+        "*://sip.df.gov.br/*",
+        "https://sip.df.gov.br/*"
       ],
       "js": [
         "content.js"
