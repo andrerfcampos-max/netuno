@@ -97,6 +97,29 @@ function updateStatus(stepText, color = '#38bdf8') {
   }
 }
 
+// Resolve qualquer URL relativa do SEI garantindo o caminho canônico /sei/
+function resolveSeiUrl(relativeOrAbsoluteUrl, fallbackBase = window.location.href) {
+  if (!relativeOrAbsoluteUrl) return '';
+  let str = relativeOrAbsoluteUrl.trim();
+  if (str.startsWith('http://') || str.startsWith('https://')) {
+    if (str.includes('sei.df.gov.br/controlador.php')) {
+      return str.replace('sei.df.gov.br/controlador.php', 'sei.df.gov.br/sei/controlador.php');
+    }
+    return str;
+  }
+  
+  let base = fallbackBase || window.location.href;
+  if (!base.includes('/sei/')) {
+    base = `${window.location.origin}/sei/controlador.php`;
+  }
+  
+  const resolved = new URL(str, base).toString();
+  if (resolved.includes('sei.df.gov.br/controlador.php')) {
+    return resolved.replace('sei.df.gov.br/controlador.php', 'sei.df.gov.br/sei/controlador.php');
+  }
+  return resolved;
+}
+
 // Extrai mensagens amigáveis de alerta ou erro do HTML do SEI
 function extractSeiErrorMessage(htmlOrDoc) {
   if (!htmlOrDoc) return null;
@@ -119,8 +142,9 @@ async function obterFormularioGerarProcesso() {
     throw new Error('Link "Iniciar Processo" não encontrado no menu do SEI. Certifique-se de que está na tela principal do SEI na unidade SUOMA.');
   }
 
+  const urlMenuEscolher = resolveSeiUrl(linkMenu.getAttribute('href'), window.location.href);
   updateStatus('⏳ Localizando catálogo de processos na unidade...', '#38bdf8');
-  const resEscolher = await fetch(linkMenu.href);
+  const resEscolher = await fetch(urlMenuEscolher);
   const htmlEscolher = await resEscolher.text();
   let docEscolher = new DOMParser().parseFromString(htmlEscolher, 'text/html');
 
@@ -189,7 +213,7 @@ async function obterFormularioGerarProcesso() {
     postTodos.set('hdnFiltroTipoProcedimento', 'T');
     postTodos.set('hdnIdTipoProcedimento', '');
 
-    const actionUrl = new URL(formEscolher.getAttribute('action') || linkMenu.href, window.location.origin).toString();
+    const actionUrl = resolveSeiUrl(formEscolher.getAttribute('action') || urlMenuEscolher, urlMenuEscolher);
     const resTodos = await fetch(actionUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -219,7 +243,7 @@ async function obterFormularioGerarProcesso() {
   postEscolher.set('hdnIdTipoProcedimento', idTipoProc);
   postEscolher.set('hdnFiltroTipoProcedimento', formEscolher.querySelector('#hdnFiltroTipoProcedimento')?.value || 'U');
 
-  const actionEscolher = new URL(formEscolher.getAttribute('action') || linkMenu.href, window.location.origin).toString();
+  const actionEscolher = resolveSeiUrl(formEscolher.getAttribute('action') || urlMenuEscolher, urlMenuEscolher);
   const resGerar = await fetch(actionEscolher, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -235,7 +259,7 @@ async function obterFormularioGerarProcesso() {
     throw new Error(erroSei || `Não foi possível carregar o formulário para "${nomeTipoProc}".`);
   }
 
-  const actionProc = new URL(formProc.getAttribute('action') || resGerar.url || actionEscolher, window.location.origin).toString();
+  const actionProc = resolveSeiUrl(formProc.getAttribute('action') || resGerar.url || actionEscolher, resGerar.url || actionEscolher);
 
   return {
     docProc: docGerar,
@@ -323,28 +347,28 @@ async function executeFullAutomation(pkg) {
 
     // Localiza o link 'Incluir Documento' a partir da página do processo
     let linkIncluirDoc = docProcessoSalvo.querySelector('a[href*="documento_escolher_tipo"], a[title*="Incluir Documento"], a[aria-label*="Incluir Documento"]');
-    let urlEscolherDoc = linkIncluirDoc ? new URL(linkIncluirDoc.getAttribute('href'), window.location.origin).toString() : null;
+    let urlEscolherDoc = linkIncluirDoc ? resolveSeiUrl(linkIncluirDoc.getAttribute('href'), resSaveProc.url) : null;
 
     if (!urlEscolherDoc) {
       // Procura qualquer link com documento_escolher_tipo
       const matchDocEsc = textSaveProc.match(/controlador\.php\?acao=documento_escolher_tipo[^"'\s<>]+/i);
       if (matchDocEsc) {
-        urlEscolherDoc = new URL(matchDocEsc[0], window.location.origin).toString();
+        urlEscolherDoc = resolveSeiUrl(matchDocEsc[0], resSaveProc.url);
       }
     }
 
     if (!urlEscolherDoc) {
       try {
-        const urlArvore = `${window.location.origin}/sei/controlador.php?acao=procedimento_trabalhar&id_procedimento=${idProcedimento}&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}`;
+        const urlArvore = resolveSeiUrl(`controlador.php?acao=procedimento_trabalhar&id_procedimento=${idProcedimento}&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}`, resSaveProc.url);
         const resArvore = await fetch(urlArvore);
         const htmlArvore = await resArvore.text();
         const docArvore = new DOMParser().parseFromString(htmlArvore, 'text/html');
         const linkArvore = docArvore.querySelector('a[href*="documento_escolher_tipo"], a[title*="Incluir Documento"], a[aria-label*="Incluir Documento"]');
         if (linkArvore) {
-          urlEscolherDoc = new URL(linkArvore.getAttribute('href'), window.location.origin).toString();
+          urlEscolherDoc = resolveSeiUrl(linkArvore.getAttribute('href'), urlArvore);
         } else {
           const m = htmlArvore.match(/controlador\.php\?acao=documento_escolher_tipo[^"'\s<>]+/i);
-          if (m) urlEscolherDoc = new URL(m[0], window.location.origin).toString();
+          if (m) urlEscolherDoc = resolveSeiUrl(m[0], urlArvore);
         }
       } catch (errArvore) {
         console.warn('[Netuno SEI] Falha ao consultar árvore do processo:', errArvore);
@@ -367,7 +391,7 @@ async function executeFullAutomation(pkg) {
     }
 
     let urlDocReceber = linkDocExterno && linkDocExterno.getAttribute('href') && !linkDocExterno.getAttribute('href').startsWith('#')
-      ? new URL(linkDocExterno.getAttribute('href'), window.location.origin).toString()
+      ? resolveSeiUrl(linkDocExterno.getAttribute('href'), urlEscolherDoc)
       : null;
 
     if (!urlDocReceber) {
@@ -398,10 +422,11 @@ async function executeFullAutomation(pkg) {
     uploadFormData.append('filArquivo', pdfBlob, fileName);
 
     const hashDocReceber = new URL(urlDocReceber).searchParams.get('infra_hash') || '';
-    const uploadAction = formDoc?.querySelector('input[name="hdnUploadUrl"]')?.value || 
-      `/sei/controlador.php?acao=documento_upload_anexo&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}&infra_hash=${hashDocReceber}`;
+    const rawUploadAction = formDoc?.querySelector('input[name="hdnUploadUrl"]')?.value || 
+      `controlador.php?acao=documento_upload_anexo&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}&infra_hash=${hashDocReceber}`;
+    const uploadAction = resolveSeiUrl(rawUploadAction, urlDocReceber);
     
-    const resUpload = await fetch(new URL(uploadAction, window.location.origin).toString(), {
+    const resUpload = await fetch(uploadAction, {
       method: 'POST',
       body: uploadFormData
     });
@@ -434,7 +459,7 @@ async function executeFullAutomation(pkg) {
       postDocData.set('selHipoteseLegal', 'null');
     }
 
-    const actionSaveDoc = formDoc ? new URL(formDoc.getAttribute('action') || urlDocReceber, window.location.origin).toString() : urlDocReceber;
+    const actionSaveDoc = resolveSeiUrl(formDoc?.getAttribute('action') || urlDocReceber, urlDocReceber);
     const resSaveDoc = await fetch(actionSaveDoc, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -463,7 +488,7 @@ async function executeFullAutomation(pkg) {
     }
 
     let urlGerarMemo = linkMemo && linkMemo.getAttribute('href') && !linkMemo.getAttribute('href').startsWith('#')
-      ? new URL(linkMemo.getAttribute('href'), window.location.origin).toString()
+      ? resolveSeiUrl(linkMemo.getAttribute('href'), urlEscolherDoc)
       : null;
 
     if (!urlGerarMemo) {
@@ -499,7 +524,7 @@ async function executeFullAutomation(pkg) {
       postMemoData.set('selHipoteseLegal', 'null');
     }
 
-    const actionSaveMemo = formMemo ? new URL(formMemo.getAttribute('action') || urlGerarMemo, window.location.origin).toString() : urlGerarMemo;
+    const actionSaveMemo = resolveSeiUrl(formMemo?.getAttribute('action') || urlGerarMemo, urlGerarMemo);
     const resSaveMemo = await fetch(actionSaveMemo, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -519,7 +544,7 @@ async function executeFullAutomation(pkg) {
 
     // Extrai o link do editor a partir do retorno ou padrão SEI
     let linkEditor = textSaveMemo.match(/controlador\.php\?acao=editor_montar[^"'\s<>]+/i);
-    const urlEditor = linkEditor ? new URL(linkEditor[0], window.location.origin).toString() : null;
+    const urlEditor = linkEditor ? resolveSeiUrl(linkEditor[0], urlGerarMemo) : null;
 
     if (urlEditor) {
       const resPageEditor = await fetch(urlEditor);
@@ -545,7 +570,7 @@ async function executeFullAutomation(pkg) {
       postEditorData.set('id_procedimento', idProcedimento);
       postEditorData.set('hdnIdProcedimento', idProcedimento);
 
-      const actionEditor = formEditor ? new URL(formEditor.getAttribute('action') || urlEditor, window.location.origin).toString() : urlEditor;
+      const actionEditor = resolveSeiUrl(formEditor?.getAttribute('action') || urlEditor, urlEditor);
       await fetch(actionEditor, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -564,12 +589,12 @@ async function executeFullAutomation(pkg) {
     const matchAssinar = textSaveMemo.match(/controlador\.php\?acao=documento_assinar[^"'\s<>]+/i);
     const hashAssinar = matchAssinar ? '' : (new URL(urlGerarMemo).searchParams.get('infra_hash') || '');
     const urlAssinatura = matchAssinar 
-      ? new URL(matchAssinar[0], window.location.origin).toString()
-      : `/sei/controlador.php?acao=documento_assinar&id_documento=${idDocumentoMemo}&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}&infra_hash=${hashAssinar}`;
+      ? resolveSeiUrl(matchAssinar[0], urlGerarMemo)
+      : resolveSeiUrl(`controlador.php?acao=documento_assinar&id_documento=${idDocumentoMemo}&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}&infra_hash=${hashAssinar}`, urlGerarMemo);
 
     // Link para tramitação posterior
     const matchEnviar = textSaveProc.match(/controlador\.php\?acao=procedimento_enviar[^"'\s<>]+/i);
-    const urlTramitar = matchEnviar ? new URL(matchEnviar[0], window.location.origin).toString() : null;
+    const urlTramitar = matchEnviar ? resolveSeiUrl(matchEnviar[0], resSaveProc.url) : null;
 
     const area = document.getElementById('netuno-status-area');
     if (area) {
@@ -619,11 +644,11 @@ async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar
     if (!urlEnviar) {
       // Localiza o link de envio na página atual
       const linkEnv = document.querySelector('a[href*="procedimento_enviar"]');
-      if (linkEnv) urlEnviar = linkEnv.href;
+      if (linkEnv) urlEnviar = resolveSeiUrl(linkEnv.getAttribute('href'));
     }
 
     if (!urlEnviar) {
-      urlEnviar = `/sei/controlador.php?acao=procedimento_enviar&id_procedimento=${idProcedimento}`;
+      urlEnviar = resolveSeiUrl(`controlador.php?acao=procedimento_enviar&id_procedimento=${idProcedimento}`);
     }
 
     const resPageEnviar = await fetch(urlEnviar);
@@ -646,7 +671,7 @@ async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar
     postEnviarData.set('hdnIdProtocolos', idProcedimento);
     postEnviarData.set('hdnUnidades', `${unidadeDestinoId}±CBMDF/COESP/GPCIU/SEHUR - Seção de Hidrantes Urbanos`);
 
-    const actionEnviar = formEnviar ? new URL(formEnviar.getAttribute('action') || urlEnviar, window.location.origin).toString() : urlEnviar;
+    const actionEnviar = resolveSeiUrl(formEnviar?.getAttribute('action') || urlEnviar, urlEnviar);
     await fetch(actionEnviar, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
