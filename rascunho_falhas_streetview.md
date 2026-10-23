@@ -83,3 +83,28 @@
 - LAS00126
 - LAS00127
 - LAS00131
+
+## Lote Sudoeste e Ceilândia (23/10/2026)
+- [Sudoeste e Octogonal] OCT00003: Sem cobertura Street View inicial
+- [Sudoeste e Octogonal] OCT00004: Sem cobertura Street View inicial
+- [Sudoeste e Octogonal] OCT00006: Sem cobertura Street View inicial
+- [Sudoeste e Octogonal] OCT00010: Sem cobertura Street View inicial
+- [Sudoeste e Octogonal] OCT00011: Sem cobertura Street View inicial
+- [Sudoeste e Octogonal] OCT00012: Sem cobertura Street View inicial
+- [Sudoeste e Octogonal] SUD00082: Sem cobertura Street View inicial
+- [Ceilândia] CEI00021: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00023: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00030: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00035: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00038: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00039: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00040: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00053: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00061: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00064: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00070: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00074: Sem cobertura Street View inicial
+- [Ceilândia] CEI00081: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00095: Sem cobertura Street View inicial
+- [Ceilândia] CEI00100: Fallback GPS (baixa confiança da IA)
+- [Ceilândia] CEI00131: Fallback GPS (baixa confiança da IA)
