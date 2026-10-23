@@ -2028,7 +2028,8 @@ syncPreferences({ filters: filters });
     const senha = (e.target.senha.value || '').trim();
     
     // Validação de acesso
-    if (senha !== '123' && senha !== 'senha123' && senha !== 'admin') {
+    const validPasswords = ['123456', '123', 'senha123', 'admin'];
+    if (!validPasswords.includes(senha)) {
       toast.error('Matrícula ou senha incorretos.');
       return;
     }
@@ -2065,6 +2066,10 @@ syncPreferences({ filters: filters });
         user = { ...foundRbac };
       } else if (mat.toLowerCase() === '1997400') {
         user = { matricula: '1997400', nome: 'Sgt Roméro', role: 'admin' };
+      } else if (mat.toLowerCase() === '1306198') {
+        user = { matricula: '1306198', nome: '1º Sgt Ribeiro', role: 'vistoriador' };
+      } else if (mat.toLowerCase() === '1406228') {
+        user = { matricula: '1406228', nome: '1º Sgt Barreira', role: 'vistoriador' };
       } else {
         // Regra de Negócio CBMDF: A princípio todos os militares entram automaticamente como vistoriador
         user = { matricula: mat, nome: `Militar ${mat}`, role: 'vistoriador' };

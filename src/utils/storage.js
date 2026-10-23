@@ -345,8 +345,14 @@ export const saveActiveMissionState = (state) => {
 
 const RBAC_USERS_KEY = 'netuno_rbac_users';
 
+const INITIAL_RBAC_USERS = [
+  { matricula: '1997400', nome: 'Sgt Roméro', role: 'admin' },
+  { matricula: '1306198', nome: '1º Sgt Ribeiro', role: 'vistoriador' },
+  { matricula: '1406228', nome: '1º Sgt Barreira', role: 'vistoriador' },
+];
+
 export const loadRbacUsers = () => {
-  const initialAdmin = { matricula: '1997400', nome: 'Sgt Roméro', role: 'admin' };
+  const initialAdmin = INITIAL_RBAC_USERS[0];
 
   try {
     const data = localStorage.getItem(RBAC_USERS_KEY);
@@ -364,6 +370,15 @@ export const loadRbacUsers = () => {
           changed = true;
         }
 
+        // Assegura que os militares padrão estejam na lista
+        INITIAL_RBAC_USERS.slice(1).forEach(defUser => {
+          const exists = parsed.some(u => String(u.matricula).toLowerCase() === String(defUser.matricula).toLowerCase());
+          if (!exists) {
+            parsed.push(defUser);
+            changed = true;
+          }
+        });
+
         if (changed) {
           saveRbacUsers(parsed);
         }
@@ -373,7 +388,7 @@ export const loadRbacUsers = () => {
   } catch (error) {
     console.error("Erro ao ler usuários RBAC", error);
   }
-  return [initialAdmin];
+  return [...INITIAL_RBAC_USERS];
 };
 
 export const saveRbacUsers = (users) => {
@@ -385,16 +400,20 @@ export const saveRbacUsers = (users) => {
  */
 export const mergeRbacUsers = (localUsers = [], cloudUsers = []) => {
   const map = new Map();
-  const initialAdmin = { matricula: '1997400', nome: 'Sgt Roméro', role: 'admin' };
-  map.set('1997400', initialAdmin);
+  const initialAdmin = INITIAL_RBAC_USERS[0];
+  INITIAL_RBAC_USERS.forEach(u => map.set(String(u.matricula).toLowerCase(), u));
 
   (localUsers || []).forEach(u => {
-    if (u && u.matricula) map.set(String(u.matricula).toLowerCase(), u);
+    if (u && u.matricula) {
+      const existing = map.get(String(u.matricula).toLowerCase());
+      map.set(String(u.matricula).toLowerCase(), { ...existing, ...u });
+    }
   });
 
   (cloudUsers || []).forEach(u => {
     if (u && u.matricula) {
-      map.set(String(u.matricula).toLowerCase(), u);
+      const existing = map.get(String(u.matricula).toLowerCase());
+      map.set(String(u.matricula).toLowerCase(), { ...existing, ...u });
     }
   });
 
