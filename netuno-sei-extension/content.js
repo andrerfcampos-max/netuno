@@ -60,7 +60,10 @@ function renderFloatingCard(pkg) {
       <div style="font-weight: bold; font-size: 13px; color: #f8fafc; margin-top: 2px;">
         Relatório CAESB: ${cidadeText}${raText}
       </div>
-      <div style="color: #38bdf8; font-size: 11px; margin-top: 4px;">
+      <div style="color: #34d399; font-size: 11px; margin-top: 4px; font-weight: 500;">
+        Processo: CBMDF - Serviço Operacional
+      </div>
+      <div style="color: #38bdf8; font-size: 11px; margin-top: 2px;">
         Destino: CBMDF/COESP/GPCIU/SEHUR
       </div>
     </div>
@@ -94,57 +97,153 @@ function updateStatus(stepText, color = '#38bdf8') {
   }
 }
 
-// Localiza a URL válida de geração do processo navegando organicamente pelos menus do SEI
-async function getUrlGerarProcessoFiscalizacao() {
+// Extrai mensagens amigáveis de alerta ou erro do HTML do SEI
+function extractSeiErrorMessage(htmlOrDoc) {
+  if (!htmlOrDoc) return null;
+  const doc = typeof htmlOrDoc === 'string' ? new DOMParser().parseFromString(htmlOrDoc, 'text/html') : htmlOrDoc;
+  const msgDiv = doc.querySelector('#divInfraMensagens, .infraMensagem, .alert-danger, .infraDivMensagem, #infraMensagem');
+  if (msgDiv && msgDiv.textContent.trim()) {
+    return msgDiv.textContent.trim().replace(/\s+/g, ' ');
+  }
+  const text = typeof htmlOrDoc === 'string' ? htmlOrDoc : doc.documentElement.innerHTML;
+  const alertMatch = text.match(/alert\s*\(\s*["']([^"']+)["']\s*\)/i);
+  if (alertMatch) return alertMatch[1].replace(/\\n/g, ' ').trim();
+  return null;
+}
+
+// Obtém o formulário oficial de geração de processo no SEI DF
+async function obterFormularioGerarProcesso() {
   // 1. Procura o link "Iniciar Processo" no menu lateral
   const linkMenu = document.querySelector('a[link="procedimento_escolher_tipo"], a[href*="acao=procedimento_escolher_tipo"]');
   if (!linkMenu) {
-    throw new Error('Link "Iniciar Processo" não encontrado no menu do SEI. Verifique se está logado na unidade SUOMA.');
+    throw new Error('Link "Iniciar Processo" não encontrado no menu do SEI. Certifique-se de que está na tela principal do SEI na unidade SUOMA.');
   }
 
-  updateStatus('⏳ Localizando catálogo de processos na SUOMA...', '#38bdf8');
+  updateStatus('⏳ Localizando catálogo de processos na unidade...', '#38bdf8');
   const resEscolher = await fetch(linkMenu.href);
   const htmlEscolher = await resEscolher.text();
   let docEscolher = new DOMParser().parseFromString(htmlEscolher, 'text/html');
 
-  // 2. Procura pelo tipo 100000446 ou "Fiscalização de Hidrantes"
-  let linkTipo = docEscolher.querySelector('a[href*="id_tipo_procedimento=100000446"]');
-  if (!linkTipo) {
-    const allLinks = Array.from(docEscolher.querySelectorAll('a[href*="procedimento_gerar"]'));
-    linkTipo = allLinks.find(a => /hidrante|fiscaliza/i.test(a.textContent));
+  let formEscolher = docEscolher.querySelector('form#frmProcedimentoEscolherTipo') || docEscolher.querySelector('form');
+  if (!formEscolher) {
+    throw new Error('Formulário de catálogo de processos não encontrado no SEI.');
   }
 
-  // 3. Se não encontrou na lista curta, busca no link de exibir todos os tipos
-  if (!linkTipo) {
-    const linkTodos = docEscolher.querySelector('#ancExibirTodosTipos, a[href*="todos_tipos"], a[href*="todos="], a[onclick*="todos"]');
-    if (linkTodos && linkTodos.href) {
-      updateStatus('⏳ Carregando todos os tipos de processos do SEI...', '#38bdf8');
-      const resTodos = await fetch(linkTodos.href);
-      const htmlTodos = await resTodos.text();
-      docEscolher = new DOMParser().parseFromString(htmlTodos, 'text/html');
+  // Função auxiliar para identificar o tipo de processo correto na tabela do SEI
+  function findTipoProcesso(doc) {
+    const rows = Array.from(doc.querySelectorAll('#tblTipoProcedimento tr, tr[data-desc], tr.infraTrClara, tr.infraTrEscura'));
 
-      linkTipo = docEscolher.querySelector('a[href*="id_tipo_procedimento=100000446"]');
-      if (!linkTipo) {
-        const allLinksTodos = Array.from(docEscolher.querySelectorAll('a[href*="procedimento_gerar"]'));
-        linkTipo = allLinksTodos.find(a => /hidrante|fiscaliza/i.test(a.textContent));
+    // 1ª Prioridade: CBMDF - Serviço Operacional (padrão oficial CBMDF/SUOMA/SEHUR para hidrantes)
+    for (const r of rows) {
+      const desc = (r.getAttribute('data-desc') || r.textContent || '').toLowerCase();
+      if (desc.includes('serviço operacional') || desc.includes('servico operacional') || (desc.includes('cbmdf') && desc.includes('operacional'))) {
+        const input = r.querySelector('input.infraCheckbox, input[type="checkbox"]');
+        const onclick = r.querySelector('a[onclick*="escolher"]')?.getAttribute('onclick') || '';
+        const m = onclick.match(/escolher\((\d+)\)/);
+        const id = input?.value || (m ? m[1] : null);
+        if (id) return { id, nome: 'CBMDF - Serviço Operacional' };
       }
+    }
+
+    // 2ª Prioridade: Qualquer tipo contendo "hidrante" ou "fiscaliza"
+    for (const r of rows) {
+      const desc = (r.getAttribute('data-desc') || r.textContent || '').toLowerCase();
+      if (desc.includes('hidrante') || desc.includes('fiscaliza')) {
+        const input = r.querySelector('input.infraCheckbox, input[type="checkbox"]');
+        const onclick = r.querySelector('a[onclick*="escolher"]')?.getAttribute('onclick') || '';
+        const m = onclick.match(/escolher\((\d+)\)/);
+        const id = input?.value || (m ? m[1] : null);
+        const nome = r.textContent.trim().replace(/\s+/g, ' ');
+        if (id) return { id, nome };
+      }
+    }
+
+    // 3ª Prioridade: Verificação por ID canônico 100000446
+    const el446 = doc.querySelector('input[value="100000446"], a[onclick*="100000446"]');
+    if (el446) return { id: '100000446', nome: 'CBMDF - Serviço Operacional' };
+
+    // 4ª Prioridade: CBMDF - Serviço Administrativo Diário (ID 100000363)
+    for (const r of rows) {
+      const desc = (r.getAttribute('data-desc') || r.textContent || '').toLowerCase();
+      if (desc.includes('servico administrativo') || desc.includes('serviço administrativo')) {
+        const input = r.querySelector('input.infraCheckbox, input[type="checkbox"]');
+        const onclick = r.querySelector('a[onclick*="escolher"]')?.getAttribute('onclick') || '';
+        const m = onclick.match(/escolher\((\d+)\)/);
+        const id = input?.value || (m ? m[1] : null);
+        if (id) return { id, nome: 'CBMDF - Serviço Administrativo Diário' };
+      }
+    }
+
+    return null;
+  }
+
+  let tipoEncontrado = findTipoProcesso(docEscolher);
+
+  // Se não encontrou nos favoritos iniciais, carrega a lista completa usando o botão (+) nativo do SEI
+  if (!tipoEncontrado) {
+    updateStatus('⏳ Carregando catálogo completo de tipos de processo do SEI...', '#38bdf8');
+    const postTodos = new URLSearchParams();
+    formEscolher.querySelectorAll('input').forEach(el => {
+      if (el.name) postTodos.set(el.name, el.value || '');
+    });
+    postTodos.set('hdnFiltroTipoProcedimento', 'T');
+    postTodos.set('hdnIdTipoProcedimento', '');
+
+    const actionUrl = new URL(formEscolher.getAttribute('action') || linkMenu.href, window.location.origin).toString();
+    const resTodos = await fetch(actionUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: postTodos.toString()
+    });
+    const htmlTodos = await resTodos.text();
+    const docTodos = new DOMParser().parseFromString(htmlTodos, 'text/html');
+
+    tipoEncontrado = findTipoProcesso(docTodos);
+    if (tipoEncontrado) {
+      docEscolher = docTodos;
+      formEscolher = docTodos.querySelector('form#frmProcedimentoEscolherTipo') || docTodos.querySelector('form');
     }
   }
 
-  // 4. Se encontrou link específico, usa a URL completa com o hash assinado
-  if (linkTipo) {
-    return new URL(linkTipo.getAttribute('href'), window.location.origin).toString();
+  const idTipoProc = tipoEncontrado ? tipoEncontrado.id : '100000446';
+  const nomeTipoProc = tipoEncontrado ? tipoEncontrado.nome : 'CBMDF - Serviço Operacional';
+
+  console.log(`[Netuno SEI] Tipo selecionado: ${nomeTipoProc} (${idTipoProc})`);
+  updateStatus(`⏳ Abrindo formulário para "${nomeTipoProc}"...`, '#38bdf8');
+
+  // Submete a seleção do tipo no formulário nativo do SEI (simula o escolher(id) nativo)
+  const postEscolher = new URLSearchParams();
+  formEscolher.querySelectorAll('input').forEach(el => {
+    if (el.name) postEscolher.set(el.name, el.value || '');
+  });
+  postEscolher.set('hdnIdTipoProcedimento', idTipoProc);
+  postEscolher.set('hdnFiltroTipoProcedimento', formEscolher.querySelector('#hdnFiltroTipoProcedimento')?.value || 'U');
+
+  const actionEscolher = new URL(formEscolher.getAttribute('action') || linkMenu.href, window.location.origin).toString();
+  const resGerar = await fetch(actionEscolher, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: postEscolher.toString()
+  });
+
+  const htmlGerar = await resGerar.text();
+  const docGerar = new DOMParser().parseFromString(htmlGerar, 'text/html');
+  const formProc = docGerar.querySelector('form#frmProcedimentoGerar') || docGerar.querySelector('form');
+
+  if (!formProc) {
+    const erroSei = extractSeiErrorMessage(htmlGerar);
+    throw new Error(erroSei || `Não foi possível carregar o formulário para "${nomeTipoProc}".`);
   }
 
-  // 5. Fallback estruturado caso o SEI use a mesma página com query param
-  const anyGerar = docEscolher.querySelector('a[href*="procedimento_gerar"]');
-  if (anyGerar) {
-    const u = new URL(anyGerar.href, window.location.origin);
-    u.searchParams.set('id_tipo_procedimento', '100000446');
-    return u.toString();
-  }
+  const actionProc = new URL(formProc.getAttribute('action') || resGerar.url || actionEscolher, window.location.origin).toString();
 
-  throw new Error('Tipo de processo "Fiscalização de Hidrantes Urbanos" não encontrado na unidade SUOMA.');
+  return {
+    docProc: docGerar,
+    formProc,
+    actionProc,
+    idTipoProc,
+    nomeTipoProc
+  };
 }
 
 // Motor de Automação no SEI
@@ -165,17 +264,9 @@ async function executeFullAutomation(pkg) {
     // ----------------------------------------------------
     // ETAPA 1: Autuação do Processo Administrativo
     // ----------------------------------------------------
-    updateStatus('⏳ 1/4: Obtendo formulário de processo de Fiscalização...', '#38bdf8');
+    updateStatus('⏳ 1/4: Obtendo formulário de processo...', '#38bdf8');
     
-    const urlGerarProc = await getUrlGerarProcessoFiscalizacao();
-    const resPageProc = await fetch(urlGerarProc);
-    const htmlProc = await resPageProc.text();
-    const docProc = new DOMParser().parseFromString(htmlProc, 'text/html');
-
-    const formProc = docProc.querySelector('form#frmProcedimentoGerar') || docProc.querySelector('form');
-    if (!formProc) {
-      throw new Error('Não foi possível carregar o formulário de geração de processo do SEI.');
-    }
+    const { docProc, formProc, actionProc, idTipoProc, nomeTipoProc } = await obterFormularioGerarProcesso();
 
     const postProcData = new URLSearchParams();
     formProc.querySelectorAll('input, select, textarea').forEach(el => {
@@ -184,8 +275,8 @@ async function executeFullAutomation(pkg) {
 
     postProcData.set('hdnInfraTipoPagina', '1');
     postProcData.set('rdoProtocolo', 'A');
-    postProcData.set('selTipoProcedimento', '100000446');
-    postProcData.set('hdnIdTipoProcedimento', '100000446');
+    postProcData.set('selTipoProcedimento', idTipoProc);
+    postProcData.set('hdnIdTipoProcedimento', idTipoProc);
     postProcData.set('txtDescricao', descProcesso);
     postProcData.set('rdoNivelAcesso', '0'); // Público
     postProcData.set('hdnFlagProcedimentoCadastro', '2');
@@ -193,11 +284,18 @@ async function executeFullAutomation(pkg) {
     postProcData.set('txtInteressadoProcedimento', 'CORPO DE BOMBEIROS MILITAR DO DISTRITO FEDERAL');
     postProcData.set('hdnAssuntos', '339±081.00 - CBMDF - CORPO DE BOMBEIROS MILITAR DO DISTRITO FEDERAL');
 
-    updateStatus('⏳ 1/4: Salvando autuação do processo no SEI...', '#38bdf8');
-    const actionProc = formProc.getAttribute('action') || urlGerarProc;
-    const fullActionProc = new URL(actionProc, window.location.origin).toString();
+    if (!postProcData.get('selTipoPrioridade') || postProcData.get('selTipoPrioridade') === '') {
+      postProcData.set('selTipoPrioridade', 'null');
+    }
+    if (!postProcData.get('selGrauSigilo') || postProcData.get('selGrauSigilo') === '') {
+      postProcData.set('selGrauSigilo', 'null');
+    }
+    if (!postProcData.get('selHipoteseLegal') || postProcData.get('selHipoteseLegal') === '') {
+      postProcData.set('selHipoteseLegal', 'null');
+    }
 
-    const resSaveProc = await fetch(fullActionProc, {
+    updateStatus(`⏳ 1/4: Salvando autuação do processo (${nomeTipoProc})...`, '#38bdf8');
+    const resSaveProc = await fetch(actionProc, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: postProcData.toString()
@@ -210,7 +308,8 @@ async function executeFullAutomation(pkg) {
     const matchNumProc = textSaveProc.match(/(\d{5}-\d{8}\/\d{4}-\d{2})/);
 
     if (!matchIdProc) {
-      throw new Error('Processo gerado, mas não foi possível extrair o ID do procedimento do SEI.');
+      const msgErro = extractSeiErrorMessage(textSaveProc);
+      throw new Error(msgErro || 'Processo gerado, mas não foi possível extrair o ID do procedimento do SEI.');
     }
 
     const idProcedimento = matchIdProc[1];
@@ -235,6 +334,24 @@ async function executeFullAutomation(pkg) {
     }
 
     if (!urlEscolherDoc) {
+      try {
+        const urlArvore = `${window.location.origin}/sei/controlador.php?acao=procedimento_trabalhar&id_procedimento=${idProcedimento}&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}`;
+        const resArvore = await fetch(urlArvore);
+        const htmlArvore = await resArvore.text();
+        const docArvore = new DOMParser().parseFromString(htmlArvore, 'text/html');
+        const linkArvore = docArvore.querySelector('a[href*="documento_escolher_tipo"], a[title*="Incluir Documento"], a[aria-label*="Incluir Documento"]');
+        if (linkArvore) {
+          urlEscolherDoc = new URL(linkArvore.getAttribute('href'), window.location.origin).toString();
+        } else {
+          const m = htmlArvore.match(/controlador\.php\?acao=documento_escolher_tipo[^"'\s<>]+/i);
+          if (m) urlEscolherDoc = new URL(m[0], window.location.origin).toString();
+        }
+      } catch (errArvore) {
+        console.warn('[Netuno SEI] Falha ao consultar árvore do processo:', errArvore);
+      }
+    }
+
+    if (!urlEscolherDoc) {
       throw new Error('Não foi possível localizar o botão "Incluir Documento" no processo recém-criado.');
     }
 
@@ -246,14 +363,21 @@ async function executeFullAutomation(pkg) {
     let linkDocExterno = docEscolherDoc.querySelector('a[href*="documento_receber"], a[href*="id_serie=2056"]');
     if (!linkDocExterno) {
       const allDocLinks = Array.from(docEscolherDoc.querySelectorAll('a'));
-      linkDocExterno = allDocLinks.find(a => /externo/i.test(a.textContent) || /documento_receber/i.test(a.href));
+      linkDocExterno = allDocLinks.find(a => /externo/i.test(a.textContent) || /documento_receber/i.test(a.href) || /2056/.test(a.getAttribute('onclick') || ''));
     }
 
-    if (!linkDocExterno) {
-      throw new Error('Opção de documento "Externo" (Relatório) não encontrada no catálogo de documentos do SEI.');
+    let urlDocReceber = linkDocExterno && linkDocExterno.getAttribute('href') && !linkDocExterno.getAttribute('href').startsWith('#')
+      ? new URL(linkDocExterno.getAttribute('href'), window.location.origin).toString()
+      : null;
+
+    if (!urlDocReceber) {
+      const u = new URL(urlEscolherDoc);
+      u.searchParams.set('acao', 'documento_receber');
+      u.searchParams.set('acao_origem', 'documento_escolher_tipo');
+      u.searchParams.set('id_serie', '2056');
+      urlDocReceber = u.toString();
     }
 
-    const urlDocReceber = new URL(linkDocExterno.getAttribute('href'), window.location.origin).toString();
     const resPageDocReceber = await fetch(urlDocReceber);
     const htmlDocReceber = await resPageDocReceber.text();
     const docDocReceber = new DOMParser().parseFromString(htmlDocReceber, 'text/html');
@@ -273,7 +397,10 @@ async function executeFullAutomation(pkg) {
     const fileName = `Relatorio_Vistoria_CAESB_${cidade.replace(/\s+/g, '_')}.pdf`;
     uploadFormData.append('filArquivo', pdfBlob, fileName);
 
-    const uploadAction = formDoc?.querySelector('input[name="hdnUploadUrl"]')?.value || `/sei/controlador.php?acao=documento_upload_anexo`;
+    const hashDocReceber = new URL(urlDocReceber).searchParams.get('infra_hash') || '';
+    const uploadAction = formDoc?.querySelector('input[name="hdnUploadUrl"]')?.value || 
+      `/sei/controlador.php?acao=documento_upload_anexo&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}&infra_hash=${hashDocReceber}`;
+    
     const resUpload = await fetch(new URL(uploadAction, window.location.origin).toString(), {
       method: 'POST',
       body: uploadFormData
@@ -302,6 +429,10 @@ async function executeFullAutomation(pkg) {
     postDocData.set('hdnStaDocumento', 'X');
     postDocData.set('hdnIdProcedimento', idProcedimento);
     postDocData.set('hdnAnexos', anexoToken);
+    postDocData.set('sbmSalvar', 'Salvar');
+    if (!postDocData.get('selHipoteseLegal')) {
+      postDocData.set('selHipoteseLegal', 'null');
+    }
 
     const actionSaveDoc = formDoc ? new URL(formDoc.getAttribute('action') || urlDocReceber, window.location.origin).toString() : urlDocReceber;
     const resSaveDoc = await fetch(actionSaveDoc, {
@@ -328,14 +459,21 @@ async function executeFullAutomation(pkg) {
     let linkMemo = docEscolherMemo.querySelector('a[href*="id_serie=165"]');
     if (!linkMemo) {
       const allMemoLinks = Array.from(docEscolherMemo.querySelectorAll('a'));
-      linkMemo = allMemoLinks.find(a => /memorando/i.test(a.textContent) && a.href.includes('documento_gerar'));
+      linkMemo = allMemoLinks.find(a => /memorando/i.test(a.textContent) && (a.href.includes('documento_gerar') || /165/.test(a.getAttribute('onclick') || '')));
     }
 
-    if (!linkMemo) {
-      throw new Error('Tipo de documento "Memorando" (Série 165) não encontrado no catálogo do SEI.');
+    let urlGerarMemo = linkMemo && linkMemo.getAttribute('href') && !linkMemo.getAttribute('href').startsWith('#')
+      ? new URL(linkMemo.getAttribute('href'), window.location.origin).toString()
+      : null;
+
+    if (!urlGerarMemo) {
+      const u = new URL(urlEscolherDoc);
+      u.searchParams.set('acao', 'documento_gerar');
+      u.searchParams.set('acao_origem', 'documento_escolher_tipo');
+      u.searchParams.set('id_serie', '165');
+      urlGerarMemo = u.toString();
     }
 
-    const urlGerarMemo = new URL(linkMemo.getAttribute('href'), window.location.origin).toString();
     const resPageMemo = await fetch(urlGerarMemo);
     const htmlMemo = await resPageMemo.text();
     const docMemo = new DOMParser().parseFromString(htmlMemo, 'text/html');
@@ -356,6 +494,10 @@ async function executeFullAutomation(pkg) {
     postMemoData.set('hdnIdSerie', '165');
     postMemoData.set('hdnStaDocumento', 'I');
     postMemoData.set('hdnIdProcedimento', idProcedimento);
+    postMemoData.set('sbmSalvar', 'Salvar');
+    if (!postMemoData.get('selHipoteseLegal')) {
+      postMemoData.set('selHipoteseLegal', 'null');
+    }
 
     const actionSaveMemo = formMemo ? new URL(formMemo.getAttribute('action') || urlGerarMemo, window.location.origin).toString() : urlGerarMemo;
     const resSaveMemo = await fetch(actionSaveMemo, {
@@ -367,7 +509,8 @@ async function executeFullAutomation(pkg) {
     const textSaveMemo = await resSaveMemo.text();
     const matchIdMemo = textSaveMemo.match(/id_documento=(\d+)/i) || resSaveMemo.url.match(/id_documento=(\d+)/i);
     if (!matchIdMemo) {
-      throw new Error('Memorando criado, mas ID do documento não retornado pelo SEI.');
+      const msgErro = extractSeiErrorMessage(textSaveMemo);
+      throw new Error(msgErro || 'Memorando criado, mas ID do documento não retornado pelo SEI.');
     }
     const idDocumentoMemo = matchIdMemo[1];
 
@@ -419,9 +562,10 @@ async function executeFullAutomation(pkg) {
 
     // Localiza o link de assinar documento
     const matchAssinar = textSaveMemo.match(/controlador\.php\?acao=documento_assinar[^"'\s<>]+/i);
+    const hashAssinar = matchAssinar ? '' : (new URL(urlGerarMemo).searchParams.get('infra_hash') || '');
     const urlAssinatura = matchAssinar 
       ? new URL(matchAssinar[0], window.location.origin).toString()
-      : `/sei/controlador.php?acao=documento_assinar&id_documento=${idDocumentoMemo}`;
+      : `/sei/controlador.php?acao=documento_assinar&id_documento=${idDocumentoMemo}&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}&infra_hash=${hashAssinar}`;
 
     // Link para tramitação posterior
     const matchEnviar = textSaveProc.match(/controlador\.php\?acao=procedimento_enviar[^"'\s<>]+/i);
@@ -435,6 +579,7 @@ async function executeFullAutomation(pkg) {
         </div>
         <div style="color: #cbd5e1; font-size: 11px; margin-bottom: 8px;">
           Processo: <strong style="color: white; font-family: monospace;">${numeroProcesso}</strong><br/>
+          Tipo: <strong style="color: #a7f3d0;">${nomeTipoProc}</strong><br/>
           Relatório CAESB: <strong style="color: #38bdf8; font-family: monospace;">Nº ${numeroSeiRelatorio}</strong><br/>
           Memorando: <strong style="color: #a7f3d0;">Endereçado ao Cel. Comandante</strong><br/><br/>
           1. A janela de assinatura do SEI foi aberta na tela.<br/>
