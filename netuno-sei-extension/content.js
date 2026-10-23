@@ -120,6 +120,43 @@ function resolveSeiUrl(relativeOrAbsoluteUrl, fallbackBase = window.location.hre
   return resolved;
 }
 
+// Codifica strings compatíveis com ISO-8859-1 (Latin-1) nativo do SEI DF
+function encodeIso88591Url(str) {
+  if (str === null || str === undefined) return '';
+  const s = String(str);
+  let res = '';
+  for (let i = 0; i < s.length; i++) {
+    const code = s.charCodeAt(i);
+    if (
+      (code >= 0x41 && code <= 0x5a) || // A-Z
+      (code >= 0x61 && code <= 0x7a) || // a-z
+      (code >= 0x30 && code <= 0x39) || // 0-9
+      code === 0x2d || code === 0x5f || code === 0x2e || code === 0x7e // - _ . ~
+    ) {
+      res += s[i];
+    } else if (code === 0x20) {
+      res += '+';
+    } else if (code <= 0xff) {
+      res += '%' + code.toString(16).toUpperCase().padStart(2, '0');
+    } else {
+      res += encodeURIComponent(s[i]);
+    }
+  }
+  return res;
+}
+
+// Codifica parâmetros em application/x-www-form-urlencoded estritamente compatível com ISO-8859-1 do SEI
+function encodeSeiFormParams(params) {
+  const parts = [];
+  const entries = params instanceof URLSearchParams ? params.entries() : Object.entries(params);
+  for (const [key, value] of entries) {
+    const k = encodeIso88591Url(key);
+    const v = encodeIso88591Url(value);
+    parts.push(`${k}=${v}`);
+  }
+  return parts.join('&');
+}
+
 // Obtém o formulário de trabalho da página ignorando o formulário de pesquisa rápida do cabeçalho
 function getSeiWorkForm(doc, specificSelector = '') {
   if (!doc) return null;
@@ -139,7 +176,7 @@ function getSeiWorkForm(doc, specificSelector = '') {
 function extractSeiErrorMessage(htmlOrDoc) {
   if (!htmlOrDoc) return null;
   const doc = typeof htmlOrDoc === 'string' ? new DOMParser().parseFromString(htmlOrDoc, 'text/html') : htmlOrDoc;
-  const msgDiv = doc.querySelector('#divInfraMensagens, .infraMensagem, .alert-danger, .infraDivMensagem, #infraMensagem');
+  const msgDiv = doc.querySelector('#divInfraExcecao, .infraExcecao, #divInfraMensagens, .infraMensagem, .alert-danger, .infraDivMensagem, #infraMensagem');
   if (msgDiv && msgDiv.textContent.trim()) {
     return msgDiv.textContent.trim().replace(/\s+/g, ' ');
   }
@@ -231,8 +268,8 @@ async function obterFormularioGerarProcesso() {
     const actionUrl = resolveSeiUrl(formEscolher.getAttribute('action') || urlMenuEscolher, urlMenuEscolher);
     const resTodos = await fetch(actionUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: postTodos.toString()
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=iso-8859-1' },
+      body: encodeSeiFormParams(postTodos)
     });
     const htmlTodos = await resTodos.text();
     const docTodos = new DOMParser().parseFromString(htmlTodos, 'text/html');
@@ -240,7 +277,7 @@ async function obterFormularioGerarProcesso() {
     tipoEncontrado = findTipoProcesso(docTodos);
     if (tipoEncontrado) {
       docEscolher = docTodos;
-      formEscolher = docTodos.querySelector('form#frmProcedimentoEscolherTipo') || docTodos.querySelector('form');
+      formEscolher = getSeiWorkForm(docTodos, 'form#frmProcedimentoEscolherTipo');
     }
   }
 
@@ -261,8 +298,8 @@ async function obterFormularioGerarProcesso() {
   const actionEscolher = resolveSeiUrl(formEscolher.getAttribute('action') || urlMenuEscolher, urlMenuEscolher);
   const resGerar = await fetch(actionEscolher, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: postEscolher.toString()
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=iso-8859-1' },
+    body: encodeSeiFormParams(postEscolher)
   });
 
   const htmlGerar = await resGerar.text();
@@ -348,23 +385,42 @@ async function executeFullAutomation(pkg) {
     updateStatus(`⏳ 1/4: Salvando autuação do processo (${nomeTipoProc})...`, '#38bdf8');
     const resSaveProc = await fetch(actionProc, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: postProcData.toString()
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=iso-8859-1' },
+      body: encodeSeiFormParams(postProcData)
     });
 
     const textSaveProc = await resSaveProc.text();
     const docProcessoSalvo = new DOMParser().parseFromString(textSaveProc, 'text/html');
 
-    const matchIdProc = textSaveProc.match(/id_procedimento=(\d+)/i) || resSaveProc.url.match(/id_procedimento=(\d+)/i);
+    const matchIdProc = textSaveProc.match(/id_procedimento=(\d+)/i) || 
+                        resSaveProc.url.match(/id_procedimento=(\d+)/i) ||
+                        textSaveProc.match(/id_protocolo=(\d+)/i);
     const matchNumProc = textSaveProc.match(/(\d{5}-\d{8}\/\d{4}-\d{2})/);
 
-    if (!matchIdProc) {
+    let idProcedimento = matchIdProc ? matchIdProc[1] : null;
+    let numeroProcesso = matchNumProc ? matchNumProc[1] : null;
+
+    // Se identificou o número do processo mas o ID não veio direto no HTML, busca na lista da unidade
+    if (!idProcedimento && numeroProcesso) {
+      try {
+        const urlCtrl = resolveSeiUrl(`controlador.php?acao=procedimento_controlar&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}`);
+        const resCtrl = await fetch(urlCtrl);
+        const htmlCtrl = await resCtrl.text();
+        const mId = htmlCtrl.match(new RegExp(`id_procedimento=(\\d+)[^>]*>${numeroProcesso}`, 'i')) ||
+                    htmlCtrl.match(new RegExp(`title=["']${numeroProcesso}["'][^>]*value=["'](\\d+)["']`, 'i')) ||
+                    htmlCtrl.match(new RegExp(`value=["'](\\d+)["'][^>]*title=["']${numeroProcesso}["']`, 'i'));
+        if (mId) idProcedimento = mId[1];
+      } catch (errCtrl) {
+        console.warn('[Netuno SEI] Falha ao consultar lista de processos gerados:', errCtrl);
+      }
+    }
+
+    if (!idProcedimento) {
       const msgErro = extractSeiErrorMessage(textSaveProc);
       throw new Error(msgErro || 'Processo gerado, mas não foi possível extrair o ID do procedimento do SEI.');
     }
 
-    const idProcedimento = matchIdProc[1];
-    const numeroProcesso = matchNumProc ? matchNumProc[1] : idProcedimento;
+    if (!numeroProcesso) numeroProcesso = idProcedimento;
     console.log('[Netuno SEI] Processo criado com sucesso:', numeroProcesso, 'ID:', idProcedimento);
 
     // ----------------------------------------------------
@@ -403,7 +459,7 @@ async function executeFullAutomation(pkg) {
     }
 
     if (!urlEscolherDoc) {
-      throw new Error('Não foi possível localizar o botão "Incluir Documento" no processo recém-criado.');
+      urlEscolherDoc = resolveSeiUrl(`controlador.php?acao=documento_escolher_tipo&id_procedimento=${idProcedimento}&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}`, resSaveProc.url);
     }
 
     const resPageEscolherDoc = await fetch(urlEscolherDoc);
@@ -489,13 +545,18 @@ async function executeFullAutomation(pkg) {
     const actionSaveDoc = resolveSeiUrl(formDoc?.getAttribute('action') || urlDocReceber, urlDocReceber);
     const resSaveDoc = await fetch(actionSaveDoc, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: postDocData.toString()
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=iso-8859-1' },
+      body: encodeSeiFormParams(postDocData)
     });
 
     const textSaveDoc = await resSaveDoc.text();
     const matchDocSei = textSaveDoc.match(/(\d{7,10})/);
-    const numeroSeiRelatorio = matchDocSei ? matchDocSei[1] : 'Relatório CAESB';
+    let numeroSeiRelatorio = matchDocSei ? matchDocSei[1] : null;
+    if (!numeroSeiRelatorio) {
+      const msgErroDoc = extractSeiErrorMessage(textSaveDoc);
+      if (msgErroDoc) throw new Error(`Falha ao anexar laudo: ${msgErroDoc}`);
+      numeroSeiRelatorio = 'Relatório CAESB';
+    }
     console.log('[Netuno SEI] Relatório anexado com sucesso:', numeroSeiRelatorio);
 
     // ----------------------------------------------------
@@ -554,8 +615,8 @@ async function executeFullAutomation(pkg) {
     const actionSaveMemo = resolveSeiUrl(formMemo?.getAttribute('action') || urlGerarMemo, urlGerarMemo);
     const resSaveMemo = await fetch(actionSaveMemo, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: postMemoData.toString()
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=iso-8859-1' },
+      body: encodeSeiFormParams(postMemoData)
     });
 
     const textSaveMemo = await resSaveMemo.text();
@@ -600,8 +661,8 @@ async function executeFullAutomation(pkg) {
       const actionEditor = resolveSeiUrl(formEditor?.getAttribute('action') || urlEditor, urlEditor);
       await fetch(actionEditor, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: postEditorData.toString()
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=iso-8859-1' },
+        body: encodeSeiFormParams(postEditorData)
       });
     }
 
@@ -699,11 +760,17 @@ async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar
     postEnviarData.set('hdnUnidades', `${unidadeDestinoId}±CBMDF/COESP/GPCIU/SEHUR - Seção de Hidrantes Urbanos`);
 
     const actionEnviar = resolveSeiUrl(formEnviar?.getAttribute('action') || urlEnviar, urlEnviar);
-    await fetch(actionEnviar, {
+    const resEnviar = await fetch(actionEnviar, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: postEnviarData.toString()
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=iso-8859-1' },
+      body: encodeSeiFormParams(postEnviarData)
     });
+
+    const textEnviar = await resEnviar.text();
+    const erroEnv = extractSeiErrorMessage(textEnviar);
+    if (erroEnv) {
+      throw new Error(erroEnv);
+    }
 
     updateStatus(`🎉 SUCESSO! Processo ${numeroProcesso} enviado para CBMDF/COESP/GPCIU/SEHUR mantendo cópia na SUOMA!`, '#34d399');
 

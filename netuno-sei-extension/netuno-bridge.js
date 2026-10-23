@@ -5,7 +5,7 @@ console.log('[Netuno SEI Bridge] Inicializado na página do Netuno.');
 // Informa ao Web App que a extensão está presente e ativa
 try {
   window.sessionStorage.setItem('netuno_sei_ext_installed', 'true');
-  window.postMessage({ type: 'NETUNO_SEI_EXTENSION_INSTALLED', version: '1.4' }, '*');
+  window.postMessage({ type: 'NETUNO_SEI_EXTENSION_INSTALLED', version: '1.5' }, '*');
 } catch (_) {}
 
 // Escuta mensagens do Netuno App com pacotes de relatório CAESB
