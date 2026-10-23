@@ -120,6 +120,21 @@ function resolveSeiUrl(relativeOrAbsoluteUrl, fallbackBase = window.location.hre
   return resolved;
 }
 
+// Obtém o formulário de trabalho da página ignorando o formulário de pesquisa rápida do cabeçalho
+function getSeiWorkForm(doc, specificSelector = '') {
+  if (!doc) return null;
+  if (specificSelector) {
+    const el = doc.querySelector(specificSelector);
+    if (el) return el;
+  }
+  const forms = Array.from(doc.querySelectorAll('form'));
+  return forms.find(f => {
+    const id = (f.id || '').toLowerCase();
+    const action = (f.getAttribute('action') || '').toLowerCase();
+    return id !== 'frmprotocolopesquisarapida' && !action.includes('pesquisa_rapida');
+  }) || null;
+}
+
 // Extrai mensagens amigáveis de alerta ou erro do HTML do SEI
 function extractSeiErrorMessage(htmlOrDoc) {
   if (!htmlOrDoc) return null;
@@ -252,7 +267,7 @@ async function obterFormularioGerarProcesso() {
 
   const htmlGerar = await resGerar.text();
   const docGerar = new DOMParser().parseFromString(htmlGerar, 'text/html');
-  const formProc = docGerar.querySelector('form#frmProcedimentoGerar') || docGerar.querySelector('form');
+  const formProc = getSeiWorkForm(docGerar, 'form#frmProcedimentoCadastro, form#frmProcedimentoGerar');
 
   if (!formProc) {
     const erroSei = extractSeiErrorMessage(htmlGerar);
@@ -297,6 +312,17 @@ async function executeFullAutomation(pkg) {
       if (el.name) postProcData.set(el.name, el.value || '');
     });
 
+    // Extrai o assunto já associado ao formulário ou define o padrão CBMDF
+    const selAssuntos = formProc.querySelector('#selAssuntos, select[name="selAssuntos"]');
+    let assuntoValor = '';
+    if (selAssuntos && selAssuntos.options && selAssuntos.options.length > 0) {
+      const opts = Array.from(selAssuntos.options);
+      assuntoValor = opts.map(o => `${o.value}±${o.text.trim()}`).join('¥');
+    }
+    if (!assuntoValor) {
+      assuntoValor = '339±081.00 - CBMDF - CORPO DE BOMBEIROS MILITAR DO DF';
+    }
+
     postProcData.set('hdnInfraTipoPagina', '1');
     postProcData.set('rdoProtocolo', 'A');
     postProcData.set('selTipoProcedimento', idTipoProc);
@@ -304,9 +330,10 @@ async function executeFullAutomation(pkg) {
     postProcData.set('txtDescricao', descProcesso);
     postProcData.set('rdoNivelAcesso', '0'); // Público
     postProcData.set('hdnFlagProcedimentoCadastro', '2');
+    postProcData.set('hdnAssuntos', assuntoValor);
+    postProcData.set('btnSalvar', 'Salvar');
     postProcData.set('sbmSalvar', 'Salvar');
     postProcData.set('txtInteressadoProcedimento', 'CORPO DE BOMBEIROS MILITAR DO DISTRITO FEDERAL');
-    postProcData.set('hdnAssuntos', '339±081.00 - CBMDF - CORPO DE BOMBEIROS MILITAR DO DISTRITO FEDERAL');
 
     if (!postProcData.get('selTipoPrioridade') || postProcData.get('selTipoPrioridade') === '') {
       postProcData.set('selTipoPrioridade', 'null');
@@ -405,7 +432,7 @@ async function executeFullAutomation(pkg) {
     const resPageDocReceber = await fetch(urlDocReceber);
     const htmlDocReceber = await resPageDocReceber.text();
     const docDocReceber = new DOMParser().parseFromString(htmlDocReceber, 'text/html');
-    const formDoc = docDocReceber.querySelector('form#frmDocumentoReceber') || docDocReceber.querySelector('form');
+    const formDoc = getSeiWorkForm(docDocReceber, 'form#frmDocumentoReceber, form#frmDocumentoCadastro');
 
     updateStatus('⏳ 2/4: Enviando arquivo PDF do Laudo CAESB...', '#38bdf8');
 
@@ -502,7 +529,7 @@ async function executeFullAutomation(pkg) {
     const resPageMemo = await fetch(urlGerarMemo);
     const htmlMemo = await resPageMemo.text();
     const docMemo = new DOMParser().parseFromString(htmlMemo, 'text/html');
-    const formMemo = docMemo.querySelector('form#frmDocumentoGerar') || docMemo.querySelector('form');
+    const formMemo = getSeiWorkForm(docMemo, 'form#frmDocumentoGerar, form#frmDocumentoCadastro');
 
     const postMemoData = new URLSearchParams();
     if (formMemo) {
@@ -550,7 +577,7 @@ async function executeFullAutomation(pkg) {
       const resPageEditor = await fetch(urlEditor);
       const htmlEditor = await resPageEditor.text();
       const docEditor = new DOMParser().parseFromString(htmlEditor, 'text/html');
-      const formEditor = docEditor.querySelector('form#frmEditor') || docEditor.querySelector('form');
+      const formEditor = getSeiWorkForm(docEditor, 'form#frmEditor');
 
       let corpoTexto = pkg.memorandoMinuta || '';
       corpoTexto = corpoTexto.replace('[Nº SEI DO RELATÓRIO EXTERNO]', numeroSeiRelatorio);
@@ -654,7 +681,7 @@ async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar
     const resPageEnviar = await fetch(urlEnviar);
     const htmlEnviar = await resPageEnviar.text();
     const docEnviar = new DOMParser().parseFromString(htmlEnviar, 'text/html');
-    const formEnviar = docEnviar.querySelector('form#frmProcedimentoEnviar') || docEnviar.querySelector('form');
+    const formEnviar = getSeiWorkForm(docEnviar, 'form#frmProcedimentoEnviar');
 
     const postEnviarData = new URLSearchParams();
     if (formEnviar) {

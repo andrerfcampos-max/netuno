@@ -360,8 +360,12 @@ export class SeiClient {
 
     const dataHoje = new Date().toLocaleDateString('pt-BR');
     
-    // Extrai o formulário gerado pelo SEI para preservar tokens de segurança e campos ocultos
-    const form = formPage.$('form#frmProcedimentoGerar').length ? formPage.$('form#frmProcedimentoGerar') : formPage.$('form');
+    // Extrai o formulário gerado pelo SEI para preservar tokens de segurança e campos ocultos (ignora formulário de pesquisa rápida)
+    const form = formPage.$('form#frmProcedimentoCadastro').length 
+      ? formPage.$('form#frmProcedimentoCadastro') 
+      : (formPage.$('form#frmProcedimentoGerar').length 
+          ? formPage.$('form#frmProcedimentoGerar') 
+          : formPage.$('form:not(#frmProtocoloPesquisaRapida)'));
     const formAction = form.attr('action');
 
     const postData = new URLSearchParams();
@@ -501,7 +505,11 @@ export class SeiClient {
     const anexoToken = anexoTokenMatch ? anexoTokenMatch[1] : `${uploadIdentifier}±${finalFileName}`;
 
     // 3. Salva os metadados do documento externo anexado
-    const form = formDoc.$('form#frmDocumentoReceber').length ? formDoc.$('form#frmDocumentoReceber') : formDoc.$('form');
+    const form = formDoc.$('form#frmDocumentoReceber').length 
+      ? formDoc.$('form#frmDocumentoReceber') 
+      : (formDoc.$('form#frmDocumentoCadastro').length 
+          ? formDoc.$('form#frmDocumentoCadastro') 
+          : formDoc.$('form:not(#frmProtocoloPesquisaRapida)'));
     const formAction = form.attr('action');
 
     const postParams = new URLSearchParams();
@@ -589,7 +597,11 @@ export class SeiClient {
     const formMemo = await this.request(urlGerarMemo);
     this.sessionState.infraHash = this.extractInfraHash(formMemo.url) || hash;
 
-    const form = formMemo.$('form#frmDocumentoGerar').length ? formMemo.$('form#frmDocumentoGerar') : formMemo.$('form');
+    const form = formMemo.$('form#frmDocumentoGerar').length 
+      ? formMemo.$('form#frmDocumentoGerar') 
+      : (formMemo.$('form#frmDocumentoCadastro').length 
+          ? formMemo.$('form#frmDocumentoCadastro') 
+          : formMemo.$('form:not(#frmProtocoloPesquisaRapida)'));
     const formAction = form.attr('action');
 
     const postParams = new URLSearchParams();
