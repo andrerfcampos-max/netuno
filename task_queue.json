@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-234",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -2358,10 +2358,10 @@
       "seq": 234,
       "conversationId": "9a4f5bed-08c5-4ccd-a8bf-1bbcd6c1ed92",
       "description": "Implementar Extensao Netuno SEI e ajustar Memorando para Cel",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-23T17:54:23.960Z",
       "startedAt": "2026-10-23T17:54:30.008Z",
-      "completedAt": null
+      "completedAt": "2026-10-23T17:58:06.329Z"
     }
   ]
 }
