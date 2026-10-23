@@ -2362,6 +2362,16 @@
       "createdAt": "2026-10-23T17:54:23.960Z",
       "startedAt": "2026-10-23T17:54:30.008Z",
       "completedAt": "2026-10-23T17:58:06.329Z"
+    },
+    {
+      "id": "TASK-235",
+      "seq": 235,
+      "conversationId": "e247e622-25d4-4afb-870f-a89519de0b6e",
+      "description": "Reforco de seguranca npm audit headers e SEI",
+      "status": "completed",
+      "createdAt": "2026-10-23T18:25:32.858Z",
+      "startedAt": "2026-10-23T18:25:36.344Z",
+      "completedAt": "2026-10-23T18:26:57.219Z"
     }
   ]
 }

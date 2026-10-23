@@ -170,6 +170,15 @@ export class SeiClient {
     };
 
     let currentUrl = url;
+
+    // Defesa em profundidade: Sanitização contra Argument Injection / CVEs em interpretadores PHP
+    if (typeof currentUrl === 'string') {
+      // Bloqueia tentativas de injeção de parâmetros de linha de comando PHP (-d, -n, -s, auto_prepend) ou quebra de cabeçalho
+      if (/(-[a-zA-Z]|%2d[a-zA-Z]|allow_url_include|auto_prepend_file|auto_append_file)/i.test(currentUrl) || /[\r\n\0]/.test(currentUrl)) {
+        throw new Error('Parâmetro inválido ou suspeito detectado na requisição para o serviço SEI.');
+      }
+    }
+
     const cookieHeader = this.getCookieHeader(currentUrl);
     if (cookieHeader) {
       headers['Cookie'] = cookieHeader;
