@@ -168,15 +168,15 @@ export const calculateCityPlanningData = ({
     const timeAgoLabel = formatTimeAgo(daysSinceLastVisit);
 
     // Definição de Situação Operacional Clara e sem contradições:
-    // 1. "completed": Campanha RECENTE (últimos 180 dias) cobriu >= 90% dos hidrantes
-    // 2. "in_progress": Teve vistoria recente (últimos 180 dias), mas ainda não completou 90%
+    // 1. "completed": Campanha RECENTE (últimos 180 dias) cobriu 100% dos hidrantes
+    // 2. "in_progress": Teve vistoria recente (últimos 180 dias), mas ainda não completou 100%
     // 3. "pending": Não recebe vistorias há mais de 180 dias (ou nunca foi vistoriada) -> Fila de Espera Ativa
     let planningStatus = 'pending';
     let statusLabel = 'Aguardando Fila';
 
-    if (daysSinceLastVisit <= 180 && (recentCoveragePct >= 90 || (recentInspectedCount >= city.totalHydrants && city.totalHydrants > 0))) {
+    if (daysSinceLastVisit <= 180 && city.totalHydrants > 0 && recentInspectedCount >= city.totalHydrants) {
       planningStatus = 'completed';
-      statusLabel = `Vistoriada Recente (${recentCoveragePct}%)`;
+      statusLabel = `Vistoriada Recente (100%)`;
     } else if (daysSinceLastVisit <= 180 && recentInspectedCount > 0) {
       planningStatus = 'in_progress';
       statusLabel = `Em Andamento (${recentCoveragePct}%)`;
@@ -409,7 +409,7 @@ export const formatCityPlanningWhatsAppText = ({
   // 3º BLOCO: CONCLUÍDAS
   text += `========================================\n`;
   text += `✅ *3º ESTÁGIO: CIDADES CONCLUÍDAS RECENTEMENTE (${completed.length})*\n`;
-  text += `_(Meta operacional atingida >= 90% dos hidrantes vistoriados)_\n`;
+  text += `_(Meta operacional atingida: 100% dos hidrantes vistoriados)_\n`;
   text += `========================================\n`;
   if (completed.length === 0) {
     text += `(Nenhuma cidade concluída recentemente)\n`;
@@ -687,7 +687,7 @@ export const generateCityPlanningPrintHtml = ({
       <!-- 3º ESTÁGIO: CONCLUÍDAS -->
       <div class="stage-section">
         <div class="stage-header stage-header-completed">
-          <span>✅ 3º Estágio: Vistoriadas Recentemente (${completed.length}) — Meta >= 90% Atingida</span>
+          <span>✅ 3º Estágio: Vistoriadas Recentemente (${completed.length}) — Meta 100% Atingida</span>
           <span>Campanha Concluída</span>
         </div>
         <table>

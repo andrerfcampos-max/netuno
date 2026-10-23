@@ -624,7 +624,7 @@ const CityInspectionPlanningModal = ({
                                 3º Estágio: Vistoriadas Recentemente ({compList.length})
                               </span>
                               <span className="text-[11px] text-emerald-200/80 ml-2 hidden sm:inline">
-                                • Meta operacional atingida (≥ 90% dos hidrantes vistoriados nos últimos 180 dias)
+                                • Meta operacional atingida (100% dos hidrantes vistoriados nos últimos 180 dias)
                               </span>
                             </div>
                           </div>
@@ -764,7 +764,7 @@ const CityInspectionPlanningModal = ({
                             )}
                             {renderTableSection(
                               '✅ 3º Estágio: Vistoriadas Recentemente',
-                              'Meta >= 90% Atingida',
+                              'Meta 100% Atingida',
                               compList,
                               'bg-emerald-950/60 text-emerald-300 border-y border-emerald-700/40'
                             )}
@@ -923,7 +923,7 @@ const CityInspectionPlanningModal = ({
                       <div className="space-y-2">
                         <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-700/40 text-emerald-300">
                           <span className="font-extrabold text-xs uppercase tracking-wide">
-                            ✅ 3º Estágio: Vistoriadas Recentemente ({compList.length}) — Meta ≥ 90% Atingida
+                            ✅ 3º Estágio: Vistoriadas Recentemente ({compList.length}) — Meta 100% Atingida
                           </span>
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-900/60 border border-emerald-700/40">
                             Campanha Concluída
