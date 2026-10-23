@@ -30,6 +30,6 @@ function createOverlay(text, subtext = '') {
 window.addEventListener('load', () => {
   createOverlay(
     'Unidade de Permanência: CBMDF/DIVIS/SEHUR/SUOMA',
-    'Protocolo SUOMA: 1. Anexar PDF CAESB (Externo) | 2. Memorando ao GPCIU com Minuta de Ofício'
+    'Protocolo SUOMA: 1. Anexar PDF CAESB (Externo) | 2. Memorando ao GPCIU com Minuta de Ofício | 3. Assinatura do Militar | 4. Tramitar para CBMDF/COESP/GPCIU/SEHUR'
   );
 });

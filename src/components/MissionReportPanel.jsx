@@ -675,7 +675,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
       inoperantesPercent,
       ano: new Date().getFullYear(),
       origem: 'CBMDF/DIVIS/SEHUR/SUOMA',
-      destino: 'CBMDF/DIVIS/SEHUR/SUOMA',
+      destino: 'CBMDF/COESP/GPCIU/SEHUR',
       seiDocNumber: '',
       htmlContent: document.getElementById('report-content-to-print')?.innerHTML || '',
       memorandoMinuta: minutaText
@@ -1058,7 +1058,7 @@ const MissionReportPanel = ({ hidrantes, currentMission, onClose, currentUser, a
               </button>
 
               {/* Botão 5: Processo SEI Gestor */}
-              {isGestorOrAdmin && (
+              {isGestorOrAdmin && reportType === 'caesb' && (
                 <>
                   <button 
                     onClick={() => { setShowDirectSeiModal(true); setIsExportMenuOpen(false); }}

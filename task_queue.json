@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-231",
+  "activeTaskId": "TASK-232",
   "queue": [
     {
       "id": "TASK-1",
@@ -2328,9 +2328,19 @@
       "seq": 231,
       "conversationId": "d264dc36-3a79-475f-b854-e4d2ddde8736",
       "description": "Ajustar regra de conclusao de cidades para 100%",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-23T12:49:42.080Z",
       "startedAt": "2026-10-23T12:53:18.935Z",
+      "completedAt": "2026-10-23T12:54:47.596Z"
+    },
+    {
+      "id": "TASK-232",
+      "seq": 232,
+      "conversationId": "9a4f5bed-08c5-4ccd-a8bf-1bbcd6c1ed92",
+      "description": "Refatoracao Envio Direto ao SEI 1 Toque (Opcao 2 - Sem credenciais)",
+      "status": "running",
+      "createdAt": "2026-10-23T13:09:55.132Z",
+      "startedAt": "2026-10-23T13:10:04.204Z",
       "completedAt": null
     }
   ]

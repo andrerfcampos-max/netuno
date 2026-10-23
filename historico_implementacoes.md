@@ -8,6 +8,18 @@ A finalidade deste registro é manter um rastro claro e auditável da evolução
 
 ## 🛠️ Modificações Recentes
 
+### [23/10/2026] Etapa 106 - Envio Direto ao SEI 1 Toque sem Credenciais (Relatório CAESB para COESP/GPCIU/SEHUR)
+- **Problema Inicial:** A integração ao SEI anterior solicitava usuário e senhas no modal do Netuno, o que violava normas institucionais de segurança e causava vulnerabilidades. Além disso, o botão aparecia erroneamente no Relatório Geral e a tramitação apontava para a SUTEC antiga.
+- **Implementação Realizada:**
+  1. **Restrição Exclusiva CAESB:** O botão "Enviar Direto ao SEI (1 Toque)" agora só é exibido quando `reportType === 'caesb'` e perfil gestor/adm em `MissionReportPanel.jsx`.
+  2. **Eliminação Total de Credenciais no Netuno:** Removidos todos os campos de login/senha da aplicação. O Netuno apenas empacota os dados da RA (PDF nato-digital, metadados, fotos e minuta) e abre a aba oficial do SEI DF (`sei.df.gov.br`).
+  3. **Fluxo das 2 Senhas Oficiais:**
+     - 1ª Senha: Login de acesso no navegador oficial do SEI DF.
+     - 2ª Senha: Senha de assinatura eletrônica solicitada nativamente pelo SEI no pop-up de assinatura do Memorando.
+  4. **Tramitação Oficial:** Destino parametrizado para **`CBMDF/COESP/GPCIU/SEHUR`**, mantendo o processo aberto na unidade geradora (`SUOMA`).
+  5. **Histórico e Registro:** Adicionada vinculação opcional do número do processo SEI autuado para auditoria local.
+
+
 ### [14/10/2026] Correção de Duplicação de Fotos no Anexo de PDF (TASK-208)
 - **Problema Inicial:** Fotos de hidrantes com defeito apareciam duplicadas lado a lado (ex: 2 fotos onde havia apenas 1 na tela) no relatório gerado em PDF.
 - **Causa Raiz Identificada:** A rotina de compressão atualizava `fotoVistoria` na raiz do objeto, mas `HISTORICO_VISTORIAS` continha a string original. Ao rodar `extractPhotos`, o comparador `photos.includes` não encontrava a correspondência por igualdade de string e adicionava a mesma foto novamente a partir do histórico arquivado.

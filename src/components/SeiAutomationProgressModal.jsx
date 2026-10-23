@@ -154,7 +154,7 @@ export const SeiAutomationProgressModal = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                {cidade || 'DF'} {raRomano ? `(RA ${raRomano})` : ''} • Destino: SUTEC/SEHUR
+                {cidade || 'DF'} {raRomano ? `(RA ${raRomano})` : ''} • Destino: CBMDF/COESP/GPCIU/SEHUR
               </p>
             </div>
           </div>
@@ -266,7 +266,7 @@ export const SeiAutomationProgressModal = ({
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
                 O processo <strong className="text-white font-mono">{processoResult?.numeroProcesso}</strong> foi criado, o relatório CAESB foi anexado e o Memorando ao GPCIU foi gerado como minuta.
-                Digite sua senha de assinatura eletrônica do SEI para concluir a assinatura e a remessa imediata para a SUTEC:
+                Digite sua senha de assinatura eletrônica do SEI para concluir a assinatura e a remessa imediata para CBMDF/COESP/GPCIU/SEHUR:
               </p>
 
               <div className="relative">
@@ -288,7 +288,7 @@ export const SeiAutomationProgressModal = ({
                   className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold rounded-lg text-xs flex items-center gap-2 shadow-lg shadow-emerald-950/50 cursor-pointer"
                 >
                   <ShieldCheck size={16} />
-                  <span>Assinar e Tramitar para SUTEC</span>
+                  <span>Assinar e Tramitar para SEHUR</span>
                 </button>
               </div>
             </form>
@@ -430,7 +430,7 @@ export const SeiAutomationProgressModal = ({
                   Expediente SEI Concluído com Sucesso!
                 </h4>
                 <p className="text-xs text-slate-300 mt-1">
-                  O processo foi autuado, o laudo oficial CAESB anexado, o memorando assinado e remetido à SUTEC.
+                  O processo foi autuado, o laudo oficial CAESB anexado, o memorando assinado e remetido para CBMDF/COESP/GPCIU/SEHUR.
                 </p>
                 <div className="mt-2 text-emerald-400 font-mono font-bold text-sm">
                   {processoResult?.numeroProcesso}

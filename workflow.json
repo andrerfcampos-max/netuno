@@ -624,6 +624,12 @@
       "status": "completed",
       "name": "Calibragem de Sensibilidade Visual e Heurística de Reconhecimento Urbano",
       "prompt": "Aprimorar o prompt e as diretrizes de visão computacional do agente de Street View com base nos casos 112 e 125: 1) Ensinar o modelo a reconhecer hidrantes de coluna envelhecidos, sem pintura amarela/vermelha viva (tons de concreto, bronze, cinza metálico ou ferro fundido escuro); 2) Priorizar o escaneamento na borda da calçada/canteiro entre garagens e na linha de meio-fio em cruzamentos residenciais; 3) Ajustar o FOV e aproximação para não perder hidrantes de menor porte visual; 4) Nunca classificar como ausente sem testar a visada oposta de 180 graus na calçada reversa."
+    },
+    {
+      "id": 106,
+      "status": "completed",
+      "name": "Envio Direto ao SEI 1 Toque sem Credenciais (Relatório CAESB para COESP/GPCIU/SEHUR)",
+      "prompt": "Reformular a integração direta ao SEI DF para atender às diretrizes de segurança institucional: 1. Restringir a função exclusivamente ao Relatório de Alterações CAESB (reportType === 'caesb'); 2. Eliminar completamente a solicitação de credenciais (login e senha) no Netuno, abrindo o navegador diretamente para autenticação do militar no SEI oficial (1ª senha); 3. Orquestrar a autuação do processo na SUOMA, inserção do relatório CAESB nato-digital e memorando com minuta de ofício ao CAESB/DP; 4. Abrir a assinatura eletrônica oficial no SEI para inserção da 2ª senha pelo usuário; 5. Tramitar o processo para CBMDF/COESP/GPCIU/SEHUR mantendo cópia aberta na SUOMA."
     }
   ]
 }

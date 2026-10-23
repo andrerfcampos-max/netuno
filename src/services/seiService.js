@@ -749,7 +749,7 @@ export class SeiClient {
     };
   }
 
-  // --- 6. Tramitar/Enviar Processo para Unidade de Destino (SUTEC) ---
+  // --- 6. Tramitar/Enviar Processo para Unidade de Destino (CBMDF/COESP/GPCIU/SEHUR) ---
   async tramitarProcesso({ idProcedimento, unidadeDestinoId = '110037655' }) {
     const hash = this.sessionState.infraHash;
     const unidade = this.sessionState.unidadeAtual;
@@ -760,7 +760,7 @@ export class SeiClient {
     const formEnviar = await this.request(urlEnviar);
     this.sessionState.infraHash = this.extractInfraHash(formEnviar.url) || hash;
 
-    // Mapeamento extraído do HAR oficial da SUTEC
+    // Mapeamento extraído do formulário de tramitação
     const form = formEnviar.$('form#frmProcedimentoEnviar').length ? formEnviar.$('form#frmProcedimentoEnviar') : formEnviar.$('form');
     const formAction = form.attr('action');
 
@@ -778,9 +778,9 @@ export class SeiClient {
     postParams.set('hdnInfraTipoPagina', '2');
     postParams.set('sbmEnviar', 'Enviar');
     postParams.set('selUnidades', unidadeDestinoId);
-    postParams.set('chkSinManterAberto', 'on'); // Mantém o processo aberto na unidade geradora
+    postParams.set('chkSinManterAberto', 'on'); // Mantém o processo aberto na unidade geradora (SUOMA)
     postParams.set('hdnIdProtocolos', idProcedimento);
-    postParams.set('hdnUnidades', `${unidadeDestinoId}±CBMDF/DIVIS/SEHUR/SUTEC - Subseção Técnica de Hidrantes`);
+    postParams.set('hdnUnidades', `${unidadeDestinoId}±CBMDF/COESP/GPCIU/SEHUR - Seção de Hidrantes Urbanos`);
 
     const submitUrl = formAction
       ? new URL(formAction, urlEnviar).toString()
@@ -798,7 +798,7 @@ export class SeiClient {
     const erroTramitar = this.extractSeiErrorMessage(submitEnviar);
     if (erroTramitar && erroTramitar !== 'Erro na operação do SEI.') {
       if (erroTramitar.toLowerCase().includes('erro') || erroTramitar.toLowerCase().includes('permissão') || erroTramitar.toLowerCase().includes('inválid')) {
-        throw new Error(`Falha na tramitação para SUTEC: ${erroTramitar}`);
+        throw new Error(`Falha na tramitação para CBMDF/COESP/GPCIU/SEHUR: ${erroTramitar}`);
       }
     }
 
@@ -808,7 +808,7 @@ export class SeiClient {
       success: true,
       idProcedimento,
       unidadeDestinoId,
-      destinoNome: 'CBMDF/DIVIS/SEHUR/SUTEC'
+      destinoNome: 'CBMDF/COESP/GPCIU/SEHUR'
     };
   }
 }
