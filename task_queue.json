@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-244",
   "queue": [
     {
       "id": "TASK-1",
@@ -2452,6 +2452,16 @@
       "createdAt": "2026-10-24T20:41:11.636Z",
       "startedAt": "2026-10-24T20:41:26.702Z",
       "completedAt": "2026-10-24T20:42:25.141Z"
+    },
+    {
+      "id": "TASK-244",
+      "seq": 244,
+      "conversationId": "f2fccac3-fada-405a-86d5-42302c631146",
+      "description": "Refatorar extract_hydrants_sniper.cjs com analise contextual descritiva e zoom tatico",
+      "status": "running",
+      "createdAt": "2026-10-24T20:47:52.328Z",
+      "startedAt": "2026-10-24T20:47:58.131Z",
+      "completedAt": null
     }
   ]
 }
