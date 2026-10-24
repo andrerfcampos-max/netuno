@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-243",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -2448,10 +2448,10 @@
       "seq": 243,
       "conversationId": "742c0e81-66f5-477e-9b06-f20bf3685be1",
       "description": "Verificar e limpar pastas antigas poc_hidrantes",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-24T20:41:11.636Z",
       "startedAt": "2026-10-24T20:41:26.702Z",
-      "completedAt": null
+      "completedAt": "2026-10-24T20:42:25.141Z"
     }
   ]
 }
