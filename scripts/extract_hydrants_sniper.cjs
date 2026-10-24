@@ -170,7 +170,7 @@ async function locateHydrantWithGemini(base64Image) {
       const result = await new Promise((resolve, reject) => {
         const options = {
           hostname: 'generativelanguage.googleapis.com',
-          path: `/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${activeKey}`,
+          path: `/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${activeKey}`,
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
         };
@@ -276,7 +276,7 @@ function saveDatabaseProgress(allRows, sheetName) {
 async function run() {
   const args = process.argv.slice(2);
   const raFilter = args.find(a => a.startsWith('--ra='))?.split('=')[1]?.toLowerCase();
-  const missingOnly = args.includes('--missing') || !raFilter;
+  const forceAll = args.includes('--force') || args.includes('--all');
   const limitArg = args.find(a => a.startsWith('--limit='))?.split('=')[1];
   const maxLimit = limitArg ? parseInt(limitArg, 10) : Infinity;
 
@@ -285,7 +285,7 @@ async function run() {
   console.log("==========================================================");
   console.log(`Chaves Gemini ativas: ${GEMINI_KEYS.length}`);
   console.log(`Filtro RA: ${raFilter || 'TODAS'}`);
-  console.log(`Apenas sem foto: ${missingOnly ? 'SIM' : 'NÃO'}`);
+  console.log(`Apenas sem foto: ${!forceAll ? 'SIM' : 'NÃO (Force)'}`);
   if (limitArg) console.log(`Limite configurado: ${maxLimit}`);
   console.log("==========================================================\n");
 
@@ -294,7 +294,7 @@ async function run() {
   const allRows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
   const targets = allRows.filter(r => {
-    if (missingOnly && r.fotoPerfil && String(r.fotoPerfil).trim().length > 5) return false;
+    if (!forceAll && r.fotoPerfil && String(r.fotoPerfil).trim().length > 5) return false;
     if (raFilter) {
       const folder = resolveFolderForHydrant(r);
       const dsc = (r.dscLocalidade || r.cidade || '').toLowerCase();

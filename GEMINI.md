@@ -86,6 +86,24 @@ Você atua como Engenheiro de Software e Arquitetos neste projeto. Nosso método
         - Para rodar a ingestão: `node scripts/import_honorato_inspections.cjs [caminho_do_arquivo_json]`
      7. **Pipeline Git e Deploy:**
         - Seguir estritamente o ciclo de Fila (`TASK-QUEUE`), validar o build (`npm run build`), versionar com `git commit` e efetuar o `git push origin main`.
+9. **Procedimento Padrão: Extração de Fotos de Perfil Street View Sniper V6 (`scripts/extract_hydrants_sniper.cjs`):**
+   - **Objetivo:** Capturar e cadastrar fotos de perfil reais de hidrantes usando visão computacional de alta performance (Sniper V6) e baixo consumo de tokens.
+   - **Arquitetura Sniper V6:**
+     - **Tiro Direto Amplo (FOV 85°, pitch -8°):** Mira calculada diretamente do carro para o GPS do hidrante (`calculateBearing`). Acerta em >80% dos casos em 1 único tiro.
+     - **Micro-Ajuste Tático:** Apenas ±22° se o tiro frontal for inconclusivo (elimina giros de 120°/180° desnecessários).
+     - **Token Saver:** Imagens de análise redimensionadas para 480x480 (50% menos tokens de visão). A foto final é salva em 800x600 e 1200x900 HD para uso dos militares.
+     - **Pool de Chaves:** Suporte a múltiplas chaves no `.env` separadas por vírgula (`GEMINI_API_KEY=key1,key2`).
+   - **Estrutura de Armazenamento:**
+     - As fotos são salvas em `public/hidrantes/[ra]/[NOM_HIDRANTE].jpeg` e `[NOM_HIDRANTE]_hd.jpeg`.
+     - Gravação síncrona na planilha `public/base-de-dados.xlsx` e `base-de-dados.xlsx` (campo `fotoPerfil`).
+     - Atualização automática dos arquivos oficiais `public/hidrantes_df_oficial.json` e `.csv` via `export_clean_database.cjs`.
+   - **Comandos de Execução:**
+     - Por Região Administrativa: `node scripts/extract_hydrants_sniper.cjs --ra=[nome_da_ra]` (ex: `--ra=gama`, `--ra=ceilandia`, `--ra=sudoeste`).
+     - Apenas faltantes no DF inteiro: `node scripts/extract_hydrants_sniper.cjs --missing`.
+     - Com limite de lote: `--limit=N` (ex: `node scripts/extract_hydrants_sniper.cjs --ra=gama --limit=40`).
+     - Forçar regravação geral: `--force`.
+   - **Pipeline Git:**
+     - Respeitar o ciclo de fila (`TASK-QUEUE`), build (`npm run build`), commit e `git push origin main`.
 
 *Sempre siga essa metodologia para evitar assimetria entre código humano e gerado pelo pipeline de IA.*
 
