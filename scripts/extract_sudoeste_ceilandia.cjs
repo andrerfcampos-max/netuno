@@ -159,27 +159,35 @@ async function downloadStreetView(carLat, carLng, heading, fov = 75, width = 800
   });
 }
 
-// Sniper 360 v5: Varredura de 360° em fatias táticas
+// Sniper V6 Otimizado: Tiro Direto Amplo (FOV 85°, 480x480) e Micro-Ajuste se necessário
 async function smartScan(carLat, carLng, gpsLat, gpsLng, prefixLog) {
   const baseHeading = calculateBearing(carLat, carLng, gpsLat, gpsLng);
   
-  const sweeps = [
-    { heading: baseHeading, label: "Frontal (0°)", pitch: -8 },
-    { heading: (baseHeading + 180) % 360, label: "Traseira (180°)", pitch: -8 },
-    { heading: (baseHeading + 60) % 360, label: "Lateral Direita (+60°)", pitch: -12 },
-    { heading: (baseHeading + 300) % 360, label: "Lateral Esquerda (-60°)", pitch: -12 },
-    { heading: (baseHeading + 120) % 360, label: "Flanco Direita (+120°)", pitch: -10 },
-    { heading: (baseHeading + 240) % 360, label: "Flanco Esquerda (-120°)", pitch: -10 }
+  // 1. TIRO DIRETO PRINCIPAL (Amplo, centrado no GPS do hidrante)
+  const scan1 = await downloadStreetView(carLat, carLng, baseHeading, 85, 480, 480, -8);
+  const res1 = await locateHydrantWithGemini(scan1.base64);
+
+  if (res1.encontrado && res1.confianca >= 60 && res1.centro_x !== undefined) {
+    const correctionOffset = (res1.centro_x - 0.5) * 85;
+    const finalHeading = (baseHeading + correctionOffset + 360) % 360;
+    console.log(`${prefixLog} 🎯 Tiro Direto Certeiro! Confiança: ${res1.confianca}%. Mira calibrada: ${Math.round(finalHeading)}° (0° Frontal)`);
+    return { success: true, finalHeading, scanImage: scan1.buffer, carLat, carLng };
+  }
+
+  // 2. MICRO-AJUSTES TÁTICOS (Apenas se o tiro direto inicial não teve certeza alta)
+  const microAdjusts = [
+    { heading: (baseHeading + 22) % 360, label: "+22° Direita" },
+    { heading: (baseHeading - 22 + 360) % 360, label: "-22° Esquerda" }
   ];
 
-  for (const sweep of sweeps) {
-    const scanImage = await downloadStreetView(carLat, carLng, sweep.heading, 75, 640, 640, sweep.pitch);
+  for (const sweep of microAdjusts) {
+    const scanImage = await downloadStreetView(carLat, carLng, sweep.heading, 75, 480, 480, -8);
     const aiResult = await locateHydrantWithGemini(scanImage.base64);
 
     if (aiResult.encontrado && aiResult.confianca >= 60 && aiResult.centro_x !== undefined) {
       const correctionOffset = (aiResult.centro_x - 0.5) * 75;
       const finalHeading = (sweep.heading + correctionOffset + 360) % 360;
-      console.log(`${prefixLog} 🎯 Detectado! Confiança: ${aiResult.confianca}%. Mira calibrada: ${Math.round(finalHeading)}° (${sweep.label})`);
+      console.log(`${prefixLog} 🎯 Detectado no Micro-Ajuste! Confiança: ${aiResult.confianca}%. Mira calibrada: ${Math.round(finalHeading)}° (${sweep.label})`);
       return { success: true, finalHeading, scanImage: scanImage.buffer, carLat, carLng };
     }
   }
