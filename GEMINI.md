@@ -87,7 +87,9 @@ Você atua como Engenheiro de Software e Arquitetos neste projeto. Nosso método
      7. **Pipeline Git e Deploy:**
         - Seguir estritamente o ciclo de Fila (`TASK-QUEUE`), validar o build (`npm run build`), versionar com `git commit` e efetuar o `git push origin main`.
 9. **Procedimento Padrão: Extração de Fotos de Perfil Street View Sniper V6 (`scripts/extract_hydrants_sniper.cjs`):**
-   - **Objetivo:** Capturar e cadastrar fotos de perfil reais de hidrantes usando visão computacional de alta performance (Sniper V6) e baixo consumo de tokens.
+   - **Contexto Operacional (100% via Chat em Português):**
+     - **O USUÁRIO NÃO UTILIZA O TERMINAL.** Todas as ordens de extração de fotos serão enviadas pelo usuário em **linguagem natural diretamente pelo chat** (ex: *"salve as fotos do Gama"*, *"extraia 30 hidrantes de Ceilândia"*, *"pegue fotos dos hidrantes que faltam no DF"*).
+     - Cabe ao agente interpretar a RA, limites e hidrantes solicitados e disparar internamente o script `scripts/extract_hydrants_sniper.cjs`.
    - **Arquitetura Sniper V6:**
      - **Tiro Direto Amplo (FOV 85°, pitch -8°):** Mira calculada diretamente do carro para o GPS do hidrante (`calculateBearing`). Acerta em >80% dos casos em 1 único tiro.
      - **Micro-Ajuste Tático:** Apenas ±22° se o tiro frontal for inconclusivo (elimina giros de 120°/180° desnecessários).
@@ -97,13 +99,13 @@ Você atua como Engenheiro de Software e Arquitetos neste projeto. Nosso método
      - As fotos são salvas em `public/hidrantes/[ra]/[NOM_HIDRANTE].jpeg` e `[NOM_HIDRANTE]_hd.jpeg`.
      - Gravação síncrona na planilha `public/base-de-dados.xlsx` e `base-de-dados.xlsx` (campo `fotoPerfil`).
      - Atualização automática dos arquivos oficiais `public/hidrantes_df_oficial.json` e `.csv` via `export_clean_database.cjs`.
-   - **Comandos de Execução:**
-     - Por Região Administrativa: `node scripts/extract_hydrants_sniper.cjs --ra=[nome_da_ra]` (ex: `--ra=gama`, `--ra=ceilandia`, `--ra=sudoeste`).
-     - Apenas faltantes no DF inteiro: `node scripts/extract_hydrants_sniper.cjs --missing`.
-     - Com limite de lote: `--limit=N` (ex: `node scripts/extract_hydrants_sniper.cjs --ra=gama --limit=40`).
-     - Forçar regravação geral: `--force`.
-   - **Pipeline Git:**
-     - Respeitar o ciclo de fila (`TASK-QUEUE`), build (`npm run build`), commit e `git push origin main`.
+   - **Mapeamento Interno das Intenções do Usuário (Executado pelo Agente via Terminal):**
+     - Quando o usuário pedir por Região Administrativa: o agente roda internamente `node scripts/extract_hydrants_sniper.cjs --ra=[nome_da_ra]` (ex: `--ra=gama`, `--ra=ceilandia`, `--ra=sudoeste`).
+     - Quando o usuário pedir faltantes no DF inteiro: o agente roda `node scripts/extract_hydrants_sniper.cjs --missing`.
+     - Quando o usuário estipular quantidade/lote: o agente anexa `--limit=N` (ex: `--limit=40`).
+     - Quando o usuário pedir para refazer/forçar: o agente anexa `--force`.
+   - **Pipeline Git e Retorno:**
+     - O agente cuida de todo o ciclo de fila (`TASK-QUEUE`), build (`npm run build`), commit e `git push origin main`, respondendo ao usuário em português com o resumo das fotos salvas.
 
 *Sempre siga essa metodologia para evitar assimetria entre código humano e gerado pelo pipeline de IA.*
 
