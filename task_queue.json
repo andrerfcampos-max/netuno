@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-243",
   "queue": [
     {
       "id": "TASK-1",
@@ -2372,6 +2372,86 @@
       "createdAt": "2026-10-23T18:25:32.858Z",
       "startedAt": "2026-10-23T18:25:36.344Z",
       "completedAt": "2026-10-23T18:26:57.219Z"
+    },
+    {
+      "id": "TASK-236",
+      "seq": 236,
+      "conversationId": "e846c38b-7d09-4761-af74-91de94fed6be",
+      "description": "Diagnostico e ajuste formulario CBMDF Servico Operacional download3",
+      "status": "completed",
+      "createdAt": "2026-10-23T18:27:35.096Z",
+      "startedAt": "2026-10-23T18:27:39.631Z",
+      "completedAt": "2026-10-23T18:33:53.251Z"
+    },
+    {
+      "id": "TASK-237",
+      "seq": 237,
+      "conversationId": "e846c38b-7d09-4761-af74-91de94fed6be",
+      "description": "Diagnostico erro Selecione uma opcao para pesquisa download4",
+      "status": "completed",
+      "createdAt": "2026-10-23T18:35:15.802Z",
+      "startedAt": "2026-10-23T18:35:21.928Z",
+      "completedAt": "2026-10-23T18:44:18.140Z"
+    },
+    {
+      "id": "TASK-238",
+      "seq": 238,
+      "conversationId": "e846c38b-7d09-4761-af74-91de94fed6be",
+      "description": "Diagnostico extracao ID procedimento SEI download5",
+      "status": "completed",
+      "createdAt": "2026-10-23T18:45:51.080Z",
+      "startedAt": "2026-10-23T18:45:57.911Z",
+      "completedAt": "2026-10-23T18:54:19.458Z"
+    },
+    {
+      "id": "TASK-239",
+      "seq": 239,
+      "conversationId": "f1c04787-b5d4-4628-9227-6f2ba00e6fa8",
+      "description": "Otimizacao Sniper Street View: 1 tiro FOV 85, reducao de tokens e backoff inteligente",
+      "status": "completed",
+      "createdAt": "2026-10-24T19:10:23.326Z",
+      "startedAt": "2026-10-24T19:10:26.161Z",
+      "completedAt": "2026-10-24T19:13:00.178Z"
+    },
+    {
+      "id": "TASK-240",
+      "seq": 240,
+      "conversationId": "f1c04787-b5d4-4628-9227-6f2ba00e6fa8",
+      "description": "Salvamento dos 40 primeiros hidrantes do Gama via Sniper V6 e registro operacional em GEMINI.md",
+      "status": "completed",
+      "createdAt": "2026-10-24T19:33:41.154Z",
+      "startedAt": "2026-10-24T19:33:47.661Z",
+      "completedAt": "2026-10-24T19:44:08.308Z"
+    },
+    {
+      "id": "TASK-241",
+      "seq": 241,
+      "conversationId": "f1c04787-b5d4-4628-9227-6f2ba00e6fa8",
+      "description": "Ajuste na Regra 9 do GEMINI.md: operacao 100% via chat em portugues pelo usuario sem terminal",
+      "status": "completed",
+      "createdAt": "2026-10-24T20:13:06.071Z",
+      "startedAt": "2026-10-24T20:13:11.723Z",
+      "completedAt": "2026-10-24T20:14:09.947Z"
+    },
+    {
+      "id": "TASK-242",
+      "seq": 242,
+      "conversationId": "36e084b3-e811-4003-a5c1-1147a25ddbf3",
+      "description": "Remover links absolutos com argosa 2-1 em STREETVIEW_PIPELINE.md",
+      "status": "completed",
+      "createdAt": "2026-10-24T20:40:55.280Z",
+      "startedAt": "2026-10-24T20:40:58.641Z",
+      "completedAt": "2026-10-24T20:41:23.978Z"
+    },
+    {
+      "id": "TASK-243",
+      "seq": 243,
+      "conversationId": "742c0e81-66f5-477e-9b06-f20bf3685be1",
+      "description": "Verificar e limpar pastas antigas poc_hidrantes",
+      "status": "running",
+      "createdAt": "2026-10-24T20:41:11.636Z",
+      "startedAt": "2026-10-24T20:41:26.702Z",
+      "completedAt": null
     }
   ]
 }
