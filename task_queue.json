@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-244",
+  "activeTaskId": "TASK-247",
   "queue": [
     {
       "id": "TASK-1",
@@ -2458,9 +2458,50 @@
       "seq": 244,
       "conversationId": "f2fccac3-fada-405a-86d5-42302c631146",
       "description": "Refatorar extract_hydrants_sniper.cjs com analise contextual descritiva e zoom tatico",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-24T20:47:52.328Z",
       "startedAt": "2026-10-24T20:47:58.131Z",
+      "completedAt": "2026-10-24T21:08:46.469Z"
+    },
+    {
+      "id": "TASK-245",
+      "seq": 245,
+      "conversationId": "ea38cc1d-ea7a-4ffa-b449-2c9a7575f8da",
+      "description": "Ajustar extensao SEI Netuno UI discreta e log de erro",
+      "status": "completed",
+      "createdAt": "2026-10-26T21:04:10.373Z",
+      "startedAt": "2026-10-26T21:04:17.716Z",
+      "completedAt": "2026-10-26T21:25:56.720Z",
+      "error": "Timeout or orphaned task cleared"
+    },
+    {
+      "id": "TASK-246",
+      "seq": 246,
+      "conversationId": "f2fccac3-fada-405a-86d5-42302c631146",
+      "description": "Limpeza de fotos sem hidrante na pasta public/hidrantes/gama",
+      "status": "timed_out",
+      "createdAt": "2026-10-26T21:07:15.028Z",
+      "startedAt": "2026-10-26T21:19:02.690Z",
+      "completedAt": "2026-10-26T21:34:04.546Z"
+    },
+    {
+      "id": "TASK-247",
+      "seq": 247,
+      "conversationId": "4b03fb84-6212-4766-b9ff-636e9fff7bf4",
+      "description": "Vistorias Honorato 26/10/2026 - TAG e SAM",
+      "status": "running",
+      "createdAt": "2026-10-26T21:25:16.897Z",
+      "startedAt": "2026-10-26T21:34:04.556Z",
+      "completedAt": null
+    },
+    {
+      "id": "TASK-248",
+      "seq": 248,
+      "conversationId": "a4dc1cd0-d704-4f89-9ef6-bd6fdd406d38",
+      "description": "Lote vistorias Sgt L Ribeiro Cruzeiro",
+      "status": "queued",
+      "createdAt": "2026-10-26T21:34:48.675Z",
+      "startedAt": null,
       "completedAt": null
     }
   ]
