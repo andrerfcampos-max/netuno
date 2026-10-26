@@ -2,6 +2,33 @@
 
 console.log('[Netuno SEI Ext] Content Script Ativo em:', window.location.href);
 
+// Armazena logs de execução para diagnóstico e cópia rápida
+const executionLogs = [];
+
+function logAutomation(message, data = null) {
+  const timestamp = new Date().toLocaleTimeString('pt-BR');
+  const line = `[${timestamp}] ${message}` + (data ? ` | ${typeof data === 'object' ? JSON.stringify(data) : data}` : '');
+  console.log('[Netuno SEI]', line);
+  executionLogs.push(line);
+  if (executionLogs.length > 80) executionLogs.shift();
+}
+
+function getErrorLogSummary(error) {
+  const lines = [
+    `=== RELATÓRIO DE DIAGNÓSTICO NETUNO SEI ===`,
+    `Data/Hora: ${new Date().toLocaleString('pt-BR')}`,
+    `URL Atual: ${window.location.href}`,
+    `Unidade SEI: ${getInfraUnidade()} | Sistema: ${getInfraSistema()}`,
+    `Erro Detectado: ${error?.message || error}`,
+    `Stack: ${error?.stack || 'Sem stack disponível'}`,
+    `-------------------------------------------`,
+    `Histórico Recente de Passos:`,
+    ...executionLogs.slice(-25),
+    `===========================================`
+  ];
+  return lines.join('\n');
+}
+
 // Extrai a unidade ativa no SEI
 function getInfraUnidade() {
   const inputUnidade = document.querySelector('input[name="infra_unidade_atual"], input#infra_unidade_atual');
@@ -19,81 +46,162 @@ function getInfraSistema() {
   return urlMatch ? urlMatch[1] : '100000100';
 }
 
-// Cria a janela flutuante do Netuno no SEI
-let floatingCard = null;
+// Widget flutuante discreto com alternância Minimizada / Expandida
+let floatingWidgetContainer = null;
+let isWidgetExpanded = false;
 
 function renderFloatingCard(pkg) {
-  if (document.getElementById('netuno-sei-floating-card')) return;
+  if (document.getElementById('netuno-sei-widget-root')) {
+    // Atualiza pacote existente sem duplicar
+    return;
+  }
 
-  floatingCard = document.createElement('div');
-  floatingCard.id = 'netuno-sei-floating-card';
-  floatingCard.style.cssText = `
+  floatingWidgetContainer = document.createElement('div');
+  floatingWidgetContainer.id = 'netuno-sei-widget-root';
+  floatingWidgetContainer.style.cssText = `
     position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 370px;
-    background: #0f172a;
-    color: #f8fafc;
-    border: 2px solid #059669;
-    border-radius: 14px;
-    padding: 16px;
+    bottom: 24px;
+    right: 24px;
     z-index: 9999999;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.65);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 13px;
-    line-height: 1.4;
   `;
 
   const cidadeText = pkg?.cidade || 'Distrito Federal';
   const raText = pkg?.raRomano ? ` (RA ${pkg.raRomano})` : '';
 
-  floatingCard.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 10px;">
-      <div style="font-weight: bold; font-size: 14px; color: #34d399; display: flex; align-items: center; gap: 6px;">
-        🚒 Netuno SEI • SUOMA
-      </div>
-      <button id="btn-netuno-close" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px;">✖</button>
+  floatingWidgetContainer.innerHTML = `
+    <!-- BOTÃO DISCRETO MINIMIZADO (Padrão) -->
+    <div id="netuno-sei-pill-btn" style="display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #065f46, #047857); color: #ecfdf5; border: 1.5px solid #10b981; border-radius: 9999px; padding: 8px 16px; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.45); font-size: 13px; font-weight: 600; user-select: none; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+      <span style="font-size: 16px;">🚒</span>
+      <span>Netuno Automação</span>
+      <span id="netuno-pill-badge" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); padding: 2px 7px; border-radius: 999px; font-size: 10px; color: #a7f3d0;">Pronto</span>
+      <span style="font-size: 11px; opacity: 0.8; margin-left: 2px;">▲</span>
     </div>
 
-    <div style="margin-bottom: 12px; font-size: 12px;">
-      <div style="color: #94a3b8; font-size: 11px;">PACOTE PRONTO PARA AUTUAÇÃO:</div>
-      <div style="font-weight: bold; font-size: 13px; color: #f8fafc; margin-top: 2px;">
-        Relatório CAESB: ${cidadeText}${raText}
+    <!-- PAINEL COMPLETO EXPANSÍVEL (Aberto somente quando clicado) -->
+    <div id="netuno-sei-card-body" style="display: none; width: 375px; background: #0f172a; color: #f8fafc; border: 2px solid #059669; border-radius: 14px; padding: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.7); font-size: 13px; line-height: 1.4; margin-bottom: 8px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 10px;">
+        <div style="font-weight: bold; font-size: 14px; color: #34d399; display: flex; align-items: center; gap: 6px;">
+          🚒 Netuno SEI • SUOMA
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button id="btn-netuno-minimize" title="Recolher para botão discreto" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; padding: 2px 6px;">_</button>
+          <button id="btn-netuno-close" title="Fechar e dispensar pacote" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px; padding: 2px 6px;">✖</button>
+        </div>
       </div>
-      <div style="color: #34d399; font-size: 11px; margin-top: 4px; font-weight: 500;">
-        Processo: CBMDF - Serviço Operacional
-      </div>
-      <div style="color: #38bdf8; font-size: 11px; margin-top: 2px;">
-        Destino: CBMDF/COESP/GPCIU/SEHUR
-      </div>
-    </div>
 
-    <div id="netuno-status-area" style="background: #1e293b; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; border: 1px solid #334155;">
-      <div style="color: #cbd5e1;">Aguardando seu comando. Clique no botão abaixo para autuar o processo, anexar o laudo da CAESB e abrir a assinatura.</div>
-    </div>
+      <div style="margin-bottom: 12px; font-size: 12px;">
+        <div style="color: #94a3b8; font-size: 11px; text-transform: uppercase; font-weight: 600;">Pacote Pronto para Autuação:</div>
+        <div style="font-weight: bold; font-size: 13px; color: #f8fafc; margin-top: 2px;">
+          Relatório CAESB: ${cidadeText}${raText}
+        </div>
+        <div style="color: #34d399; font-size: 11px; margin-top: 4px; font-weight: 500;">
+          Processo: CBMDF - Serviço Operacional
+        </div>
+        <div style="color: #38bdf8; font-size: 11px; margin-top: 2px;">
+          Destino: CBMDF/COESP/GPCIU/SEHUR
+        </div>
+      </div>
 
-    <div style="display: flex; gap: 8px;">
-      <button id="btn-netuno-run" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #059669, #0d9488); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 12px; box-shadow: 0 4px 12px rgba(5,150,105,0.4);">
-        ⚡ Autuar Processo no SEI (1 Toque)
-      </button>
+      <div id="netuno-status-area" style="background: #1e293b; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; border: 1px solid #334155; min-height: 48px; max-height: 180px; overflow-y: auto;">
+        <div style="color: #cbd5e1;">Aguardando seu comando. Clique no botão abaixo para autuar o processo, anexar o laudo da CAESB e abrir a assinatura.</div>
+      </div>
+
+      <!-- Área de Erro com Botão de Cópia -->
+      <div id="netuno-error-box" style="display: none; background: #450a0a; border: 1px solid #b91c1c; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 11px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: #fca5a5; font-weight: bold;">⚠️ Detalhes do Erro para Diagnóstico:</span>
+          <button id="btn-netuno-copy-error" style="background: #7f1d1d; color: #fee2e2; border: 1px solid #ef4444; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 10px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
+            📋 Copiar Log
+          </button>
+        </div>
+        <pre id="netuno-error-pre" style="color: #fecaca; margin: 0; font-family: monospace; font-size: 10px; white-space: pre-wrap; word-break: break-all; max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px;"></pre>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button id="btn-netuno-run" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #059669, #0d9488); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 12px; box-shadow: 0 4px 12px rgba(5,150,105,0.4); display: flex; align-items: center; justify-content: center; gap: 6px;">
+          ⚡ Autuar Processo no SEI (1 Toque)
+        </button>
+      </div>
     </div>
   `;
 
-  document.body.appendChild(floatingCard);
+  document.body.appendChild(floatingWidgetContainer);
 
-  document.getElementById('btn-netuno-close').onclick = () => {
-    floatingCard.remove();
+  const pillBtn = document.getElementById('netuno-sei-pill-btn');
+  const cardBody = document.getElementById('netuno-sei-card-body');
+  const btnMinimize = document.getElementById('btn-netuno-minimize');
+  const btnClose = document.getElementById('btn-netuno-close');
+  const btnRun = document.getElementById('btn-netuno-run');
+  const btnCopyError = document.getElementById('btn-netuno-copy-error');
+
+  const toggleWidget = (expand) => {
+    isWidgetExpanded = expand !== undefined ? expand : !isWidgetExpanded;
+    if (isWidgetExpanded) {
+      cardBody.style.display = 'block';
+      pillBtn.style.display = 'none';
+    } else {
+      cardBody.style.display = 'none';
+      pillBtn.style.display = 'flex';
+    }
   };
 
-  document.getElementById('btn-netuno-run').onclick = () => {
+  pillBtn.onclick = () => toggleWidget(true);
+  btnMinimize.onclick = () => toggleWidget(false);
+
+  btnClose.onclick = () => {
+    if (confirm('Deseja descartar este pacote do Netuno?')) {
+      chrome.storage?.local?.remove(['netuno_sei_package']);
+      floatingWidgetContainer.remove();
+    }
+  };
+
+  btnCopyError.onclick = () => {
+    const errorText = document.getElementById('netuno-error-pre').innerText;
+    navigator.clipboard.writeText(errorText).then(() => {
+      btnCopyError.innerText = '✅ Copiado!';
+      setTimeout(() => {
+        btnCopyError.innerHTML = '📋 Copiar Log';
+      }, 2500);
+    });
+  };
+
+  btnRun.onclick = () => {
     executeFullAutomation(pkg);
   };
 }
 
 function updateStatus(stepText, color = '#38bdf8') {
+  logAutomation(stepText);
   const area = document.getElementById('netuno-status-area');
   if (area) {
     area.innerHTML = `<div style="color: ${color}; font-weight: 500;">${stepText}</div>`;
+  }
+}
+
+function displayAutomationError(err) {
+  const fullLog = getErrorLogSummary(err);
+  logAutomation('ERRO CRÍTICO: ' + (err?.message || err));
+  
+  const statusArea = document.getElementById('netuno-status-area');
+  if (statusArea) {
+    statusArea.innerHTML = `<div style="color: #f43f5e; font-weight: bold;">❌ Falha: ${err.message || err}</div>`;
+  }
+
+  const errBox = document.getElementById('netuno-error-box');
+  const errPre = document.getElementById('netuno-error-pre');
+  if (errBox && errPre) {
+    errPre.innerText = fullLog;
+    errBox.style.display = 'block';
+  }
+
+  // Se o painel estiver minimizado, expande automaticamente para exibir o erro e o botão de cópia
+  const cardBody = document.getElementById('netuno-sei-card-body');
+  const pillBtn = document.getElementById('netuno-sei-pill-btn');
+  if (cardBody && pillBtn) {
+    cardBody.style.display = 'block';
+    pillBtn.style.display = 'none';
+    isWidgetExpanded = true;
   }
 }
 
@@ -428,33 +536,76 @@ async function executeFullAutomation(pkg) {
     // ----------------------------------------------------
     updateStatus(`⏳ 2/4: Processo ${numeroProcesso} criado! Abrindo formulário de anexo...`, '#38bdf8');
 
-    // Localiza o link 'Incluir Documento' a partir da página do processo
+    // Tenta localizar o link 'Incluir Documento' a partir da página retornada pelo SEI
     let linkIncluirDoc = docProcessoSalvo.querySelector('a[href*="documento_escolher_tipo"], a[title*="Incluir Documento"], a[aria-label*="Incluir Documento"]');
     let urlEscolherDoc = linkIncluirDoc ? resolveSeiUrl(linkIncluirDoc.getAttribute('href'), resSaveProc.url) : null;
 
     if (!urlEscolherDoc) {
-      // Procura qualquer link com documento_escolher_tipo
       const matchDocEsc = textSaveProc.match(/controlador\.php\?acao=documento_escolher_tipo[^"'\s<>]+/i);
       if (matchDocEsc) {
         urlEscolherDoc = resolveSeiUrl(matchDocEsc[0], resSaveProc.url);
       }
     }
 
+    // Se ainda não encontrou o link no HTML direto, busca na árvore iframe do processo
     if (!urlEscolherDoc) {
       try {
-        const urlArvore = resolveSeiUrl(`controlador.php?acao=procedimento_trabalhar&id_procedimento=${idProcedimento}&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}`, resSaveProc.url);
-        const resArvore = await fetch(urlArvore);
+        logAutomation('Buscando link da árvore (ifrArvore) no processo criado...');
+        const matchArvoreIframe = textSaveProc.match(/<iframe[^>]+id=["']ifrArvore["'][^>]*src=["']([^"']+)["']/i) ||
+                                  textSaveProc.match(/<iframe[^>]+src=["']([^"']+)["'][^>]*id=["']ifrArvore["']/i) ||
+                                  textSaveProc.match(/controlador\.php\?acao=procedimento_visualizar[^"'\s<>]+/i);
+        
+        let urlArvoreVisualizar = null;
+        if (matchArvoreIframe) {
+          urlArvoreVisualizar = resolveSeiUrl(matchArvoreIframe[1] || matchArvoreIframe[0], resSaveProc.url);
+        } else {
+          urlArvoreVisualizar = resolveSeiUrl(`controlador.php?acao=procedimento_visualizar&acao_origem=procedimento_trabalhar&id_procedimento=${idProcedimento}&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}`, resSaveProc.url);
+        }
+
+        logAutomation('Carregando árvore de documentos:', urlArvoreVisualizar);
+        const resArvore = await fetch(urlArvoreVisualizar);
         const htmlArvore = await resArvore.text();
         const docArvore = new DOMParser().parseFromString(htmlArvore, 'text/html');
+
         const linkArvore = docArvore.querySelector('a[href*="documento_escolher_tipo"], a[title*="Incluir Documento"], a[aria-label*="Incluir Documento"]');
         if (linkArvore) {
-          urlEscolherDoc = resolveSeiUrl(linkArvore.getAttribute('href'), urlArvore);
+          urlEscolherDoc = resolveSeiUrl(linkArvore.getAttribute('href'), urlArvoreVisualizar);
         } else {
           const m = htmlArvore.match(/controlador\.php\?acao=documento_escolher_tipo[^"'\s<>]+/i);
-          if (m) urlEscolherDoc = resolveSeiUrl(m[0], urlArvore);
+          if (m) urlEscolherDoc = resolveSeiUrl(m[0], urlArvoreVisualizar);
         }
       } catch (errArvore) {
-        console.warn('[Netuno SEI] Falha ao consultar árvore do processo:', errArvore);
+        logAutomation('Aviso ao consultar árvore do processo:', errArvore?.message);
+      }
+    }
+
+    // Se ainda não encontrou, pesquisa o processo na tela de Controle de Processos da unidade
+    if (!urlEscolherDoc) {
+      try {
+        logAutomation('Localizando processo na tela de Controle de Processos...');
+        const urlControle = resolveSeiUrl(`controlador.php?acao=procedimento_controlar&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}`);
+        const resControle = await fetch(urlControle);
+        const htmlControle = await resControle.text();
+        const docControle = new DOMParser().parseFromString(htmlControle, 'text/html');
+
+        // Busca o link direto do processo na tabela de gerados
+        const linkProcGerado = docControle.querySelector(`a[href*="id_procedimento=${idProcedimento}"]`);
+        if (linkProcGerado) {
+          const urlTrabalharGerado = resolveSeiUrl(linkProcGerado.getAttribute('href'), urlControle);
+          const resTrab = await fetch(urlTrabalharGerado);
+          const htmlTrab = await resTrab.text();
+          const docTrab = new DOMParser().parseFromString(htmlTrab, 'text/html');
+
+          const lDoc = docTrab.querySelector('a[href*="documento_escolher_tipo"], a[title*="Incluir Documento"]');
+          if (lDoc) {
+            urlEscolherDoc = resolveSeiUrl(lDoc.getAttribute('href'), urlTrabalharGerado);
+          } else {
+            const m = htmlTrab.match(/controlador\.php\?acao=documento_escolher_tipo[^"'\s<>]+/i);
+            if (m) urlEscolherDoc = resolveSeiUrl(m[0], urlTrabalharGerado);
+          }
+        }
+      } catch (errCtrl) {
+        logAutomation('Aviso ao consultar controle de processos:', errCtrl?.message);
       }
     }
 
@@ -714,7 +865,7 @@ async function executeFullAutomation(pkg) {
 
   } catch (err) {
     console.error('[Netuno SEI] Erro na automação:', err);
-    updateStatus(`❌ Falha: ${err.message}`, '#f43f5e');
+    displayAutomationError(err);
     if (runBtn) {
       runBtn.disabled = false;
       runBtn.style.opacity = '1';
