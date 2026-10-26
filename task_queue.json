@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-249",
+  "activeTaskId": "TASK-250",
   "queue": [
     {
       "id": "TASK-1",
@@ -2479,10 +2479,10 @@
       "seq": 246,
       "conversationId": "f2fccac3-fada-405a-86d5-42302c631146",
       "description": "Limpeza de fotos sem hidrante na pasta public/hidrantes/gama",
-      "status": "timed_out",
+      "status": "completed",
       "createdAt": "2026-10-26T21:07:15.028Z",
       "startedAt": "2026-10-26T21:19:02.690Z",
-      "completedAt": "2026-10-26T21:34:04.546Z"
+      "completedAt": "2026-10-26T21:46:26.628Z"
     },
     {
       "id": "TASK-247",
@@ -2509,19 +2509,19 @@
       "seq": 249,
       "conversationId": "0fbb6ebb-7089-49e2-8967-ab592da5d09d",
       "description": "Diagnostico e correcao extensao SEI Failed to fetch",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-26T21:37:03.859Z",
       "startedAt": "2026-10-26T21:40:28.320Z",
-      "completedAt": null
+      "completedAt": "2026-10-26T21:46:44.090Z"
     },
     {
       "id": "TASK-250",
       "seq": 250,
       "conversationId": "0bfcceaf-40b9-481c-b037-68e2e1443924",
       "description": "Alterar descricao do processo SEI automacao",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-10-26T21:39:25.607Z",
-      "startedAt": null,
+      "startedAt": "2026-10-26T21:46:44.681Z",
       "completedAt": null
     },
     {
