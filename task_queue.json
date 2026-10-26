@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-252",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -2539,10 +2539,31 @@
       "seq": 252,
       "conversationId": "f2fccac3-fada-405a-86d5-42302c631146",
       "description": "Verificar e refazer fotos gama 36 37 39 a 42",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-26T22:04:50.837Z",
       "startedAt": "2026-10-26T22:04:54.053Z",
-      "completedAt": null
+      "completedAt": "2026-10-26T22:09:19.724Z"
+    },
+    {
+      "id": "TASK-253",
+      "seq": 253,
+      "conversationId": "0fbb6ebb-7089-49e2-8967-ab592da5d09d",
+      "description": "Diagnostico Failed to fetch no documento_receber SEI",
+      "status": "completed",
+      "createdAt": "2026-10-26T22:09:21.225Z",
+      "startedAt": "2026-10-26T22:09:26.540Z",
+      "completedAt": "2026-10-26T22:12:43.692Z"
+    },
+    {
+      "id": "TASK-254",
+      "seq": 254,
+      "conversationId": "f2fccac3-fada-405a-86d5-42302c631146",
+      "description": "Inspecionar motivos de rejeicao e passos adjacentes do carro",
+      "status": "failed",
+      "createdAt": "2026-10-26T22:11:48.673Z",
+      "startedAt": null,
+      "completedAt": "2026-10-26T22:12:11.354Z",
+      "error": "Apenas consulta explicativa, liberando lock"
     }
   ]
 }
