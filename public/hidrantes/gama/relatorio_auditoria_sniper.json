@@ -1,12 +1,112 @@
 {
-  "gerado_em": "2026-10-26T22:20:17.478Z",
+  "gerado_em": "2026-10-26T23:22:25.349Z",
   "filtro_ra": "gama",
-  "total_processados": 3,
-  "total_aprovados": 0,
-  "total_rejeitados": 3,
-  "taxa_aproveitamento": "0.0%",
+  "total_processados": 30,
+  "total_aprovados": 11,
+  "total_rejeitados": 19,
+  "taxa_aproveitamento": "36.7%",
   "taxa_assertividade_fotos_salvas": "100%",
-  "aprovados": [],
+  "aprovados": [
+    {
+      "nom": "GAM00043",
+      "codHidrante": "GAM00043",
+      "folderName": "gama",
+      "confianca": 98,
+      "descricao": "Hidrante de coluna metálico de cor amarela",
+      "referencia": "Na calçada à esquerda, rente à cerca de tela metálica e ao lado de uma pequena planta ornamental",
+      "data_auditoria": "2026-10-26T23:07:11.591Z"
+    },
+    {
+      "nom": "GAM00046",
+      "codHidrante": "GAM00046",
+      "folderName": "gama",
+      "confianca": 90,
+      "descricao": "Hidrante de coluna metálico de cor amarela instalado na calçada.",
+      "referencia": "Na calçada à esquerda da via, próximo à cerca de tela de arame e ligeiramente à frente do pedestre que caminha no local.",
+      "data_auditoria": "2026-10-26T23:07:58.724Z"
+    },
+    {
+      "nom": "GAM00057",
+      "codHidrante": "GAM00057",
+      "folderName": "gama",
+      "confianca": 98,
+      "descricao": "Hidrante de coluna metálico de cor vermelha com tampas das tomadas visíveis",
+      "referencia": "No canteiro gramado à esquerda da via, na borda com o asfalto, em frente ao quiosque escuro",
+      "data_auditoria": "2026-10-26T23:09:40.014Z"
+    },
+    {
+      "nom": "GAM00058",
+      "codHidrante": "GAM00058",
+      "folderName": "gama",
+      "confianca": 98,
+      "descricao": "Hidrante de coluna metálico de cor amarela, com saídas laterais e flange na base.",
+      "referencia": "No piso intertravado à esquerda do caminhão de mudanças, próximo à traseira do carro preto estacionado.",
+      "data_auditoria": "2026-10-26T23:10:42.149Z"
+    },
+    {
+      "nom": "GAM00059",
+      "codHidrante": "GAM00059",
+      "folderName": "gama",
+      "confianca": 98,
+      "descricao": "Hidrante de coluna padrão de cor amarela com bocal de expedição visível",
+      "referencia": "instalado no meio-fio à direita da área cimentada em frente ao estabelecimento comercial",
+      "data_auditoria": "2026-10-26T23:10:53.980Z"
+    },
+    {
+      "nom": "GAM00060",
+      "codHidrante": "GAM00060",
+      "folderName": "gama",
+      "confianca": 98,
+      "descricao": "Hidrante de coluna cilíndrico de cor amarela com bocas de saída laterais e flange na base",
+      "referencia": "na calçada em frente ao canto direito do portão metálico, próximo ao muro rústico alto",
+      "data_auditoria": "2026-10-26T23:11:38.826Z"
+    },
+    {
+      "nom": "GAM00061",
+      "codHidrante": "GAM00061",
+      "folderName": "gama",
+      "confianca": 98,
+      "descricao": "Hidrante de coluna urbano na cor amarela",
+      "referencia": "No canteiro com grama à esquerda, próximo à base da palmeira e à placa de sinalização, em frente ao carro cinza",
+      "data_auditoria": "2026-10-26T23:12:04.089Z"
+    },
+    {
+      "nom": "GAM00062",
+      "codHidrante": "GAM00062",
+      "folderName": "gama",
+      "confianca": 95,
+      "descricao": "Hidrante de coluna metálico de cor amarela instalado na área gramada.",
+      "referencia": "No canteiro gramado à esquerda, em frente ao muro lateral da residência com portão cinza.",
+      "data_auditoria": "2026-10-26T23:12:15.820Z"
+    },
+    {
+      "nom": "GAM00063",
+      "codHidrante": "GAM00063",
+      "folderName": "gama",
+      "confianca": 95,
+      "descricao": "Hidrante de coluna de porte baixo, de cor amarela/desbotada, instalado na grama ao nível do solo.",
+      "referencia": "Na área gramada, próximo ao canto da garagem com portão branco e ao lado de uma placa/tampa no chão.",
+      "data_auditoria": "2026-10-26T23:12:38.412Z"
+    },
+    {
+      "nom": "GAM00071",
+      "codHidrante": "GAM00071",
+      "folderName": "gama",
+      "confianca": 85,
+      "descricao": "Hidrante de coluna cilíndrico metálico na cor amarela, padrão de rede pública de combate a incêndio.",
+      "referencia": "Na calçada no final da parede do prédio, logo à esquerda da caminhonete prata estacionada.",
+      "data_auditoria": "2026-10-26T23:21:44.262Z"
+    },
+    {
+      "nom": "GAM00072",
+      "codHidrante": "GAM00072",
+      "folderName": "gama",
+      "confianca": 98,
+      "descricao": "Hidrante de coluna de combate a incêndio pintado na cor amarela, com saídas laterais visíveis",
+      "referencia": "No canteiro/meio-fio à esquerda da via, em primeiro plano",
+      "data_auditoria": "2026-10-26T23:22:23.747Z"
+    }
+  ],
   "rejeitados": [
     {
       "nom": "GAM00007",
@@ -15,9 +115,9 @@
       "endereco": "SETOR NORTE QUADRA 1 CONJUNTO H CASA 219 - GAMA - DF",
       "gps": "-16.012306, -48.067389",
       "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
-      "motivo": "O trecho de calçada e meio-fio encontra-se visível e desobstruído, sem presença de hidrante de coluna instalado.",
-      "detalhes": "Via pública com calçada de concreto à esquerda dotada de boca de lobo e balizadores metálicos vermelhos, com visão desimpedida da faixa de pedestres onde inexiste equipamento de combate a incêndio.",
-      "data_auditoria": "2026-10-26T22:17:59.299Z"
+      "motivo": "A calçada e o alinhamento viário estão visíveis ao longo da via, sem qualquer hidrante de coluna instalado no trecho.",
+      "detalhes": "Via pública com calçada de concreto e canaletas/bueiros à esquerda delimitada por piquetes vermelhos e vegetação rasteira, com veículo vermelho ao fundo e edificações comerciais à direita, não havendo hidrante de combate a incêndio no local vistoriado.",
+      "data_auditoria": "2026-10-26T22:55:20.846Z"
     },
     {
       "nom": "GAM00009",
@@ -26,9 +126,9 @@
       "endereco": "SETOR NORTE QUADRA 2 CONJUNTO I CASA 419 - GAMA - DF",
       "gps": "-16.004389, -48.059778",
       "causa_principal": "OBSTRUCAO_VEICULO",
-      "motivo": "Veículo de passeio estacionado sobre a calçada bloqueia a linha de visão do passeio público onde o hidrante estaria instalado.",
-      "detalhes": "Trecho urbano com edificação comercial à esquerda e veículo prata estacionado sobre o passeio/acesso frontal, obstruindo a visão do piso e da calçada adjacente à via.",
-      "data_auditoria": "2026-10-26T22:19:12.667Z"
+      "motivo": "Veículo estacionado junto ao meio-fio encobre a área da calçada onde o equipamento deveria estar posicionado.",
+      "detalhes": "Automóvel branco estacionado no bordo da via em frente a estabelecimento comercial, bloqueando a visualização direta do meio-fio e do alinhamento da calçada.",
+      "data_auditoria": "2026-10-26T22:56:31.919Z"
     },
     {
       "nom": "GAM00012",
@@ -37,9 +137,185 @@
       "endereco": "SETOR SUL QD. 01 CONJUNTO O CASA 16 - GAMA - DF",
       "gps": "-16.030194, -48.07025",
       "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
-      "motivo": "A extensão da calçada e meio-fio está visível ao longo da via pública, sem registro de hidrante de coluna instalado.",
-      "detalhes": "Trecho residencial urbano com calçada de concreto e faixa gramada expostas em frente a uma residência com portão de grade; há veículos estacionados na rampa interna/lateral e uma lixeira aramada no canteiro, mas nenhum hidrante é identificado no logradouro.",
-      "data_auditoria": "2026-10-26T22:20:16.889Z"
+      "motivo": "A calçada e a faixa de servidão pública estão visíveis ao longo do meio-fio, inexistindo hidrante instalado no logradouro.",
+      "detalhes": "Trecho residencial com calçada de concreto visível, canteiro gramado com lixeira suspensa e pequena palmeira, e acesso de garagem com veículos estacionados ao fundo, sem registro de hidrante de coluna.",
+      "data_auditoria": "2026-10-26T22:57:33.420Z"
+    },
+    {
+      "nom": "GAM00013",
+      "codHidrante": "GAM00013",
+      "folderName": "gama",
+      "endereco": "SETOR SUL QD. 04 CONJUNTO B CASA 22 - GAMA - DF",
+      "gps": "-16.022306, -48.076972",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "O canteiro gramado, meio-fio e calçadas estão totalmente desimpedidos, inexistindo hidrante de coluna instalado no perímetro.",
+      "detalhes": "Esquina com via asfaltada, edifício comercial à esquerda, canteiro com grama baixa e pequena edificação de serviços ao centro, sem a presença de equipamento hidráulico urbano visível.",
+      "data_auditoria": "2026-10-26T22:58:39.919Z"
+    },
+    {
+      "nom": "GAM00014",
+      "codHidrante": "GAM00014",
+      "folderName": "gama",
+      "endereco": "SETOR SUL QD. 08 ÁREA ESPECIAL LOTE 01 - GAMA - DF",
+      "gps": "-16.029528, -48.076917",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "A calçada e o meio-fio estão com boa visibilidade, porém não há hidrante de coluna instalado no trecho.",
+      "detalhes": "Área frontal de residência com portão verde, garagem com grade metálica e calçada em concreto com meio-fio visível, sem presença física do equipamento de combate a incêndio.",
+      "data_auditoria": "2026-10-26T22:59:46.557Z"
+    },
+    {
+      "nom": "GAM00015",
+      "codHidrante": "GAM00015",
+      "folderName": "gama",
+      "endereco": "SETOR SUL QD. 08 CONJUNTO K CASA 18 - GAMA - DF",
+      "gps": "-16.027639, -48.074694",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "Passeio público e meio-fio totalmente visíveis e desobstruídos, constatando-se a inexistência física de hidrante instalado no trecho.",
+      "detalhes": "Trecho viário com baia de estacionamento, calçada pavimentada contígua a alambrado metálico de lote institucional (SENAI), sem obstruções visuais que impeçam a visualização do equipamento caso existisse.",
+      "data_auditoria": "2026-10-26T23:00:57.536Z"
+    },
+    {
+      "nom": "GAM00018",
+      "codHidrante": "GAM00018",
+      "folderName": "gama",
+      "endereco": "SETOR SUL QD. 12 CONJUNTO H CASA 24 - GAMA - DF",
+      "gps": "-16.024528, -48.084278",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "Muro e área de estacionamento totalmente visíveis e desobstruídos, constatando-se a ausência de hidrante instalado no trecho.",
+      "detalhes": "Trecho com via asfáltica contendo vagas de estacionamento perpendiculares que margeiam um muro extenso decorado com pinturas, com visibilidade clara e sem a presença do equipamento.",
+      "data_auditoria": "2026-10-26T23:02:01.345Z"
+    },
+    {
+      "nom": "GAM00146",
+      "codHidrante": "GAM00146",
+      "folderName": "gama",
+      "endereco": "SETOR LESTE QUADRA 47 CASA 31 - GAMA - DF",
+      "gps": "-15.997222, -48.055167",
+      "causa_principal": "OBSTRUCAO_VEGETACAO",
+      "motivo": "Cerca viva densa e podada na esquina obstrui a visualização da calçada e de eventual hidrante subterrâneo ou de coluna.",
+      "detalhes": "Esquina residencial com placa de sinalização de quadra, contendo cerca viva arbustiva contínua em primeiro plano que oculta a faixa de passeio público adjacente ao muro e portões.",
+      "data_auditoria": "2026-10-26T23:03:07.461Z"
+    },
+    {
+      "nom": "GAM00028",
+      "codHidrante": "GAM00028",
+      "folderName": "gama",
+      "endereco": "SETOR LESTE ENTRE QUADRAS 44/46 - GAMA - DF",
+      "gps": "-15.999338, -48.05526",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "O trecho de calçada e meio-fio encontra-se visível e desobstruído, constatando-se a ausência física do hidrante no local.",
+      "detalhes": "Frente de lote residencial com calçada de concreto, árvore no alinhamento predial e terreno lateral com grama e poste de iluminação, sem qualquer hidrante instalado.",
+      "data_auditoria": "2026-10-26T23:04:09.071Z"
+    },
+    {
+      "nom": "GAM00032",
+      "codHidrante": "GAM00032",
+      "folderName": "gama",
+      "endereco": "SETOR INDUSTRIAL QI 02/03 LOTE 580 - GAMA - DF",
+      "gps": "-16.010778, -48.057611",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "Acesso e calçada em frente ao portão metálico estão plenamente visíveis, inexistindo hidrante de coluna instalado no trecho.",
+      "detalhes": "Trecho frontal com portão de chapa ondulada com sinalização de proibido estacionar, sobre calçada/rampa pavimentada sem obstruções visuais e sem presença de hidrante urbano.",
+      "data_auditoria": "2026-10-26T23:05:14.828Z"
+    },
+    {
+      "nom": "GAM00037",
+      "codHidrante": "GAM00037",
+      "folderName": "gama",
+      "endereco": "SETOR INDUSTRIAL QI 4 LOTE 580 - GAMA - DF",
+      "gps": "-16.010583, -48.056833",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "Passeio público e meios-fios estão desobstruídos e visíveis, constatando-se a ausência física do hidrante no trecho.",
+      "detalhes": "Via pública com calçada de concreto e acessos pavimentados à esquerda e acostamento de terra com veículos estacionados à direita, sem presença de hidrante de coluna instalado.",
+      "data_auditoria": "2026-10-26T23:06:24.832Z"
+    },
+    {
+      "nom": "GAM00056",
+      "codHidrante": "GAM00056",
+      "folderName": "gama",
+      "endereco": "SETOR LESTE QD. 49 LOTE 129 - GAMA - DF",
+      "gps": "-16.02225, -48.050444",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "O trecho da calçada e esquina está visível e desimpedido, constatando-se a inexistência de hidrante instalado no local.",
+      "detalhes": "Cruzamento de vias residenciais com calçadas e meios-fios expostos em frente a muros e residências, sem registro de hidrante de coluna ou subterrâneo visível no perímetro.",
+      "data_auditoria": "2026-10-26T23:09:05.610Z"
+    },
+    {
+      "nom": "GAM00064",
+      "codHidrante": "GAM00064",
+      "folderName": "gama",
+      "endereco": "SETOR LESTE QD 42 LOTE 16 - GAMA - DF",
+      "gps": "-16.029072, -48.060925",
+      "causa_principal": "OBSTRUCAO_VEICULO",
+      "motivo": "A linha de visão da calçada e do meio-fio está totalmente obstruída por veículos estacionados em primeiro e segundo plano.",
+      "detalhes": "Estacionamento comercial com múltiplos veículos (destaque para carro vermelho e caminhonete branca no primeiro plano) em frente ao Supermercado Capricho, bloqueando a visão do passeio público.",
+      "data_auditoria": "2026-10-26T23:13:41.860Z"
+    },
+    {
+      "nom": "GAM00065",
+      "codHidrante": "GAM00065",
+      "folderName": "gama",
+      "endereco": "SETOR LESTE QD 40 LOTE 01 - GAMA - DF",
+      "gps": "-16.026667, -48.063889",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "A calçada e as margens da via estão visíveis e desobstruídas, inexistindo hidrante de coluna instalado no perímetro registrado.",
+      "detalhes": "Via residencial pavimentada ladeada por passeios públicos e canteiros gramados com árvores espaçadas, permitindo visualização clara do solo e meios-fios sem presença de equipamento hidráulico.",
+      "data_auditoria": "2026-10-26T23:14:58.305Z"
+    },
+    {
+      "nom": "GAM00066",
+      "codHidrante": "GAM00066",
+      "folderName": "gama",
+      "endereco": "SETOR SUL QUADRA 17 CONJUNTO A CASA 18 - GAMA - DF",
+      "gps": "-16.040333, -48.058611",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "A calçada e o muro estão totalmente visíveis e desobstruídos, mas não há hidrante instalado no local.",
+      "detalhes": "Passeio público pavimentado margeando um muro com pintura infantil, com sinalização vertical e sem obstruções visuais significativas, sem registro de hidrante de coluna aparente.",
+      "data_auditoria": "2026-10-26T23:16:05.752Z"
+    },
+    {
+      "nom": "GAM00067",
+      "codHidrante": "GAM00067",
+      "folderName": "gama",
+      "endereco": "SETOR SUL QUADRA 15 CONJUNTO C CASA 01 - GAMA-DF",
+      "gps": "-16.039611, -48.061083",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "Calçadas e canteiros encontram-se desobstruídos e com boa visibilidade, porém não há hidrante instalado no trecho.",
+      "detalhes": "Trecho de via urbana com calçada em frente a residência e canteiro/área aberta do outro lado da rua; visibilidade desimpedida, sem presença de hidrante de coluna aparente.",
+      "data_auditoria": "2026-10-26T23:17:19.651Z"
+    },
+    {
+      "nom": "GAM00068",
+      "codHidrante": "GAM00068",
+      "folderName": "gama",
+      "endereco": "SETOR SUL QUADRA 13 CONJUNTO D CASA 40 - GAMA DF",
+      "gps": "-16.037472, -48.059028",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "O trecho da calçada e a fachada da edificação estão visíveis, constatando-se a ausência física de hidrante instalado.",
+      "detalhes": "Edificação de madeira/metálica na divisa da via, calçada de paralelepípedo/terra com lixeira de ferro e placa informativa, sem presença de hidrante de coluna no logradouro.",
+      "data_auditoria": "2026-10-26T23:18:29.087Z"
+    },
+    {
+      "nom": "GAM00069",
+      "codHidrante": "GAM00069",
+      "folderName": "gama",
+      "endereco": "SETOR SUL QD 11 CONJUNTO C CASA 25 - GAMA - DF",
+      "gps": "-16.037333, -48.064444",
+      "causa_principal": "OBSTRUCAO_VEGETACAO",
+      "motivo": "A faixa de calçada está tomada por mato e vegetação rasteira densa, impossibilitando a visualização de eventual hidrante subterrâneo ou base de equipamento.",
+      "detalhes": "Trecho sem calçamento pavimentado, apresentando canteiro com terra, entulhos e mato cobrindo a margem da via em frente a um muro residencial.",
+      "data_auditoria": "2026-10-26T23:19:37.496Z"
+    },
+    {
+      "nom": "GAM00070",
+      "codHidrante": "GAM00070",
+      "folderName": "gama",
+      "endereco": "SETOR SUL QD 09 CONJUNTO C CASA 27 - GAMA - DF",
+      "gps": "-16.034806, -48.068528",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "A faixa lateral e os muros encontram-se desobstruídos e visíveis, sem nenhum hidrante de coluna instalado no trecho.",
+      "detalhes": "Trecho viário ladeado por ampla faixa gramada e muro de alvenaria residencial totalmente expostos, sem a presença do equipamento cadastrado.",
+      "data_auditoria": "2026-10-26T23:20:49.997Z"
     }
   ]
 }
