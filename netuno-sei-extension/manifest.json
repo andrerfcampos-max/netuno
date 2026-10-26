@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Netuno SEI Integrator",
-  "version": "1.7",
+  "version": "1.8",
   "description": "Automatiza a autuação de processos, anexo do relatório CAESB, geração do memorando e tramitação no SEI DF.",
   "permissions": [
     "storage",
     "scripting",
-    "tabs"
+    "tabs",
+    "cookies"
   ],
   "host_permissions": [
     "*://sei.df.gov.br/*",

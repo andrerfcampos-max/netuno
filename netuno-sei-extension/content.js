@@ -205,10 +205,15 @@ function displayAutomationError(err) {
   }
 }
 
-// Resolve qualquer URL relativa do SEI garantindo o caminho canônico /sei/ e rejeitando pseudoprotocolos como javascript:
+// Resolve qualquer URL relativa do SEI garantindo o caminho canônico /sei/, protocolo HTTPS e rejeitando pseudoprotocolos como javascript:
 function resolveSeiUrl(relativeOrAbsoluteUrl, fallbackBase = window.location.href) {
   if (!relativeOrAbsoluteUrl) return '';
   let str = String(relativeOrAbsoluteUrl).trim();
+
+  // Força HTTPS se vier com http://sei.df.gov.br
+  if (str.startsWith('http://sei.df.gov.br')) {
+    str = str.replace('http://sei.df.gov.br', 'https://sei.df.gov.br');
+  }
 
   // Se vier com javascript: ou código onclick inline (ex: javascript:infraAbrirJanela('controlador.php?acao=...'))
   if (/^javascript:/i.test(str) || /infraAbrirJanela|infraNavegar/i.test(str)) {
@@ -225,7 +230,7 @@ function resolveSeiUrl(relativeOrAbsoluteUrl, fallbackBase = window.location.hre
 
   if (str.startsWith('http://') || str.startsWith('https://')) {
     if (str.includes('sei.df.gov.br/controlador.php')) {
-      return str.replace('sei.df.gov.br/controlador.php', 'sei.df.gov.br/sei/controlador.php');
+      str = str.replace('sei.df.gov.br/controlador.php', 'sei.df.gov.br/sei/controlador.php');
     }
     return str;
   }
@@ -234,12 +239,18 @@ function resolveSeiUrl(relativeOrAbsoluteUrl, fallbackBase = window.location.hre
   if (!base || !base.includes('/sei/')) {
     base = `${window.location.origin}/sei/controlador.php`;
   }
+  if (base.startsWith('http://sei.df.gov.br')) {
+    base = base.replace('http://sei.df.gov.br', 'https://sei.df.gov.br');
+  }
   
   try {
-    const resolved = new URL(str, base).toString();
+    let resolved = new URL(str, base).toString();
     if (resolved.startsWith('javascript:')) return '';
+    if (resolved.startsWith('http://sei.df.gov.br')) {
+      resolved = resolved.replace('http://sei.df.gov.br', 'https://sei.df.gov.br');
+    }
     if (resolved.includes('sei.df.gov.br/controlador.php')) {
-      return resolved.replace('sei.df.gov.br/controlador.php', 'sei.df.gov.br/sei/controlador.php');
+      resolved = resolved.replace('sei.df.gov.br/controlador.php', 'sei.df.gov.br/sei/controlador.php');
     }
     return resolved;
   } catch (e) {
@@ -287,18 +298,77 @@ function extractCleanLinkUrl(el, fallbackBase) {
   return '';
 }
 
-// Wrapper seguro para fetch com validação prévia de protocolo e log contextual
+// Wrapper seguro para fetch com fallback automático para background service worker (imune a CORS e Mixed Content de redirecionamento)
 async function safeFetch(url, options = {}, contextDescription = '') {
   if (!url || typeof url !== 'string') {
     throw new Error(`Falha de navegação SEI: URL nula ou inválida (${contextDescription || 'sem contexto'}).`);
   }
-  const cleanUrl = url.trim();
+  let cleanUrl = url.trim();
+  if (cleanUrl.startsWith('http://sei.df.gov.br')) {
+    cleanUrl = cleanUrl.replace('http://sei.df.gov.br', 'https://sei.df.gov.br');
+  }
   if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
     throw new Error(`Protocolo incompatível para fetch (${contextDescription || 'SEI'}): "${cleanUrl.slice(0, 80)}".`);
   }
+
   logAutomation(`[FETCH] ${contextDescription ? contextDescription + ' -> ' : ''}${cleanUrl.length > 130 ? cleanUrl.slice(0, 130) + '...' : cleanUrl}`);
-  const res = await fetch(cleanUrl, options);
-  return res;
+
+  try {
+    const res = await fetch(cleanUrl, {
+      ...options,
+      credentials: 'include'
+    });
+    return res;
+  } catch (errDirect) {
+    // Se for FormData (upload binário) repassa erro direto
+    if (options.body instanceof FormData) {
+      logAutomation(`[FETCH] Erro no upload direto de arquivo: ${errDirect?.message}`);
+      throw errDirect;
+    }
+
+    logAutomation(`[FETCH] Falha direta (${errDirect.message}). Acionando proxy via Service Worker para ${contextDescription || 'SEI'}...`);
+
+    return new Promise((resolve, reject) => {
+      if (!chrome.runtime || !chrome.runtime.sendMessage) {
+        return reject(errDirect);
+      }
+
+      let serializedBody = null;
+      if (options.body) {
+        serializedBody = typeof options.body === 'string' ? options.body : options.body.toString();
+      }
+
+      chrome.runtime.sendMessage({
+        action: 'netuno_bg_fetch',
+        url: cleanUrl,
+        method: options.method || 'GET',
+        headers: options.headers || {},
+        body: serializedBody
+      }, response => {
+        if (chrome.runtime.lastError) {
+          return reject(new Error(`Erro no Service Worker: ${chrome.runtime.lastError.message}`));
+        }
+        if (!response) {
+          return reject(new Error(`Sem resposta do Service Worker para: ${cleanUrl}`));
+        }
+        if (!response.success) {
+          return reject(new Error(`Falha no proxy background: ${response.error}`));
+        }
+
+        const data = response.data;
+        const mockResponse = {
+          ok: data.ok,
+          status: data.status,
+          statusText: data.statusText,
+          url: data.url,
+          text: async () => data.text,
+          json: async () => JSON.parse(data.text),
+          blob: async () => new Blob([data.text])
+        };
+        resolve(mockResponse);
+      });
+    });
+  }
 }
 
 // Codifica strings compatíveis com ISO-8859-1 (Latin-1) nativo do SEI DF
