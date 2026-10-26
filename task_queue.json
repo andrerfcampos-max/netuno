@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": null,
+  "activeTaskId": "TASK-255",
   "queue": [
     {
       "id": "TASK-1",
@@ -2564,6 +2564,16 @@
       "startedAt": null,
       "completedAt": "2026-10-26T22:12:11.354Z",
       "error": "Apenas consulta explicativa, liberando lock"
+    },
+    {
+      "id": "TASK-255",
+      "seq": 255,
+      "conversationId": "f2fccac3-fada-405a-86d5-42302c631146",
+      "description": "Implementar Sniper V8 com passos na via e relatorio pericial de rejeicoes",
+      "status": "running",
+      "createdAt": "2026-10-26T22:14:12.542Z",
+      "startedAt": "2026-10-26T22:14:16.046Z",
+      "completedAt": null
     }
   ]
 }

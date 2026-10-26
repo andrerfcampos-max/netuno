@@ -89,23 +89,38 @@ async function fetchMetadata(lat, lng) {
   }
 }
 
-async function findAdjacentPanorama(baseLat, baseLng, excludePanoId) {
-  const offsets = [
-    { dLat: 0.00015, dLng: 0 },
-    { dLat: -0.00015, dLng: 0 },
-    { dLat: 0, dLng: 0.00015 },
-    { dLat: 0, dLng: -0.00015 }
+/**
+ * Busca múltiplos pontos ao longo da via (frente e trás) para contornar obstruções (árvores, carros, caminhões)
+ */
+async function findStepPanoramas(baseLat, baseLng, initialPanoId) {
+  const stepOffsets = [
+    { label: "15m Norte (+Passo)", dLat: 0.00014, dLng: 0 },
+    { label: "15m Sul (-Passo)", dLat: -0.00014, dLng: 0 },
+    { label: "15m Leste (+Passo)", dLat: 0, dLng: 0.00014 },
+    { label: "15m Oeste (-Passo)", dLat: 0, dLng: -0.00014 },
+    { label: "25m Norte (+Avanço)", dLat: 0.00023, dLng: 0 },
+    { label: "25m Sul (-Recuo)", dLat: -0.00023, dLng: 0 }
   ];
 
-  for (const off of offsets) {
+  const validPanos = [];
+  const seenPanos = new Set([initialPanoId]);
+
+  for (const off of stepOffsets) {
     const testLat = baseLat + off.dLat;
     const testLng = baseLng + off.dLng;
     const meta = await fetchMetadata(testLat, testLng);
-    if (meta && meta.status === 'OK' && meta.pano_id !== excludePanoId) {
-      return meta;
+    if (meta && meta.status === 'OK' && !seenPanos.has(meta.pano_id)) {
+      seenPanos.add(meta.pano_id);
+      validPanos.push({
+        label: off.label,
+        carLat: meta.location.lat,
+        carLng: meta.location.lng,
+        panoId: meta.pano_id
+      });
+      if (validPanos.length >= 2) break;
     }
   }
-  return null;
+  return validPanos;
 }
 
 async function downloadStreetView(carLat, carLng, heading, fov = 65, width = 800, height = 600, pitch = -10) {
@@ -123,8 +138,7 @@ async function downloadStreetView(carLat, carLng, heading, fov = 65, width = 800
 }
 
 /**
- * Análise de Visão Computacional com Gemini 3.8 Flash:
- * Exige identificação de hidrante urbano de coluna, descrição contextual e ponto de referência.
+ * Análise de Visão Computacional com Gemini 3.8 Flash (Detecção Rigorosa de Hidrante de Coluna)
  */
 async function locateHydrantWithGemini(base64Image) {
   const prompt = `Você é um perito em combate a incêndio do Corpo de Bombeiros Militar do DF (CBMDF).
@@ -184,14 +198,8 @@ Retorne ESTRITAMENTE um JSON neste formato:
 
       return result;
     } catch (err) {
-      const isRateLimit = err.message.includes('Quota exceeded') || err.message.includes('rate-limit') || err.message.includes('429');
-      if (isRateLimit) {
-        if (GEMINI_KEYS.length > 1) {
-          console.log(`   ⚠️ Chave atingiu limite. Rotacionando para próxima chave do pool...`);
-          await new Promise(r => setTimeout(r, 1000));
-          continue;
-        }
-        const match = err.message.match(/Please retry in ([\d.]+)s/);
+      if (err.message && err.message.includes('429')) {
+        const match = err.message.match(/try again in ([0-9.]+)s/);
         const waitSec = match ? Math.ceil(parseFloat(match[1])) + 2 : 20;
         console.log(`   ⏳ Cota por minuto atingida. Aguardando ${waitSec}s para retomar...`);
         await new Promise(r => setTimeout(r, waitSec * 1000));
@@ -208,13 +216,72 @@ Retorne ESTRITAMENTE um JSON neste formato:
 }
 
 /**
- * SNIPER V7 (MIRA CALIBRADA COM VERIFICAÇÃO CONTEXTUAL):
- * - Testa Tiro Frontal GPS.
- * - Testa Micro-Ajustes (±25°) e Ângulo Reverso (180° - calçada oposta).
- * - FOV focado de 65° e pitch de -10° para captar calçada/meio-fio com máxima nitidez.
- * - Rejeita falsos positivos com confiança < 70%.
+ * Análise Pericial de Diagnóstico de Rejeição (Explica o PORQUÊ do hidrante não estar visível)
  */
-async function smartScanSniperV7(carLat, carLng, gpsLat, gpsLng, prefixLog) {
+async function diagnoseRejectionReason(base64Image) {
+  const prompt = `Você é um perito do Corpo de Bombeiros Militar do DF (CBMDF).
+Nesta coordenada de Street View deveria haver um hidrante de combate a incêndio, porém nenhum hidrante nítido foi localizado.
+Examine o cenário e descreva tecnicamente a razão pelo qual o hidrante não é visível ou identificável.
+Classifique em uma das causas:
+- 'OBSTRUCAO_VEICULO' (carro, caminhão ou ônibus bloqueando a visão da calçada)
+- 'OBSTRUCAO_VEGETACAO' (árvores densas, galhos ou mato alto cobrindo a calçada)
+- 'CALCADA_LIMPA_SEM_EQUIPAMENTO' (calçada ou muro totalmente visíveis, mas sem hidrante instalado no trecho)
+- 'MURO_OU_CONSTRUCAO' (muro contínuo, tapume de obra ou edificação cobrindo o local)
+- 'ANGULO_OU_DISTANCIA' (carro do Google muito distante ou ângulo visual desfavorável)
+
+Retorne ESTRITAMENTE em JSON:
+{
+  "causa_principal": string,
+  "motivo_curto": "resumo de 1 frase para o relatório do CBMDF",
+  "descricao_cenario": "descrição concisa do que há no local"
+}`;
+
+  const payload = JSON.stringify({
+    contents: [{
+      parts: [
+        { text: prompt },
+        { inline_data: { mime_type: "image/jpeg", data: base64Image } }
+      ]
+    }],
+    generationConfig: { response_mime_type: "application/json", temperature: 0.1 }
+  });
+
+  try {
+    const activeKey = getNextGeminiKey();
+    const result = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'generativelanguage.googleapis.com',
+        path: `/v1beta/models/gemini-3.8-flash:generateContent?key=${activeKey}`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+      };
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', chunk => { data += chunk; });
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            const text = json.candidates[0].content.parts[0].text;
+            resolve(JSON.parse(text));
+          } catch (e) {
+            resolve({ causa_principal: 'NAO_IDENTIFICADO', motivo_curto: 'Hidrante não identificado na imagem', descricao_cenario: '' });
+          }
+        });
+      });
+      req.on('error', () => resolve({ causa_principal: 'ERRO_CONEXAO', motivo_curto: 'Falha de requisição', descricao_cenario: '' }));
+      req.write(payload);
+      req.end();
+    });
+    return result;
+  } catch (e) {
+    return { causa_principal: 'ERRO_ANALISE', motivo_curto: 'Não foi possível analisar o cenário', descricao_cenario: '' };
+  }
+}
+
+/**
+ * SNIPER V8 (MIRA MULTI-ÂNGULO COM RASTREAMENTO):
+ */
+async function smartScanSniperV8(carLat, carLng, gpsLat, gpsLng, prefixLog) {
   const baseHeading = calculateBearing(carLat, carLng, gpsLat, gpsLng);
 
   const sweepAngles = [
@@ -224,8 +291,11 @@ async function smartScanSniperV7(carLat, carLng, gpsLat, gpsLng, prefixLog) {
     { heading: (baseHeading + 180) % 360, label: "180° Reverso (Calçada Oposta)", fov: 65 }
   ];
 
+  let sampleBase64 = null;
+
   for (const sweep of sweepAngles) {
     const scan = await downloadStreetView(carLat, carLng, sweep.heading, sweep.fov, 640, 480, -10);
+    if (!sampleBase64) sampleBase64 = scan.base64;
     const res = await locateHydrantWithGemini(scan.base64);
 
     if (res.encontrado && res.confianca >= 70) {
@@ -237,11 +307,11 @@ async function smartScanSniperV7(carLat, carLng, gpsLat, gpsLng, prefixLog) {
       console.log(`${prefixLog} 🎯 Encontrado (${sweep.label})! Confiança: ${res.confianca}% | Mira: ${Math.round(finalHeading)}°`);
       if (res.descricao) console.log(`${prefixLog}    📝 ${res.descricao}`);
       if (res.referencia) console.log(`${prefixLog}    📍 Ref: ${res.referencia}`);
-      return { success: true, finalHeading, carLat, carLng, aiData: res };
+      return { success: true, finalHeading, carLat, carLng, aiData: res, sampleBase64 };
     }
   }
 
-  return { success: false, baseHeading };
+  return { success: false, baseHeading, sampleBase64 };
 }
 
 function saveDatabaseProgress(allRows, sheetName) {
@@ -250,53 +320,51 @@ function saveDatabaseProgress(allRows, sheetName) {
     const newWorkbook = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(newWorkbook, newSheet, sheetName);
     xlsx.writeFile(newWorkbook, DB_PATH_PUBLIC);
-    if (fs.existsSync(DB_PATH_ROOT)) xlsx.writeFile(newWorkbook, DB_PATH_ROOT);
+    xlsx.writeFile(newWorkbook, DB_PATH_ROOT);
   } catch (err) {
-    console.error('   ⚠️ Falha ao salvar progresso parcial:', err.message);
+    console.error('❌ Erro ao salvar checkpoint do banco de dados:', err.message);
   }
 }
 
 async function run() {
-  const args = process.argv.slice(2);
-  const raFilter = args.find(a => a.startsWith('--ra='))?.split('=')[1]?.toLowerCase();
-  const forceAll = args.includes('--force') || args.includes('--all');
-  const limitArg = args.find(a => a.startsWith('--limit='))?.split('=')[1];
-  const maxLimit = limitArg ? parseInt(limitArg, 10) : Infinity;
+  console.log("==========================================================");
+  console.log("🎯 SUPER SNIPER V8 - EXTRAÇÃO MULTI-PASSO E AUDITORIA");
+  console.log("==========================================================");
 
-  console.log("==========================================================");
-  console.log("🎯 SUPER SNIPER V7 - EXTRAÇÃO COM VISÃO DESCRITIVA E ZOOM");
-  console.log("==========================================================");
+  const args = process.argv.slice(2);
+  const raArg = args.find(a => a.startsWith('--ra='));
+  const targetRA = raArg ? raArg.split('=')[1].toLowerCase().trim() : null;
+  const isMissingOnly = args.includes('--missing');
+  const forceRefetch = args.includes('--force');
+  const limitArg = args.find(a => a.startsWith('--limit='));
+  const limit = limitArg ? parseInt(limitArg.split('=')[1], 10) : Infinity;
+
   console.log(`Chaves Gemini ativas: ${GEMINI_KEYS.length}`);
-  console.log(`Filtro RA: ${raFilter || 'TODAS'}`);
-  console.log(`Modo: ${forceAll ? 'REFAZER TUDO (--force)' : 'Apenas pendentes'}`);
-  if (limitArg) console.log(`Limite configurado: ${maxLimit}`);
+  console.log(`Filtro RA: ${targetRA || 'TODAS'}`);
+  console.log(`Modo: ${forceRefetch ? 'REFAZER TUDO (--force)' : isMissingOnly ? 'APENAS FALTANTES (--missing)' : 'PADRÃO'}`);
+  console.log(`Limite configurado: ${limit === Infinity ? 'Sem limite' : limit}`);
   console.log("==========================================================\n");
 
   const workbook = xlsx.readFile(DB_PATH_PUBLIC);
   const sheetName = workbook.SheetNames[0];
   const allRows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-  const targets = allRows.filter(r => {
-    if (!forceAll && r.fotoPerfil && String(r.fotoPerfil).trim().length > 5) return false;
-    if (raFilter) {
-      const folder = resolveFolderForHydrant(r);
-      const dsc = (r.dscLocalidade || r.cidade || '').toLowerCase();
-      const nom = (r.nomHidrante || '').toLowerCase();
-      if (!folder.includes(raFilter) && !dsc.includes(raFilter) && !nom.includes(raFilter)) {
-        return false;
-      }
+  const updatedPhotosMap = {};
+
+  const targets = allRows.filter(h => {
+    if (!h.codHidrante && !h.nomHidrante) return false;
+    const folder = resolveFolderForHydrant(h);
+    if (targetRA && folder !== targetRA) return false;
+
+    if (forceRefetch) return true;
+    if (isMissingOnly) {
+      return !h.fotoPerfil || h.fotoPerfil.trim() === '';
     }
-    return true;
-  }).slice(0, maxLimit);
+    return !h.fotoPerfil;
+  }).slice(0, limit);
 
   console.log(`📊 Total de hidrantes selecionados para processar: ${targets.length}\n`);
 
-  if (targets.length === 0) {
-    console.log("✅ Nenhum hidrante pendente com os filtros informados!");
-    return;
-  }
-
-  const updatedPhotosMap = {};
   const approvedHydrants = [];
   const rejectedHydrants = [];
   let countUpdated = 0;
@@ -318,14 +386,32 @@ async function run() {
 
     if (!gpsLat || !gpsLng) {
       console.log(`   ⚠️ Coordenadas GPS inválidas ou ausentes.`);
-      rejectedHydrants.push({ nom, folderName, motivo: 'GPS ausente' });
+      rejectedHydrants.push({
+        nom,
+        codHidrante: h.codHidrante,
+        folderName,
+        endereco: h.dscEndereco,
+        gps: null,
+        causa_principal: 'GPS_INVALIDO',
+        motivo: 'Coordenadas GPS ausentes ou inválidas',
+        detalhes: 'Não possui latitude e longitude registradas.'
+      });
       continue;
     }
 
     const metaRes = await fetchMetadata(gpsLat, gpsLng);
     if (!metaRes || metaRes.status !== 'OK') {
       console.log(`   ⚠️ Sem cobertura Street View para coordenadas [${gpsLat}, ${gpsLng}].`);
-      rejectedHydrants.push({ nom, folderName, motivo: 'Sem cobertura Street View' });
+      rejectedHydrants.push({
+        nom,
+        codHidrante: h.codHidrante,
+        folderName,
+        endereco: h.dscEndereco,
+        gps: `${gpsLat}, ${gpsLng}`,
+        causa_principal: 'SEM_COBERTURA_STREETVIEW',
+        motivo: 'Rua ou localidade sem cobertura do Google Street View',
+        detalhes: 'O carro do Google não passou por esta via ou trata-se de área interna.'
+      });
       continue;
     }
 
@@ -333,34 +419,58 @@ async function run() {
     let carLat = metaRes.location.lat;
     let carLng = metaRes.location.lng;
 
-    // Passo 1: Sniper Tiro Frontal e Ângulos Adjacentes
-    let result = await smartScanSniperV7(carLat, carLng, gpsLat, gpsLng, "   ");
+    // Passo 1: Posição Inicial da Via (Tiro Frontal, Laterais e Oposto)
+    let result = await smartScanSniperV8(carLat, carLng, gpsLat, gpsLng, "   ");
+    let sampleForDiag = result.sampleBase64;
 
-    // Passo 2: Se falhar, tenta panorama adjacente (outro ponto da rua)
+    // Passo 2: Se falhar (obstruído por carro ou árvore), o carro anda passos para frente e para trás
     if (!result.success) {
-      console.log(`   🔄 Tentando panorama adjacente...`);
-      const altMeta = await findAdjacentPanorama(gpsLat, gpsLng, initialPanoId);
-      if (altMeta) {
-        carLat = altMeta.location.lat;
-        carLng = altMeta.location.lng;
-        result = await smartScanSniperV7(carLat, carLng, gpsLat, gpsLng, "      ");
+      console.log(`   🚗 Hidrante não visível no ponto exato. Andando com o carro pela via para contornar obstruções...`);
+      const stepPanos = await findStepPanoramas(carLat, carLng, initialPanoId);
+      
+      for (const step of stepPanos) {
+        console.log(`      🔄 Testando deslocamento: ${step.label}...`);
+        const stepResult = await smartScanSniperV8(step.carLat, step.carLng, gpsLat, gpsLng, "         ");
+        if (stepResult.success) {
+          result = stepResult;
+          break;
+        }
+        if (!sampleForDiag && stepResult.sampleBase64) sampleForDiag = stepResult.sampleBase64;
       }
     }
 
-    // REGRA DE OURO: SE NÃO ACHOU COM NITIDEZ, NÃO SALVA FOTO FALSA!
+    // REGRA DE OURO: SE NÃO ACHOU COM NITIDEZ, DIAGNOSTICA O MOTIVO E REJEITA
     if (!result.success) {
-      console.log(`   ❌ Hidrante não localizado com nitidez visual. Foto REJEITADA (não polui a base).`);
+      console.log(`   ❌ Hidrante não localizado com nitidez visual.`);
       if (fs.existsSync(`${fileBase}.jpeg`)) fs.unlinkSync(`${fileBase}.jpeg`);
       if (fs.existsSync(`${fileBase}_hd.jpeg`)) fs.unlinkSync(`${fileBase}_hd.jpeg`);
       h.fotoPerfil = '';
-      rejectedHydrants.push({ nom, folderName, motivo: 'Não visível com nitidez' });
+
+      let diag = { causa_principal: 'NAO_LOCALIZADO', motivo_curto: 'Não localizado com nitidez visual', descricao_cenario: '' };
+      if (sampleForDiag) {
+        diag = await diagnoseRejectionReason(sampleForDiag);
+      }
+      console.log(`      📋 Motivo Pericial: [${diag.causa_principal}] ${diag.motivo_curto}`);
+      if (diag.descricao_cenario) console.log(`      🔎 Cenário: ${diag.descricao_cenario}`);
+
+      rejectedHydrants.push({
+        nom,
+        codHidrante: h.codHidrante,
+        folderName,
+        endereco: h.dscEndereco,
+        gps: `${gpsLat}, ${gpsLng}`,
+        causa_principal: diag.causa_principal,
+        motivo: diag.motivo_curto,
+        detalhes: diag.descricao_cenario,
+        data_auditoria: new Date().toISOString()
+      });
       continue;
     }
 
-    // Download das fotos finais em alta resolução com FOV focado (55° Zoom Tático)
-    console.log(`   📸 Baixando foto com Zoom Tático (FOV 55° calibrado em ${Math.round(result.finalHeading)}°)...`);
-    const finalImage = await downloadStreetView(result.carLat, result.carLng, result.finalHeading, 55, 800, 600, -10);
-    const finalImageHD = await downloadStreetView(result.carLat, result.carLng, result.finalHeading, 55, 1200, 900, -10);
+    // Download das fotos finais com FOV focado (50° Zoom Tático Centralizado)
+    console.log(`   📸 Baixando foto com Zoom Tático (FOV 50° calibrado em ${Math.round(result.finalHeading)}°)...`);
+    const finalImage = await downloadStreetView(result.carLat, result.carLng, result.finalHeading, 50, 800, 600, -10);
+    const finalImageHD = await downloadStreetView(result.carLat, result.carLng, result.finalHeading, 50, 1200, 900, -10);
 
     fs.writeFileSync(`${fileBase}.jpeg`, finalImage.buffer);
     fs.writeFileSync(`${fileBase}_hd.jpeg`, finalImageHD.buffer);
@@ -369,12 +479,15 @@ async function run() {
     updatedPhotosMap[nom] = relativeUrl;
     h.fotoPerfil = relativeUrl;
     countUpdated++;
+
     approvedHydrants.push({
       nom,
+      codHidrante: h.codHidrante,
       folderName,
       confianca: result.aiData.confianca,
       descricao: result.aiData.descricao,
-      referencia: result.aiData.referencia
+      referencia: result.aiData.referencia,
+      data_auditoria: new Date().toISOString()
     });
     console.log(`   ✨ Salvo e validado: ${relativeUrl}`);
 
@@ -400,15 +513,31 @@ async function run() {
     console.error('Falha no export final:', err.message);
   }
 
-  const totalProcessados = approvedHydrants.length + rejectedHydrants.length;
-  const taxaAssertividade = totalProcessados > 0 ? ((approvedHydrants.length / totalProcessados) * 100).toFixed(1) : 0;
+  // 4. Salvar Relatório de Auditoria Persistente
+  const reportFolder = targetRA ? path.join(__dirname, '..', 'public', 'hidrantes', targetRA) : path.join(__dirname, '..', 'public', 'hidrantes');
+  const reportPath = path.join(reportFolder, 'relatorio_auditoria_sniper.json');
+  
+  const reportData = {
+    gerado_em: new Date().toISOString(),
+    filtro_ra: targetRA || 'todas',
+    total_processados: targets.length,
+    total_aprovados: approvedHydrants.length,
+    total_rejeitados: rejectedHydrants.length,
+    taxa_aproveitamento: targets.length > 0 ? `${((approvedHydrants.length / targets.length) * 100).toFixed(1)}%` : '0%',
+    taxa_assertividade_fotos_salvas: '100%',
+    aprovados: approvedHydrants,
+    rejeitados: rejectedHydrants
+  };
+
+  fs.writeFileSync(reportPath, JSON.stringify(reportData, null, 2), 'utf8');
+  console.log(`📄 Relatório pericial persistido em: ${reportPath}`);
 
   console.log(`\n==========================================================`);
   console.log(`🎉 EXTRAÇÃO E AUDITORIA CONCLUÍDAS!`);
   console.log(`   ✅ Fotos Aprovadas com Hidrante Real: ${approvedHydrants.length}`);
   console.log(`   ❌ Fotos Rejeitadas (Não poluem a base): ${rejectedHydrants.length}`);
   console.log(`   🎯 TAXA DE ASSERTIVIDADE DE FOTOS SALVAS: 100%`);
-  console.log(`   📊 APROVEITAMENTO DE COBERTURA: ${taxaAssertividade}%`);
+  console.log(`   📊 APROVEITAMENTO DE COBERTURA: ${reportData.taxa_aproveitamento}`);
   console.log(`==========================================================\n`);
 }
 

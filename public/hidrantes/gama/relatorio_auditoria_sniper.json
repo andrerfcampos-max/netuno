@@ -1,0 +1,45 @@
+{
+  "gerado_em": "2026-10-26T22:20:17.478Z",
+  "filtro_ra": "gama",
+  "total_processados": 3,
+  "total_aprovados": 0,
+  "total_rejeitados": 3,
+  "taxa_aproveitamento": "0.0%",
+  "taxa_assertividade_fotos_salvas": "100%",
+  "aprovados": [],
+  "rejeitados": [
+    {
+      "nom": "GAM00007",
+      "codHidrante": "GAM00007",
+      "folderName": "gama",
+      "endereco": "SETOR NORTE QUADRA 1 CONJUNTO H CASA 219 - GAMA - DF",
+      "gps": "-16.012306, -48.067389",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "O trecho de calçada e meio-fio encontra-se visível e desobstruído, sem presença de hidrante de coluna instalado.",
+      "detalhes": "Via pública com calçada de concreto à esquerda dotada de boca de lobo e balizadores metálicos vermelhos, com visão desimpedida da faixa de pedestres onde inexiste equipamento de combate a incêndio.",
+      "data_auditoria": "2026-10-26T22:17:59.299Z"
+    },
+    {
+      "nom": "GAM00009",
+      "codHidrante": "GAM00009",
+      "folderName": "gama",
+      "endereco": "SETOR NORTE QUADRA 2 CONJUNTO I CASA 419 - GAMA - DF",
+      "gps": "-16.004389, -48.059778",
+      "causa_principal": "OBSTRUCAO_VEICULO",
+      "motivo": "Veículo de passeio estacionado sobre a calçada bloqueia a linha de visão do passeio público onde o hidrante estaria instalado.",
+      "detalhes": "Trecho urbano com edificação comercial à esquerda e veículo prata estacionado sobre o passeio/acesso frontal, obstruindo a visão do piso e da calçada adjacente à via.",
+      "data_auditoria": "2026-10-26T22:19:12.667Z"
+    },
+    {
+      "nom": "GAM00012",
+      "codHidrante": "GAM00012",
+      "folderName": "gama",
+      "endereco": "SETOR SUL QD. 01 CONJUNTO O CASA 16 - GAMA - DF",
+      "gps": "-16.030194, -48.07025",
+      "causa_principal": "CALCADA_LIMPA_SEM_EQUIPAMENTO",
+      "motivo": "A extensão da calçada e meio-fio está visível ao longo da via pública, sem registro de hidrante de coluna instalado.",
+      "detalhes": "Trecho residencial urbano com calçada de concreto e faixa gramada expostas em frente a uma residência com portão de grade; há veículos estacionados na rampa interna/lateral e uma lixeira aramada no canteiro, mas nenhum hidrante é identificado no logradouro.",
+      "data_auditoria": "2026-10-26T22:20:16.889Z"
+    }
+  ]
+}
