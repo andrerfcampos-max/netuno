@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-250",
+  "activeTaskId": "TASK-251",
   "queue": [
     {
       "id": "TASK-1",
@@ -2519,19 +2519,19 @@
       "seq": 250,
       "conversationId": "0bfcceaf-40b9-481c-b037-68e2e1443924",
       "description": "Alterar descricao do processo SEI automacao",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-26T21:39:25.607Z",
       "startedAt": "2026-10-26T21:46:44.681Z",
-      "completedAt": null
+      "completedAt": "2026-10-26T21:48:26.106Z"
     },
     {
       "id": "TASK-251",
       "seq": 251,
       "conversationId": "e2fbb211-14c5-4dd4-8ea6-6178fd6cd4b7",
       "description": "Compartilhar card de hidrante com foto de perfil via WhatsApp (Etapa workflow)",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-10-26T21:44:47.003Z",
-      "startedAt": null,
+      "startedAt": "2026-10-26T21:48:28.032Z",
       "completedAt": null
     }
   ]
