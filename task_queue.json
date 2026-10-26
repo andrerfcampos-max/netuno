@@ -2523,6 +2523,16 @@
       "createdAt": "2026-10-26T21:39:25.607Z",
       "startedAt": null,
       "completedAt": null
+    },
+    {
+      "id": "TASK-251",
+      "seq": 251,
+      "conversationId": "e2fbb211-14c5-4dd4-8ea6-6178fd6cd4b7",
+      "description": "Compartilhar card de hidrante com foto de perfil via WhatsApp (Etapa workflow)",
+      "status": "queued",
+      "createdAt": "2026-10-26T21:44:47.003Z",
+      "startedAt": null,
+      "completedAt": null
     }
   ]
 }

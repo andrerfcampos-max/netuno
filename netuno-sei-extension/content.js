@@ -205,10 +205,24 @@ function displayAutomationError(err) {
   }
 }
 
-// Resolve qualquer URL relativa do SEI garantindo o caminho canônico /sei/
+// Resolve qualquer URL relativa do SEI garantindo o caminho canônico /sei/ e rejeitando pseudoprotocolos como javascript:
 function resolveSeiUrl(relativeOrAbsoluteUrl, fallbackBase = window.location.href) {
   if (!relativeOrAbsoluteUrl) return '';
-  let str = relativeOrAbsoluteUrl.trim();
+  let str = String(relativeOrAbsoluteUrl).trim();
+
+  // Se vier com javascript: ou código onclick inline (ex: javascript:infraAbrirJanela('controlador.php?acao=...'))
+  if (/^javascript:/i.test(str) || /infraAbrirJanela|infraNavegar/i.test(str)) {
+    const matchEmbedded = str.match(/controlador\.php\?[^'"]+/i);
+    if (matchEmbedded) {
+      str = matchEmbedded[0];
+    } else {
+      return '';
+    }
+  }
+
+  // Remove hashes vazios
+  if (str === '#' || str.startsWith('#')) return '';
+
   if (str.startsWith('http://') || str.startsWith('https://')) {
     if (str.includes('sei.df.gov.br/controlador.php')) {
       return str.replace('sei.df.gov.br/controlador.php', 'sei.df.gov.br/sei/controlador.php');
@@ -217,15 +231,74 @@ function resolveSeiUrl(relativeOrAbsoluteUrl, fallbackBase = window.location.hre
   }
   
   let base = fallbackBase || window.location.href;
-  if (!base.includes('/sei/')) {
+  if (!base || !base.includes('/sei/')) {
     base = `${window.location.origin}/sei/controlador.php`;
   }
   
-  const resolved = new URL(str, base).toString();
-  if (resolved.includes('sei.df.gov.br/controlador.php')) {
-    return resolved.replace('sei.df.gov.br/controlador.php', 'sei.df.gov.br/sei/controlador.php');
+  try {
+    const resolved = new URL(str, base).toString();
+    if (resolved.startsWith('javascript:')) return '';
+    if (resolved.includes('sei.df.gov.br/controlador.php')) {
+      return resolved.replace('sei.df.gov.br/controlador.php', 'sei.df.gov.br/sei/controlador.php');
+    }
+    return resolved;
+  } catch (e) {
+    return '';
   }
-  return resolved;
+}
+
+// Extrai URL limpa e válida a partir de um elemento DOM (<a>, <button>, etc.), inspecionando href, onclick e atributos
+function extractCleanLinkUrl(el, fallbackBase) {
+  if (!el) return '';
+
+  // 1. Inspeciona o atributo href
+  const href = el.getAttribute('href') || '';
+  if (href && !href.startsWith('#') && !/^javascript:(void\(0\)|;?)$/i.test(href.trim())) {
+    const resolvedHref = resolveSeiUrl(href, fallbackBase);
+    if (resolvedHref && (resolvedHref.startsWith('http://') || resolvedHref.startsWith('https://'))) {
+      return resolvedHref;
+    }
+  }
+
+  // 2. Inspeciona o atributo onclick
+  const onclick = el.getAttribute('onclick') || '';
+  if (onclick) {
+    const matchOnclick = onclick.match(/controlador\.php\?[^'"]+/i);
+    if (matchOnclick) {
+      const resolvedOnclick = resolveSeiUrl(matchOnclick[0], fallbackBase);
+      if (resolvedOnclick && (resolvedOnclick.startsWith('http://') || resolvedOnclick.startsWith('https://'))) {
+        return resolvedOnclick;
+      }
+    }
+  }
+
+  // 3. Inspeciona outros atributos de atributos DOM
+  for (let i = 0; i < el.attributes.length; i++) {
+    const attr = el.attributes[i];
+    if (attr.name !== 'href' && attr.name !== 'onclick' && /controlador\.php\?/i.test(attr.value)) {
+      const m = attr.value.match(/controlador\.php\?[^'"]+/i);
+      if (m) {
+        const res = resolveSeiUrl(m[0], fallbackBase);
+        if (res && (res.startsWith('http://') || res.startsWith('https://'))) return res;
+      }
+    }
+  }
+
+  return '';
+}
+
+// Wrapper seguro para fetch com validação prévia de protocolo e log contextual
+async function safeFetch(url, options = {}, contextDescription = '') {
+  if (!url || typeof url !== 'string') {
+    throw new Error(`Falha de navegação SEI: URL nula ou inválida (${contextDescription || 'sem contexto'}).`);
+  }
+  const cleanUrl = url.trim();
+  if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+    throw new Error(`Protocolo incompatível para fetch (${contextDescription || 'SEI'}): "${cleanUrl.slice(0, 80)}".`);
+  }
+  logAutomation(`[FETCH] ${contextDescription ? contextDescription + ' -> ' : ''}${cleanUrl.length > 130 ? cleanUrl.slice(0, 130) + '...' : cleanUrl}`);
+  const res = await fetch(cleanUrl, options);
+  return res;
 }
 
 // Codifica strings compatíveis com ISO-8859-1 (Latin-1) nativo do SEI DF
@@ -538,7 +611,7 @@ async function executeFullAutomation(pkg) {
 
     // Tenta localizar o link 'Incluir Documento' a partir da página retornada pelo SEI
     let linkIncluirDoc = docProcessoSalvo.querySelector('a[href*="documento_escolher_tipo"], a[title*="Incluir Documento"], a[aria-label*="Incluir Documento"]');
-    let urlEscolherDoc = linkIncluirDoc ? resolveSeiUrl(linkIncluirDoc.getAttribute('href'), resSaveProc.url) : null;
+    let urlEscolherDoc = extractCleanLinkUrl(linkIncluirDoc, resSaveProc.url);
 
     if (!urlEscolherDoc) {
       const matchDocEsc = textSaveProc.match(/controlador\.php\?acao=documento_escolher_tipo[^"'\s<>]+/i);
@@ -563,14 +636,15 @@ async function executeFullAutomation(pkg) {
         }
 
         logAutomation('Carregando árvore de documentos:', urlArvoreVisualizar);
-        const resArvore = await fetch(urlArvoreVisualizar);
+        const resArvore = await safeFetch(urlArvoreVisualizar, {}, 'Árvore de Documentos');
         const htmlArvore = await resArvore.text();
         const docArvore = new DOMParser().parseFromString(htmlArvore, 'text/html');
 
         const linkArvore = docArvore.querySelector('a[href*="documento_escolher_tipo"], a[title*="Incluir Documento"], a[aria-label*="Incluir Documento"]');
         if (linkArvore) {
-          urlEscolherDoc = resolveSeiUrl(linkArvore.getAttribute('href'), urlArvoreVisualizar);
-        } else {
+          urlEscolherDoc = extractCleanLinkUrl(linkArvore, urlArvoreVisualizar);
+        }
+        if (!urlEscolherDoc) {
           const m = htmlArvore.match(/controlador\.php\?acao=documento_escolher_tipo[^"'\s<>]+/i);
           if (m) urlEscolherDoc = resolveSeiUrl(m[0], urlArvoreVisualizar);
         }
@@ -584,7 +658,7 @@ async function executeFullAutomation(pkg) {
       try {
         logAutomation('Localizando processo na tela de Controle de Processos...');
         const urlControle = resolveSeiUrl(`controlador.php?acao=procedimento_controlar&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}`);
-        const resControle = await fetch(urlControle);
+        const resControle = await safeFetch(urlControle, {}, 'Controle de Processos');
         const htmlControle = await resControle.text();
         const docControle = new DOMParser().parseFromString(htmlControle, 'text/html');
 
@@ -592,14 +666,15 @@ async function executeFullAutomation(pkg) {
         const linkProcGerado = docControle.querySelector(`a[href*="id_procedimento=${idProcedimento}"]`);
         if (linkProcGerado) {
           const urlTrabalharGerado = resolveSeiUrl(linkProcGerado.getAttribute('href'), urlControle);
-          const resTrab = await fetch(urlTrabalharGerado);
+          const resTrab = await safeFetch(urlTrabalharGerado, {}, 'Tela do Processo Gerado');
           const htmlTrab = await resTrab.text();
           const docTrab = new DOMParser().parseFromString(htmlTrab, 'text/html');
 
           const lDoc = docTrab.querySelector('a[href*="documento_escolher_tipo"], a[title*="Incluir Documento"]');
           if (lDoc) {
-            urlEscolherDoc = resolveSeiUrl(lDoc.getAttribute('href'), urlTrabalharGerado);
-          } else {
+            urlEscolherDoc = extractCleanLinkUrl(lDoc, urlTrabalharGerado);
+          }
+          if (!urlEscolherDoc) {
             const m = htmlTrab.match(/controlador\.php\?acao=documento_escolher_tipo[^"'\s<>]+/i);
             if (m) urlEscolherDoc = resolveSeiUrl(m[0], urlTrabalharGerado);
           }
@@ -613,30 +688,42 @@ async function executeFullAutomation(pkg) {
       urlEscolherDoc = resolveSeiUrl(`controlador.php?acao=documento_escolher_tipo&id_procedimento=${idProcedimento}&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}`, resSaveProc.url);
     }
 
-    const resPageEscolherDoc = await fetch(urlEscolherDoc);
+    const resPageEscolherDoc = await safeFetch(urlEscolherDoc, {}, 'Catálogo Escolher Tipo Documento');
     const htmlEscolherDoc = await resPageEscolherDoc.text();
     const docEscolherDoc = new DOMParser().parseFromString(htmlEscolherDoc, 'text/html');
 
     // Localiza o documento externo (Série 2056 - Relatório ou link "Externo")
     let linkDocExterno = docEscolherDoc.querySelector('a[href*="documento_receber"], a[href*="id_serie=2056"]');
     if (!linkDocExterno) {
-      const allDocLinks = Array.from(docEscolherDoc.querySelectorAll('a'));
-      linkDocExterno = allDocLinks.find(a => /externo/i.test(a.textContent) || /documento_receber/i.test(a.href) || /2056/.test(a.getAttribute('onclick') || ''));
+      const allDocLinks = Array.from(docEscolherDoc.querySelectorAll('a, button, input[type="button"]'));
+      linkDocExterno = allDocLinks.find(a => 
+        /externo/i.test(a.textContent || a.value || '') || 
+        /documento_receber/i.test(a.getAttribute('href') || a.getAttribute('onclick') || '') || 
+        /2056/.test(a.getAttribute('onclick') || '')
+      );
     }
 
-    let urlDocReceber = linkDocExterno && linkDocExterno.getAttribute('href') && !linkDocExterno.getAttribute('href').startsWith('#')
-      ? resolveSeiUrl(linkDocExterno.getAttribute('href'), urlEscolherDoc)
-      : null;
+    let urlDocReceber = extractCleanLinkUrl(linkDocExterno, urlEscolherDoc);
 
+    // Se não veio pelo link direto, tenta extrair por regex no HTML da página escolher tipo
+    if (!urlDocReceber) {
+      const matchDocReceber = htmlEscolherDoc.match(/controlador\.php\?acao=documento_receber[^"'\s<>]+/i);
+      if (matchDocReceber) {
+        urlDocReceber = resolveSeiUrl(matchDocReceber[0], urlEscolherDoc);
+      }
+    }
+
+    // Se ainda não encontrou, constrói a URL oficial com id_serie=2056 ou preservando os parâmetros
     if (!urlDocReceber) {
       const u = new URL(urlEscolherDoc);
       u.searchParams.set('acao', 'documento_receber');
       u.searchParams.set('acao_origem', 'documento_escolher_tipo');
-      u.searchParams.set('id_serie', '2056');
+      u.searchParams.delete('id_serie');
       urlDocReceber = u.toString();
     }
 
-    const resPageDocReceber = await fetch(urlDocReceber);
+    logAutomation('Abrindo formulário de Documento Externo (Laudo CAESB):', urlDocReceber);
+    const resPageDocReceber = await safeFetch(urlDocReceber, {}, 'Formulário Documento Receber');
     const htmlDocReceber = await resPageDocReceber.text();
     const docDocReceber = new DOMParser().parseFromString(htmlDocReceber, 'text/html');
     const formDoc = getSeiWorkForm(docDocReceber, 'form#frmDocumentoReceber, form#frmDocumentoCadastro');
@@ -649,7 +736,7 @@ async function executeFullAutomation(pkg) {
     uploadFormData.append('UPLOAD_IDENTIFIER', uploadId);
 
     const pdfBlob = pkg.pdfBase64 
-      ? await (await fetch(`data:application/pdf;base64,${pkg.pdfBase64}`)).blob()
+      ? await (await safeFetch(`data:application/pdf;base64,${pkg.pdfBase64}`, {}, 'Conversão Base64 PDF')).blob()
       : new Blob([pkg.htmlContent || 'Relatório Oficial CAESB'], { type: 'text/html;charset=utf-8' });
 
     const fileName = `Relatorio_Vistoria_CAESB_${cidade.replace(/\s+/g, '_')}.pdf`;
@@ -660,10 +747,10 @@ async function executeFullAutomation(pkg) {
       `controlador.php?acao=documento_upload_anexo&infra_sistema=${getInfraSistema()}&infra_unidade_atual=${getInfraUnidade()}&infra_hash=${hashDocReceber}`;
     const uploadAction = resolveSeiUrl(rawUploadAction, urlDocReceber);
     
-    const resUpload = await fetch(uploadAction, {
+    const resUpload = await safeFetch(uploadAction, {
       method: 'POST',
       body: uploadFormData
-    });
+    }, 'Upload Arquivo PDF');
     const uploadRespText = await resUpload.text();
     const matchToken = uploadRespText.match(/([a-f0-9]{32}±[^"'\s<>]+)/);
     const anexoToken = matchToken ? matchToken[1] : `${uploadId}±${fileName}`;
@@ -716,19 +803,29 @@ async function executeFullAutomation(pkg) {
     updateStatus(`⏳ 3/4: Laudo nº ${numeroSeiRelatorio} anexado! Abrindo Memorando...`, '#38bdf8');
 
     // Acessa catálogo de documentos novamente para pegar o link do Memorando (Série 165)
-    const resPageEscolherMemo = await fetch(urlEscolherDoc);
+    const resPageEscolherMemo = await safeFetch(urlEscolherDoc, {}, 'Catálogo Documentos Memorando');
     const htmlEscolherMemo = await resPageEscolherMemo.text();
     const docEscolherMemo = new DOMParser().parseFromString(htmlEscolherMemo, 'text/html');
 
     let linkMemo = docEscolherMemo.querySelector('a[href*="id_serie=165"]');
     if (!linkMemo) {
-      const allMemoLinks = Array.from(docEscolherMemo.querySelectorAll('a'));
-      linkMemo = allMemoLinks.find(a => /memorando/i.test(a.textContent) && (a.href.includes('documento_gerar') || /165/.test(a.getAttribute('onclick') || '')));
+      const allMemoLinks = Array.from(docEscolherMemo.querySelectorAll('a, button, input[type="button"]'));
+      linkMemo = allMemoLinks.find(a => 
+        /memorando/i.test(a.textContent || a.value || '') && 
+        ((a.getAttribute('href') || '').includes('documento_gerar') || /165/.test(a.getAttribute('onclick') || ''))
+      );
     }
 
-    let urlGerarMemo = linkMemo && linkMemo.getAttribute('href') && !linkMemo.getAttribute('href').startsWith('#')
-      ? resolveSeiUrl(linkMemo.getAttribute('href'), urlEscolherDoc)
-      : null;
+    let urlGerarMemo = extractCleanLinkUrl(linkMemo, urlEscolherDoc);
+
+    // Se não veio do elemento, busca por regex no HTML da página
+    if (!urlGerarMemo) {
+      const matchDocGerar = htmlEscolherMemo.match(/controlador\.php\?acao=documento_gerar[^"'\s<>]*id_serie=165[^"'\s<>]*/i) ||
+                            htmlEscolherMemo.match(/controlador\.php\?acao=documento_gerar[^"'\s<>]+/i);
+      if (matchDocGerar) {
+        urlGerarMemo = resolveSeiUrl(matchDocGerar[0], urlEscolherDoc);
+      }
+    }
 
     if (!urlGerarMemo) {
       const u = new URL(urlEscolherDoc);
@@ -738,7 +835,8 @@ async function executeFullAutomation(pkg) {
       urlGerarMemo = u.toString();
     }
 
-    const resPageMemo = await fetch(urlGerarMemo);
+    logAutomation('Abrindo formulário de geração de Memorando:', urlGerarMemo);
+    const resPageMemo = await safeFetch(urlGerarMemo, {}, 'Formulário Documento Gerar Memorando');
     const htmlMemo = await resPageMemo.text();
     const docMemo = new DOMParser().parseFromString(htmlMemo, 'text/html');
     const formMemo = getSeiWorkForm(docMemo, 'form#frmDocumentoGerar, form#frmDocumentoCadastro');
@@ -883,14 +981,14 @@ async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar
     if (!urlEnviar) {
       // Localiza o link de envio na página atual
       const linkEnv = document.querySelector('a[href*="procedimento_enviar"]');
-      if (linkEnv) urlEnviar = resolveSeiUrl(linkEnv.getAttribute('href'));
+      if (linkEnv) urlEnviar = extractCleanLinkUrl(linkEnv, window.location.href);
     }
 
     if (!urlEnviar) {
       urlEnviar = resolveSeiUrl(`controlador.php?acao=procedimento_enviar&id_procedimento=${idProcedimento}`);
     }
 
-    const resPageEnviar = await fetch(urlEnviar);
+    const resPageEnviar = await safeFetch(urlEnviar, {}, 'Página Tramitação Enviar');
     const htmlEnviar = await resPageEnviar.text();
     const docEnviar = new DOMParser().parseFromString(htmlEnviar, 'text/html');
     const formEnviar = getSeiWorkForm(docEnviar, 'form#frmProcedimentoEnviar');
@@ -911,11 +1009,11 @@ async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar
     postEnviarData.set('hdnUnidades', `${unidadeDestinoId}±CBMDF/COESP/GPCIU/SEHUR - Seção de Hidrantes Urbanos`);
 
     const actionEnviar = resolveSeiUrl(formEnviar?.getAttribute('action') || urlEnviar, urlEnviar);
-    const resEnviar = await fetch(actionEnviar, {
+    const resEnviar = await safeFetch(actionEnviar, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=iso-8859-1' },
       body: encodeSeiFormParams(postEnviarData)
-    });
+    }, 'Submeter Tramitação');
 
     const textEnviar = await resEnviar.text();
     const erroEnv = extractSeiErrorMessage(textEnviar);
