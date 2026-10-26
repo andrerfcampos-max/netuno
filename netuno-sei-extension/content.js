@@ -515,7 +515,7 @@ async function executeFullAutomation(pkg) {
   const cidade = pkg?.cidade || 'Distrito Federal';
   const raRomano = pkg?.raRomano || '';
   const ano = new Date().getFullYear();
-  const descProcesso = `Vistoria em Hidrantes Urbanos - ${cidade}${raRomano ? ` (RA ${raRomano})` : ''} - ${ano}`;
+  const descProcesso = `Hidrantes com alteração - ${cidade}${raRomano ? ` (RA ${raRomano})` : ''} - ${ano}`;
 
   try {
     // ----------------------------------------------------

@@ -341,7 +341,7 @@ export class SeiClient {
   async criarProcesso({ tipoProcessoId = '100000446', descricao, cidade, raRomano }) {
     const nomeCidade = (cidade || '').trim() || 'Distrito Federal';
     const sufixoRa = raRomano ? `(RA ${raRomano})` : '';
-    const desc = descricao || `Vistoria em Hidrantes Urbanos - ${nomeCidade}${sufixoRa ? ` ${sufixoRa}` : ''} - ${new Date().getFullYear()}`;
+    const desc = descricao || `Hidrantes com alteração - ${nomeCidade}${sufixoRa ? ` ${sufixoRa}` : ''} - ${new Date().getFullYear()}`;
     const urlGerar = `${this.seiUrl}/sei/controlador.php?acao=procedimento_gerar&acao_origem=procedimento_escolher_tipo&id_tipo_procedimento=${tipoProcessoId}&infra_sistema=${this.sessionState.infraSistema}&infra_unidade_atual=${this.sessionState.unidadeAtual}&infra_hash=${this.sessionState.infraHash}`;
 
     // Acessa formulário de geração
