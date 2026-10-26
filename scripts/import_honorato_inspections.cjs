@@ -195,6 +195,13 @@ async function run() {
       });
     }
 
+    if (item.problemasHidrante && typeof item.problemasHidrante === 'string') {
+      const splitProbs = item.problemasHidrante.split(/[|;]/).map(s => s.trim()).filter(Boolean);
+      splitProbs.forEach(p => {
+        if (!probParts.includes(p)) probParts.push(p);
+      });
+    }
+
     const problemaFinal = probParts.join(' | ');
     const isOperante = (item.status === 'OPERANTE' || item.flgAtivo === true || item.flgAtivo === 'true');
 
@@ -250,6 +257,25 @@ async function run() {
     current.vistoriadorMatricula = vistoriadorMatricula;
     current.matricula = vistoriadorMatricula;
     current.equipeVistoria = equipeVistoria;
+    if (item.latitude || item.numLatitude) {
+      current.numLatitude = parseFloat(item.latitude || item.numLatitude);
+    }
+    if (item.longitude || item.numLongitude) {
+      current.numLongitude = parseFloat(item.longitude || item.numLongitude);
+    }
+    if (item.endereco || item.dscEndereco) {
+      current.dscEndereco = item.endereco || item.dscEndereco;
+    }
+    if (item.pontoReferencia || item.dscPontoReferencia) {
+      current.pontoReferencia = item.pontoReferencia || item.dscPontoReferencia;
+      current.dscPontoReferencia = current.pontoReferencia;
+    }
+    if (item.numeroSei || item.processoSei) {
+      current.processoSei = item.numeroSei || item.processoSei;
+    }
+    if (item.aguardandoManutencao !== undefined) {
+      current.aguardandoManutencao = item.aguardandoManutencao;
+    }
     current.HISTORICO_VISTORIAS = prevHistory;
     current.ultimaAtualizacao = new Date().toISOString();
 
@@ -456,12 +482,12 @@ async function run() {
         title: `Carga em Lote Concluída: ${updatedCount} Vistorias Efetivadas`,
         entityId: 'LOTE',
         entityName: `${updatedCount} vistorias processadas`,
-        location: 'DF (Geral)',
+        location: updatedHydrantsList[0]?.dscLocalidade || 'DF (Geral)',
         author: {
-          nome: 'Sgt Rrm Honorato',
-          matricula: '-',
+          nome: updatedHydrantsList[0]?.vistoriadorNome || 'Sgt Rrm Honorato',
+          matricula: updatedHydrantsList[0]?.vistoriadorMatricula || '-',
           role: 'vistoriador',
-          equipe: 'Sgt Freitas, Sgt Santiago (pttc)'
+          equipe: updatedHydrantsList[0]?.equipeVistoria || 'Sgt Freitas, Sgt Santiago (pttc)'
         },
         details: `Carga em lote de ${updatedCount} vistorias realizada com sucesso. Missões, rotas e histórico 100% sincronizados.`,
         coords: null,
