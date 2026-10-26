@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-251",
+  "activeTaskId": "TASK-252",
   "queue": [
     {
       "id": "TASK-1",
@@ -2529,9 +2529,19 @@
       "seq": 251,
       "conversationId": "e2fbb211-14c5-4dd4-8ea6-6178fd6cd4b7",
       "description": "Compartilhar card de hidrante com foto de perfil via WhatsApp (Etapa workflow)",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-26T21:44:47.003Z",
       "startedAt": "2026-10-26T21:48:28.032Z",
+      "completedAt": "2026-10-26T21:54:33.497Z"
+    },
+    {
+      "id": "TASK-252",
+      "seq": 252,
+      "conversationId": "f2fccac3-fada-405a-86d5-42302c631146",
+      "description": "Verificar e refazer fotos gama 36 37 39 a 42",
+      "status": "running",
+      "createdAt": "2026-10-26T22:04:50.837Z",
+      "startedAt": "2026-10-26T22:04:54.053Z",
       "completedAt": null
     }
   ]
