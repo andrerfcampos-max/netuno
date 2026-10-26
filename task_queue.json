@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-247",
+  "activeTaskId": "TASK-248",
   "queue": [
     {
       "id": "TASK-1",
@@ -2489,19 +2489,19 @@
       "seq": 247,
       "conversationId": "4b03fb84-6212-4766-b9ff-636e9fff7bf4",
       "description": "Vistorias Honorato 26/10/2026 - TAG e SAM",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-26T21:25:16.897Z",
       "startedAt": "2026-10-26T21:34:04.556Z",
-      "completedAt": null
+      "completedAt": "2026-10-26T21:34:59.086Z"
     },
     {
       "id": "TASK-248",
       "seq": 248,
       "conversationId": "a4dc1cd0-d704-4f89-9ef6-bd6fdd406d38",
       "description": "Lote vistorias Sgt L Ribeiro Cruzeiro",
-      "status": "queued",
+      "status": "running",
       "createdAt": "2026-10-26T21:34:48.675Z",
-      "startedAt": null,
+      "startedAt": "2026-10-26T21:35:00.674Z",
       "completedAt": null
     }
   ]
