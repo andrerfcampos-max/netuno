@@ -41,6 +41,9 @@ export const getHydrantPhoto = (h) => {
   if (nom.startsWith('CEI') || nom.startsWith('CEL')) {
     return `/hidrantes/ceilandia/${nom}.jpeg`;
   }
+  if (nom.startsWith('GAM')) {
+    return `/hidrantes/gama/${nom}.jpeg`;
+  }
 
   // 3. Fallbacks secundários de fotos
   if (h.foto && typeof h.foto === 'string' && h.foto.trim() !== '') return h.foto.trim();
@@ -71,19 +74,49 @@ export const getHydrantHdPhoto = (h) => {
   return standard;
 };
 
-// Cache em memória para evitar duplicação de requisições de preloading
+// Cache em memória para evitar duplicação de requisições de preloading e permitir Web Share API 0ms
 const preloadedUrls = new Set();
+const photoBlobCache = new Map();
+const photoValidUrlCache = new Map();
 
 /**
  * Dispara o pré-carregamento (pre-load) instantâneo de uma foto no cache HTTP do navegador
+ * e armazena o Blob em memória para compartilhamento instantâneo (0ms) no WhatsApp Mobile.
  * @param {string} photoUrl 
  */
 export const preloadHydrantPhoto = (photoUrl) => {
   if (!photoUrl || typeof photoUrl !== 'string') return;
   const clean = photoUrl.trim();
-  if (!clean || preloadedUrls.has(clean) || clean.startsWith('data:')) return;
+  if (!clean || preloadedUrls.has(clean)) return;
 
   preloadedUrls.add(clean);
+
+  // Pré-carrega o Blob em memória (inclusive data URLs) para Web Share API síncrona no clique
+  if (typeof fetch !== 'undefined' && !photoBlobCache.has(clean)) {
+    fetch(clean)
+      .then(res => {
+        if (!res.ok) {
+          photoValidUrlCache.set(clean, false);
+          return null;
+        }
+        return res.blob();
+      })
+      .then(blob => {
+        if (blob && blob.size > 0 && blob.type.startsWith('image/')) {
+          photoBlobCache.set(clean, blob);
+          photoValidUrlCache.set(clean, true);
+        } else {
+          photoValidUrlCache.set(clean, false);
+        }
+      })
+      .catch(() => {
+        if (clean.startsWith('http')) {
+          photoValidUrlCache.set(clean, true);
+        }
+      });
+  }
+
+  if (clean.startsWith('data:')) return;
 
   try {
     // 1. Pré-carregamento via objeto Image em memória com alta prioridade
@@ -125,3 +158,100 @@ export const preloadHydrantsList = (hydrants = [], count = 3) => {
     }
   });
 };
+
+/**
+ * Compartilha o card completo do hidrante no WhatsApp incluindo a Foto de Perfil, texto e links:
+ * - Em dispositivos móveis (Web Share API Level 2 com suporte a files):
+ *   Envia o arquivo de imagem (.jpeg) anexado diretamente com o texto completo na legenda (caption).
+ * - Em Desktop (WhatsApp Web) ou fallback:
+ *   Inclui o link público direto da Foto de Perfil no corpo da mensagem para pré-visualização automática no WhatsApp.
+ * @param {Object} h - Objeto do hidrante
+ * @param {string} [formattedVistoriaDate] - Data da última vistoria formatada (opcional)
+ */
+export const shareHydrantOnWhatsApp = async (h, formattedVistoriaDate) => {
+  if (!h) return;
+  const id = h.codHidrante || h._internalId || h.nomHidrante;
+  const displayCode = h.nomHidrante || h.codHidrante || id;
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://netuno-eight.vercel.app';
+  const netunoUrl = `${baseUrl}/?hid=${encodeURIComponent(id)}`;
+  const wazeUrl = `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}`;
+  const photoRaw = getHydrantPhoto(h);
+
+  let imageFile = null;
+  let isPhotoVerified = false;
+  const safeName = String(displayCode).replace(/[^a-zA-Z0-9_-]/g, '_');
+
+  if (photoRaw) {
+    const cleanUrl = photoRaw.trim();
+    if (photoBlobCache.has(cleanUrl)) {
+      const cachedBlob = photoBlobCache.get(cleanUrl);
+      if (cachedBlob) {
+        const ext = cachedBlob.type.includes('png') ? 'png' : 'jpeg';
+        imageFile = new File([cachedBlob], `${safeName}.${ext}`, { type: cachedBlob.type || 'image/jpeg' });
+        isPhotoVerified = true;
+      }
+    } else if (photoValidUrlCache.get(cleanUrl) !== false) {
+      try {
+        const res = await fetch(cleanUrl);
+        if (res.ok) {
+          const blob = await res.blob();
+          if (blob && blob.size > 0 && blob.type.startsWith('image/')) {
+            photoBlobCache.set(cleanUrl, blob);
+            photoValidUrlCache.set(cleanUrl, true);
+            const ext = blob.type.includes('png') ? 'png' : 'jpeg';
+            imageFile = new File([blob], `${safeName}.${ext}`, { type: blob.type || 'image/jpeg' });
+            isPhotoVerified = true;
+          } else {
+            photoValidUrlCache.set(cleanUrl, false);
+          }
+        } else {
+          photoValidUrlCache.set(cleanUrl, false);
+        }
+      } catch (e) {
+        if (cleanUrl.startsWith('http')) {
+          isPhotoVerified = true;
+        }
+      }
+    }
+  }
+
+  const publicPhotoUrl = (photoRaw && isPhotoVerified)
+    ? (photoRaw.startsWith('http') ? photoRaw : (photoRaw.startsWith('/') ? `${baseUrl}${photoRaw}` : ''))
+    : '';
+
+  const vistoriaStr = formattedVistoriaDate || h.datHoraUltimaVistoria || 'Sem registro';
+  let text = `🚒 *Hidrante:* ${displayCode}\n📍 *RA:* ${h.dscLocalidade || '-'}\n${h.flgAtivo ? '🟢 *Status:* OPERANTE' : '🔴 *Status:* INOPERANTE'}\n📅 *Última Vistoria:* ${vistoriaStr}\n⚠️ *Problemas:* ${h.problemasHidrante || 'Nenhum'}\n🗺️ *Endereço:* ${h.dscEndereco || ''} ${h.dscPontoReferencia ? `(${h.dscPontoReferencia})` : ''}`;
+
+  if (publicPhotoUrl) {
+    text += `\n\n📸 *Foto de Perfil:*\n${publicPhotoUrl}`;
+  }
+
+  text += `\n\n📲 *Abrir no App Netuno:*\n${netunoUrl}\n\n🚗 *Navegar pelo Waze:*\n${wazeUrl}`;
+
+  const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  // No Mobile, prioriza o envio nativo com a foto de perfil real anexada como imagem e texto na legenda
+  if (isMobile && imageFile && typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
+    try {
+      if (navigator.canShare({ files: [imageFile] })) {
+        await navigator.share({
+          title: `Hidrante ${displayCode}`,
+          text: text,
+          files: [imageFile]
+        });
+        return;
+      }
+    } catch (err) {
+      if (err && (err.name === 'AbortError' || String(err.message).toLowerCase().includes('cancel') || String(err.message).toLowerCase().includes('abort'))) {
+        return;
+      }
+    }
+  }
+
+  // Fallback universal (WhatsApp Mobile / WhatsApp Web com link da foto de perfil incluso)
+  const waUrl = isMobile
+    ? `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`
+    : `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  window.open(waUrl, '_blank');
+};
+

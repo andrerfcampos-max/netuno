@@ -636,6 +636,12 @@
       "status": "completed",
       "name": "Extensão Netuno SEI Integrator (Opção A) e Ajuste de Endereçamento para Cel no Memorando",
       "prompt": "Implementar a Opção A via Extensão Chrome/Edge (netuno-sei-extension): 1) Atualizar o modelo de minuta de memorando em seiMemorandoUtils.js para endereçar ao Cel. QOBM/Comb. Comandante do GPCIU; 2) Criar netuno-bridge.js para sincronizar o pacote CAESB do Netuno para o storage da extensão; 3) Implementar em content.js o motor completo de autuação do processo na SUOMA, upload do PDF nato-digital da CAESB, geração do memorando ao Cel, abertura da janela nativa de assinatura do SEI (2ª senha) e remessa automática para CBMDF/COESP/GPCIU/SEHUR mantendo aberto na SUOMA."
+    },
+    {
+      "id": 108,
+      "status": "completed",
+      "name": "Compartilhamento de Card de Hidrante no WhatsApp com Foto de Perfil Anexada e Fallback Inteligente",
+      "prompt": "Aprimorar o compartilhamento de cards de hidrantes pelo WhatsApp (hydrantPhotoUtils.js e MapComponent.jsx): 1) No Mobile (Android/iOS), utilizar a Web Share API Level 2 (navigator.share com files) para enviar o arquivo real da foto de perfil (.jpeg) anexado diretamente como imagem e os dados táticos, link do Netuno e Waze na legenda (caption); 2) Pré-carregar o Blob da foto em memória (photoBlobCache) ao selecionar o hidrante para compartilhamento síncrono instantâneo (0ms); 3) No Desktop (WhatsApp Web) ou fallback, incluir o link público verificado da foto de perfil no corpo da mensagem para geração automática do preview."
     }
   ]
 }

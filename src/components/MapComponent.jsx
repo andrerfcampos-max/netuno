@@ -12,7 +12,7 @@ import { setCachedLocation, getLastKnownLocation } from '../utils/geoTracker';
 import { optimizeRouteEuclidean } from '../utils/routeOptimization';
 import { isHydrantInSet, getHydrantAllIds, isHydrantCompletedInMission, translateId } from '../utils/idMapping';
 import { getStreetViewUrl } from '../utils/streetViewUtils';
-import { getHydrantPhoto, preloadHydrantPhoto } from '../utils/hydrantPhotoUtils';
+import { getHydrantPhoto, preloadHydrantPhoto, shareHydrantOnWhatsApp } from '../utils/hydrantPhotoUtils';
 
 // Fix para ícones padrão do Leaflet não quebrarem
 delete L.Icon.Default.prototype._getIconUrl;
@@ -1137,16 +1137,7 @@ const MapComponent = ({
   } catch(e) {}
 
   const handleShareWhatsApp = (h) => {
-    const id = h.codHidrante || h._internalId || h.nomHidrante;
-    const baseUrl = window.location.origin;
-    const netunoUrl = `${baseUrl}/?hid=${encodeURIComponent(id)}`;
-    const wazeUrl = `https://waze.com/ul?ll=${h.numLatitude},${h.numLongitude}`;
-    const text = `🚒 *Hidrante:* ${h.nomHidrante || h.codHidrante}\n📍 *RA:* ${h.dscLocalidade || '-'}\n${h.flgAtivo ? '🟢 *Status:* OPERANTE' : '🔴 *Status:* INOPERANTE'}\n📅 *Última Vistoria:* ${h.datHoraUltimaVistoria || 'Sem registro'}\n⚠️ *Problemas:* ${h.problemasHidrante || 'Nenhum'}\n🗺️ *Endereço:* ${h.dscEndereco || ''} ${h.dscPontoReferencia ? `(${h.dscPontoReferencia})` : ''}\n\n📲 *Abrir no App Netuno:*\n${netunoUrl}\n\n🚗 *Navegar pelo Waze:*\n${wazeUrl}`;
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const waUrl = isMobile 
-      ? `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}` 
-      : `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-    window.open(waUrl, '_blank');
+    shareHydrantOnWhatsApp(h, getHydrantVistoriaDate(h));
   };
 
   const hasActiveRoute = Boolean(isRouteActiveOnMap && activeMission && activeMissionHydrants && activeMissionHydrants.length > 0);

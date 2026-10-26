@@ -989,3 +989,14 @@ Estas implementações foram extraídas do *Relatório Final Consolidado de QA e
   4. **Modo ATSP (OSRM):** A função de custo total (`calculatePathCost`) e as etapas de construção (Cheapest Directed Insertion), refinamento local (Or-Opt 1-Shift/2-Shift) e 2-Opt Direcionado agora incorporam os 40s de penalidade a cada manobra de retorno. O algoritmo prefere manter o avanço linear contínuo no mesmo sentido da via e reservar os hidrantes do sentido oposto para a perna de volta.
   5. **Modo Fallback Euclidiano:** Converte a penalidade temporal em distância virtual equivalente (~333 metros a 30 km/h), eliminando manobras em zigue-zague mesmo sem rede.
   6. **Métricas de Condução:** As estimativas de tempo (`durSec`) exibidas no painel de rota agora contabilizam com precisão os 40s adicionais caso uma manobra de 180° seja inevitável.
+
+### [26/10/2026] Etapa 108 Concluída: Compartilhamento de Card de Hidrante no WhatsApp com Foto de Perfil Anexada e Fallback Inteligente (TASK-251)
+- **1. Envio Nativo de Foto de Perfil como Anexo Real no Mobile (`src/utils/hydrantPhotoUtils.js`, `src/components/MapComponent.jsx`):**
+  - Implementada a função `shareHydrantOnWhatsApp(h, formattedVistoriaDate)` utilizando a **Web Share API Level 2** (`navigator.share({ files: [imageFile], title, text })`).
+  - Em dispositivos móveis (Android/iOS), ao tocar no botão **Zap**, a foto de perfil do hidrante (`.jpeg`) é anexada como imagem real e todos os dados táticos (código, RA, status, última vistoria, problemas, endereço, link do Netuno e link do Waze) são preenchidos automaticamente como **legenda (caption)** da foto.
+- **2. Pré-Carregamento em Memória (0ms) de Blobs de Imagem (`photoBlobCache`):**
+  - Aprimorado `preloadHydrantPhoto` para pré-carregar e validar o `Blob` (`blob.type.startsWith('image/')`) em memória assim que o hidrante é selecionado no mapa, garantindo acionamento instantâneo na chamada de compartilhamento mobile e preservando a ativação de gesto do navegador (Safari iOS / Chrome Android).
+- **3. Fallback Inteligente para Desktop (WhatsApp Web) e Link Direto Verificado:**
+  - Quando aberto no Desktop (`web.whatsapp.com`) ou em navegadores sem suporte a anexo de arquivos via Web Share API, a mensagem inclui automaticamente o link público verificado da foto (`📸 *Foto de Perfil:*`), gerando o card de pré-visualização da imagem no WhatsApp.
+  - Adicionado suporte ao prefixo `GAM` (`/hidrantes/gama/${nom}.jpeg`) na resolução de fotos de perfil.
+
