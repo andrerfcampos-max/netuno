@@ -795,6 +795,40 @@ syncPreferences({ filters: newFilters });
           });
           return updatedHidrantes;
         });
+
+        // Se houver hidrantes excluídos na nuvem, desvincula automaticamente de todas as missões locais
+        if (Array.isArray(cloudMutations.deleted) && cloudMutations.deleted.length > 0) {
+          const deletedKeys = cloudMutations.deleted.map(String);
+          setMissions(prevMissions => {
+            let changed = false;
+            const nextMissions = prevMissions.map(m => {
+              const prevSel = m.selectedIds || [];
+              const prevOrd = m.orderedIds || [];
+              const prevComp = m.completedIds || [];
+
+              const newSel = prevSel.filter(id => !deletedKeys.some(ck => areIdsEquivalent(id, ck)));
+              const newOrd = prevOrd.filter(id => !deletedKeys.some(ck => areIdsEquivalent(id, ck)));
+              const newComp = prevComp.filter(id => !deletedKeys.some(ck => areIdsEquivalent(id, ck)));
+
+              if (newSel.length !== prevSel.length || newOrd.length !== prevOrd.length || newComp.length !== prevComp.length) {
+                changed = true;
+                return {
+                  ...m,
+                  selectedIds: newSel,
+                  orderedIds: newOrd,
+                  completedIds: newComp,
+                  updatedAt: new Date().toISOString()
+                };
+              }
+              return m;
+            });
+            if (changed) {
+              saveMissions(nextMissions);
+              return nextMissions;
+            }
+            return prevMissions;
+          });
+        }
       }
 
       // Sincronização em tempo real de Edificações (PPO) vindas da nuvem
@@ -1291,19 +1325,29 @@ syncPreferences({ filters: newFilters });
     }
 
     const currentSel = currentM.selectedIds || [];
+    const currentOrd = currentM.orderedIds || [];
     const currentComp = currentM.completedIds || [];
 
     const newSelected = currentSel.filter(selId => !candidateKeys.some(ck => areIdsEquivalent(selId, ck)));
+    const newOrdered = currentOrd.filter(ordId => !candidateKeys.some(ck => areIdsEquivalent(ordId, ck)));
     const newCompleted = currentComp.filter(compId => !candidateKeys.some(ck => areIdsEquivalent(compId, ck)));
 
     const target = {
       ...currentM,
       selectedIds: newSelected,
+      orderedIds: newOrdered,
       completedIds: newCompleted,
       updatedAt: new Date().toISOString()
     };
 
-    setMissions(prev => prev.map(m => m.id === target.id ? target : m));
+    setMissions(prev => {
+      const updated = prev.map(m => m.id === target.id ? target : m);
+      saveMissions(updated);
+      return updated;
+    });
+    try {
+      localStorage.setItem(`netuno_mission_ordered_${target.id}`, JSON.stringify(newOrdered));
+    } catch (e) {}
     syncMissionToCloud(target);
     toast.info('Hidrante removido da rota de missão.');
   };
@@ -1846,26 +1890,91 @@ syncPreferences({ filters: filters });
   };
 
   const handleDeleteHydrant = (hydrantToDelete) => {
+    if (!hydrantToDelete) return;
     const delId = hydrantToDelete._internalId || hydrantToDelete.codHidrante || hydrantToDelete.nomHidrante;
+    const candidateKeys = getHydrantAllIds(hydrantToDelete);
+    if (delId && !candidateKeys.includes(String(delId))) {
+      candidateKeys.push(String(delId));
+    }
+
     const newHidrantes = hidrantes.filter(h => {
       if (hydrantToDelete._internalId && h._internalId) {
         return h._internalId !== hydrantToDelete._internalId;
       }
       const idA = hydrantToDelete.codHidrante || hydrantToDelete.nomHidrante;
       const idB = h.codHidrante || h.nomHidrante;
-      return idA !== idB;
+      if (idA && idB && idA === idB) return false;
+      return !candidateKeys.some(ck => areIdsEquivalent(h.codHidrante || h._internalId || h.nomHidrante, ck));
     });
     
     const changes = loadHydrantChanges();
     if (!changes.deleted.includes(delId)) {
       changes.deleted.push(delId);
     }
-    changes.added = changes.added.filter(h => (h._internalId || h.codHidrante) !== delId);
-    delete changes.updated[delId];
+    candidateKeys.forEach(k => {
+      if (!changes.deleted.includes(k)) changes.deleted.push(k);
+      delete changes.updated[k];
+    });
+    changes.added = changes.added.filter(h => !candidateKeys.some(ck => areIdsEquivalent(h._internalId || h.codHidrante || h.nomHidrante, ck)));
     saveHydrantChanges(changes);
 
     setHidrantes(newHidrantes);
     syncHydrantMutationToCloud('delete', delId);
+
+    // 1. Atualiza e desvincula imediatamente de TODAS as rotas e missões ativas e salvas (selectedIds, orderedIds, completedIds)
+    let anyMissionChanged = false;
+    setMissions(prevMissions => {
+      const nextMissions = prevMissions.map(m => {
+        const prevSel = m.selectedIds || [];
+        const prevOrd = m.orderedIds || [];
+        const prevComp = m.completedIds || [];
+
+        const newSel = prevSel.filter(id => !candidateKeys.some(ck => areIdsEquivalent(id, ck)));
+        const newOrd = prevOrd.filter(id => !candidateKeys.some(ck => areIdsEquivalent(id, ck)));
+        const newComp = prevComp.filter(id => !candidateKeys.some(ck => areIdsEquivalent(id, ck)));
+
+        const changed = (newSel.length !== prevSel.length) || 
+                        (newOrd.length !== prevOrd.length) || 
+                        (newComp.length !== prevComp.length);
+
+        if (changed) {
+          anyMissionChanged = true;
+          const updatedM = {
+            ...m,
+            selectedIds: newSel,
+            orderedIds: newOrd,
+            completedIds: newComp,
+            updatedAt: new Date().toISOString()
+          };
+          try {
+            localStorage.setItem(`netuno_mission_ordered_${m.id}`, JSON.stringify(newOrd));
+          } catch (e) {}
+          syncMissionToCloud(updatedM);
+          return updatedM;
+        }
+        return m;
+      });
+
+      if (anyMissionChanged) {
+        saveMissions(nextMissions);
+        return nextMissions;
+      }
+      return prevMissions;
+    });
+
+    // 2. Remove do carrinho de seleção caso presente
+    setCartSelectionIds(prev => prev.filter(id => !candidateKeys.some(ck => areIdsEquivalent(id, ck))));
+
+    // 3. Limpa referências ativas se for o hidrante excluído
+    if (selectedHydrant && candidateKeys.some(ck => areIdsEquivalent(selectedHydrant.codHidrante || selectedHydrant._internalId || selectedHydrant.nomHidrante, ck))) {
+      setSelectedHydrant(null);
+    }
+    if (inspectingHidrante && candidateKeys.some(ck => areIdsEquivalent(inspectingHydrante.codHidrante || inspectingHydrant._internalId || inspectingHydrant.nomHidrante, ck))) {
+      setInspectingHidrante(null);
+    }
+    if (editingHydrante && candidateKeys.some(ck => areIdsEquivalent(editingHydrante.codHidrante || editingHydrante._internalId || editingHydrante.nomHidrante, ck))) {
+      setEditingHydrante(null);
+    }
 
     // Registra ação de exclusão no Histórico de Auditoria
     logAuditEvent({
@@ -1880,7 +1989,7 @@ syncPreferences({ filters: filters });
       coords: (hydrantToDelete.numLatitude && hydrantToDelete.numLongitude) ? { lat: Number(hydrantToDelete.numLatitude), lng: Number(hydrantToDelete.numLongitude) } : null
     });
 
-    toast.success('Hidrante excluído da base com sucesso!');
+    toast.success('Hidrante excluído da base e removido das rotas com sucesso!');
   };
 
   // ---- Controle de Missões ----

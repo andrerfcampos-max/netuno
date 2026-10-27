@@ -19,7 +19,7 @@ import {
   subscribeLocation, 
   setCachedLocation 
 } from '../utils/geoTracker';
-import { isHydrantInSet, getHydrantAllIds, translateId, areIdsEquivalent, isHydrantCompletedInMission, getMissionProgressMetrics } from '../utils/idMapping';
+import { isHydrantInSet, getHydrantAllIds, translateId, areIdsEquivalent, isHydrantCompletedInMission, getMissionProgressMetrics, buildExpandedIdSet } from '../utils/idMapping';
 import { getHydrantPhoto, getHydrantHdPhoto, preloadHydrantsList } from '../utils/hydrantPhotoUtils';
 import { parseDateToTimestamp, formatDateOnly, getHydrantVistoriaDate } from '../utils/dateUtils';
 
@@ -338,17 +338,14 @@ const MissionRoutePanel = ({
       return;
     }
 
-    const currentPendingKeys = new Set(
-      pendingHydrants.map(h => String(h.nomHidrante || h.codHidrante || h._internalId))
+    const currentPendingExpanded = buildExpandedIdSet(
+      pendingHydrants.flatMap(h => getHydrantAllIds(h))
     );
 
     // 1. Preservação de Rota em Andamento:
-    // Se o vistoriador estiver realizando vistorias na mesma sessão, mantém rigorosamente a ordem dos restantes
+    // Se o vistoriador estiver realizando vistorias na mesma sessão ou hidrantes forem excluídos/removidos, mantém rigorosamente a ordem dos restantes
     if (pendingRoute.length > 0) {
-      const remainingRoute = pendingRoute.filter(h => {
-        const k = String(h.nomHidrante || h.codHidrante || h._internalId);
-        return currentPendingKeys.has(k);
-      });
+      const remainingRoute = pendingRoute.filter(h => isHydrantInSet(h, currentPendingExpanded));
 
       if (remainingRoute.length === pendingHydrants.length) {
         if (remainingRoute.length !== pendingRoute.length) {
@@ -536,10 +533,10 @@ const MissionRoutePanel = ({
   // Lista de hidrantes pendentes ordenada: utiliza pendingRoute se válida e sincronizada; fallback em pendingHydrants
   const displayedPendingRoute = useMemo(() => {
     if (pendingHydrants.length === 0) return [];
-    if (pendingRoute.length === pendingHydrants.length) {
-      const pendingKeys = new Set(pendingHydrants.map(h => String(h.nomHidrante || h.codHidrante || h._internalId)));
-      const allMatch = pendingRoute.every(h => pendingKeys.has(String(h.nomHidrante || h.codHidrante || h._internalId)));
-      if (allMatch) return pendingRoute;
+    const pendingExpanded = buildExpandedIdSet(pendingHydrants.flatMap(h => getHydrantAllIds(h)));
+    const validPendingRoute = pendingRoute.filter(h => isHydrantInSet(h, pendingExpanded));
+    if (validPendingRoute.length === pendingHydrants.length) {
+      return validPendingRoute;
     }
     return pendingHydrants;
   }, [pendingRoute, pendingHydrants]);
@@ -616,9 +613,9 @@ const MissionRoutePanel = ({
   const handleRemoveItem = (h) => {
     const name = fixEncoding(h.nomHidrante) || h.codHidrante || 'Hidrante';
     if (window.confirm(`Deseja realmente remover "${name}" da rota de missão?`)) {
-      const idKey = h.nomHidrante || h.codHidrante || h._internalId;
+      const hKeys = getHydrantAllIds(h);
       setPendingRoute(prev => prev.filter(item => 
-        (item.nomHidrante || item.codHidrante || item._internalId) !== idKey
+        !hKeys.some(k => areIdsEquivalent(item.nomHidrante || item.codHidrante || item._internalId, k))
       ));
       if (onRemoveFromMission) {
         onRemoveFromMission(h);
