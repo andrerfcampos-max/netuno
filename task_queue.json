@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-255",
+  "activeTaskId": "TASK-258",
   "queue": [
     {
       "id": "TASK-1",
@@ -2570,9 +2570,39 @@
       "seq": 255,
       "conversationId": "f2fccac3-fada-405a-86d5-42302c631146",
       "description": "Implementar Sniper V8 com passos na via e relatorio pericial de rejeicoes",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-26T22:14:12.542Z",
       "startedAt": "2026-10-26T22:14:16.046Z",
+      "completedAt": "2026-10-26T22:20:44.199Z"
+    },
+    {
+      "id": "TASK-256",
+      "seq": 256,
+      "conversationId": "29a94c83-f59b-4319-8b35-3d759b65182a",
+      "description": "Salvar 30 fotos de perfil do Gama",
+      "status": "completed",
+      "createdAt": "2026-10-26T22:53:49.750Z",
+      "startedAt": "2026-10-26T22:53:53.078Z",
+      "completedAt": "2026-10-26T23:23:46.869Z"
+    },
+    {
+      "id": "TASK-257",
+      "seq": 257,
+      "conversationId": "1ceaf90f-5bdb-4e83-bf4c-4694c7558006",
+      "description": "Vistoria em lote Honorato 27/10/2026 - 12 hidrantes SAM",
+      "status": "completed",
+      "createdAt": "2026-10-27T22:26:07.379Z",
+      "startedAt": "2026-10-27T22:26:10.199Z",
+      "completedAt": "2026-10-27T22:30:45.036Z"
+    },
+    {
+      "id": "TASK-258",
+      "seq": 258,
+      "conversationId": "4db8f8c4-d8a3-4db5-bd5f-2c604cbee7a7",
+      "description": "Consertar atualizacao de rota ao excluir hidrante definitivamente",
+      "status": "running",
+      "createdAt": "2026-10-27T22:27:12.643Z",
+      "startedAt": "2026-10-27T22:30:48.426Z",
       "completedAt": null
     }
   ]
