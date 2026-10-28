@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "activeTaskId": "TASK-258",
+  "activeTaskId": null,
   "queue": [
     {
       "id": "TASK-1",
@@ -2600,10 +2600,20 @@
       "seq": 258,
       "conversationId": "4db8f8c4-d8a3-4db5-bd5f-2c604cbee7a7",
       "description": "Consertar atualizacao de rota ao excluir hidrante definitivamente",
-      "status": "running",
+      "status": "completed",
       "createdAt": "2026-10-27T22:27:12.643Z",
       "startedAt": "2026-10-27T22:30:48.426Z",
-      "completedAt": null
+      "completedAt": "2026-10-27T22:39:39.599Z"
+    },
+    {
+      "id": "TASK-259",
+      "seq": 259,
+      "conversationId": "42df12c0-ca06-49a4-9563-e072f9a3746c",
+      "description": "Vistorias em lote Sgt Honorato Samambaia 28/10/2026",
+      "status": "completed",
+      "createdAt": "2026-10-28T22:58:22.990Z",
+      "startedAt": "2026-10-28T22:58:26.497Z",
+      "completedAt": "2026-10-28T23:01:33.668Z"
     }
   ]
 }
