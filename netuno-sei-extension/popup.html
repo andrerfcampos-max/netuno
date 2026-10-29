@@ -10,7 +10,7 @@
       padding: 0;
     }
     body {
-      width: 340px;
+      width: 365px;
       background: #0f172a;
       color: #f8fafc;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -23,8 +23,8 @@
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid #334155;
-      padding-bottom: 10px;
-      margin-bottom: 12px;
+      padding-bottom: 9px;
+      margin-bottom: 10px;
     }
     .title {
       font-weight: 700;
@@ -43,37 +43,65 @@
       padding: 2px 7px;
       border-radius: 999px;
     }
-    .pkg-card {
+    .upload-box {
       background: #1e293b;
-      border: 1px solid #334155;
+      border: 1px dashed #10b981;
       border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
     }
-    .pkg-label {
+    .upload-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .field-label {
       color: #94a3b8;
       font-size: 10px;
       text-transform: uppercase;
       font-weight: 700;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.3px;
+      display: block;
+      margin-bottom: 3px;
     }
-    .pkg-city {
-      font-size: 13px;
-      font-weight: 700;
-      color: #f8fafc;
-      margin-top: 3px;
-    }
-    .pkg-meta {
-      color: #38bdf8;
+    .btn-upload {
+      background: #059669;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 6px;
       font-size: 11px;
-      margin-top: 3px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .file-info {
+      font-size: 11px;
+      word-break: break-all;
+      color: #fbbf24;
+    }
+    .select-group {
+      margin-bottom: 9px;
+    }
+    select {
+      width: 100%;
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      border-radius: 7px;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      outline: none;
     }
     .status-msg {
       background: rgba(15, 23, 42, 0.7);
       border: 1px solid #334155;
       border-radius: 8px;
       padding: 8px 10px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       font-size: 11px;
       color: #cbd5e1;
       display: none;
@@ -82,7 +110,7 @@
       width: 100%;
       border: none;
       border-radius: 9px;
-      padding: 11px 12px;
+      padding: 10px 12px;
       font-size: 12.5px;
       font-weight: 700;
       cursor: pointer;
@@ -91,7 +119,7 @@
       justify-content: center;
       gap: 7px;
       transition: filter 0.15s, transform 0.1s;
-      margin-bottom: 8px;
+      margin-bottom: 7px;
     }
     .btn:active {
       transform: scale(0.98);
@@ -105,33 +133,16 @@
       color: #ffffff;
       box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4);
     }
-    .btn-play:hover:not(:disabled) {
-      filter: brightness(1.1);
-    }
     .btn-show {
       background: #1e293b;
       color: #e2e8f0;
       border: 1px solid #475569;
-      font-size: 12px;
-      padding: 9px 12px;
-    }
-    .btn-show:hover:not(:disabled) {
-      background: #334155;
-    }
-    .btn-sync {
-      background: transparent;
-      color: #94a3b8;
-      border: 1px dashed #334155;
-      font-size: 11px;
-      padding: 7px 10px;
+      font-size: 11.5px;
+      padding: 8px 12px;
       margin-bottom: 0;
     }
-    .btn-sync:hover:not(:disabled) {
-      color: #e2e8f0;
-      border-color: #64748b;
-    }
     .hint {
-      margin-top: 10px;
+      margin-top: 8px;
       font-size: 10px;
       color: #64748b;
       text-align: center;
@@ -140,35 +151,51 @@
 </head>
 <body>
   <div class="header">
-    <div class="title">🚒 Netuno SEI • SUOMA</div>
-    <span id="ext-badge" class="badge">Ativo</span>
+    <div class="title">🚒 Netuno SEI • Autuação CAESB</div>
+    <span id="ext-badge" class="badge">v2.0</span>
   </div>
 
-  <div class="pkg-card">
-    <div class="pkg-label">Pacote Carregado:</div>
-    <div id="pkg-title" class="pkg-city">Verificando pacote...</div>
-    <div id="pkg-subtitle" class="pkg-meta">Destino: CBMDF/COESP/GPCIU/SEHUR</div>
+  <!-- 1. UPLOAD DO PDF -->
+  <div class="upload-box">
+    <div class="upload-top">
+      <span class="field-label" style="margin-bottom:0;">1. Relatório CAESB (PDF):</span>
+      <label for="popup-input-pdf" class="btn-upload">📂 Subir PDF</label>
+      <input type="file" id="popup-input-pdf" accept=".pdf,application/pdf" style="display:none;" />
+    </div>
+    <div id="popup-file-info" class="file-info">
+      ⚠️ Selecione o PDF do relatório baixado no Netuno
+    </div>
+  </div>
+
+  <!-- 2. CIDADE / RA -->
+  <div class="select-group">
+    <label class="field-label" for="popup-select-ra">2. Cidade / Região Administrativa:</label>
+    <select id="popup-select-ra"></select>
+  </div>
+
+  <!-- 3. UNIDADE DESTINO -->
+  <div class="select-group">
+    <label class="field-label" for="popup-select-destino">3. Unidade de Destino no SEI:</label>
+    <select id="popup-select-destino" style="color:#38bdf8; font-size:11px;">
+      <option value="110037655">CBMDF/DIVIS/SEHUR/SUTEC - Subseção Técnica</option>
+      <option value="110001072">CBMDF/COESP/GPCIU/SEHUR - Seção de Hidrante Urbano</option>
+    </select>
   </div>
 
   <div id="popup-status" class="status-msg"></div>
 
   <button id="btn-popup-play" class="btn btn-play">
     <span>▶️</span>
-    <span>Dar Play e Autuar no SEI</span>
+    <span>Dar Play • Gerar Processo no SEI</span>
   </button>
 
   <button id="btn-popup-show" class="btn btn-show">
     <span>👁️</span>
-    <span>Reabrir Painel na Tela do SEI</span>
-  </button>
-
-  <button id="btn-popup-sync" class="btn btn-sync">
-    <span>🔄</span>
-    <span>Sincronizar Último Relatório do Netuno</span>
+    <span>Abrir Painel na Tela do SEI</span>
   </button>
 
   <div class="hint">
-    Um botão discreto (🚒 SEI) também fica sempre no canto inferior direito do SEI.
+    Ao subir o PDF, a cidade é reconhecida automaticamente pelo nome do arquivo.
   </div>
 
   <script src="popup.js"></script>
