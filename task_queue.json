@@ -2614,6 +2614,16 @@
       "createdAt": "2026-10-28T22:58:22.990Z",
       "startedAt": "2026-10-28T22:58:26.497Z",
       "completedAt": "2026-10-28T23:01:33.668Z"
+    },
+    {
+      "id": "TASK-260",
+      "seq": 260,
+      "conversationId": "1eb6ee8c-ddff-4787-bbf7-4fb26cf8d7fa",
+      "description": "Reabrir extensao via botao discreto e icone da barra de extensoes",
+      "status": "completed",
+      "createdAt": "2026-10-29T17:58:45.316Z",
+      "startedAt": "2026-10-29T17:58:52.458Z",
+      "completedAt": "2026-10-29T18:05:41.643Z"
     }
   ]
 }
