@@ -2664,6 +2664,16 @@
       "createdAt": "2026-10-29T19:27:38.603Z",
       "startedAt": "2026-10-29T19:27:49.051Z",
       "completedAt": "2026-10-29T19:44:07.612Z"
+    },
+    {
+      "id": "TASK-265",
+      "seq": 265,
+      "conversationId": "1eb6ee8c-ddff-4787-bbf7-4fb26cf8d7fa",
+      "description": "Nao manter arquivo em cache entre execucoes no Netuno SEI",
+      "status": "completed",
+      "createdAt": "2026-10-29T19:48:21.944Z",
+      "startedAt": "2026-10-29T19:48:25.798Z",
+      "completedAt": "2026-10-29T19:53:39.893Z"
     }
   ]
 }

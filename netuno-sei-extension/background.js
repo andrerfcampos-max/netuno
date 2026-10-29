@@ -56,8 +56,7 @@ async function syncPackageFromOpenNetunoTabs() {
       const foundPkg = results?.[0]?.result;
       if (foundPkg) {
         await chrome.storage.local.set({
-          netuno_sei_package: foundPkg,
-          netuno_sei_last_package: foundPkg
+          netuno_sei_package: foundPkg
         });
         return foundPkg;
       }
@@ -66,21 +65,15 @@ async function syncPackageFromOpenNetunoTabs() {
     }
   }
 
-  // Fallback para o último pacote salvo no storage
-  const stored = await chrome.storage.local.get(['netuno_sei_package', 'netuno_sei_last_package']);
-  const fallbackPkg = stored.netuno_sei_package || stored.netuno_sei_last_package || null;
-  if (fallbackPkg && !stored.netuno_sei_package) {
-    await chrome.storage.local.set({ netuno_sei_package: fallbackPkg });
-  }
-  return fallbackPkg;
+  const stored = await chrome.storage.local.get(['netuno_sei_package']);
+  return stored.netuno_sei_package || null;
 }
 
 // Localiza (ou abre) a aba do SEI, garante que o content.js está injetado e envia o comando (abrir painel ou dar Play)
 async function dispatchCommandToSeiTab(command, pkg = null) {
   if (pkg) {
     await chrome.storage.local.set({
-      netuno_sei_package: pkg,
-      netuno_sei_last_package: pkg
+      netuno_sei_package: pkg
     });
   }
 

@@ -415,9 +415,33 @@ function saveActivePackageToStorage(pkg) {
   activePackage = pkg;
   if (chrome.storage?.local && pkg) {
     chrome.storage.local.set({
-      netuno_sei_package: pkg,
-      netuno_sei_last_package: pkg
+      netuno_sei_package: pkg
     });
+  }
+}
+
+function clearCurrentLoadedFile() {
+  if (activePackage) {
+    activePackage.pdfBase64 = null;
+    activePackage.fileName = null;
+    activePackage.fileSize = null;
+  }
+  if (chrome.storage?.local) {
+    chrome.storage.local.remove(['netuno_sei_package', 'netuno_sei_last_package']);
+  }
+  updateWidgetPackageUI(activePackage);
+}
+
+function highlightUploadBox() {
+  const uploadBox = document.getElementById('netuno-upload-box');
+  if (uploadBox) {
+    uploadBox.style.transition = 'all 0.3s ease';
+    uploadBox.style.borderColor = '#f59e0b';
+    uploadBox.style.boxShadow = '0 0 16px rgba(245, 158, 11, 0.7)';
+    setTimeout(() => {
+      uploadBox.style.borderColor = '#10b981';
+      uploadBox.style.boxShadow = 'none';
+    }, 2500);
   }
 }
 
@@ -522,7 +546,7 @@ function renderFloatingCard(pkg) {
       </div>
 
       <!-- 1. UPLOAD DO PDF DA CAESB -->
-      <div style="background: #1e293b; border: 1px dashed #10b981; border-radius: 10px; padding: 10px; margin-bottom: 10px;">
+      <div id="netuno-upload-box" style="background: #1e293b; border: 1px dashed #10b981; border-radius: 10px; padding: 10px; margin-bottom: 10px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
           <span style="color: #94a3b8; font-size: 10.5px; text-transform: uppercase; font-weight: 700;">1. Arquivo PDF do Relatório CAESB:</span>
           <label for="input-netuno-pdf" style="background: #059669; color: white; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
@@ -703,35 +727,23 @@ function triggerPlayWithSync() {
   const selectDestino = document.getElementById('select-netuno-destino');
   const chosenDestinoId = selectDestino?.value || activePackage?.destinoId || '110037655';
 
-  if (activePackage && activePackage.pdfBase64) {
-    const finalCity = activePackage.cidade || selectRa?.value || 'Brasília';
-    const finalRoman = activePackage.raRomano || getRARomanByName(finalCity);
-    activePackage.cidade = finalCity;
-    activePackage.raRomano = finalRoman;
-    activePackage.destinoId = chosenDestinoId;
-    activePackage.memorandoMinuta = generateSeiMemorandoMinutaText({ cidade: finalCity, raRomano: finalRoman });
-    saveActivePackageToStorage(activePackage);
-    updateWidgetPackageUI(activePackage);
-    executeFullAutomation(activePackage);
+  // Se o militar não subiu o PDF desta vez, barra a execução e exige o arquivo para nunca repetir relatório anterior
+  if (!activePackage || !activePackage.pdfBase64) {
+    setWidgetExpandedState(true);
+    updateStatus('⚠️ Nenhum relatório PDF carregado! Por favor, clique em "📂 Subir PDF" acima e selecione o relatório da CAESB antes de dar Play.', '#fbbf24');
+    highlightUploadBox();
     return;
   }
 
-  // Se ainda não subiu o PDF, verifica se há no storage
-  chrome.storage?.local?.get(['netuno_sei_package', 'netuno_sei_last_package'], (st) => {
-    const pkg = st?.netuno_sei_package || st?.netuno_sei_last_package;
-    if (pkg && pkg.pdfBase64) {
-      const finalCity = pkg.cidade || selectRa?.value || 'Brasília';
-      const finalRoman = pkg.raRomano || getRARomanByName(finalCity);
-      pkg.cidade = finalCity;
-      pkg.raRomano = finalRoman;
-      pkg.destinoId = chosenDestinoId;
-      pkg.memorandoMinuta = generateSeiMemorandoMinutaText({ cidade: finalCity, raRomano: finalRoman });
-      updateWidgetPackageUI(pkg);
-      executeFullAutomation(pkg);
-    } else {
-      updateStatus('⚠️ Por favor, clique em "📂 Subir PDF" acima e selecione o arquivo PDF do Relatório CAESB antes de dar Play.', '#fbbf24');
-    }
-  });
+  const finalCity = activePackage.cidade || selectRa?.value || 'Brasília';
+  const finalRoman = activePackage.raRomano || getRARomanByName(finalCity);
+  activePackage.cidade = finalCity;
+  activePackage.raRomano = finalRoman;
+  activePackage.destinoId = chosenDestinoId;
+  activePackage.memorandoMinuta = generateSeiMemorandoMinutaText({ cidade: finalCity, raRomano: finalRoman });
+  saveActivePackageToStorage(activePackage);
+  updateWidgetPackageUI(activePackage);
+  executeFullAutomation(activePackage);
 }
 
 function updateStatus(stepText, color = '#38bdf8') {
@@ -2039,6 +2051,9 @@ async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar
 
     updateStatus(`🎉 SUCESSO TOTAL! Processo ${numeroProcesso} assinado e enviado para ${destinoObj.descricao} (mantido aberto na SUOMA)!`, '#34d399');
 
+    // Limpa imediatamente o arquivo PDF carregado para evitar reutilização errônea
+    clearCurrentLoadedFile();
+
     if (urlProcedimentoTrabalhar) {
       setTimeout(() => {
         window.location.href = urlProcedimentoTrabalhar;
@@ -2100,26 +2115,19 @@ function initExtension() {
 
   if (window !== window.top) return;
 
-  renderFloatingCard(activePackage);
+  // Garante inicialização 100% limpa: nunca pré-carrega arquivo de execuções anteriores
+  activePackage = null;
+  renderFloatingCard(null);
 
   if (chrome.storage?.local) {
-    chrome.storage.local.get(['netuno_sei_package', 'netuno_sei_last_package', 'netuno_sei_panel_open', 'netuno_sei_auto_play'], (res) => {
-      const pkg = res?.netuno_sei_package || res?.netuno_sei_last_package || null;
-      if (pkg) {
-        renderFloatingCard(pkg);
-        updateWidgetPackageUI(pkg);
-      }
-
+    chrome.storage.local.get(['netuno_sei_panel_open'], (res) => {
       if (res?.netuno_sei_panel_open) {
         setWidgetExpandedState(true);
         chrome.storage.local.remove(['netuno_sei_panel_open']);
       }
-      if (res?.netuno_sei_auto_play && document.querySelector('a[link="procedimento_escolher_tipo"], a[href*="acao=procedimento_escolher_tipo"]')) {
-        setWidgetExpandedState(true);
-        chrome.storage.local.remove(['netuno_sei_auto_play']);
-        triggerPlayWithSync();
-      }
     });
+    // Remove qualquer pacote em cache residual para que a sessão sempre exija o novo PDF
+    chrome.storage.local.remove(['netuno_sei_package', 'netuno_sei_last_package', 'netuno_sei_auto_play']);
   }
 }
 

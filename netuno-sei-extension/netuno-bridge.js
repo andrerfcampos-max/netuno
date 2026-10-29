@@ -57,26 +57,5 @@ if (chrome.runtime?.onMessage) {
   });
 }
 
-// Sincroniza periodicamente com o localStorage caso a janela seja fechada/reaberta
-function syncLocalStoragePayload() {
-  try {
-    const parsed = getLocalNetunoPackage();
-    if (parsed && chrome.runtime?.id) {
-      chrome.storage.local.get(['netuno_sei_package', 'netuno_sei_last_package'], (res) => {
-        const updates = {};
-        if (!res.netuno_sei_last_package || res.netuno_sei_last_package.dataCriacao !== parsed.dataCriacao) {
-          updates.netuno_sei_last_package = parsed;
-        }
-        if (!res.netuno_sei_package || res.netuno_sei_package.dataCriacao !== parsed.dataCriacao) {
-          updates.netuno_sei_package = parsed;
-        }
-        if (Object.keys(updates).length > 0) {
-          chrome.storage.local.set(updates);
-        }
-      });
-    }
-  } catch (_) {}
-}
-
-setInterval(syncLocalStoragePayload, 2000);
-syncLocalStoragePayload();
+// Sincronização periódica desativada para nunca manter pacotes de arquivos pré-carregados entre execuções
+// O upload do PDF deve ser sempre fornecido ativamente pelo usuário para cada processo novo.

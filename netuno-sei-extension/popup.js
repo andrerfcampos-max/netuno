@@ -280,8 +280,7 @@ fileInput.addEventListener('change', (e) => {
     };
 
     chrome.storage.local.set({
-      netuno_sei_package: newPkg,
-      netuno_sei_last_package: newPkg
+      netuno_sei_package: newPkg
     }, () => {
       renderPackageInfo(newPkg);
       showStatus(`✅ PDF carregado! Cidade identificada: ${chosenCity} (RA ${chosenRoman})`, '#34d399');
@@ -301,8 +300,7 @@ selectRa.addEventListener('change', () => {
   };
   currentPackage = updated;
   chrome.storage.local.set({
-    netuno_sei_package: updated,
-    netuno_sei_last_package: updated
+    netuno_sei_package: updated
   });
 });
 
@@ -313,14 +311,13 @@ selectDestino.addEventListener('change', () => {
   };
   currentPackage = updated;
   chrome.storage.local.set({
-    netuno_sei_package: updated,
-    netuno_sei_last_package: updated
+    netuno_sei_package: updated
   });
 });
 
 btnPlay.addEventListener('click', () => {
   if (!currentPackage || !currentPackage.pdfBase64) {
-    showStatus('⚠️ Clique em "📂 Subir PDF" acima e selecione o arquivo PDF antes de dar Play.', '#fbbf24');
+    showStatus('⚠️ Selecione o arquivo PDF do Relatório CAESB acima antes de dar Play.', '#fbbf24');
     return;
   }
 
@@ -367,9 +364,9 @@ btnShow.addEventListener('click', () => {
 });
 
 async function initPopup() {
-  const res = await chrome.storage.local.get(['netuno_sei_package', 'netuno_sei_last_package']);
-  const pkg = res.netuno_sei_package || res.netuno_sei_last_package || { cidade: 'Samambaia', raRomano: 'XII', destinoId: '110037655' };
-  renderPackageInfo(pkg);
+  // Limpa qualquer cache de arquivo de sessões anteriores
+  currentPackage = { cidade: 'Brasília', raRomano: 'I', destinoId: '110037655', pdfBase64: null, fileName: null };
+  renderPackageInfo(currentPackage);
 }
 
 initPopup();
