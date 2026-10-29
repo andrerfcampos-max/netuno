@@ -716,7 +716,15 @@ function serializeSeiForm(form) {
     }
 
     if (tag === 'select') {
-      params.set(name, el.value !== undefined && el.value !== '' ? el.value : 'null');
+      if (el.multiple) {
+        Array.from(el.selectedOptions || []).forEach(opt => {
+          if (opt.value !== undefined && opt.value !== '') {
+            params.append(name, opt.value);
+          }
+        });
+      } else {
+        params.set(name, el.value !== undefined && el.value !== '' ? el.value : 'null');
+      }
     } else {
       params.set(name, el.value || '');
     }
@@ -1389,23 +1397,27 @@ async function executeFullAutomation(pkg) {
       await navigator.clipboard.writeText(corpoTexto);
     } catch (_) {}
 
-    // Extrai links assinados de editor_montar e documento_assinar de arvore_visualizar (Entry 1099 do Gabarito)
+    // Extrai links assinados de editor_montar, documento_assinar e documento_verificar_assinatura de arvore_visualizar (Entry 1099 do Gabarito / Entry 18 do HAT)
     const matchEditor = textSaveMemo.match(/controlador\.php\?acao=editor_montar[^"'\s<>]+/i);
     const urlEditor = matchEditor ? resolveSeiUrl(matchEditor[0], resSaveMemo.url) : null;
 
     const matchAssinar = textSaveMemo.match(/controlador\.php\?acao=documento_assinar[^"'\s<>]+/i);
     const urlAssinatura = matchAssinar ? resolveSeiUrl(matchAssinar[0], resSaveMemo.url) : null;
 
+    const matchVerifAss = textSaveMemo.match(/controlador_ajax\.php\?acao_ajax=documento_verificar_assinatura[^"'\s<>)]+/i);
+    const urlVerificarAssinatura = matchVerifAss ? resolveSeiUrl(matchVerifAss[0], resSaveMemo.url) : null;
+
     // Atualiza árvore após o Memorando (Entry 1146 do Gabarito) para pegar o número SEI do Memorando e link de tramitação
     let tituloMemorando = `Memorando (ID ${idDocumentoMemo})`;
+    let urlProcVis3Saved = null;
     const matchProcVis3 = textSaveMemo.match(/controlador\.php\?acao=procedimento_visualizar[^"'\s<>]*id_documento=\d+[^"'\s<>]*/i) ||
                           textSaveMemo.match(/controlador\.php\?acao=procedimento_visualizar[^"'\s<>]+/i);
     if (matchProcVis3) {
       try {
-        const urlProcVis3 = resolveSeiUrl(matchProcVis3[0], resSaveMemo.url);
-        const resProcVis3 = await safeFetch(urlProcVis3, {}, 'Atualizar Árvore após Memorando');
+        urlProcVis3Saved = resolveSeiUrl(matchProcVis3[0], resSaveMemo.url);
+        const resProcVis3 = await safeFetch(urlProcVis3Saved, {}, 'Atualizar Árvore após Memorando');
         const htmlProcVis3 = await resProcVis3.text();
-        const arvoreInfo3 = parseProcedimentoVisualizar(htmlProcVis3, urlProcVis3);
+        const arvoreInfo3 = parseProcedimentoVisualizar(htmlProcVis3, urlProcVis3Saved);
         if (arvoreInfo3.urlEnviarProc) urlTramitar = arvoreInfo3.urlEnviarProc;
         const memoNode = arvoreInfo3.documentos.find(d => d.idDocumento === idDocumentoMemo);
         if (memoNode && memoNode.tituloCompleto) {
@@ -1490,7 +1502,7 @@ async function executeFullAutomation(pkg) {
     }
 
     // =========================================================================
-    // ETAPA 4: Painel de Conclusão, Edição/Assinatura e Tramitação (Entry 1607 -> 1661)
+    // ETAPA 4: Painel de Conclusão, Assinatura e Envio Automático para SUTEC (Entry 1607 -> 1661)
     // =========================================================================
     const destinoEscolhidoId = document.getElementById('select-netuno-destino')?.value || pkg.destinoId || '110037655';
     const destinoObj = DESTINO_UNIDADES.find(u => u.id === destinoEscolhidoId) || DESTINO_UNIDADES[0];
@@ -1506,7 +1518,7 @@ async function executeFullAutomation(pkg) {
           Cidade/RA: <strong style="color: #a7f3d0;">${cidade}${raRomano ? ` (RA ${raRomano})` : ''}</strong><br/>
           Relatório CAESB: <strong style="color: #38bdf8; font-family: monospace;">Nº SEI ${numeroSeiRelatorio}</strong><br/>
           Documento: <strong style="color: #a7f3d0;">${tituloMemorando}</strong><br/>
-          <span id="netuno-assinatura-feedback" style="color: #fcd34d; font-size: 10.5px;">✍️ Assine na janela aberta (ela fechará automaticamente após assinar).</span>
+          <span id="netuno-assinatura-feedback" style="color: #fcd34d; font-size: 10.5px;">✍️ Assine na janela aberta: assim que assinar, a janela fechará e o processo será enviado automaticamente para <strong>${destinoObj.sigla}</strong>!</span>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 7px;">
@@ -1519,7 +1531,7 @@ async function executeFullAutomation(pkg) {
         </div>
 
         <button id="btn-tramitar-final" style="width: 100%; padding: 9px; background: #0284c7; border: none; border-radius: 7px; color: white; font-weight: bold; cursor: pointer; font-size: 11.5px; box-shadow: 0 4px 12px rgba(2,132,199,0.4); margin-bottom: 6px;">
-          🚀 Enviar Processo para ${destinoObj.sigla}
+          🚀 Enviar Processo Agora para ${destinoObj.sigla}
         </button>
 
         <button id="btn-abrir-processo-tela" style="width: 100%; padding: 6px; background: transparent; border: 1px solid #475569; border-radius: 6px; color: #94a3b8; font-weight: 600; cursor: pointer; font-size: 10.5px;">
@@ -1552,7 +1564,7 @@ async function executeFullAutomation(pkg) {
       if (btnTram) {
         btnTram.onclick = async () => {
           const currentDestId = document.getElementById('select-netuno-destino')?.value || destinoEscolhidoId;
-          await tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar, currentDestId, urlProcedimentoTrabalhar);
+          await tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar, currentDestId, urlProcedimentoTrabalhar, urlProcVis3Saved);
         };
       }
 
@@ -1566,7 +1578,19 @@ async function executeFullAutomation(pkg) {
       }
     }
 
-    // Abre automaticamente a janela de Assinatura (com fechamento automático após assinar)
+    // Registra o contexto ativo para envio automático imediato assim que o Memorando for assinado
+    registerAutoTramitacaoOnSign({
+      idProcedimento,
+      idDocumentoMemo,
+      numeroProcesso,
+      urlTramitar,
+      destinoId: destinoEscolhidoId,
+      urlProcedimentoTrabalhar,
+      urlProcVis3: urlProcVis3Saved,
+      urlVerificarAssinatura
+    });
+
+    // Abre automaticamente a janela de Assinatura (com fechamento e tramitação automáticos após assinar)
     if (urlAssinatura && editorAutoSaved) {
       openSeiSignaturePopup(urlAssinatura);
     } else if (urlEditor) {
@@ -1586,34 +1610,124 @@ async function executeFullAutomation(pkg) {
   }
 }
 
-// Referência da janela popup de assinatura para fechamento automático garantido
+// Referência da janela popup de assinatura e monitor de envio automático pós-assinatura
 let janelaAssinaturaRef = null;
+let activeSignWatchInterval = null;
+let pendingTramitacaoContext = null;
 
 function openSeiSignaturePopup(urlAssinatura) {
   if (!urlAssinatura) return;
   janelaAssinaturaRef = window.open(urlAssinatura, 'JanelaAssinaturaSEI', 'width=680,height=490,scrollbars=yes,resizable=yes');
 }
 
-// Escuta notificação da janela popup de assinatura (documento_assinar) para fechá-la imediatamente e atualizar o status
+// Verifica no endpoint AJAX oficial do SEI se o Memorando já consta como assinado (<complemento nome="SinAssinado">S</complemento>)
+async function checkMemorandoSignedViaAjax(urlVerificarAssinatura) {
+  if (!urlVerificarAssinatura) return false;
+  try {
+    const res = await fetch(urlVerificarAssinatura, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    if (!res.ok) return false;
+    const xmlText = await res.text();
+    return /nome=["']SinAssinado["'][^>]*>\s*S\s*</i.test(xmlText) || /<SinAssinado>\s*S\s*<\/SinAssinado>/i.test(xmlText);
+  } catch (_) {
+    return false;
+  }
+}
+
+function registerAutoTramitacaoOnSign(ctx) {
+  if (activeSignWatchInterval) {
+    clearInterval(activeSignWatchInterval);
+    activeSignWatchInterval = null;
+  }
+  pendingTramitacaoContext = { ...ctx, triggered: false };
+
+  const startTime = Date.now();
+  activeSignWatchInterval = setInterval(async () => {
+    if (!pendingTramitacaoContext || pendingTramitacaoContext.triggered) {
+      clearInterval(activeSignWatchInterval);
+      activeSignWatchInterval = null;
+      return;
+    }
+
+    // Expira após 10 minutos
+    if (Date.now() - startTime > 600000) {
+      clearInterval(activeSignWatchInterval);
+      activeSignWatchInterval = null;
+      return;
+    }
+
+    // 1. Verifica via AJAX nativo do SEI se o documento já foi assinado
+    if (pendingTramitacaoContext.urlVerificarAssinatura) {
+      const isSigned = await checkMemorandoSignedViaAjax(pendingTramitacaoContext.urlVerificarAssinatura);
+      if (isSigned) {
+        logAutomation('Assinatura detectada via AJAX (documento_verificar_assinatura)! Disparando envio automático para SUTEC...');
+        await triggerAutoTramitacaoAfterSignature();
+        return;
+      }
+    }
+
+    // 2. Se a janela de assinatura foi fechada pelo usuário, verifica uma última vez se assinou
+    if (janelaAssinaturaRef && janelaAssinaturaRef.closed) {
+      janelaAssinaturaRef = null;
+      if (pendingTramitacaoContext.urlVerificarAssinatura) {
+        const isSignedAfterClose = await checkMemorandoSignedViaAjax(pendingTramitacaoContext.urlVerificarAssinatura);
+        if (isSignedAfterClose) {
+          logAutomation('Janela de assinatura fechada e documento assinado! Disparando envio automático para SUTEC...');
+          await triggerAutoTramitacaoAfterSignature();
+        }
+      }
+    }
+  }, 1200);
+}
+
+async function triggerAutoTramitacaoAfterSignature() {
+  if (!pendingTramitacaoContext || pendingTramitacaoContext.triggered) return;
+  pendingTramitacaoContext.triggered = true;
+
+  if (activeSignWatchInterval) {
+    clearInterval(activeSignWatchInterval);
+    activeSignWatchInterval = null;
+  }
+
+  if (janelaAssinaturaRef && !janelaAssinaturaRef.closed) {
+    try {
+      janelaAssinaturaRef.close();
+    } catch (_) {}
+  }
+
+  const btnAss = document.getElementById('btn-abrir-assinatura-sei');
+  if (btnAss) {
+    btnAss.innerHTML = '✅ Memorando Assinado!';
+    btnAss.style.background = '#059669';
+    btnAss.style.borderColor = '#34d399';
+  }
+
+  const fbEl = document.getElementById('netuno-assinatura-feedback');
+  if (fbEl) {
+    fbEl.style.color = '#38bdf8';
+    fbEl.style.fontWeight = 'bold';
+    fbEl.textContent = '⏳ Memorando assinado! Enviando processo automaticamente para a unidade de destino...';
+  }
+
+  const ctx = pendingTramitacaoContext;
+  const currentDestId = document.getElementById('select-netuno-destino')?.value || ctx.destinoId || '110037655';
+  await tramitarProcessoFinal(
+    ctx.idProcedimento,
+    ctx.numeroProcesso,
+    ctx.urlTramitar,
+    currentDestId,
+    ctx.urlProcedimentoTrabalhar,
+    ctx.urlProcVis3
+  );
+}
+
+// Escuta notificação da janela popup de assinatura (documento_assinar) para fechá-la imediatamente e enviar o processo para SUTEC
 window.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'NETUNO_SEI_ASSINATURA_OK') {
-    if (janelaAssinaturaRef && !janelaAssinaturaRef.closed) {
-      try {
-        janelaAssinaturaRef.close();
-      } catch (_) {}
-    }
-    const btnAss = document.getElementById('btn-abrir-assinatura-sei');
-    if (btnAss) {
-      btnAss.innerHTML = '✅ Memorando Assinado!';
-      btnAss.style.background = '#059669';
-      btnAss.style.borderColor = '#34d399';
-    }
-    const fbEl = document.getElementById('netuno-assinatura-feedback');
-    if (fbEl) {
-      fbEl.style.color = '#34d399';
-      fbEl.style.fontWeight = 'bold';
-      fbEl.textContent = '✅ Memorando assinado com sucesso! Clique abaixo em "Enviar Processo".';
-    }
+    logAutomation('Evento NETUNO_SEI_ASSINATURA_OK recebido da janela de assinatura!');
+    triggerAutoTramitacaoAfterSignature();
   }
 });
 
@@ -1649,7 +1763,7 @@ function handleSignaturePopupLifecycle() {
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#34d399;font-family:sans-serif;text-align:center;padding:20px;">
           <div style="font-size:38px;margin-bottom:10px;">✅</div>
           <div style="font-size:16px;font-weight:bold;margin-bottom:6px;">Memorando Assinado com Sucesso!</div>
-          <div style="font-size:12px;color:#94a3b8;">Fechando janela automaticamente...</div>
+          <div style="font-size:12px;color:#94a3b8;">Fechando janela e enviando processo para SUTEC...</div>
         </div>
       `;
     } catch (_) {}
@@ -1694,12 +1808,24 @@ function handleSignaturePopupLifecycle() {
 }
 
 // Tramitação final do processo seguindo 100% os Entries 1607 -> 1661 do Gabarito (#frmAtividadeListar + hdnIdAtividades)
-async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar, destinoId = '110037655', urlProcedimentoTrabalhar = null) {
+async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar, destinoId = '110037655', urlProcedimentoTrabalhar = null, urlProcVisRefresh = null) {
   try {
     const destinoObj = DESTINO_UNIDADES.find(u => u.id === destinoId) || DESTINO_UNIDADES[0];
-    updateStatus(`⏳ Tramitando processo ${numeroProcesso} para ${destinoObj.sigla}...`, '#38bdf8');
+    updateStatus(`⏳ 4/4: Enviando processo ${numeroProcesso} para ${destinoObj.sigla}...`, '#38bdf8');
 
+    // Atualiza a árvore após a assinatura caso urlProcVisRefresh esteja disponível para garantir link de envio fresco
     let urlEnviar = urlTramitar;
+    if (urlProcVisRefresh) {
+      try {
+        const resVis = await safeFetch(urlProcVisRefresh, {}, 'Atualizar Árvore antes de Tramitar');
+        const htmlVis = await resVis.text();
+        const infoVis = parseProcedimentoVisualizar(htmlVis, urlProcVisRefresh);
+        if (infoVis.urlEnviarProc) {
+          urlEnviar = infoVis.urlEnviarProc;
+        }
+      } catch (_) {}
+    }
+
     if (!urlEnviar) {
       const linkEnv = document.querySelector('a[href*="procedimento_enviar"]');
       if (linkEnv) urlEnviar = extractCleanLinkUrl(linkEnv, window.location.href);
@@ -1720,8 +1846,13 @@ async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar
       throw new Error(erroPag || 'Formulário de envio (#frmAtividadeListar) não encontrado no SEI.');
     }
 
-    const postEnviarData = serializeSeiForm(formEnviar);
-    postEnviarData.set('hdnInfraTipoPagina', '2');
+    const hdnTipoPag = formEnviar.querySelector('#hdnInfraTipoPagina, input[name="hdnInfraTipoPagina"]')?.value || '2';
+    const hdnProtocolos = formEnviar.querySelector('#hdnIdProtocolos, input[name="hdnIdProtocolos"]')?.value || idProcedimento;
+    const hdnAtividades = formEnviar.querySelector('#hdnIdAtividades, input[name="hdnIdAtividades"]')?.value || '';
+
+    // Monta exatamente os 14 parâmetros do Entry 1661 do Gabarito na mesma ordem (sem selProcedimentos)
+    const postEnviarData = new URLSearchParams();
+    postEnviarData.set('hdnInfraTipoPagina', hdnTipoPag);
     postEnviarData.set('sbmEnviar', 'Enviar');
     postEnviarData.set('selOrgao', '');
     postEnviarData.set('txtUnidade', '');
@@ -1732,7 +1863,8 @@ async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar
     postEnviarData.set('txtDiasRetornoProgramado', '');
     postEnviarData.set('txtPrazoReaberturaProgramada', '');
     postEnviarData.set('txtDiasReaberturaProgramada', '');
-    postEnviarData.set('hdnIdProtocolos', idProcedimento);
+    postEnviarData.set('hdnIdProtocolos', hdnProtocolos);
+    postEnviarData.set('hdnIdAtividades', hdnAtividades);
     postEnviarData.set('hdnUnidades', `${destinoObj.id}±${destinoObj.descricao}`);
 
     const actionEnviar = resolveSeiUrl(formEnviar.getAttribute('action') || urlEnviar, resPageEnviar.url || urlEnviar);
@@ -1748,15 +1880,23 @@ async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar
       throw new Error(erroEnv);
     }
 
-    updateStatus(`🎉 SUCESSO! Processo ${numeroProcesso} enviado para ${destinoObj.descricao} mantendo aberto na SUOMA!`, '#34d399');
+    // Verifica se o SEI redirecionou para arvore_visualizar (sucesso real da tramitação, igual Entry 1662 do Gabarito)
+    if (textEnviar.includes('id="frmAtividadeListar"') && !(resEnviar.url || '').includes('acao=arvore_visualizar')) {
+      throw new Error('O SEI não concluiu a tramitação para a unidade de destino (verifique se o Memorando foi assinado).');
+    }
+
+    updateStatus(`🎉 SUCESSO TOTAL! Processo ${numeroProcesso} assinado e enviado para ${destinoObj.descricao} (mantido aberto na SUOMA)!`, '#34d399');
 
     if (urlProcedimentoTrabalhar) {
       setTimeout(() => {
         window.location.href = urlProcedimentoTrabalhar;
-      }, 1500);
+      }, 1200);
     }
   } catch (err) {
     console.error('[Netuno SEI] Falha na tramitação:', err);
+    if (pendingTramitacaoContext) {
+      pendingTramitacaoContext.triggered = false;
+    }
     displayAutomationError(err);
   }
 }

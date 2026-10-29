@@ -2644,6 +2644,16 @@
       "createdAt": "2026-10-29T18:55:39.025Z",
       "startedAt": "2026-10-29T18:55:39.089Z",
       "completedAt": "2026-10-29T19:06:43.632Z"
+    },
+    {
+      "id": "TASK-263",
+      "seq": 263,
+      "conversationId": "1eb6ee8c-ddff-4787-bbf7-4fb26cf8d7fa",
+      "description": "Corrigir envio automatico/tramitacao do processo para SUTEC no SEI",
+      "status": "completed",
+      "createdAt": "2026-10-29T19:09:41.306Z",
+      "startedAt": "2026-10-29T19:09:54.055Z",
+      "completedAt": "2026-10-29T19:19:58.666Z"
     }
   ]
 }
