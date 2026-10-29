@@ -86,7 +86,7 @@ function detectRAFromFilename(fileName) {
   return null;
 }
 
-// Gera o texto oficial do Memorando + Minuta de Ofício para qualquer Cidade/RA selecionada
+// Gera o texto oficial do Memorando + Minuta de Ofício para qualquer Cidade/RA selecionada (para cópia em área de transferência)
 function generateSeiMemorandoMinutaText({ cidade, raRomano, ano = new Date().getFullYear(), numeroSeiRelatorio = '' }) {
   const nomeCidade = cidade || 'Distrito Federal';
   const romano = raRomano || getRARomanByName(nomeCidade);
@@ -97,11 +97,11 @@ function generateSeiMemorandoMinutaText({ cidade, raRomano, ano = new Date().get
     : '[Nº SEI DO RELATÓRIO EXTERNO]';
 
   return `Para: Cel. QOBM/Comb. Comandante do Grupamento de Prevenção e Combate a Incêndio Urbano (GPCIU)
-Assunto: Vistoria de Hidrante em ${nomeCidade} ${raSufixo}
+Assunto: Vistoria de Hidrante em ${nomeCidade}${raSufixo ? ` ${raSufixo}` : ''}
 
 Senhor(a) Comandante,
 
-1.     Informo a Vossa Senhoria que esta Seção de Hidrantes Urbanos procedeu às devidas vistorias anuais em ${nomeCidade} ${raSufixo}.
+1.     Informo a Vossa Senhoria que esta Seção de Hidrantes Urbanos procedeu às devidas vistorias anuais em ${nomeCidade}${raSufixo ? ` ${raSufixo}` : ''}.
 2.     Conforme registrado no Relatório de Vistoria da Fiscalização (${docRef}), constatou-se que os hidrantes encontram-se com alterações, apresentando avarias estruturais e demandando manutenção corretiva imediata por parte da CAESB conforme previsto no Acordo de Cooperação Técnica CAESB/CBMDF.
 3.     Dessa forma, submeto o expediente à apreciação de Vossa Senhoria para conhecimento e posterior encaminhamento de ofício para o ambiente SEI [CAESB/DP] (minuta de ofício em anexo).
 
@@ -109,12 +109,12 @@ Senhor(a) Comandante,
 **** Anexo - Minuta de ofício ao ambiente CAESB/DP ****
 
 Ao Senhor Diretor de Operações e Manutenção - Companhia de Saneamento Ambiental do Distrito Federal - CAESB
-Assunto: Solicitação de Manutenção Corretiva em Hidrante Urbano de Incêndio – ${romano ? `RA ${romano} ` : ''}${cidadeUpper} - ${ano}.
+Assunto: Solicitação de Manutenção Corretiva em Hidrante Urbano de Incêndio - ${romano ? `RA ${romano} ` : ''}${cidadeUpper} - ${ano}.
 Referência: Relatório de Vistoria da Fiscalização (${docRef})
 
 Senhor Diretor,
 
-Cumprimentando-o cordialmente, dirijo-me a Vossa Senhoria para solicitar a atenção dessa Companhia quanto à premente necessidade de manutenção corretiva e/ou substituição de aparelho na rede de hidrantes urbanos de incêndio instalados na Região Administrativa de ${nomeCidade} ${raSufixo}.
+Cumprimentando-o cordialmente, dirijo-me a Vossa Senhoria para solicitar a atenção dessa Companhia quanto à premente necessidade de manutenção corretiva e/ou substituição de aparelho na rede de hidrantes urbanos de incêndio instalados na Região Administrativa de ${nomeCidade}${raSufixo ? ` ${raSufixo}` : ''}.
 
 Durante vistoria técnica, constatou-se que os hidrantes situados em ${nomeCidade}, encontram-se com avarias e necessidade de manutenção corretiva imediata.
 
@@ -125,6 +125,55 @@ Dessa forma, solicito os valorosos préstimos dessa Companhia para a adoção da
 Renovo, na oportunidade, os protestos de elevada estima e consideração institucional.
 
 Atenciosamente,`;
+}
+
+// Gera as 4 seções editáveis oficiais do Editor SEI-GDF para o Memorando (Série 165) com as classes nativas do CKEditor SEI
+function buildSeiMemorandoEditorSections({ cidade, raRomano, ano = new Date().getFullYear(), numeroSeiRelatorio = '' }) {
+  const nomeCidade = cidade || 'Distrito Federal';
+  const romano = raRomano || getRARomanByName(nomeCidade);
+  const raSufixo = romano ? ` (RA ${romano})` : '';
+  const cidadeUpper = nomeCidade.toUpperCase();
+  const docRef = numeroSeiRelatorio && String(numeroSeiRelatorio).trim() !== ''
+    ? String(numeroSeiRelatorio).trim()
+    : '[Nº SEI DO RELATÓRIO EXTERNO]';
+
+  // Seção txaEditor_15168 (title: "Destinatário")
+  const destinatarioHtml = `<p class="I02_Justificado_12">Para: Cel. QOBM/Comb. Comandante do Grupamento de Prevenção e Combate a Incêndio Urbano (GPCIU)</p>\n`;
+
+  // Seção txaEditor_15170 (title: "Assunto")
+  const assuntoHtml = `<p class="I02_Justificado_12">Assunto: <strong>Vistoria de Hidrante em ${nomeCidade}${raSufixo}</strong></p>\n`;
+
+  // Seção txaEditor_15172 (title: "Corpo do Texto" - nota: I11_Paragrafo_Numerado_Nivel1 já numera 1., 2., 3. automaticamente via CSS counter)
+  const corpoHtml = [
+    `<p class="I02_Justificado_12">Senhor(a) Comandante,</p>`,
+    `<p class="I02_Justificado_12">&nbsp;</p>`,
+    `<p class="I11_Paragrafo_Numerado_Nivel1">Informo a Vossa Senhoria que esta Seção de Hidrantes Urbanos procedeu às devidas vistorias anuais em ${nomeCidade}${raSufixo}.</p>`,
+    `<p class="I11_Paragrafo_Numerado_Nivel1">Conforme registrado no Relatório de Vistoria da Fiscalização (${docRef}), constatou-se que os hidrantes encontram-se com alterações, apresentando avarias estruturais e demandando manutenção corretiva imediata por parte da CAESB conforme previsto no Acordo de Cooperação Técnica CAESB/CBMDF.</p>`,
+    `<p class="I11_Paragrafo_Numerado_Nivel1">Dessa forma, submeto o expediente à apreciação de Vossa Senhoria para conhecimento e posterior encaminhamento de ofício para o ambiente SEI [CAESB/DP] (minuta de ofício em anexo).</p>`,
+    `<p class="I02_Justificado_12">&nbsp;</p>`,
+    `<p class="I03_Centralizado_12"><strong>**** Anexo - Minuta de ofício ao ambiente CAESB/DP ****</strong></p>`,
+    `<p class="I02_Justificado_12">&nbsp;</p>`,
+    `<p class="I02_Justificado_12">Ao Senhor Diretor de Operações e Manutenção - Companhia de Saneamento Ambiental do Distrito Federal - CAESB</p>`,
+    `<p class="I02_Justificado_12">Assunto: <strong>Solicitação de Manutenção Corretiva em Hidrante Urbano de Incêndio - ${romano ? `RA ${romano} ` : ''}${cidadeUpper} - ${ano}.</strong></p>`,
+    `<p class="I02_Justificado_12">Referência: Relatório de Vistoria da Fiscalização (${docRef})</p>`,
+    `<p class="I02_Justificado_12">&nbsp;</p>`,
+    `<p class="I02_Justificado_12">Senhor Diretor,</p>`,
+    `<p class="I01_Justificado_Recuo_Primeira_Linha">Cumprimentando-o cordialmente, dirijo-me a Vossa Senhoria para solicitar a atenção dessa Companhia quanto à premente necessidade de manutenção corretiva e/ou substituição de aparelho na rede de hidrantes urbanos de incêndio instalados na Região Administrativa de ${nomeCidade}${raSufixo}.</p>`,
+    `<p class="I01_Justificado_Recuo_Primeira_Linha">Durante vistoria técnica, constatou-se que os hidrantes situados em ${nomeCidade}, encontram-se com avarias e necessidade de manutenção corretiva imediata.</p>`,
+    `<p class="I01_Justificado_Recuo_Primeira_Linha">A plena funcionalidade do referido dispositivo é indispensável para garantir o suprimento ininterrupto e célere de água às viaturas operacionais em caso de sinistros, sendo medida crucial para a salvaguarda de vidas e proteção ao patrimônio na localidade.</p>`,
+    `<p class="I01_Justificado_Recuo_Primeira_Linha">Dessa forma, solicito os valorosos préstimos dessa Companhia para a adoção das providências necessárias visando a regularização dos componentes. O Relatório de Vistoria da Fiscalização (${docRef}) segue com as informações pertinentes para subsidiar as equipes técnicas em campo.</p>`,
+    `<p class="I01_Justificado_Recuo_Primeira_Linha">Renovo, na oportunidade, os protestos de elevada estima e consideração institucional.</p>`
+  ].join('\n\n') + '\n';
+
+  // Seção txaEditor_15174 (title: "Fecho")
+  const fechoHtml = `<p class="I03_Centralizado_12">Atenciosamente,</p>\n`;
+
+  return {
+    destinatarioHtml,
+    assuntoHtml,
+    corpoHtml,
+    fechoHtml
+  };
 }
 
 // Converte string Base64 pura (ou DataURL) diretamente em Blob PDF sem depender de fetch()
@@ -755,7 +804,11 @@ async function safeFetch(url, options = {}, contextDescription = '') {
 // Codifica strings compatíveis com ISO-8859-1 (Latin-1) nativo do SEI DF
 function encodeIso88591Url(str) {
   if (str === null || str === undefined) return '';
-  const s = String(str);
+  // Normaliza travessões e aspas curvas Unicode para equivalentes ASCII/Latin-1 puros
+  const s = String(str)
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"');
   let res = '';
   for (let i = 0; i < s.length; i++) {
     const code = s.charCodeAt(i);
@@ -1008,7 +1061,7 @@ function parseProcedimentoVisualizar(htmlProcVis, baseUrl) {
 
   // 4. Lista de nós de documentos da árvore (new infraArvoreNo("DOCUMENTO", idDoc, idProc, ..., "Titulo (218531117)", ..., "218531117"))
   const documentos = [];
-  const regexNos = /new\s+infraArvoreNo\s*\(\s*"DOCUMENTO"\s*,\s*"(\d+)"[^)]*?"([^"]*\((\d{6,12})\))"[^)]*?"(\d{6,12})"\s*\)/gi;
+  const regexNos = /new\s+infraArvoreNo\s*\(\s*"DOCUMENTO"\s*,\s*"(\d+)"[^\n]*?"([^"\n]*\((\d{6,12})\))"[^\n]*?"(\d{6,12})"\s*\)/gi;
   let matchNo;
   while ((matchNo = regexNos.exec(htmlProcVis)) !== null) {
     documentos.push({
@@ -1361,11 +1414,11 @@ async function executeFullAutomation(pkg) {
       } catch (_) {}
     }
 
-    // Tenta preencher e salvar automaticamente o corpo do Memorando no Editor do SEI
+    // Preenche e salva automaticamente as seções editáveis do Memorando no Editor do SEI (Entry 20 & 21 do HAT)
     let editorAutoSaved = false;
     if (urlEditor) {
       try {
-        updateStatus('⏳ 3/4: Inserindo texto da minuta no Editor do Memorando...', '#38bdf8');
+        updateStatus('⏳ 3/4: Inserindo texto modelo oficial no Editor do Memorando...', '#38bdf8');
         const resPageEditor = await safeFetch(urlEditor, {}, 'Carregar Editor do Memorando');
         const htmlEditor = await resPageEditor.text();
         const docEditor = new DOMParser().parseFromString(htmlEditor, 'text/html');
@@ -1373,20 +1426,49 @@ async function executeFullAutomation(pkg) {
 
         if (formEditor && formEditor.getAttribute('action')) {
           const postEditorData = serializeSeiForm(formEditor);
-          const paragraphsHtml = corpoTexto
-            .split('\n\n')
-            .map(p => `<p style="font-family: Calibri, Arial, sans-serif; font-size: 12pt; line-height: 1.5; text-align: justify; margin-bottom: 10pt;">${p.replace(/\n/g, '<br/>')}</p>`)
-            .join('');
+          const editorSections = buildSeiMemorandoEditorSections({
+            cidade,
+            raRomano,
+            ano,
+            numeroSeiRelatorio
+          });
 
-          // No SEI 4.1.5, as seções editáveis são textareas com name="txaEditor_..."
-          const editorTextareas = Array.from(formEditor.querySelectorAll('textarea[name^="txaEditor_"], textarea'));
-          const editableTextareas = editorTextareas.filter(t => !t.hasAttribute('readonly') && !t.disabled);
+          // No SEI 4.1.5, cada seção txaEditor_XXXXX tem title e readOnly configurados via CKEDITOR.replace('txaEditor_XXXXX', {...})
+          const regexCk = /CKEDITOR\.replace\s*\(\s*['"](txaEditor_\d+)['"]\s*,\s*\{([^\n]+)\}\s*\)/gi;
+          let matchCk;
+          let mappedCount = 0;
 
-          if (editableTextareas.length > 0) {
-            const bodyTextarea = editableTextareas[editableTextareas.length - 1];
-            postEditorData.set(bodyTextarea.name, paragraphsHtml);
-          } else {
-            postEditorData.set('txaConteudo', paragraphsHtml);
+          while ((matchCk = regexCk.exec(htmlEditor)) !== null) {
+            const fieldName = matchCk[1];
+            const configStr = matchCk[2];
+            const titleMatch = configStr.match(/title\s*:\s*["']([^"']+)["']/i);
+            const readOnlyMatch = configStr.match(/["']?readOnly["']?\s*:\s*(true|false)/i);
+            const isReadOnly = readOnlyMatch ? readOnlyMatch[1].toLowerCase() === 'true' : false;
+            const normTitle = normalizeSearchStr(titleMatch ? titleMatch[1] : '');
+
+            if (!isReadOnly) {
+              if (normTitle.includes('destinatario') || fieldName === 'txaEditor_15168') {
+                postEditorData.set(fieldName, editorSections.destinatarioHtml);
+                mappedCount++;
+              } else if (normTitle.includes('assunto') || fieldName === 'txaEditor_15170') {
+                postEditorData.set(fieldName, editorSections.assuntoHtml);
+                mappedCount++;
+              } else if (normTitle.includes('corpo') || normTitle.includes('texto') || fieldName === 'txaEditor_15172') {
+                postEditorData.set(fieldName, editorSections.corpoHtml);
+                mappedCount++;
+              } else if (normTitle.includes('fecho') || fieldName === 'txaEditor_15174') {
+                postEditorData.set(fieldName, editorSections.fechoHtml);
+                mappedCount++;
+              }
+            }
+          }
+
+          // Fallback direto pelos nomes de campos do modelo Memorando GDF caso o regex não case
+          if (mappedCount === 0) {
+            if (postEditorData.has('txaEditor_15168')) postEditorData.set('txaEditor_15168', editorSections.destinatarioHtml);
+            if (postEditorData.has('txaEditor_15170')) postEditorData.set('txaEditor_15170', editorSections.assuntoHtml);
+            if (postEditorData.has('txaEditor_15172')) postEditorData.set('txaEditor_15172', editorSections.corpoHtml);
+            if (postEditorData.has('txaEditor_15174')) postEditorData.set('txaEditor_15174', editorSections.fechoHtml);
           }
 
           const actionEditor = resolveSeiUrl(formEditor.getAttribute('action'), urlEditor);
@@ -1395,8 +1477,10 @@ async function executeFullAutomation(pkg) {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=iso-8859-1' },
             body: encodeSeiFormParams(postEditorData)
           }, 'Salvar Texto no Editor SEI');
-          const txtSaveEditor = await resSaveEditor.text();
-          if (resSaveEditor.ok && !extractSeiErrorMessage(txtSaveEditor)) {
+          const txtSaveEditor = (await resSaveEditor.text()).trim();
+          logAutomation('Resposta do salvamento do Editor SEI:', txtSaveEditor.slice(0, 80));
+
+          if (/^OK\b/i.test(txtSaveEditor) || (resSaveEditor.ok && !extractSeiErrorMessage(txtSaveEditor))) {
             editorAutoSaved = true;
           }
         }
@@ -1415,14 +1499,14 @@ async function executeFullAutomation(pkg) {
     if (area) {
       area.innerHTML = `
         <div style="color: #34d399; font-weight: bold; margin-bottom: 6px;">
-          ✅ Processo e Documentos criados com sucesso!
+          ✅ Processo e Memorando preenchidos com sucesso!
         </div>
         <div style="color: #cbd5e1; font-size: 11px; margin-bottom: 8px; line-height: 1.45;">
           Processo: <strong style="color: white; font-family: monospace;">${numeroProcesso}</strong><br/>
           Cidade/RA: <strong style="color: #a7f3d0;">${cidade}${raRomano ? ` (RA ${raRomano})` : ''}</strong><br/>
           Relatório CAESB: <strong style="color: #38bdf8; font-family: monospace;">Nº SEI ${numeroSeiRelatorio}</strong><br/>
           Documento: <strong style="color: #a7f3d0;">${tituloMemorando}</strong><br/>
-          <span style="color: #fcd34d; font-size: 10.5px;">📋 A minuta com o Nº SEI ${numeroSeiRelatorio} também já foi copiada para o seu Ctrl+V!</span>
+          <span id="netuno-assinatura-feedback" style="color: #fcd34d; font-size: 10.5px;">✍️ Assine na janela aberta (ela fechará automaticamente após assinar).</span>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 7px;">
@@ -1459,7 +1543,7 @@ async function executeFullAutomation(pkg) {
       if (btnAss) {
         btnAss.onclick = () => {
           if (urlAssinatura) {
-            window.open(urlAssinatura, 'JanelaAssinaturaSEI', 'width=720,height=520,scrollbars=yes');
+            openSeiSignaturePopup(urlAssinatura);
           }
         };
       }
@@ -1482,9 +1566,9 @@ async function executeFullAutomation(pkg) {
       }
     }
 
-    // Abre automaticamente a janela de Assinatura (ou Editor caso precise colar)
+    // Abre automaticamente a janela de Assinatura (com fechamento automático após assinar)
     if (urlAssinatura && editorAutoSaved) {
-      window.open(urlAssinatura, 'JanelaAssinaturaSEI', 'width=720,height=520,scrollbars=yes');
+      openSeiSignaturePopup(urlAssinatura);
     } else if (urlEditor) {
       window.open(urlEditor, 'JanelaEditorSEI', 'width=1050,height=760,scrollbars=yes,resizable=yes');
     }
@@ -1499,6 +1583,113 @@ async function executeFullAutomation(pkg) {
       runBtn.style.opacity = '1';
       runBtn.style.cursor = 'pointer';
     }
+  }
+}
+
+// Referência da janela popup de assinatura para fechamento automático garantido
+let janelaAssinaturaRef = null;
+
+function openSeiSignaturePopup(urlAssinatura) {
+  if (!urlAssinatura) return;
+  janelaAssinaturaRef = window.open(urlAssinatura, 'JanelaAssinaturaSEI', 'width=680,height=490,scrollbars=yes,resizable=yes');
+}
+
+// Escuta notificação da janela popup de assinatura (documento_assinar) para fechá-la imediatamente e atualizar o status
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'NETUNO_SEI_ASSINATURA_OK') {
+    if (janelaAssinaturaRef && !janelaAssinaturaRef.closed) {
+      try {
+        janelaAssinaturaRef.close();
+      } catch (_) {}
+    }
+    const btnAss = document.getElementById('btn-abrir-assinatura-sei');
+    if (btnAss) {
+      btnAss.innerHTML = '✅ Memorando Assinado!';
+      btnAss.style.background = '#059669';
+      btnAss.style.borderColor = '#34d399';
+    }
+    const fbEl = document.getElementById('netuno-assinatura-feedback');
+    if (fbEl) {
+      fbEl.style.color = '#34d399';
+      fbEl.style.fontWeight = 'bold';
+      fbEl.textContent = '✅ Memorando assinado com sucesso! Clique abaixo em "Enviar Processo".';
+    }
+  }
+});
+
+// Gerencia o fechamento automático da janelinha popup de assinatura (acao=documento_assinar) após o militar clicar em Assinar
+function handleSignaturePopupLifecycle() {
+  if (!window.location.href.includes('acao=documento_assinar')) return;
+
+  const htmlSource = document.documentElement.innerHTML || '';
+  const erroAssinatura = extractSeiErrorMessage(document);
+  const subTs = Number(sessionStorage.getItem('netuno_sei_signing_submitted') || 0);
+  const justSubmitted = subTs > 0 && (Date.now() - subTs) < 45000;
+
+  // Detecta se o SEI executou a rotina de fechamento pós-assinatura no inicializar() ou se informou que já foi assinado
+  const initMatch = htmlSource.match(/function\s+inicializar\s*\(\s*\)\s*\{([\s\S]*?)\}/i);
+  const seiWantsToCloseModal = initMatch && /infraFecharJanelaModal|atualizarArvore|recarregar/i.test(initMatch[1]);
+  const alreadySignedMsg = erroAssinatura && /j[aá]\s+(foi\s+assinado|consta\s+assinatura)/i.test(erroAssinatura);
+  const hasPasswordInput = Boolean(document.querySelector('#pwdSenha, input[type="password"]'));
+
+  if (seiWantsToCloseModal || alreadySignedMsg || (justSubmitted && !erroAssinatura) || (!hasPasswordInput && !erroAssinatura && justSubmitted)) {
+    sessionStorage.removeItem('netuno_sei_signing_submitted');
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type: 'NETUNO_SEI_ASSINATURA_OK' }, '*');
+      }
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'NETUNO_SEI_ASSINATURA_OK' }, '*');
+      }
+    } catch (_) {}
+
+    // Exibe aviso rápido de sucesso e fecha a janela imediatamente
+    try {
+      document.body.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#34d399;font-family:sans-serif;text-align:center;padding:20px;">
+          <div style="font-size:38px;margin-bottom:10px;">✅</div>
+          <div style="font-size:16px;font-weight:bold;margin-bottom:6px;">Memorando Assinado com Sucesso!</div>
+          <div style="font-size:12px;color:#94a3b8;">Fechando janela automaticamente...</div>
+        </div>
+      `;
+    } catch (_) {}
+
+    window.close();
+    setTimeout(() => {
+      try { window.close(); } catch (_) {}
+    }, 150);
+    return;
+  }
+
+  // Se houve erro de senha (ex: Senha inválida), limpa a flag para permitir nova tentativa na mesma janela
+  if (erroAssinatura) {
+    sessionStorage.removeItem('netuno_sei_signing_submitted');
+  }
+
+  // Registra quando o militar submeter a assinatura (clicar em Assinar ou pressionar Enter na senha)
+  const markSubmitted = () => {
+    const pwd = document.querySelector('#pwdSenha, input[type="password"]');
+    const flag = document.getElementById('hdnFlagAssinatura');
+    if ((flag && flag.value === '1') || (pwd && pwd.value && pwd.value.trim().length > 0)) {
+      sessionStorage.setItem('netuno_sei_signing_submitted', String(Date.now()));
+    }
+  };
+
+  window.addEventListener('beforeunload', markSubmitted);
+  const formAss = document.getElementById('frmAssinaturas') || document.querySelector('form');
+  if (formAss) {
+    formAss.addEventListener('submit', () => {
+      sessionStorage.setItem('netuno_sei_signing_submitted', String(Date.now()));
+    });
+  }
+  const btnAssinar = document.getElementById('btnAssinar') || document.querySelector('button[name="btnAssinar"], input[name="btnAssinar"]');
+  if (btnAssinar) {
+    btnAssinar.addEventListener('click', () => {
+      const pwd = document.querySelector('#pwdSenha, input[type="password"]');
+      if (pwd && pwd.value && pwd.value.trim().length > 0) {
+        sessionStorage.setItem('netuno_sei_signing_submitted', String(Date.now()));
+      }
+    });
   }
 }
 
@@ -1608,8 +1799,13 @@ if (chrome.storage?.onChanged) {
   });
 }
 
-// Inicialização: Sempre mantém o botãozinho disfarçado disponível no SEI
+// Inicialização: Sempre mantém o botãozinho disfarçado disponível no SEI e gerencia popup de assinatura
 function initExtension() {
+  if (window.location.href.includes('acao=documento_assinar')) {
+    handleSignaturePopupLifecycle();
+    return;
+  }
+
   if (window !== window.top) return;
 
   renderFloatingCard(activePackage);

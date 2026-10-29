@@ -2634,6 +2634,16 @@
       "createdAt": "2026-10-29T18:16:25.207Z",
       "startedAt": "2026-10-29T18:16:25.273Z",
       "completedAt": "2026-10-29T18:30:57.264Z"
+    },
+    {
+      "id": "TASK-262",
+      "seq": 262,
+      "conversationId": "1eb6ee8c-ddff-4787-bbf7-4fb26cf8d7fa",
+      "description": "Corrigir preenchimento do editor do Memorando no SEI e fechamento automatico da janela de assinatura usando HAR hat",
+      "status": "completed",
+      "createdAt": "2026-10-29T18:55:39.025Z",
+      "startedAt": "2026-10-29T18:55:39.089Z",
+      "completedAt": "2026-10-29T19:06:43.632Z"
     }
   ]
 }
