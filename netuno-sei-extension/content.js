@@ -61,43 +61,190 @@ function getRARomanByName(cidade) {
   return found ? found.roman : '';
 }
 
-// Detecta automaticamente a Cidade/RA a partir do nome do arquivo PDF baixado no Netuno
-function detectRAFromFilename(fileName) {
-  if (!fileName) return null;
-  const cleaned = normalizeSearchStr(
-    fileName
-      .replace(/\.pdf$/i, '')
-      .replace(/relatorio|alteracoes|caesb|hidrantes|vistoria/gi, ' ')
-      .replace(/\b20\d{2,6}\b/g, ' ')
-  );
+// Mapeamento canônico de prefixos de hidrantes para RA
+const PREFIX_RA_MAP = {
+  CRU: 'Cruzeiro',
+  ARN: 'Arniqueira',
+  TAG: 'Taguatinga',
+  SAM: 'Samambaia',
+  GUA: 'Guará',
+  GAM: 'Gama',
+  LGS: 'Lago Sul',
+  LGN: 'Lago Norte',
+  PLA: 'Planaltina',
+  CEI: 'Ceilândia',
+  SOB: 'Sobradinho',
+  STM: 'Santa Maria',
+  REC: 'Recanto das Emas',
+  SJA: 'São Sebastião',
+  SUD: 'Sudoeste e Octogonal',
+  NUB: 'Núcleo Bandeirante',
+  CAN: 'Candangolândia',
+  BRA: 'Brazlândia',
+  EST: 'Estrutural',
+  FER: 'Fercal',
+  ITA: 'Itapoã',
+  JAB: 'Jardim Botânico',
+  PAR: 'Paranoá',
+  PKW: 'Park Way',
+  RIA: 'Riacho Fundo',
+  RF2: 'Riacho Fundo II',
+  SB2: 'Sobradinho II',
+  SIA: 'SIA',
+  SNP: 'Sol Nascente/Pôr do Sol',
+  VAR: 'Varjão',
+  VCP: 'Vicente Pires',
+  AQU: 'Água Quente',
+  ARP: 'Arapoanga',
+  ACL: 'Águas Claras',
+  BSB: 'Brasília'
+};
 
-  // Ordena pelos nomes mais longos primeiro para casar "Riacho Fundo II" antes de "Riacho Fundo" e "Sobradinho II" antes de "Sobradinho"
-  const sorted = [...RA_CATALOG].sort((a, b) => b.name.length - a.name.length);
-  for (const ra of sorted) {
-    const raNorm = normalizeSearchStr(ra.name);
-    if (raNorm && cleaned.includes(raNorm)) {
-      return ra;
+// Decodifica strings literais ou hexadecimais em conformidade com a especificação PDF
+function decodePdfString(raw) {
+  if (!raw) return '';
+  if (raw.startsWith('<') && raw.endsWith('>')) {
+    const hex = raw.slice(1, -1).trim();
+    let res = '';
+    const step = /^feff/i.test(hex) ? 4 : 2;
+    for (let i = step === 4 ? 4 : 0; i < hex.length; i += step) {
+      res += String.fromCharCode(parseInt(hex.substr(i, step), 16));
+    }
+    return res;
+  }
+  let s = raw.replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+  s = s.replace(/\\[nrtbf()\\]/g, (m) => ({
+    '\\n': '\n', '\\r': '\r', '\\t': '\t', '\\b': '\b', '\\f': '\f',
+    '\\(': '(', '\\)': ')', '\\\\': '\\'
+  })[m] || m);
+  if (s.startsWith('\xfe\xff')) {
+    let res = '';
+    for (let i = 2; i < s.length; i += 2) {
+      res += String.fromCharCode((s.charCodeAt(i) << 8) | s.charCodeAt(i + 1));
+    }
+    return res;
+  }
+  return s;
+}
+
+// Detecta automaticamente a Cidade / RA a partir do conteúdo interno, metadados do PDF e prefixos de hidrantes
+function detectRAFromPdfContent(rawPdfStrOrBase64, fileName = '') {
+  let rawPdfStr = '';
+  if (rawPdfStrOrBase64) {
+    if (typeof rawPdfStrOrBase64 === 'string' && rawPdfStrOrBase64.startsWith('JVBERi')) {
+      try {
+        rawPdfStr = atob(rawPdfStrOrBase64.slice(0, 100000));
+      } catch (e) {
+        rawPdfStr = rawPdfStrOrBase64;
+      }
+    } else if (typeof rawPdfStrOrBase64 === 'string') {
+      rawPdfStr = rawPdfStrOrBase64;
     }
   }
-  if (cleaned.includes('arniqueiras')) return RA_CATALOG.find(r => r.name === 'Arniqueira');
-  if (cleaned.includes('plano piloto')) return RA_CATALOG.find(r => r.name === 'Brasília');
-  if (cleaned.includes('sol nascente') || cleaned.includes('por do sol')) return RA_CATALOG.find(r => r.name === 'Sol Nascente/Pôr do Sol');
-  if (cleaned.includes('sudoeste') || cleaned.includes('octogonal')) return RA_CATALOG.find(r => r.name === 'Sudoeste e Octogonal');
+
+  const candidates = [];
+
+  if (rawPdfStr) {
+    // 1. Extração de /Title (...) ou /Title <...> no dicionário do PDF (gerado automaticamente pelo Netuno/jsPDF)
+    const titleMatch = rawPdfStr.match(/\/Title\s*(?:\(([^)]+)\)|<([0-9a-fA-F]+)>)/i);
+    if (titleMatch) {
+      const titleStr = decodePdfString(titleMatch[1] ? titleMatch[1] : ('<' + titleMatch[2] + '>'));
+      candidates.push(titleStr);
+    }
+
+    // 2. Extração de /Subject (...) ou /Subject <...>
+    const subjMatch = rawPdfStr.match(/\/Subject\s*(?:\(([^)]+)\)|<([0-9a-fA-F]+)>)/i);
+    if (subjMatch) {
+      candidates.push(decodePdfString(subjMatch[1] ? subjMatch[1] : ('<' + subjMatch[2] + '>')));
+    }
+
+    // 3. Extração de tags 'Relatorio...CAESB...' nos primeiros 50k caracteres
+    const relMatch = rawPdfStr.slice(0, 50000).match(/Relatorio[a-zA-Z0-9_]*CAESB[a-zA-Z0-9_]*/gi);
+    if (relMatch) {
+      candidates.push(...relMatch);
+    }
+
+    // 4. Reconhecimento por prefixos de hidrantes no documento (ex: CRU00033, ARN00010)
+    const hydrantMatches = rawPdfStr.slice(0, 80000).match(/\b([A-Z]{3})\d{4,5}\b/g);
+    if (hydrantMatches && hydrantMatches.length > 0) {
+      const counts = {};
+      for (const h of hydrantMatches) {
+        const pref = h.slice(0, 3);
+        if (PREFIX_RA_MAP[pref]) {
+          counts[pref] = (counts[pref] || 0) + 1;
+        }
+      }
+      const sortedPrefs = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+      if (sortedPrefs.length > 0) {
+        const bestRaName = PREFIX_RA_MAP[sortedPrefs[0]];
+        const foundRa = RA_CATALOG.find(r => r.name === bestRaName);
+        if (foundRa) {
+          candidates.push(foundRa.name);
+        }
+      }
+    }
+  }
+
+  if (fileName) {
+    candidates.push(fileName);
+  }
+
+  const sortedRAs = [...RA_CATALOG].sort((a, b) => b.name.length - a.name.length);
+
+  for (const text of candidates) {
+    if (!text) continue;
+    const clean = normalizeSearchStr(
+      text
+        .replace(/\.pdf$/i, '')
+        .replace(/relatorio|alteracoes|caesb|hidrantes|vistoria|geral|cbmdf/gi, ' ')
+        .replace(/\b20\d{2,6}\b/g, ' ')
+        .replace(/ano/gi, ' ')
+    );
+
+    for (const ra of sortedRAs) {
+      const raNorm = normalizeSearchStr(ra.name);
+      if (raNorm && clean.includes(raNorm)) {
+        return ra;
+      }
+    }
+
+    if (clean.includes('arniqueiras')) return RA_CATALOG.find(r => r.name === 'Arniqueira');
+    if (clean.includes('plano piloto')) return RA_CATALOG.find(r => r.name === 'Brasília');
+    if (clean.includes('sol nascente') || clean.includes('por do sol')) return RA_CATALOG.find(r => r.name === 'Sol Nascente/Pôr do Sol');
+    if (clean.includes('sudoeste') || clean.includes('octogonal')) return RA_CATALOG.find(r => r.name === 'Sudoeste e Octogonal');
+  }
+
+  // Fallback: varre o cabeçalho do PDF diretamente por qualquer menção textual aos nomes das RAs
+  if (rawPdfStr) {
+    const headChunk = normalizeSearchStr(rawPdfStr.slice(0, 50000));
+    for (const ra of sortedRAs) {
+      const raNorm = normalizeSearchStr(ra.name);
+      if (raNorm && raNorm.length >= 4 && headChunk.includes(raNorm)) {
+        return ra;
+      }
+    }
+  }
+
   return null;
+}
+
+// Detecta automaticamente a Cidade/RA a partir do nome do arquivo PDF baixado no Netuno
+function detectRAFromFilename(fileName) {
+  return detectRAFromPdfContent('', fileName);
 }
 
 // Gera o texto oficial do Memorando + Minuta de Ofício para qualquer Cidade/RA selecionada (para cópia em área de transferência)
 function generateSeiMemorandoMinutaText({ cidade, raRomano, ano = new Date().getFullYear(), numeroSeiRelatorio = '' }) {
   const nomeCidade = cidade || 'Distrito Federal';
   const romano = raRomano || getRARomanByName(nomeCidade);
-  const raSufixo = romano ? `(RA ${romano})` : '';
+  const raSufixo = romano ? ` (RA ${romano})` : '';
   const cidadeUpper = nomeCidade.toUpperCase();
   const docRef = numeroSeiRelatorio && String(numeroSeiRelatorio).trim() !== ''
     ? String(numeroSeiRelatorio).trim()
     : '[Nº SEI DO RELATÓRIO EXTERNO]';
 
   return `Para: Cel. QOBM/Comb. Comandante do Grupamento de Prevenção e Combate a Incêndio Urbano (GPCIU)
-Assunto: Vistoria de Hidrante em ${nomeCidade}${raSufixo ? ` ${raSufixo}` : ''}
+Assunto: Vistoria de Hidrantes em ${nomeCidade}${raSufixo ? ` ${raSufixo}` : ''}
 
 Senhor(a) Comandante,
 
@@ -109,7 +256,7 @@ Senhor(a) Comandante,
 **** Anexo - Minuta de ofício ao ambiente CAESB/DP ****
 
 Ao Senhor Diretor de Operações e Manutenção - Companhia de Saneamento Ambiental do Distrito Federal - CAESB
-Assunto: Solicitação de Manutenção Corretiva em Hidrante Urbano de Incêndio - ${romano ? `RA ${romano} ` : ''}${cidadeUpper} - ${ano}.
+Assunto: Solicitação de Manutenção Corretiva em Hidrantes Urbanos de Incêndio - ${romano ? `RA ${romano} ` : ''}${cidadeUpper} - ${ano}.
 Referência: Relatório de Vistoria da Fiscalização (${docRef})
 
 Senhor Diretor,
@@ -118,7 +265,7 @@ Cumprimentando-o cordialmente, dirijo-me a Vossa Senhoria para solicitar a aten�
 
 Durante vistoria técnica, constatou-se que os hidrantes situados em ${nomeCidade}, encontram-se com avarias e necessidade de manutenção corretiva imediata.
 
-A plena funcionalidade do referido dispositivo é indispensável para garantir o suprimento ininterrupto e célere de água às viaturas operacionais em caso de sinistros, sendo medida crucial para a salvaguarda de vidas e proteção ao patrimônio na localidade.
+A plena funcionalidade dos referidos dispositivos é indispensável para garantir o suprimento ininterrupto e célere de água às viaturas operacionais em caso de sinistros, sendo medida crucial para a salvaguarda de vidas e proteção ao patrimônio na localidade.
 
 Dessa forma, solicito os valorosos préstimos dessa Companhia para a adoção das providências necessárias visando a regularização dos componentes. O Relatório de Vistoria da Fiscalização (${docRef}) segue com as informações pertinentes para subsidiar as equipes técnicas em campo.
 
@@ -141,7 +288,7 @@ function buildSeiMemorandoEditorSections({ cidade, raRomano, ano = new Date().ge
   const destinatarioHtml = `<p class="I02_Justificado_12">Para: Cel. QOBM/Comb. Comandante do Grupamento de Prevenção e Combate a Incêndio Urbano (GPCIU)</p>\n`;
 
   // Seção txaEditor_15170 (title: "Assunto")
-  const assuntoHtml = `<p class="I02_Justificado_12">Assunto: <strong>Vistoria de Hidrante em ${nomeCidade}${raSufixo}</strong></p>\n`;
+  const assuntoHtml = `<p class="I02_Justificado_12">Assunto: <strong>Vistoria de Hidrantes em ${nomeCidade}${raSufixo}</strong></p>\n`;
 
   // Seção txaEditor_15172 (title: "Corpo do Texto" - nota: I11_Paragrafo_Numerado_Nivel1 já numera 1., 2., 3. automaticamente via CSS counter)
   const corpoHtml = [
@@ -154,13 +301,13 @@ function buildSeiMemorandoEditorSections({ cidade, raRomano, ano = new Date().ge
     `<p class="I03_Centralizado_12"><strong>**** Anexo - Minuta de ofício ao ambiente CAESB/DP ****</strong></p>`,
     `<p class="I02_Justificado_12">&nbsp;</p>`,
     `<p class="I02_Justificado_12">Ao Senhor Diretor de Operações e Manutenção - Companhia de Saneamento Ambiental do Distrito Federal - CAESB</p>`,
-    `<p class="I02_Justificado_12">Assunto: <strong>Solicitação de Manutenção Corretiva em Hidrante Urbano de Incêndio - ${romano ? `RA ${romano} ` : ''}${cidadeUpper} - ${ano}.</strong></p>`,
+    `<p class="I02_Justificado_12">Assunto: <strong>Solicitação de Manutenção Corretiva em Hidrantes Urbanos de Incêndio - ${romano ? `RA ${romano} ` : ''}${cidadeUpper} - ${ano}.</strong></p>`,
     `<p class="I02_Justificado_12">Referência: Relatório de Vistoria da Fiscalização (${docRef})</p>`,
     `<p class="I02_Justificado_12">&nbsp;</p>`,
     `<p class="I02_Justificado_12">Senhor Diretor,</p>`,
     `<p class="I01_Justificado_Recuo_Primeira_Linha">Cumprimentando-o cordialmente, dirijo-me a Vossa Senhoria para solicitar a atenção dessa Companhia quanto à premente necessidade de manutenção corretiva e/ou substituição de aparelho na rede de hidrantes urbanos de incêndio instalados na Região Administrativa de ${nomeCidade}${raSufixo}.</p>`,
     `<p class="I01_Justificado_Recuo_Primeira_Linha">Durante vistoria técnica, constatou-se que os hidrantes situados em ${nomeCidade}, encontram-se com avarias e necessidade de manutenção corretiva imediata.</p>`,
-    `<p class="I01_Justificado_Recuo_Primeira_Linha">A plena funcionalidade do referido dispositivo é indispensável para garantir o suprimento ininterrupto e célere de água às viaturas operacionais em caso de sinistros, sendo medida crucial para a salvaguarda de vidas e proteção ao patrimônio na localidade.</p>`,
+    `<p class="I01_Justificado_Recuo_Primeira_Linha">A plena funcionalidade dos referidos dispositivos é indispensável para garantir o suprimento ininterrupto e célere de água às viaturas operacionais em caso de sinistros, sendo medida crucial para a salvaguarda de vidas e proteção ao patrimônio na localidade.</p>`,
     `<p class="I01_Justificado_Recuo_Primeira_Linha">Dessa forma, solicito os valorosos préstimos dessa Companhia para a adoção das providências necessárias visando a regularização dos componentes. O Relatório de Vistoria da Fiscalização (${docRef}) segue com as informações pertinentes para subsidiar as equipes técnicas em campo.</p>`,
     `<p class="I01_Justificado_Recuo_Primeira_Linha">Renovo, na oportunidade, os protestos de elevada estima e consideração institucional.</p>`
   ].join('\n\n') + '\n';
@@ -298,7 +445,8 @@ function updateWidgetPackageUI(pkg) {
     if (activePackage?.pdfBase64) {
       const fName = activePackage.fileName || `Relatorio_alteracoes_CAESB_${(activePackage.cidade || 'DF').replace(/\s+/g, '_')}.pdf`;
       const sizeTxt = activePackage.fileSize ? ` (${formatSeiFileSize(activePackage.fileSize)})` : '';
-      fileInfoEl.innerHTML = `<span style="color: #34d399; font-weight: 600;">📄 ${fName}${sizeTxt}</span>`;
+      const cidadeBadge = activePackage.cidade ? `<div style="margin-top: 5px; color: #34d399; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px;"><span>🔒 Cidade no PDF:</span> <strong>${activePackage.cidade} ${activePackage.raRomano ? `(RA ${activePackage.raRomano})` : ''}</strong></div>` : '';
+      fileInfoEl.innerHTML = `<span style="color: #34d399; font-weight: 600;">📄 ${fName}${sizeTxt}</span>${cidadeBadge}`;
     } else {
       fileInfoEl.innerHTML = `<span style="color: #fbbf24;">⚠️ Selecione abaixo o PDF do Relatório CAESB baixado no Netuno</span>`;
     }
@@ -481,10 +629,10 @@ function renderFloatingCard(pkg) {
       const dataUrl = String(reader.result || '');
       const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
 
-      // Detecta a RA pelo nome do arquivo PDF, ou mantém a selecionada no dropdown
-      const detectedRa = detectRAFromFilename(file.name);
+      // Detecta a RA a partir do conteúdo interno / metadados do PDF (e nome do arquivo)
+      const detectedRa = detectRAFromPdfContent(base64, file.name);
       const chosenCity = detectedRa ? detectedRa.name : (selectRa.value || 'Brasília');
-      const chosenRoman = getRARomanByName(chosenCity);
+      const chosenRoman = detectedRa ? detectedRa.roman : getRARomanByName(chosenCity);
       if (detectedRa) {
         selectRa.value = detectedRa.name;
       }
@@ -504,7 +652,7 @@ function renderFloatingCard(pkg) {
 
       saveActivePackageToStorage(newPkg);
       updateWidgetPackageUI(newPkg);
-      updateStatus(`✅ Arquivo "${file.name}" carregado para ${chosenCity} (RA ${chosenRoman})! Clique em Dar Play.`, '#34d399');
+      updateStatus(`✅ Arquivo "${file.name}" carregado! Cidade identificada: ${chosenCity} (RA ${chosenRoman}). Clique em Dar Play.`, '#34d399');
     };
     reader.readAsDataURL(file);
   });
@@ -553,15 +701,17 @@ function renderFloatingCard(pkg) {
 function triggerPlayWithSync() {
   const selectRa = document.getElementById('select-netuno-ra');
   const selectDestino = document.getElementById('select-netuno-destino');
-  const chosenCity = selectRa?.value || activePackage?.cidade || 'Brasília';
-  const chosenRoman = getRARomanByName(chosenCity);
   const chosenDestinoId = selectDestino?.value || activePackage?.destinoId || '110037655';
 
   if (activePackage && activePackage.pdfBase64) {
-    activePackage.cidade = chosenCity;
-    activePackage.raRomano = chosenRoman;
+    const finalCity = activePackage.cidade || selectRa?.value || 'Brasília';
+    const finalRoman = activePackage.raRomano || getRARomanByName(finalCity);
+    activePackage.cidade = finalCity;
+    activePackage.raRomano = finalRoman;
     activePackage.destinoId = chosenDestinoId;
-    activePackage.memorandoMinuta = generateSeiMemorandoMinutaText({ cidade: chosenCity, raRomano: chosenRoman });
+    activePackage.memorandoMinuta = generateSeiMemorandoMinutaText({ cidade: finalCity, raRomano: finalRoman });
+    saveActivePackageToStorage(activePackage);
+    updateWidgetPackageUI(activePackage);
     executeFullAutomation(activePackage);
     return;
   }
@@ -570,10 +720,12 @@ function triggerPlayWithSync() {
   chrome.storage?.local?.get(['netuno_sei_package', 'netuno_sei_last_package'], (st) => {
     const pkg = st?.netuno_sei_package || st?.netuno_sei_last_package;
     if (pkg && pkg.pdfBase64) {
-      pkg.cidade = selectRa?.value || pkg.cidade || 'Brasília';
-      pkg.raRomano = getRARomanByName(pkg.cidade);
+      const finalCity = pkg.cidade || selectRa?.value || 'Brasília';
+      const finalRoman = pkg.raRomano || getRARomanByName(finalCity);
+      pkg.cidade = finalCity;
+      pkg.raRomano = finalRoman;
       pkg.destinoId = chosenDestinoId;
-      pkg.memorandoMinuta = generateSeiMemorandoMinutaText({ cidade: pkg.cidade, raRomano: pkg.raRomano });
+      pkg.memorandoMinuta = generateSeiMemorandoMinutaText({ cidade: finalCity, raRomano: finalRoman });
       updateWidgetPackageUI(pkg);
       executeFullAutomation(pkg);
     } else {

@@ -2654,6 +2654,16 @@
       "createdAt": "2026-10-29T19:09:41.306Z",
       "startedAt": "2026-10-29T19:09:54.055Z",
       "completedAt": "2026-10-29T19:19:58.666Z"
+    },
+    {
+      "id": "TASK-264",
+      "seq": 264,
+      "conversationId": "1eb6ee8c-ddff-4787-bbf7-4fb26cf8d7fa",
+      "description": "Identificar Cidade/RA diretamente pelo conteudo do PDF do relatorio",
+      "status": "completed",
+      "createdAt": "2026-10-29T19:27:38.603Z",
+      "startedAt": "2026-10-29T19:27:49.051Z",
+      "completedAt": "2026-10-29T19:44:07.612Z"
     }
   ]
 }

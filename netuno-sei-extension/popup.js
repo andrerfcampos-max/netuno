@@ -53,24 +53,156 @@ function getRARomanByName(cidade) {
   return found ? found.roman : '';
 }
 
-function detectRAFromFilename(fileName) {
-  if (!fileName) return null;
-  const cleaned = normalizeSearchStr(
-    fileName
-      .replace(/\.pdf$/i, '')
-      .replace(/relatorio|alteracoes|caesb|hidrantes|vistoria/gi, ' ')
-      .replace(/\b20\d{2,6}\b/g, ' ')
-  );
-  const sorted = [...RA_CATALOG].sort((a, b) => b.name.length - a.name.length);
-  for (const ra of sorted) {
-    const raNorm = normalizeSearchStr(ra.name);
-    if (raNorm && cleaned.includes(raNorm)) return ra;
+// Mapeamento canônico de prefixos de hidrantes para RA
+const PREFIX_RA_MAP = {
+  CRU: 'Cruzeiro',
+  ARN: 'Arniqueira',
+  TAG: 'Taguatinga',
+  SAM: 'Samambaia',
+  GUA: 'Guará',
+  GAM: 'Gama',
+  LGS: 'Lago Sul',
+  LGN: 'Lago Norte',
+  PLA: 'Planaltina',
+  CEI: 'Ceilândia',
+  SOB: 'Sobradinho',
+  STM: 'Santa Maria',
+  REC: 'Recanto das Emas',
+  SJA: 'São Sebastião',
+  SUD: 'Sudoeste e Octogonal',
+  NUB: 'Núcleo Bandeirante',
+  CAN: 'Candangolândia',
+  BRA: 'Brazlândia',
+  EST: 'Estrutural',
+  FER: 'Fercal',
+  ITA: 'Itapoã',
+  JAB: 'Jardim Botânico',
+  PAR: 'Paranoá',
+  PKW: 'Park Way',
+  RIA: 'Riacho Fundo',
+  RF2: 'Riacho Fundo II',
+  SB2: 'Sobradinho II',
+  SIA: 'SIA',
+  SNP: 'Sol Nascente/Pôr do Sol',
+  VAR: 'Varjão',
+  VCP: 'Vicente Pires',
+  AQU: 'Água Quente',
+  ARP: 'Arapoanga',
+  ACL: 'Águas Claras',
+  BSB: 'Brasília'
+};
+
+function decodePdfString(raw) {
+  if (!raw) return '';
+  if (raw.startsWith('<') && raw.endsWith('>')) {
+    const hex = raw.slice(1, -1).trim();
+    let res = '';
+    const step = /^feff/i.test(hex) ? 4 : 2;
+    for (let i = step === 4 ? 4 : 0; i < hex.length; i += step) {
+      res += String.fromCharCode(parseInt(hex.substr(i, step), 16));
+    }
+    return res;
   }
-  if (cleaned.includes('arniqueiras')) return RA_CATALOG.find(r => r.name === 'Arniqueira');
-  if (cleaned.includes('plano piloto')) return RA_CATALOG.find(r => r.name === 'Brasília');
-  if (cleaned.includes('sol nascente') || cleaned.includes('por do sol')) return RA_CATALOG.find(r => r.name === 'Sol Nascente/Pôr do Sol');
-  if (cleaned.includes('sudoeste') || cleaned.includes('octogonal')) return RA_CATALOG.find(r => r.name === 'Sudoeste e Octogonal');
+  let s = raw.replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+  s = s.replace(/\\[nrtbf()\\]/g, (m) => ({
+    '\\n': '\n', '\\r': '\r', '\\t': '\t', '\\b': '\b', '\\f': '\f',
+    '\\(': '(', '\\)': ')', '\\\\': '\\'
+  })[m] || m);
+  if (s.startsWith('\xfe\xff')) {
+    let res = '';
+    for (let i = 2; i < s.length; i += 2) {
+      res += String.fromCharCode((s.charCodeAt(i) << 8) | s.charCodeAt(i + 1));
+    }
+    return res;
+  }
+  return s;
+}
+
+function detectRAFromPdfContent(rawPdfStrOrBase64, fileName = '') {
+  let rawPdfStr = '';
+  if (rawPdfStrOrBase64) {
+    if (typeof rawPdfStrOrBase64 === 'string' && rawPdfStrOrBase64.startsWith('JVBERi')) {
+      try {
+        rawPdfStr = atob(rawPdfStrOrBase64.slice(0, 100000));
+      } catch (e) {
+        rawPdfStr = rawPdfStrOrBase64;
+      }
+    } else if (typeof rawPdfStrOrBase64 === 'string') {
+      rawPdfStr = rawPdfStrOrBase64;
+    }
+  }
+
+  const candidates = [];
+
+  if (rawPdfStr) {
+    const titleMatch = rawPdfStr.match(/\/Title\s*(?:\(([^)]+)\)|<([0-9a-fA-F]+)>)/i);
+    if (titleMatch) {
+      candidates.push(decodePdfString(titleMatch[1] ? titleMatch[1] : ('<' + titleMatch[2] + '>')));
+    }
+    const subjMatch = rawPdfStr.match(/\/Subject\s*(?:\(([^)]+)\)|<([0-9a-fA-F]+)>)/i);
+    if (subjMatch) {
+      candidates.push(decodePdfString(subjMatch[1] ? subjMatch[1] : ('<' + subjMatch[2] + '>')));
+    }
+    const relMatch = rawPdfStr.slice(0, 50000).match(/Relatorio[a-zA-Z0-9_]*CAESB[a-zA-Z0-9_]*/gi);
+    if (relMatch) {
+      candidates.push(...relMatch);
+    }
+    const hydrantMatches = rawPdfStr.slice(0, 80000).match(/\b([A-Z]{3})\d{4,5}\b/g);
+    if (hydrantMatches && hydrantMatches.length > 0) {
+      const counts = {};
+      for (const h of hydrantMatches) {
+        const pref = h.slice(0, 3);
+        if (PREFIX_RA_MAP[pref]) counts[pref] = (counts[pref] || 0) + 1;
+      }
+      const sortedPrefs = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+      if (sortedPrefs.length > 0) {
+        const bestRaName = PREFIX_RA_MAP[sortedPrefs[0]];
+        const foundRa = RA_CATALOG.find(r => r.name === bestRaName);
+        if (foundRa) candidates.push(foundRa.name);
+      }
+    }
+  }
+
+  if (fileName) {
+    candidates.push(fileName);
+  }
+
+  const sortedRAs = [...RA_CATALOG].sort((a, b) => b.name.length - a.name.length);
+
+  for (const text of candidates) {
+    if (!text) continue;
+    const clean = normalizeSearchStr(
+      text
+        .replace(/\.pdf$/i, '')
+        .replace(/relatorio|alteracoes|caesb|hidrantes|vistoria|geral|cbmdf/gi, ' ')
+        .replace(/\b20\d{2,6}\b/g, ' ')
+        .replace(/ano/gi, ' ')
+    );
+
+    for (const ra of sortedRAs) {
+      const raNorm = normalizeSearchStr(ra.name);
+      if (raNorm && clean.includes(raNorm)) return ra;
+    }
+
+    if (clean.includes('arniqueiras')) return RA_CATALOG.find(r => r.name === 'Arniqueira');
+    if (clean.includes('plano piloto')) return RA_CATALOG.find(r => r.name === 'Brasília');
+    if (clean.includes('sol nascente') || clean.includes('por do sol')) return RA_CATALOG.find(r => r.name === 'Sol Nascente/Pôr do Sol');
+    if (clean.includes('sudoeste') || clean.includes('octogonal')) return RA_CATALOG.find(r => r.name === 'Sudoeste e Octogonal');
+  }
+
+  if (rawPdfStr) {
+    const headChunk = normalizeSearchStr(rawPdfStr.slice(0, 50000));
+    for (const ra of sortedRAs) {
+      const raNorm = normalizeSearchStr(ra.name);
+      if (raNorm && raNorm.length >= 4 && headChunk.includes(raNorm)) return ra;
+    }
+  }
+
   return null;
+}
+
+function detectRAFromFilename(fileName) {
+  return detectRAFromPdfContent('', fileName);
 }
 
 function formatSize(bytes) {
@@ -112,7 +244,8 @@ function renderPackageInfo(pkg) {
   if (pkg?.pdfBase64) {
     const fName = pkg.fileName || `Relatorio_alteracoes_CAESB_${(pkg.cidade || 'DF').replace(/\s+/g, '_')}.pdf`;
     const sizeStr = pkg.fileSize ? ` (${formatSize(pkg.fileSize)})` : '';
-    fileInfoEl.innerHTML = `<span style="color:#34d399; font-weight:600;">📄 ${fName}${sizeStr}</span>`;
+    const cidadeBadge = pkg.cidade ? `<div style="margin-top: 4px; color: #34d399; font-size: 11px; font-weight: 600;">🔒 Localidade no PDF: ${pkg.cidade} ${pkg.raRomano ? `(RA ${pkg.raRomano})` : ''}</div>` : '';
+    fileInfoEl.innerHTML = `<span style="color:#34d399; font-weight:600;">📄 ${fName}${sizeStr}</span>${cidadeBadge}`;
     badgeEl.textContent = 'Pronto';
   } else {
     fileInfoEl.innerHTML = `⚠️ Selecione o PDF do relatório baixado no Netuno`;
@@ -129,9 +262,9 @@ fileInput.addEventListener('change', (e) => {
     const dataUrl = String(reader.result || '');
     const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
 
-    const detected = detectRAFromFilename(file.name);
+    const detected = detectRAFromPdfContent(base64, file.name);
     const chosenCity = detected ? detected.name : (selectRa.value || 'Brasília');
-    const chosenRoman = getRARomanByName(chosenCity);
+    const chosenRoman = detected ? detected.roman : getRARomanByName(chosenCity);
     if (detected) selectRa.value = detected.name;
 
     const newPkg = {
@@ -151,7 +284,7 @@ fileInput.addEventListener('change', (e) => {
       netuno_sei_last_package: newPkg
     }, () => {
       renderPackageInfo(newPkg);
-      showStatus(`✅ PDF carregado para ${chosenCity} (RA ${chosenRoman})!`, '#34d399');
+      showStatus(`✅ PDF carregado! Cidade identificada: ${chosenCity} (RA ${chosenRoman})`, '#34d399');
     });
   };
   reader.readAsDataURL(file);

@@ -22,7 +22,7 @@ export const generateSeiMemorandoMinutaText = ({
     : '[Nº SEI DO RELATÓRIO EXTERNO]';
 
   return `Para: Cel. QOBM/Comb. Comandante do Grupamento de Prevenção e Combate a Incêndio Urbano (GPCIU)
-Assunto: Vistoria de Hidrante em ${nomeCidade} ${raSufixo}
+Assunto: Vistoria de Hidrantes em ${nomeCidade} ${raSufixo}
 
 Senhor(a) Comandante,
 
@@ -34,7 +34,7 @@ Senhor(a) Comandante,
 **** Anexo - Minuta de ofício ao ambiente CAESB/DP ****
 
 Ao Senhor Diretor de Operações e Manutenção - Companhia de Saneamento Ambiental do Distrito Federal - CAESB
-Assunto: Solicitação de Manutenção Corretiva em Hidrante Urbano de Incêndio – ${romano ? `RA ${romano} ` : ''}${cidadeUpper} - ${ano}.
+Assunto: Solicitação de Manutenção Corretiva em Hidrantes Urbanos de Incêndio – ${romano ? `RA ${romano} ` : ''}${cidadeUpper} - ${ano}.
 Referência: Relatório de Vistoria da Fiscalização (${docRef})
 
 Senhor Diretor,
@@ -43,7 +43,7 @@ Cumprimentando-o cordialmente, dirijo-me a Vossa Senhoria para solicitar a aten�
 
 Durante vistoria técnica, constatou-se que os hidrantes situados em ${nomeCidade}, encontram-se com avarias e necessidade de manutenção corretiva imediata.
 
-A plena funcionalidade do referido dispositivo é indispensável para garantir o suprimento ininterrupto e célere de água às viaturas operacionais em caso de sinistros, sendo medida crucial para a salvaguarda de vidas e proteção ao patrimônio na localidade.
+A plena funcionalidade dos referidos dispositivos é indispensável para garantir o suprimento ininterrupto e célere de água às viaturas operacionais em caso de sinistros, sendo medida crucial para a salvaguarda de vidas e proteção ao patrimônio na localidade.
 
 Dessa forma, solicito os valorosos préstimos dessa Companhia para a adoção das providências necessárias visando a regularização dos componentes. O Relatório de Vistoria da Fiscalização (${docRef}) segue com as informações pertinentes para subsidiar as equipes técnicas em campo.
 
