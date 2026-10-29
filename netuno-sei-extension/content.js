@@ -413,7 +413,7 @@ function setWidgetExpandedState(expand) {
 
 function saveActivePackageToStorage(pkg) {
   activePackage = pkg;
-  if (chrome.storage?.local && pkg) {
+  if (chrome.storage?.local && pkg && pkg.pdfBase64) {
     chrome.storage.local.set({
       netuno_sei_package: pkg
     });
@@ -421,15 +421,13 @@ function saveActivePackageToStorage(pkg) {
 }
 
 function clearCurrentLoadedFile() {
-  if (activePackage) {
-    activePackage.pdfBase64 = null;
-    activePackage.fileName = null;
-    activePackage.fileSize = null;
-  }
+  activePackage = null;
+  const inputPdf = document.getElementById('input-netuno-pdf');
+  if (inputPdf) inputPdf.value = '';
   if (chrome.storage?.local) {
     chrome.storage.local.remove(['netuno_sei_package', 'netuno_sei_last_package']);
   }
-  updateWidgetPackageUI(activePackage);
+  updateWidgetPackageUI(null);
 }
 
 function highlightUploadBox() {
@@ -446,7 +444,7 @@ function highlightUploadBox() {
 }
 
 function updateWidgetPackageUI(pkg) {
-  if (pkg) activePackage = pkg;
+  if (pkg !== undefined) activePackage = pkg;
 
   const selectRa = document.getElementById('select-netuno-ra');
   const selectDestino = document.getElementById('select-netuno-destino');
@@ -454,10 +452,14 @@ function updateWidgetPackageUI(pkg) {
   const pillBadgeEl = document.getElementById('netuno-pill-badge');
   const runBtn = document.getElementById('btn-netuno-run');
 
-  if (selectRa && activePackage?.cidade) {
-    const matchedRa = RA_CATALOG.find(r => normalizeSearchStr(r.name) === normalizeSearchStr(activePackage.cidade));
-    if (matchedRa) {
-      selectRa.value = matchedRa.name;
+  if (selectRa) {
+    if (activePackage?.cidade) {
+      const matchedRa = RA_CATALOG.find(r => normalizeSearchStr(r.name) === normalizeSearchStr(activePackage.cidade));
+      if (matchedRa) {
+        selectRa.value = matchedRa.name;
+      }
+    } else if (!activePackage?.pdfBase64) {
+      selectRa.value = '';
     }
   }
 
@@ -492,11 +494,18 @@ function updateWidgetPackageUI(pkg) {
 
 function renderFloatingCard(pkg) {
   if (window !== window.top) return; // Evita duplicar dentro dos iframes internos do SEI
-  if (pkg) activePackage = pkg;
+  if (pkg && pkg.pdfBase64) activePackage = pkg;
 
-  if (document.getElementById('netuno-sei-widget-root')) {
-    updateWidgetPackageUI(activePackage);
-    return;
+  const existingRoot = document.getElementById('netuno-sei-widget-root');
+  let restoreExpanded = false;
+  if (existingRoot) {
+    if (floatingWidgetContainer === existingRoot) {
+      updateWidgetPackageUI(activePackage);
+      return;
+    }
+    // Se o elemento no DOM pertencia a um script antigo (ex: extensão recarregada), substitui mantendo o estado aberto/fechado
+    restoreExpanded = document.getElementById('netuno-sei-card-body')?.style.display === 'block';
+    existingRoot.remove();
   }
 
   floatingWidgetContainer = document.createElement('div');
@@ -509,11 +518,12 @@ function renderFloatingCard(pkg) {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   `;
 
-  const currentCity = activePackage?.cidade || 'Samambaia';
+  const currentCity = activePackage?.cidade || '';
   const currentDestinoId = activePackage?.destinoId || '110037655';
 
-  const raOptionsHtml = RA_CATALOG.map(ra => {
-    const sel = normalizeSearchStr(ra.name) === normalizeSearchStr(currentCity) ? 'selected' : '';
+  const placeholderOption = `<option value="" ${!currentCity ? 'selected' : ''}>— Detectada automaticamente pelo PDF —</option>`;
+  const raOptionsHtml = placeholderOption + RA_CATALOG.map(ra => {
+    const sel = currentCity && normalizeSearchStr(ra.name) === normalizeSearchStr(currentCity) ? 'selected' : '';
     return `<option value="${ra.name}" ${sel}>${ra.name} (RA ${ra.roman})</option>`;
   }).join('');
 
@@ -671,9 +681,12 @@ function renderFloatingCard(pkg) {
         pdfBase64: base64,
         destinoId: selectDestino.value || '110037655',
         memorandoMinuta: generateSeiMemorandoMinutaText({ cidade: chosenCity, raRomano: chosenRoman }),
-        dataCriacao: new Date().toISOString()
+        dataCriacao: new Date().toISOString(),
+        uploadedAt: Date.now(),
+        consumed: false
       };
 
+      inputPdf.value = '';
       saveActivePackageToStorage(newPkg);
       updateWidgetPackageUI(newPkg);
       updateStatus(`✅ Arquivo "${file.name}" carregado! Cidade identificada: ${chosenCity} (RA ${chosenRoman}). Clique em Dar Play.`, '#34d399');
@@ -684,6 +697,7 @@ function renderFloatingCard(pkg) {
   // Ao trocar a Cidade / RA manualmente no seletor
   selectRa.addEventListener('change', () => {
     const chosenCity = selectRa.value;
+    if (!chosenCity) return;
     const chosenRoman = getRARomanByName(chosenCity);
     const updatedPkg = {
       ...(activePackage || {}),
@@ -720,20 +734,15 @@ function renderFloatingCard(pkg) {
   };
 
   updateWidgetPackageUI(activePackage);
+  if (restoreExpanded) {
+    setWidgetExpandedState(true);
+  }
 }
 
-function triggerPlayWithSync() {
+function executePlayWithLoadedPackage() {
   const selectRa = document.getElementById('select-netuno-ra');
   const selectDestino = document.getElementById('select-netuno-destino');
   const chosenDestinoId = selectDestino?.value || activePackage?.destinoId || '110037655';
-
-  // Se o militar não subiu o PDF desta vez, barra a execução e exige o arquivo para nunca repetir relatório anterior
-  if (!activePackage || !activePackage.pdfBase64) {
-    setWidgetExpandedState(true);
-    updateStatus('⚠️ Nenhum relatório PDF carregado! Por favor, clique em "📂 Subir PDF" acima e selecione o relatório da CAESB antes de dar Play.', '#fbbf24');
-    highlightUploadBox();
-    return;
-  }
 
   const finalCity = activePackage.cidade || selectRa?.value || 'Brasília';
   const finalRoman = activePackage.raRomano || getRARomanByName(finalCity);
@@ -744,6 +753,33 @@ function triggerPlayWithSync() {
   saveActivePackageToStorage(activePackage);
   updateWidgetPackageUI(activePackage);
   executeFullAutomation(activePackage);
+}
+
+function triggerPlayWithSync() {
+  if (activePackage && activePackage.pdfBase64) {
+    executePlayWithLoadedPackage();
+    return;
+  }
+
+  // Verifica se o PDF recém-carregado está salvo no storage local (ex: subido pelo popup ou antes de navegação de página)
+  if (chrome.storage?.local) {
+    chrome.storage.local.get(['netuno_sei_package'], (res) => {
+      const stored = res?.netuno_sei_package;
+      if (stored && stored.pdfBase64 && !stored.consumed) {
+        activePackage = stored;
+        executePlayWithLoadedPackage();
+      } else {
+        setWidgetExpandedState(true);
+        updateStatus('⚠️ Nenhum relatório PDF carregado! Por favor, clique em "📂 Subir PDF" acima e selecione o relatório da CAESB antes de dar Play.', '#fbbf24');
+        highlightUploadBox();
+      }
+    });
+    return;
+  }
+
+  setWidgetExpandedState(true);
+  updateStatus('⚠️ Nenhum relatório PDF carregado! Por favor, clique em "📂 Subir PDF" acima e selecione o relatório da CAESB antes de dar Play.', '#fbbf24');
+  highlightUploadBox();
 }
 
 function updateStatus(stepText, color = '#38bdf8') {
@@ -1742,6 +1778,9 @@ async function executeFullAutomation(pkg) {
       }
     }
 
+    // Assim que o Processo, PDF Externo e Memorando foram gerados no SEI, consome/limpa o PDF carregado para nunca repetir em outro processo
+    clearCurrentLoadedFile();
+
     // Registra o contexto ativo para envio automático imediato assim que o Memorando for assinado
     registerAutoTramitacaoOnSign({
       idProcedimento,
@@ -2074,7 +2113,9 @@ if (chrome.runtime?.onMessage) {
     if (window !== window.top) return;
 
     if (request.action === 'netuno_open_panel') {
-      if (request.package) activePackage = request.package;
+      if (request.package && request.package.pdfBase64) {
+        activePackage = request.package;
+      }
       renderFloatingCard(activePackage);
       updateWidgetPackageUI(activePackage);
       setWidgetExpandedState(true);
@@ -2083,7 +2124,9 @@ if (chrome.runtime?.onMessage) {
     }
 
     if (request.action === 'netuno_start_play') {
-      if (request.package) activePackage = request.package;
+      if (request.package && request.package.pdfBase64) {
+        activePackage = request.package;
+      }
       renderFloatingCard(activePackage);
       updateWidgetPackageUI(activePackage);
       setWidgetExpandedState(true);
@@ -2094,19 +2137,20 @@ if (chrome.runtime?.onMessage) {
   });
 }
 
-// Atualiza automaticamente caso o PDF ou a Cidade sejam alterados pelo Popup da extensão
+// Atualiza automaticamente caso o PDF ou a Cidade sejam enviados pelo Popup da extensão
 if (chrome.storage?.onChanged) {
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== 'local' || window !== window.top) return;
-    if (changes.netuno_sei_package?.newValue) {
-      const newPkg = changes.netuno_sei_package.newValue;
+    const newPkg = changes.netuno_sei_package?.newValue;
+    if (newPkg && newPkg.pdfBase64 && !newPkg.consumed) {
+      activePackage = newPkg;
       renderFloatingCard(newPkg);
       updateWidgetPackageUI(newPkg);
     }
   });
 }
 
-// Inicialização: Sempre mantém o botãozinho disfarçado disponível no SEI e gerencia popup de assinatura
+// Inicialização: Sempre mantém o botãozinho disfarçado disponível no SEI e preserva PDF recém-subido ainda não utilizado
 function initExtension() {
   if (window.location.href.includes('acao=documento_assinar')) {
     handleSignaturePopupLifecycle();
@@ -2115,19 +2159,42 @@ function initExtension() {
 
   if (window !== window.top) return;
 
-  // Garante inicialização 100% limpa: nunca pré-carrega arquivo de execuções anteriores
-  activePackage = null;
-  renderFloatingCard(null);
+  renderFloatingCard(activePackage);
 
   if (chrome.storage?.local) {
-    chrome.storage.local.get(['netuno_sei_panel_open'], (res) => {
+    // Remove sempre o cache persistente legado
+    chrome.storage.local.remove(['netuno_sei_last_package']);
+
+    chrome.storage.local.get(['netuno_sei_package', 'netuno_sei_panel_open', 'netuno_sei_auto_play'], (res) => {
       if (res?.netuno_sei_panel_open) {
         setWidgetExpandedState(true);
         chrome.storage.local.remove(['netuno_sei_panel_open']);
       }
+
+      const pkg = res?.netuno_sei_package;
+      const isFreshUnconsumed = Boolean(
+        pkg &&
+        pkg.pdfBase64 &&
+        !pkg.consumed &&
+        (!pkg.uploadedAt || (Date.now() - pkg.uploadedAt) < 30 * 60 * 1000)
+      );
+
+      if (isFreshUnconsumed) {
+        activePackage = pkg;
+        renderFloatingCard(pkg);
+        updateWidgetPackageUI(pkg);
+
+        if (res?.netuno_sei_auto_play) {
+          chrome.storage.local.remove(['netuno_sei_auto_play']);
+          setWidgetExpandedState(true);
+          setTimeout(() => {
+            triggerPlayWithSync();
+          }, 400);
+        }
+      } else {
+        chrome.storage.local.remove(['netuno_sei_package', 'netuno_sei_auto_play']);
+      }
     });
-    // Remove qualquer pacote em cache residual para que a sessão sempre exija o novo PDF
-    chrome.storage.local.remove(['netuno_sei_package', 'netuno_sei_last_package', 'netuno_sei_auto_play']);
   }
 }
 

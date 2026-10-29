@@ -224,7 +224,7 @@ const btnPlay = document.getElementById('btn-popup-play');
 const btnShow = document.getElementById('btn-popup-show');
 
 // Popula o select de RAs
-selectRa.innerHTML = RA_CATALOG.map(r => `<option value="${r.name}">${r.name} (RA ${r.roman})</option>`).join('');
+selectRa.innerHTML = `<option value="">— Detectada automaticamente pelo PDF —</option>` + RA_CATALOG.map(r => `<option value="${r.name}">${r.name} (RA ${r.roman})</option>`).join('');
 
 function showStatus(text, color = '#38bdf8') {
   statusEl.style.display = 'block';
@@ -237,6 +237,8 @@ function renderPackageInfo(pkg) {
   if (pkg?.cidade) {
     const matched = RA_CATALOG.find(r => normalizeSearchStr(r.name) === normalizeSearchStr(pkg.cidade));
     if (matched) selectRa.value = matched.name;
+  } else if (!pkg?.pdfBase64) {
+    selectRa.value = '';
   }
   if (pkg?.destinoId) {
     selectDestino.value = pkg.destinoId;
@@ -276,9 +278,12 @@ fileInput.addEventListener('change', (e) => {
       fileSize: file.size,
       pdfBase64: base64,
       destinoId: selectDestino.value || '110037655',
-      dataCriacao: new Date().toISOString()
+      dataCriacao: new Date().toISOString(),
+      uploadedAt: Date.now(),
+      consumed: false
     };
 
+    fileInput.value = '';
     chrome.storage.local.set({
       netuno_sei_package: newPkg
     }, () => {
@@ -291,6 +296,7 @@ fileInput.addEventListener('change', (e) => {
 
 selectRa.addEventListener('change', () => {
   const chosenCity = selectRa.value;
+  if (!chosenCity) return;
   const chosenRoman = getRARomanByName(chosenCity);
   const updated = {
     ...(currentPackage || {}),
@@ -299,9 +305,11 @@ selectRa.addEventListener('change', () => {
     destinoId: selectDestino.value || '110037655'
   };
   currentPackage = updated;
-  chrome.storage.local.set({
-    netuno_sei_package: updated
-  });
+  if (updated.pdfBase64) {
+    chrome.storage.local.set({
+      netuno_sei_package: updated
+    });
+  }
 });
 
 selectDestino.addEventListener('change', () => {
@@ -310,9 +318,11 @@ selectDestino.addEventListener('change', () => {
     destinoId: selectDestino.value
   };
   currentPackage = updated;
-  chrome.storage.local.set({
-    netuno_sei_package: updated
-  });
+  if (updated.pdfBase64) {
+    chrome.storage.local.set({
+      netuno_sei_package: updated
+    });
+  }
 });
 
 btnPlay.addEventListener('click', () => {
@@ -321,8 +331,9 @@ btnPlay.addEventListener('click', () => {
     return;
   }
 
-  currentPackage.cidade = selectRa.value;
-  currentPackage.raRomano = getRARomanByName(selectRa.value);
+  const finalCity = selectRa.value || currentPackage.cidade || 'Brasília';
+  currentPackage.cidade = finalCity;
+  currentPackage.raRomano = getRARomanByName(finalCity);
   currentPackage.destinoId = selectDestino.value;
 
   btnPlay.disabled = true;
@@ -352,7 +363,7 @@ btnShow.addEventListener('click', () => {
   chrome.runtime.sendMessage({
     action: 'netuno_dispatch_to_sei',
     command: 'netuno_open_panel',
-    package: currentPackage
+    package: (currentPackage && currentPackage.pdfBase64) ? currentPackage : null
   }, (res) => {
     if (res && res.success) {
       showStatus('✅ Painel exibido na aba do SEI!', '#34d399');
@@ -364,9 +375,21 @@ btnShow.addEventListener('click', () => {
 });
 
 async function initPopup() {
-  // Limpa qualquer cache de arquivo de sessões anteriores
-  currentPackage = { cidade: 'Brasília', raRomano: 'I', destinoId: '110037655', pdfBase64: null, fileName: null };
-  renderPackageInfo(currentPackage);
+  chrome.storage.local.get(['netuno_sei_package'], (res) => {
+    const pkg = res?.netuno_sei_package;
+    const isFreshUnconsumed = Boolean(
+      pkg &&
+      pkg.pdfBase64 &&
+      !pkg.consumed &&
+      (!pkg.uploadedAt || (Date.now() - pkg.uploadedAt) < 30 * 60 * 1000)
+    );
+    if (isFreshUnconsumed) {
+      renderPackageInfo(pkg);
+    } else {
+      chrome.storage.local.remove(['netuno_sei_package', 'netuno_sei_last_package']);
+      renderPackageInfo({ cidade: '', raRomano: '', destinoId: '110037655', pdfBase64: null, fileName: null });
+    }
+  });
 }
 
 initPopup();
