@@ -46,13 +46,52 @@ function getInfraSistema() {
   return urlMatch ? urlMatch[1] : '100000100';
 }
 
-// Widget flutuante discreto com alternância Minimizada / Expandida
+// Widget flutuante discreto (sempre disfarçado no canto) com alternância Minimizada / Expandida
 let floatingWidgetContainer = null;
 let isWidgetExpanded = false;
+let activePackage = null;
+
+function setWidgetExpandedState(expand) {
+  isWidgetExpanded = expand !== undefined ? expand : !isWidgetExpanded;
+  const cardBody = document.getElementById('netuno-sei-card-body');
+  const pillBtn = document.getElementById('netuno-sei-pill-btn');
+  if (!cardBody || !pillBtn) return;
+
+  if (isWidgetExpanded) {
+    cardBody.style.display = 'block';
+    pillBtn.style.display = 'none';
+  } else {
+    cardBody.style.display = 'none';
+    pillBtn.style.display = 'flex';
+  }
+}
+
+function updateWidgetPackageUI(pkg) {
+  if (pkg) activePackage = pkg;
+  const pkgTitleEl = document.getElementById('netuno-pkg-title');
+  const pillBadgeEl = document.getElementById('netuno-pill-badge');
+  if (pkgTitleEl) {
+    if (activePackage) {
+      const cidadeText = activePackage.cidade || 'Distrito Federal';
+      const raText = activePackage.raRomano ? ` (RA ${activePackage.raRomano})` : '';
+      pkgTitleEl.textContent = `Relatório CAESB: ${cidadeText}${raText}`;
+      pkgTitleEl.style.color = '#f8fafc';
+    } else {
+      pkgTitleEl.textContent = 'Aguardando pacote do Netuno (clique em 🔄 Sincronizar)';
+      pkgTitleEl.style.color = '#94a3b8';
+    }
+  }
+  if (pillBadgeEl) {
+    pillBadgeEl.textContent = activePackage ? (activePackage.cidade || 'Pronto') : 'SEI';
+  }
+}
 
 function renderFloatingCard(pkg) {
+  if (window !== window.top) return; // Evita duplicar dentro dos iframes internos do SEI
+  if (pkg) activePackage = pkg;
+
   if (document.getElementById('netuno-sei-widget-root')) {
-    // Atualiza pacote existente sem duplicar
+    updateWidgetPackageUI(activePackage);
     return;
   }
 
@@ -60,40 +99,46 @@ function renderFloatingCard(pkg) {
   floatingWidgetContainer.id = 'netuno-sei-widget-root';
   floatingWidgetContainer.style.cssText = `
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: 16px;
+    right: 16px;
     z-index: 9999999;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   `;
 
-  const cidadeText = pkg?.cidade || 'Distrito Federal';
-  const raText = pkg?.raRomano ? ` (RA ${pkg.raRomano})` : '';
+  const cidadeText = activePackage?.cidade || 'Distrito Federal';
+  const raText = activePackage?.raRomano ? ` (RA ${activePackage.raRomano})` : '';
+  const initialTitle = activePackage
+    ? `Relatório CAESB: ${cidadeText}${raText}`
+    : 'Aguardando pacote do Netuno (clique em 🔄 Sincronizar)';
 
   floatingWidgetContainer.innerHTML = `
-    <!-- BOTÃO DISCRETO MINIMIZADO (Padrão) -->
-    <div id="netuno-sei-pill-btn" style="display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #065f46, #047857); color: #ecfdf5; border: 1.5px solid #10b981; border-radius: 9999px; padding: 8px 16px; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.45); font-size: 13px; font-weight: 600; user-select: none; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-      <span style="font-size: 16px;">🚒</span>
-      <span>Netuno Automação</span>
-      <span id="netuno-pill-badge" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); padding: 2px 7px; border-radius: 999px; font-size: 10px; color: #a7f3d0;">Pronto</span>
-      <span style="font-size: 11px; opacity: 0.8; margin-left: 2px;">▲</span>
+    <!-- BOTÃOZINHO SEMPRE DISFARÇADO NO CANTO (Fica discreto e nunca desaparece ao fechar) -->
+    <div id="netuno-sei-pill-btn" title="Clique para abrir o Netuno SEI ou no ▶ para dar Play direto" style="display: flex; align-items: center; gap: 6px; background: rgba(6, 78, 59, 0.85); backdrop-filter: blur(6px); color: #ecfdf5; border: 1px solid rgba(16, 185, 129, 0.55); border-radius: 9999px; padding: 5px 8px 5px 11px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.35); font-size: 11.5px; font-weight: 600; user-select: none; opacity: 0.45; transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;">
+      <div id="netuno-pill-open-area" style="display: flex; align-items: center; gap: 6px;">
+        <span style="font-size: 13px;">🚒</span>
+        <span>Netuno</span>
+        <span id="netuno-pill-badge" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.18); padding: 1px 6px; border-radius: 999px; font-size: 9.5px; color: #a7f3d0; max-width: 95px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${activePackage ? (activePackage.cidade || 'Pronto') : 'SEI'}</span>
+      </div>
+      <button id="netuno-pill-quick-play" title="Dar Play agora (Autuar Processo no SEI)" style="background: #10b981; color: #022c22; border: none; border-radius: 999px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; cursor: pointer; margin-left: 2px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">▶</button>
     </div>
 
-    <!-- PAINEL COMPLETO EXPANSÍVEL (Aberto somente quando clicado) -->
+    <!-- PAINEL COMPLETO EXPANSÍVEL (Aberto quando clicado ou acionado pelo menu de extensões) -->
     <div id="netuno-sei-card-body" style="display: none; width: 375px; background: #0f172a; color: #f8fafc; border: 2px solid #059669; border-radius: 14px; padding: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.7); font-size: 13px; line-height: 1.4; margin-bottom: 8px;">
       <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 10px;">
         <div style="font-weight: bold; font-size: 14px; color: #34d399; display: flex; align-items: center; gap: 6px;">
           🚒 Netuno SEI • SUOMA
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <button id="btn-netuno-minimize" title="Recolher para botão discreto" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; padding: 2px 6px;">_</button>
-          <button id="btn-netuno-close" title="Fechar e dispensar pacote" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px; padding: 2px 6px;">✖</button>
+          <button id="btn-netuno-sync" title="Sincronizar último relatório gerado no Netuno" style="background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #cbd5e1; cursor: pointer; font-size: 11px; padding: 2px 7px;">🔄</button>
+          <button id="btn-netuno-minimize" title="Recolher para botãozinho disfarçado" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; padding: 2px 6px;">_</button>
+          <button id="btn-netuno-close" title="Fechar painel (mantém botãozinho disfarçado no canto)" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px; padding: 2px 6px;">✖</button>
         </div>
       </div>
 
       <div style="margin-bottom: 12px; font-size: 12px;">
         <div style="color: #94a3b8; font-size: 11px; text-transform: uppercase; font-weight: 600;">Pacote Pronto para Autuação:</div>
-        <div style="font-weight: bold; font-size: 13px; color: #f8fafc; margin-top: 2px;">
-          Relatório CAESB: ${cidadeText}${raText}
+        <div id="netuno-pkg-title" style="font-weight: bold; font-size: 13px; color: ${activePackage ? '#f8fafc' : '#94a3b8'}; margin-top: 2px;">
+          ${initialTitle}
         </div>
         <div style="color: #34d399; font-size: 11px; margin-top: 4px; font-weight: 500;">
           Processo: CBMDF - Serviço Operacional
@@ -120,7 +165,7 @@ function renderFloatingCard(pkg) {
 
       <div style="display: flex; gap: 8px;">
         <button id="btn-netuno-run" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #059669, #0d9488); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 12px; box-shadow: 0 4px 12px rgba(5,150,105,0.4); display: flex; align-items: center; justify-content: center; gap: 6px;">
-          ⚡ Autuar Processo no SEI (1 Toque)
+          ▶️ Dar Play • Autuar no SEI (1 Toque)
         </button>
       </div>
     </div>
@@ -129,30 +174,55 @@ function renderFloatingCard(pkg) {
   document.body.appendChild(floatingWidgetContainer);
 
   const pillBtn = document.getElementById('netuno-sei-pill-btn');
-  const cardBody = document.getElementById('netuno-sei-card-body');
+  const pillOpenArea = document.getElementById('netuno-pill-open-area');
+  const pillQuickPlay = document.getElementById('netuno-pill-quick-play');
   const btnMinimize = document.getElementById('btn-netuno-minimize');
   const btnClose = document.getElementById('btn-netuno-close');
+  const btnSync = document.getElementById('btn-netuno-sync');
   const btnRun = document.getElementById('btn-netuno-run');
   const btnCopyError = document.getElementById('btn-netuno-copy-error');
 
-  const toggleWidget = (expand) => {
-    isWidgetExpanded = expand !== undefined ? expand : !isWidgetExpanded;
-    if (isWidgetExpanded) {
-      cardBody.style.display = 'block';
-      pillBtn.style.display = 'none';
-    } else {
-      cardBody.style.display = 'none';
-      pillBtn.style.display = 'flex';
-    }
+  // Efeito disfarçado: semi-transparente em repouso, 100% visível ao passar o mouse
+  pillBtn.addEventListener('mouseenter', () => {
+    pillBtn.style.opacity = '1';
+    pillBtn.style.transform = 'scale(1.03)';
+  });
+  pillBtn.addEventListener('mouseleave', () => {
+    pillBtn.style.opacity = '0.45';
+    pillBtn.style.transform = 'scale(1)';
+  });
+
+  pillOpenArea.onclick = (e) => {
+    e.stopPropagation();
+    setWidgetExpandedState(true);
   };
 
-  pillBtn.onclick = () => toggleWidget(true);
-  btnMinimize.onclick = () => toggleWidget(false);
+  pillBtn.onclick = () => setWidgetExpandedState(true);
 
+  pillQuickPlay.onclick = (e) => {
+    e.stopPropagation();
+    setWidgetExpandedState(true);
+    triggerPlayWithSync();
+  };
+
+  btnMinimize.onclick = () => setWidgetExpandedState(false);
+
+  // Fechar (✖) apenas recolhe de volta para o botãozinho disfarçado, NUNCA remove da tela!
   btnClose.onclick = () => {
-    if (confirm('Deseja descartar este pacote do Netuno?')) {
-      chrome.storage?.local?.remove(['netuno_sei_package']);
-      floatingWidgetContainer.remove();
+    setWidgetExpandedState(false);
+  };
+
+  btnSync.onclick = () => {
+    updateStatus('⏳ Sincronizando último relatório do Netuno...', '#38bdf8');
+    if (chrome.runtime?.sendMessage) {
+      chrome.runtime.sendMessage({ action: 'netuno_sync_from_netuno_tabs' }, (res) => {
+        if (res && res.package) {
+          updateWidgetPackageUI(res.package);
+          updateStatus(`✅ Pacote sincronizado: ${res.package.cidade || 'DF'}! Pronto para dar Play.`, '#34d399');
+        } else {
+          updateStatus('⚠️ Nenhum pacote novo encontrado. Gere o Relatório CAESB no Netuno.', '#f59e0b');
+        }
+      });
     }
   };
 
@@ -167,8 +237,34 @@ function renderFloatingCard(pkg) {
   };
 
   btnRun.onclick = () => {
-    executeFullAutomation(pkg);
+    triggerPlayWithSync();
   };
+}
+
+function triggerPlayWithSync() {
+  if (activePackage) {
+    executeFullAutomation(activePackage);
+    return;
+  }
+  updateStatus('⏳ Buscando pacote do Netuno antes de iniciar...', '#38bdf8');
+  if (chrome.runtime?.sendMessage) {
+    chrome.runtime.sendMessage({ action: 'netuno_sync_from_netuno_tabs' }, (res) => {
+      if (res && res.package) {
+        updateWidgetPackageUI(res.package);
+        executeFullAutomation(res.package);
+      } else {
+        chrome.storage?.local?.get(['netuno_sei_package', 'netuno_sei_last_package'], (st) => {
+          const pkg = st?.netuno_sei_package || st?.netuno_sei_last_package;
+          if (pkg) {
+            updateWidgetPackageUI(pkg);
+            executeFullAutomation(pkg);
+          } else {
+            updateStatus('⚠️ Nenhum relatório carregado ainda. Clique em "Enviar ao SEI" lá no Netuno primeiro.', '#f59e0b');
+          }
+        });
+      }
+    });
+  }
 }
 
 function updateStatus(stepText, color = '#38bdf8') {
@@ -1102,13 +1198,78 @@ async function tramitarProcessoFinal(idProcedimento, numeroProcesso, urlTramitar
   }
 }
 
-// Inicialização: Verifica se há pacote pendente
+// Escuta comandos vindos do menu de extensões (popup.js / background.js)
+if (chrome.runtime?.onMessage) {
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (window !== window.top) return;
+
+    if (request.action === 'netuno_open_panel') {
+      if (request.package) activePackage = request.package;
+      renderFloatingCard(activePackage);
+      setWidgetExpandedState(true);
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (request.action === 'netuno_start_play') {
+      if (request.package) activePackage = request.package;
+      renderFloatingCard(activePackage);
+      setWidgetExpandedState(true);
+      triggerPlayWithSync();
+      sendResponse({ success: true });
+      return true;
+    }
+  });
+}
+
+// Atualiza automaticamente caso um novo pacote seja enviado pelo Netuno com a aba do SEI já aberta
+if (chrome.storage?.onChanged) {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local' || window !== window.top) return;
+    if (changes.netuno_sei_package?.newValue) {
+      const newPkg = changes.netuno_sei_package.newValue;
+      renderFloatingCard(newPkg);
+      updateWidgetPackageUI(newPkg);
+    } else if (changes.netuno_sei_last_package?.newValue && !activePackage) {
+      const lastPkg = changes.netuno_sei_last_package.newValue;
+      renderFloatingCard(lastPkg);
+      updateWidgetPackageUI(lastPkg);
+    }
+  });
+}
+
+// Inicialização: Sempre mantém o botãozinho disfarçado disponível no SEI
 function initExtension() {
+  if (window !== window.top) return;
+
+  // Renderiza o botãozinho disfarçado imediatamente
+  renderFloatingCard(activePackage);
+
   if (chrome.storage?.local) {
-    chrome.storage.local.get(['netuno_sei_package'], (res) => {
-      if (res && res.netuno_sei_package) {
-        console.log('[Netuno SEI] Pacote ativo detectado:', res.netuno_sei_package);
-        renderFloatingCard(res.netuno_sei_package);
+    chrome.storage.local.get(['netuno_sei_package', 'netuno_sei_last_package', 'netuno_sei_panel_open', 'netuno_sei_auto_play'], (res) => {
+      const pkg = res?.netuno_sei_package || res?.netuno_sei_last_package || null;
+      if (pkg) {
+        console.log('[Netuno SEI] Pacote detectado:', pkg.cidade);
+        renderFloatingCard(pkg);
+        updateWidgetPackageUI(pkg);
+      } else if (chrome.runtime?.sendMessage) {
+        // Tenta puxar automaticamente de qualquer aba aberta do Netuno
+        chrome.runtime.sendMessage({ action: 'netuno_sync_from_netuno_tabs' }, (syncRes) => {
+          if (syncRes?.package) {
+            renderFloatingCard(syncRes.package);
+            updateWidgetPackageUI(syncRes.package);
+          }
+        });
+      }
+
+      if (res?.netuno_sei_panel_open) {
+        setWidgetExpandedState(true);
+        chrome.storage.local.remove(['netuno_sei_panel_open']);
+      }
+      if (res?.netuno_sei_auto_play && document.querySelector('a[link="procedimento_escolher_tipo"], a[href*="acao=procedimento_escolher_tipo"]')) {
+        setWidgetExpandedState(true);
+        chrome.storage.local.remove(['netuno_sei_auto_play']);
+        triggerPlayWithSync();
       }
     });
   }

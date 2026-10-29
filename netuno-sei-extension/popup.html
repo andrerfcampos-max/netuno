@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Netuno SEI Integrator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 340px;
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 14px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+    .title {
+      font-weight: 700;
+      font-size: 14px;
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+    .pkg-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+    .pkg-label {
+      color: #94a3b8;
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+    .pkg-city {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-top: 3px;
+    }
+    .pkg-meta {
+      color: #38bdf8;
+      font-size: 11px;
+      margin-top: 3px;
+    }
+    .status-msg {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 12px;
+      font-size: 11px;
+      color: #cbd5e1;
+      display: none;
+    }
+    .btn {
+      width: 100%;
+      border: none;
+      border-radius: 9px;
+      padding: 11px 12px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: filter 0.15s, transform 0.1s;
+      margin-bottom: 8px;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-play {
+      background: linear-gradient(135deg, #059669, #0d9488);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4);
+    }
+    .btn-play:hover:not(:disabled) {
+      filter: brightness(1.1);
+    }
+    .btn-show {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #475569;
+      font-size: 12px;
+      padding: 9px 12px;
+    }
+    .btn-show:hover:not(:disabled) {
+      background: #334155;
+    }
+    .btn-sync {
+      background: transparent;
+      color: #94a3b8;
+      border: 1px dashed #334155;
+      font-size: 11px;
+      padding: 7px 10px;
+      margin-bottom: 0;
+    }
+    .btn-sync:hover:not(:disabled) {
+      color: #e2e8f0;
+      border-color: #64748b;
+    }
+    .hint {
+      margin-top: 10px;
+      font-size: 10px;
+      color: #64748b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">🚒 Netuno SEI • SUOMA</div>
+    <span id="ext-badge" class="badge">Ativo</span>
+  </div>
+
+  <div class="pkg-card">
+    <div class="pkg-label">Pacote Carregado:</div>
+    <div id="pkg-title" class="pkg-city">Verificando pacote...</div>
+    <div id="pkg-subtitle" class="pkg-meta">Destino: CBMDF/COESP/GPCIU/SEHUR</div>
+  </div>
+
+  <div id="popup-status" class="status-msg"></div>
+
+  <button id="btn-popup-play" class="btn btn-play">
+    <span>▶️</span>
+    <span>Dar Play e Autuar no SEI</span>
+  </button>
+
+  <button id="btn-popup-show" class="btn btn-show">
+    <span>👁️</span>
+    <span>Reabrir Painel na Tela do SEI</span>
+  </button>
+
+  <button id="btn-popup-sync" class="btn btn-sync">
+    <span>🔄</span>
+    <span>Sincronizar Último Relatório do Netuno</span>
+  </button>
+
+  <div class="hint">
+    Um botão discreto (🚒 SEI) também fica sempre no canto inferior direito do SEI.
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
