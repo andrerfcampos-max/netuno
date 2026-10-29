@@ -2624,6 +2624,16 @@
       "createdAt": "2026-10-29T17:58:45.316Z",
       "startedAt": "2026-10-29T17:58:52.458Z",
       "completedAt": "2026-10-29T18:05:41.643Z"
+    },
+    {
+      "id": "TASK-261",
+      "seq": 261,
+      "conversationId": "1eb6ee8c-ddff-4787-bbf7-4fb26cf8d7fa",
+      "description": "Upload manual PDF na extensao SEI, selecao/deteccao de cidade e correcao de upload/fluxo SEI usando HAR gabarito",
+      "status": "completed",
+      "createdAt": "2026-10-29T18:16:25.207Z",
+      "startedAt": "2026-10-29T18:16:25.273Z",
+      "completedAt": "2026-10-29T18:30:57.264Z"
     }
   ]
 }
